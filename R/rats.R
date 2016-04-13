@@ -13,7 +13,7 @@ mark_singleparent_ids <- function(df){
     warning("Something went wrong with the identification. The number targets of identified
             multiple target parent ids does not match the number in the final filter!")
   }
-  df$singles_filter <- df_filter
+  df$has_multi <- df_filter
   return(df)
 }
 
