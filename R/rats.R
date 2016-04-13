@@ -3,7 +3,6 @@
 #' @param df a data frame with at least two variables, \code{target_id} & \code{parent_id}
 #'
 #' @export
-
 markSingles <- function(df){
   parent_group <- group_by(df, parent_id)
   unique_parent_count<-summarise(parent_group,n())
