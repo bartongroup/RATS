@@ -4,8 +4,6 @@
 #'
 #' @export
 
-library(dplyr)
-
 markSingles <- function(df){
   parent_group <- group_by(df, parent_id)
   unique_parent_count<-summarise(parent_group,n())
