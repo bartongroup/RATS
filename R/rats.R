@@ -19,5 +19,3 @@ markSingles <- function(df){
   df$singles_filter <- df_filter
   return(df)
 }
-
-t2gf<-markSingles(t2g)
