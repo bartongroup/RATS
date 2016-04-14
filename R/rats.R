@@ -4,8 +4,8 @@
 #'
 #' @export
 mark_singleparent_ids <- function(df){
-  parent_group <- group_by(df, parent_id)
-  unique_parent_count<-summarise(parent_group,n())
+  parent_group <- dplyr::group_by(df, parent_id)
+  unique_parent_count<-dplyr::summarise(parent_group,n())
   singles_filter <- unique_parent_count[2]>1
   multi_parent_ids=unique_parent_count[singles_filter,]
   df_filter <- apply(df, 1, function(r,s) any(r["parent_id"] %in% s ), s=multi_parent_ids[[1]])
