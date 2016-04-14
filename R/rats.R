@@ -17,21 +17,26 @@ mark_singleparent_ids <- function(df){
   return(df)
 }
 
-#' Compute a logical vector filter marking multi-child parent IDs in a data frame.
+#' Compute a logical vector marking as FALSE the single-target parents in a data frame.
 #'
 #' @param ids a data frame with at least two variables, \code{target_id} & \code{parent_id}
+#' @param duptx a boolean switch indicating if duplicate target_ids are expected (default FALSE)
 #'
 #' This is a second implementation of this routine. Faster, but less general.
+#' Target IDs are assumed to have the format \code{parentID.childextension} .
 #'
 #' @export
-mark_singleparent_ids2 <- function(ids) {
-  # Look for duplicate target_ids.
-  # branch_count is basically a hash table with Var1 contining the target_ids exactly once.
-  branch_count <- as.data.frame(table(ids$target_id))
-  # Use the non redundant list of target_ids to find out how many times the parent_ids are used.
-  root_ids <- sapply(branch_count$Var1, function(x) strsplit(as.character(x), "\\.")[[1]][1])
+mark_sibling_targets2 <- function(ids, duptx=FALSE) {
+  if (duptx) {
+    # EITHER count for duplicate target_ids. Then I can use the hash keys as a non-redundant list of target_ids.
+    branch_count <- as.data.frame(table(ids$target_id))
+    root_ids <- sapply(branch_count$Var1, function(x) strsplit(as.character(x), "\\.")[[1]][1])
+  } else {
+    # OR assume the target_ids are already non-redundant
+    root_ids <- sapply(ids$target_id, function(x) strsplit(as.character(x), "\\.")[[1]][1])
+  }
+  # Count parents and mark as TRUE targets that share their parent with other targets.
   root_id_counts <- table(root_ids)
-  # Add boolean column
-  ids$has_multi <- root_id_counts[ids$parent_id] > 1
+  ids$has_siblings <- root_id_counts[ids$parent_id] > 1
   return(ids)
 }
