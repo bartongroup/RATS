@@ -3,7 +3,7 @@
 #' @param df a data frame with at least two variables, \code{target_id} & \code{parent_id}
 #'
 #' @export
-mark_singleparent_ids <- function(df){
+mark_sibling_targets <- function(df){
   parent_group <- dplyr::group_by(df, parent_id)
   unique_parent_count<-dplyr::summarise(parent_group,n())
   singles_filter <- unique_parent_count[2]>1
@@ -13,14 +13,14 @@ mark_singleparent_ids <- function(df){
     warning("Something went wrong with the identification. The number targets of identified
             multiple target parent ids does not match the number in the final filter!")
   }
-  df$has_multi <- df_filter
+  df$has_siblings <- df_filter
   return(df)
 }
 
 #' Compute a logical vector marking as FALSE the single-target parents in a data frame.
 #'
 #' @param ids a data frame with at least two variables, \code{target_id} & \code{parent_id}
-#' @param duptx a boolean switch indicating if duplicate target_ids are expected (default FALSE)
+#' @param duptx a boolean switch indicating whether to account for duplicate target_ids (default FALSE)
 #'
 #' This is a second implementation of this routine. Faster, but less general.
 #' Target IDs are assumed to have the format \code{parentID.childextension} .
