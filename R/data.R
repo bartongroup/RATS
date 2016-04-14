@@ -85,3 +85,84 @@
 #' }
 #' @format A sleuth object.
 "At_RNAMeth_sleuth"
+
+#' Small example sleuth object containing transcript abundance estimates and bootstrap data
+#'
+#' \href{http://combine-lab.github.io/salmon/}{Salmon} abundance estimates and bootstraps were
+#' calculated for 513 Arabidopsis thaliana transcripts from the TAIR10 annotation. These
+#' transcripts map to 250 genes - 50 ofwhich are single-transcript genes, 200 of which have
+#' multiple transcripts (463 in total).
+#'
+#' The data were computed for 3 biological replicates in 2 conditions:
+#' \itemize{
+#'   \item{Col: 3 replicates}
+#'   \item{Vir: 3 replicates}
+#' }
+#'
+#' The \href{http://combine-lab.github.io/salmon/}{salmon} abundance information is then
+#' processed with the routine \code{\link{gen_example_sleuth}} (including a convertion to
+#' the correct hd5 format if required) to generate theoutput sleuth object that is saved here.
+#'
+#' See the help page for \code{\link{At_RNAMeth_sleuth}} for a description of the sleuth
+#' object structure.
+#'
+#' @format A sleuth object.
+"At_250genes_50singletx_200multitx_513totaltx"
+
+#' A function that generates the example sleuth object storred in
+#' At_250genes_50singletx_200multitx_513totaltx.rda from the raw salmon 0.5.1. data
+#'
+#' @param overwrite Logical flag for triggering an overwrite of At_250genes_50singletx_200multitx_513totaltx.rda.
+#' @param annot name of the annotation used for the data - assumes this is part of the path to the files.
+#' @param path root path to the raw salmon data - combined with annot to get the data for all replicates.
+#'
+#' @export
+gen_example_sleuth <- function(overwrite=FALSE, annot="TAIR10",
+                               path="/cluster/gjb_lab/nschurch/Projects/Arabidopsis_RNAMeth/salmon/rats_testdata_0.5.1_bootstraps"){
+
+  # construct paths
+  files <- Sys.glob(file.path(path,"*-*", annot))
+
+  # convert the sailfish dirs to kallisto h5 format
+  wasabi::prepare_fish_for_sleuth(files)
+
+  # make the table for the data
+  colreps <- sapply(1:3, function(repname) paste("Col-",repname, sep=""))
+  virreps <- sapply(1:3, function(repname) paste("Vir-",repname, sep=""))
+  allreps <- c(colreps, virreps)
+
+  # construct condition metadata
+  colcond <- sapply(1:3, function(repname) paste("Col"))
+  vircond <- sapply(1:3, function(repname) paste("Vir"))
+  allcond <- c(colcond, vircond)
+
+  # construct batch effect metadata
+  batch1 <- sapply(1:4, function(repname) paste("batch1"))
+  batch2 <- sapply(1:2, function(repname) paste("batch2"))
+  batch <- c(batch1, batch2)
+
+  # initiate data frame (remembering to skip col4 cos its bad)
+  exp <- matrix(, ncol=4, nrow=(length(allreps)))
+  colnames(exp) <- c("sample","condition","path","batch")
+  exp[,1] <- allreps
+  exp[,2] <- allcond
+  exp[,3] <- files
+  exp[,4] <- batch
+  exp <- as.data.frame(exp, stringsAsFactors=FALSE)
+
+  # construct sleuth object
+  so <- sleuth::sleuth_prep(exp, ~ condition+batch)
+
+  # fit linear model
+  so <- sleuth::sleuth_fit(so)
+  sleuth::models(so)
+  so <- sleuth::sleuth_wt(so, 'conditionVir')
+
+  if (overwrite) {
+    # save the sleuth object includind the sleuth results for this data.
+    At_250genes_50singletx_200multitx_513totaltx <- so
+    devtools::use_data(At_250genes_50singletx_200multitx_513totaltx, overwrite=TRUE)
+  }
+
+  return(so)
+}
