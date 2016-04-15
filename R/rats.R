@@ -51,7 +51,10 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
 group_samples <- function(covariates, varname) {
   categories <- levels(as.factor(covariates[, varname]))
   samplesByVariable <- list()
-  sapply(categories, function(x) samplesByVariable[[x]] <- which(covariates[, varname] == x))
+  for (x in categories) {
+    samplesByVariable[[x]] <- which(covariates[, varname] == x)
+  }
+  return samplesByVariable
 }
 
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
