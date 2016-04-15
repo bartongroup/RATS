@@ -54,7 +54,7 @@ group_samples <- function(covariates, varname) {
   for (x in categories) {
     samplesByVariable[[x]] <- which(covariates[, varname] == x)
   }
-  return samplesByVariable
+  return(samplesByVariable)
 }
 
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
