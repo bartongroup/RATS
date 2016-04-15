@@ -41,6 +41,19 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
   return(ids)
 }
 
+#' Group sample numbers by factor.
+#'
+#' @param covariates a dataframe with different factor variables
+#' @param varname the name of the variabel by which to group
+#'
+#' Des not assume proximity of same-factor samples.
+#' Returns list fo vectors. Dataframe inappropriate as the vectors may differ in length.
+group_samples <- function(covariates, varname) {
+  categories <- levels(as.factor(covariates[, varname]))
+  samplesByVariable <- list()
+  sapply(categories, function(x) samplesByVariable[[x]] <- which(covariates[, varname] == x))
+}
+
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
 #'
 #' @param sleuth_data a sleuth object
