@@ -43,16 +43,18 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
 
 #' Group sample numbers by factor.
 #'
-#' @param covariates a dataframe with different factor variables
-#' @param varname the name of the variabel by which to group
+#' @param covariates a dataframe with different factor variables.
 #'
-#' Des not assume proximity of same-factor samples.
-#' Returns list fo vectors. Dataframe inappropriate as the vectors may differ in length.
+#' Row number corresponds to smaple number. Does not assume proximity of same-factor samples.
+#' Assumes that a factor's value is not also another factor's name.
+#' Returns list of vectors. Dataframe inappropriate as the vectors may differ in length.
 group_samples <- function(covariates, varname) {
-  categories <- levels(as.factor(covariates[, varname]))
   samplesByVariable <- list()
-  for (x in categories) {
-    samplesByVariable[[x]] <- which(covariates[, varname] == x)
+  for(varname in names(covariates)) {
+    categories <- levels(as.factor(covariates[, varname]))
+    for (x in categories) {
+      samplesByVariable[[x]] <- which(covariates[, varname] == x)
+    }
   }
   return(samplesByVariable)
 }
