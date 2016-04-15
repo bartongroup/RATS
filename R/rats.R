@@ -40,3 +40,32 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
   ids$has_siblings <- root_id_counts[ids$parent_id] > 1
   return(ids)
 }
+
+#' Calculate the proportion of counts which are assigned to each transcript in a gene
+#'
+#' @param sleuth_data a sleuth object
+#' @param transcripts a dataframe listing the transcripts to process, and their parent genes,
+#' with at least column \code{target_id} & \code{parent_id}
+#' @param counts_col the sleuth column to use for the calculation (est_counts or tpm), default est_counts
+#'
+#' @export
+calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_counts") {
+
+  max_b <- 100
+
+  # make a list of dataframes, one df for each sample, containing the counts from its bootstraps
+  samples <- 1:nrow(sleuth_data$sample_to_covariates)
+  count_data <- lapply(samples, function(x) as.data.frame(sapply(sleuth_data$kal[[x]]$bootstrap, function(e) e[, counts_col])))
+
+  # add in transcript ids
+  tx_ids <- sleuth_data$kal[[1]]$bootstrap[[1]]["target_id"] #assume target ids in same order in all dataframes
+  count_data <- Map(cbind, count_data, target_id = tx_ids)
+
+  # calculate mean/variance across samples of same condition
+  # count_data[[1]]$testMean <- rowMeans(count_data[[1]][,1:max_b], na.rm=TRUE)
+  # count_data[[1]]$testVar <- apply(count_data[[1]][,1:max_b],1,var)
+
+  # merge with gene ids no not yet - use merge(data, transcripts)
+  #count_stats <- aggregate(count_data[[1]][, 1:100], list(count_data[[1]]$target_id), mean)
+
+}
