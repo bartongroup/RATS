@@ -15,6 +15,4 @@ Suggests:
 RoxygenNote: 5.0.1
 Imports:
     dplyr,
-    sleuth,
-    pastecs
-
+    sleuth

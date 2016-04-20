@@ -79,10 +79,16 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   # try to do mean/var calculations in place rather than creating a new count_data dataframe
   # calculate the proportions
 
+  # get full set of target_id filters
+  filter <- mark_sibling_targets(At_tair10_t2g)
+
+  # reduce filter to match entries in bootstraps (assumes all bootstraps have same entries)
+  filter <- filter[ filter$target_id %in% sleuth_data$kal[[1]]$bootstrap[[1]]$target_id, "has_siblings" ]
+
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
   count_data <- lapply(samples_by_condition, function(condition)
-    as.data.frame(lapply (condition, function(sample) sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[, counts_col]))))
+    as.data.frame(lapply (condition, function(sample) sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[filter,][, counts_col]))))
 
   # calculate mean and variance across all samples of the same condition
   means <- lapply(count_data, function(condition) apply(condition, 1, mean))
