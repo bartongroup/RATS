@@ -1,3 +1,6 @@
+# constant declaration - do not export in NAMESPACE
+CONDITION_COL = "condition" # name of condition column in sleuth sample_to_covariates object
+
 #' Compute a logical vector filter marking single-target parents in a data frame.
 #'
 #' @param df a data frame with at least two variables, \code{target_id} & \code{parent_id}
@@ -77,7 +80,7 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   # calculate the proportions
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
-  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[["condition"]]
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
   count_data <- lapply(samples_by_condition, function(condition)
     as.data.frame(lapply (condition, function(sample) sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[, counts_col]))))
 
