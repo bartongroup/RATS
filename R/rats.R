@@ -48,12 +48,13 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
 #' Row number corresponds to smaple number. Does not assume proximity of same-factor samples.
 #' Assumes that a factor's value is not also another factor's name.
 #' Returns list of vectors. Dataframe inappropriate as the vectors may differ in length.
-group_samples <- function(covariates, varname) {
+group_samples <- function(covariates) {
   samplesByVariable <- list()
   for(varname in names(covariates)) {
     categories <- levels(as.factor(covariates[, varname]))
+    samplesByVariable[[varname]] <- list()
     for (x in categories) {
-      samplesByVariable[[x]] <- which(covariates[, varname] == x)
+      samplesByVariable[[varname]][[x]] <- which(covariates[, varname] == x)
     }
   }
   return(samplesByVariable)
