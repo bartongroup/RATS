@@ -45,7 +45,7 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
 #'
 #' @param covariates a dataframe with different factor variables.
 #'
-#' Row number corresponds to smaple number. Does not assume proximity of same-factor samples.
+#' Row number corresponds to sample number. Does not assume proximity of same-factor samples.
 #' Assumes that a factor's value is not also another factor's name.
 #' Returns list of vectors. Dataframe inappropriate as the vectors may differ in length.
 group_samples <- function(covariates) {
@@ -70,21 +70,20 @@ group_samples <- function(covariates) {
 #' @export
 calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_counts") {
 
-  max_b <- 100
+  # TODO
+  # add transcript ids as index
+  # filter by transcript ids
+  # try to do mean/var calculations in place rather than creating a new count_data dataframe
+  # calculate the proportions
 
-  # make a list of dataframes, one df for each sample, containing the counts from its bootstraps
-  samples <- 1:nrow(sleuth_data$sample_to_covariates)
-  count_data <- lapply(samples, function(x) as.data.frame(sapply(sleuth_data$kal[[x]]$bootstrap, function(e) e[, counts_col])))
+  # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[["condition"]]
+  count_data <- lapply(samples_by_condition, function(condition)
+    as.data.frame(lapply (condition, function(sample) sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[, counts_col]))))
 
-  # add in transcript ids
-  tx_ids <- sleuth_data$kal[[1]]$bootstrap[[1]]["target_id"] #assume target ids in same order in all dataframes
-  count_data <- Map(cbind, count_data, target_id = tx_ids)
-
-  # calculate mean/variance across samples of same condition
-  # count_data[[1]]$testMean <- rowMeans(count_data[[1]][,1:max_b], na.rm=TRUE)
-  # count_data[[1]]$testVar <- apply(count_data[[1]][,1:max_b],1,var)
-
-  # merge with gene ids no not yet - use merge(data, transcripts)
-  #count_stats <- aggregate(count_data[[1]][, 1:100], list(count_data[[1]]$target_id), mean)
+  # calculate mean and variance across all samples of the same condition
+  means <- lapply(count_data, function(condition) apply(condition, 1, mean))
+  vars <- lapply(count_data, function(condition) apply(condition, 1, var))
 
 }
+
