@@ -1,6 +1,7 @@
 # constant declaration - do not export in NAMESPACE
 CONDITION_COL = "condition" # name of condition column in sleuth sample_to_covariates object
 
+
 #' Compute a logical vector filter marking single-target parents in a data frame.
 #'
 #' @param df a data frame with at least two variables, \code{target_id} & \code{parent_id}
@@ -19,6 +20,7 @@ mark_sibling_targets <- function(df){
   df$has_siblings <- df_filter
   return(df)
 }
+
 
 #' Compute a logical vector marking as FALSE the single-target parents in a data frame.
 #'
@@ -44,6 +46,7 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
   return(ids)
 }
 
+
 #' Group sample numbers by factor.
 #'
 #' @param covariates a dataframe with different factor variables.
@@ -62,6 +65,7 @@ group_samples <- function(covariates) {
   }
   return(samplesByVariable)
 }
+
 
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
 #'
@@ -95,4 +99,66 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   vars <- lapply(count_data, function(condition) apply(condition, 1, var))
 
 }
+
+
+#' Calculate mean and variance.
+#'
+#' @param targets A vector of target_id's.
+#' @param sl A sleuth object.
+#' @param reps A vector indicating which replicates to use.
+#' @param counttype "est_counts" or "tmp".
+#'
+#' Returns a dataframe with mean and variance per target_id
+#'
+#' @export
+do_count_stats <- function(targets, sl, reps, counttype="tmp"){
+  # Initialize dataframe
+  metrics <- data.frame("target_id"=targets, "mean"=NA, "variance"=NA)
+  rownames(metrics) <- metrics$target_id
+
+  # Calculate means
+  metrics["mean"] <- rowMeans( as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype]))) )
+  # TODO do with normal mean() instead of rowMeans()
+
+  # TODO calculate variances
+
+  return(metrics)
+}
+
+
+#' Main
+#'
+#' @param sl A sleuth object.
+#' @param ids A dataframe with \code{target_id}, corresponding \code{parent_id}, and other corresponding  id's that are ignored.
+#'
+#' Does not produce any visible output. For workflow demonstration purpose.
+#'
+#' @export
+main <- function(sl=At_250genes_50singletx_200multitx_513totaltx, ids=At_tair10_t2g) {
+#  sl <- At_250genes_50singletx_200multitx_513totaltx   # sleuth object
+#  ids < At_tair10_t2g
+
+  # Create reverse look-up of covariates to samples.
+  covariates_to_samples <- group_samples(sl$sample_to_covariates)
+
+  # Mark target_id's that have alternative transcript siblings.
+  ids <- mark_sibling_targets2(At_tair10_t2g)
+
+  # Assign index to ids
+  rownames(ids) <- ids$target_id      # assign transcript_id as row index, without dropping
+
+  # Assign index to bootstraps
+  for (k in 1:length(sl$kal)) {
+    for (b in 1:length(sl$kal[[k]]$bootstrap)) {
+      rownames(sl$kal[[k]]$bootstrap[[b]]) <- sl$kal[[k]]$bootstrap[[b]]$target_id
+    }
+  }
+
+  # Calculate means and variances per transcript.
+  metrics <- do_count_stats(ids$target_id[ids$has_siblings], sl, reps=covariates_to_samples[["condition"]][["Col"]], counttype="est_counts")
+}
+
+
+
+
 
