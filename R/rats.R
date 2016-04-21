@@ -120,16 +120,25 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
 #' Returns a dataframe with mean and variance per target_id
 #'
 #' @export
-do_count_stats <- function(targets, sl, reps, counttype="tmp"){
+do_count_stats <- function(targets, sl, reps, counttype="tpm") {
+#  targets <- filtered_ids
+#  reps <- covariates_to_samples[["condition"]][["Col"]]
+#  counttype <- "est_counts"
+
   # Initialize dataframe
   metrics <- data.frame("target_id"=targets, "mean"=NA, "variance"=NA)
   rownames(metrics) <- metrics$target_id
 
-  # Calculate means
-  metrics["mean"] <- rowMeans( as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype]))) )
-  # TODO do with normal mean() instead of rowMeans()
+  # I think as.dataframe() will copy the values into a new location of RAM in the requested format, so I might as well name it and re-use it.
+  counts <- as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype])))
+  rownames(counts) <- metrics$target_id   # counts was created based on metrics$target_id so I am able to do this with confidence that it is indeed so.
 
-  # TODO calculate variances
+  # Calculate means
+  metrics["mean"] <- rowMeans(counts)
+#  metrics["mean"] <- rowMeans( as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype])))  )
+
+  # Calculate variances (from package matrixStats)
+  metrics["variance"] <- rowVars(as.matrix(counts))
 
   return(metrics)
 }
@@ -144,8 +153,9 @@ do_count_stats <- function(targets, sl, reps, counttype="tmp"){
 #'
 #' @export
 main <- function(sl=At_250genes_50singletx_200multitx_513totaltx, ids=At_tair10_t2g) {
+#  devtools::load_all()
 #  sl <- At_250genes_50singletx_200multitx_513totaltx   # sleuth object
-#  ids < At_tair10_t2g
+#  ids <- At_tair10_t2g
 
   # Create reverse look-up of covariates to samples.
   covariates_to_samples <- group_samples(sl$sample_to_covariates)
@@ -163,8 +173,15 @@ main <- function(sl=At_250genes_50singletx_200multitx_513totaltx, ids=At_tair10_
     }
   }
 
-  # Calculate means and variances per transcript.
-  metrics <- do_count_stats(ids$target_id[ids$has_siblings], sl, reps=covariates_to_samples[["condition"]][["Col"]], counttype="est_counts")
+  # Reduce the ids to the ones actually present in the sleuth object and select those that have alternative splicing siblings.
+  exist_ids <- ids[ ids$target_id[ ids$target_id %in% sl$kal[[1]]$bootstrap[[1]]$target_id ], ]   # still a dataframe
+  filtered_ids <- exist_ids$target_id[exist_ids$has_siblings]                                     # vector
+
+  # Calculate means and variances per transcript (only for those that have alternative transcript siblings).
+  metrics <- do_count_stats(filtered_ids,
+                            sl,
+                            reps=covariates_to_samples[["condition"]][["Col"]],
+                            counttype="est_counts")
 }
 
 
