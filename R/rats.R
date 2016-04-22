@@ -84,31 +84,40 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   # get full set of target_id filters
   filter <- mark_sibling_targets2(transcripts)
 
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
+
   # reduce filter to match entries in bootstraps (assumes all bootstraps have same entries)
   f_to_b_rows <- match(sleuth_data$kal[[1]]$bootstrap[[1]]$target_id, filter$target_id)
   filter <- filter[f_to_b_rows,]$has_siblings
+  target_ids <- transcripts [f_to_b_rows,]$target_id
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
-  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
+
   count_data <- lapply(samples_by_condition, function(condition)
-    as.data.frame(lapply (condition, function(sample) sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[filter,][, counts_col]))))
+    as.data.frame(lapply (condition, function(sample)
+    sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[filter,][, counts_col]))))
 
   # calculate mean and variance across all samples of the same condition
-  means <- lapply(count_data, function(condition) as.data.frame(apply(condition, 1, mean)))
-  vars <- lapply(count_data, function(condition) as.data.frame(apply(condition, 1, var)))
-
-  # reduce target ids to match entries in bootstraps, same as filter, and then filter
-  target_ids <- transcripts [f_to_b_rows,]$target_id
-  target_ids <- target_ids[filter]
-
-  # munge into target/condition/mean/var format
-  conditions <- levels(as.factor(sleuth_data$sample_to_covariates$condition))
-  metrics <- data.frame(rep(conditions, each=length(target_ids)),
-                        rep(target_ids, length(samples_by_condition)),
-                        data.table::rbindlist(means),
-                        data.table::rbindlist(vars))
-  colnames(metrics) <- c("condition","target_id","means","variance")
+  metrics <- lapply(count_data, function(condition) calculate_stats(condition))
+  metrics <- lapply(metrics, function(m) cbind.data.frame(target_id = target_ids[filter],m))
   return(metrics)
+}
+
+calculate_stats <- function(x)
+{
+  return (t(apply(x, 1, mean_and_var)))
+}
+
+mean_and_var <- function(x)
+{
+  return(c(mean = mean(x), variance = var(x)))
+}
+
+bs_filter <- function(bootstrap, global_filter)
+{
+  f_to_b_rows <- match(bootstrap$target_id, global_filter$target_id)
+  filter <- filter[f_to_b_rows,]$has_siblings
+  return(filter)
 }
 
 
