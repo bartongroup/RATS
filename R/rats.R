@@ -87,7 +87,7 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   filter <- mark_sibling_targets(transcripts)
 
   # reduce filter to match entries in bootstraps (assumes all bootstraps have same entries)
-  filter <- filter[ filter$target_id %in% sleuth_data$kal[[1]]$bootstrap[[1]]$target_id, "has_siblings" ]
+  filter <- filter [filter$target_id %in% sleuth_data$kal[[1]]$bootstrap[[1]]$target_id, ]$has_siblings
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
@@ -97,7 +97,10 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   # calculate mean and variance across all samples of the same condition
   means <- lapply(count_data, function(condition) as.data.frame(apply(condition, 1, mean)))
   vars <- lapply(count_data, function(condition) as.data.frame(apply(condition, 1, var)))
-  target_ids <- transcripts[filter,]$target_id
+
+  # reduce target ids to match entries in bootstraps, same as filter, and then filter
+  target_ids <- transcripts [transcripts$target_id %in% sleuth_data$kal[[1]]$bootstrap[[1]]$target_id, ]$target_id
+  target_ids <- target_ids[filter]
 
   # munge into target/condition/mean/var format
   conditions <- levels(as.factor(sleuth_data$sample_to_covariates$condition))
