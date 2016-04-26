@@ -20,3 +20,12 @@ test_that("Stats are correct", {
   expect_equal(sort(stats$Vir$variance), sort(v), tolerance = 1e-6)
 
 })
+
+test_that("Mixed order bootstraps give same results as unmixed", {
+
+  # make a pseudo sleuth object with mixed up bootstrap rows
+  mixed_psuedo_sleuth <- pseudo_sleuth
+  mixed_pseudo_sleuth$kal[[1]]$bootstrap[[3]] <- mixed_pseudo_sleuth$kal[[1]]$bootstrap[[3]][c(1,3,2,5,4),]
+
+
+})
