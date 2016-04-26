@@ -3,12 +3,15 @@ CONDITION_COL = "condition" # name of condition column in sleuth sample_to_covar
 TARGET_ID = "target_id"     # name of transcript id column in transcripts object
 BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap tables
 
-#' Calculate differential transcript usage
+#================================================================================
+#' Calculate differential transcript usage.
+#'
 #' @param sleuth_data A sleuth object
 #' @param transcripts A dataframe listing the transcripts to process, and their parent genes,
 #' with at least column \code{target_id} & \code{parent_id}
 #' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts
 #' @return (TODO) dataframe with a row for each transcript, indicating if it is DTU and giving p-value etc.
+#'
 calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
 
   # get full set of target_id filters
@@ -28,6 +31,7 @@ calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
   return(proportions) # for now just return proportions
 }
 
+#================================================================================
 #' Compute a logical vector filter marking single-target parents in a data frame.
 #'
 #' @param df a data frame with at least two variables, \code{target_id} & \code{parent_id}
@@ -47,14 +51,15 @@ mark_sibling_targets <- function(df){
   return(df)
 }
 
-
+#--------------------------------------------------------------------------------
 #' Compute a logical vector marking as FALSE the single-target parents in a data frame.
+#' (alternative implementation)
 #'
 #' @param ids a data frame with at least two variables, \code{target_id} & \code{parent_id}
 #' @param duptx a boolean switch indicating whether to account for duplicate target_ids (default FALSE)
+#' @return data.frame An updated version of the input ids.
 #'
-#' This is a second implementation of this routine. Faster, but less general.
-#' Target IDs are assumed to have the format \code{parentID.childextension} .
+#' Target IDs are assumed to have the format \code{parentID.childextension}.
 #'
 #' @export
 mark_sibling_targets2 <- function(ids, duptx=FALSE) {
@@ -72,14 +77,15 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
   return(ids)
 }
 
-
+#================================================================================
 #' Group sample numbers by factor.
 #'
 #' @param covariates a dataframe with different factor variables.
+#' @return list of lists (per covariate) of vectors (per factor level).
 #'
-#' Row number corresponds to sample number. Does not assume proximity of same-factor samples.
-#' Assumes that a factor's value is not also another factor's name.
-#' Returns nested lists of vectors. Dataframe inappropriate as the vectors may differ in length.
+#' Row number corresponds to sample number.
+#'
+#' @export
 group_samples <- function(covariates) {
   samplesByVariable <- list()
   for(varname in names(covariates)) {
@@ -92,13 +98,16 @@ group_samples <- function(covariates) {
   return(samplesByVariable)
 }
 
+#================================================================================
 #' For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 #' filtered according to filter, and ordered according to target_ids
+#'
 #' @param sleuth_data A sleuth object
 #' @param samples_by_condition The samples which correspond to each condition
 #' @param filter A filter for the bootstraps, with corresponding target_ids
 #' @param counts_col The sleuth column to use for the calculation
 #' @return List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+#'
 make_filtered_bootstraps <- function(sleuth_data, samples_by_condition, filter, counts_col) {
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
@@ -116,27 +125,14 @@ make_filtered_bootstraps <- function(sleuth_data, samples_by_condition, filter, 
   return(count_data)
 }
 
-#' Calculate the proportion of counts which are assigned to each transcript in a gene
-#'
-#' @param count_data List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
-#' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
-calculate_tx_proportions <- function(count_data) {
-
-  # TODO
-  # try to do mean/var calculations in place rather than creating a new count_data dataframe
-  # calculate the proportions
-
-  # calculate mean and variance across all samples of the same condition
-  metrics <- lapply(count_data, function(condition) calculate_stats(condition))
-  return(metrics)
-}
-
+#================================================================================
 #' Extract a filtered column from a bootstrap table
 #'
 #' @param bootstrap A bootstrap dataframe
 #' @param filter A boolean vector for filtering the bootstrap, with matching transcript ids
 #' @param counts_col The column in the bootstrap table to extract
 #' @return The column from the bootstrap table
+#'
 filter_and_match <- function(bootstrap, filter, counts_col)
 {
   # create map from bootstrap to filter(i.e. main annotation) target ids
@@ -148,50 +144,69 @@ filter_and_match <- function(bootstrap, filter, counts_col)
   return(result)
 }
 
+#--------------------------------------------------------------------------------
+#' Extract filtered counts, assuming the bootstraps and replicates are identical in their
+#' order, number and presence of transcripts.
+#'
+#' @param kal A list of kallisto objects.
+#' @param tx_filter A logic vector to select bootstap rows (the same ones across all bootstraps).
+#' @param counttype "tpm" or "est_counts".
+#'
+#' @export
+filter_and_match2 <- function(kal, tx_filter=c(TRUE), counttype="tpm") {
+  counts <- as.data.frame(lapply(kal, function(k) sapply(k$bootstrap, function(b) b[tx_filter, counttype])))
+  return(counts)
+}
+
+#================================================================================
 #' Calculate statistics across the columns of a dataframe
 #'
 #' @param df dataframe
 #' @return A dataframe containing the calculated statistics, one in each column
+#'
 calculate_stats <- function(df)
 {
   metric <- as.data.frame(t(apply(df, 1, mean_and_var)))
   return(metric)
 }
 
+#--------------------------------------------------------------------------------
 #' Calculate mean and variance across the columns of a row
 #'
 #' @param row the row
 #' @return A vector containing the mean and variance
+#'
 mean_and_var <- function(row)
 {
   return(c(mean = mean(row), variance = var(row)))
 }
 
-#' Calculate mean and variance.
+#--------------------------------------------------------------------------------
+#' Calculate row-wise statistics in a dataframe.
 #'
-#' @param kal A list of kallisto objects.
-#' @param targets A logic vector indicating which rows in the bootstraps to calculate for.
-#' @param counttype "est_counts" or "tmp".
+#' @param df dataframe
+#' @return A dataframe containing the calculated statistics, one in each column
 #'
-#' Returns a dataframe with mean and variance per target_id
-#'
-#' @export
-do_count_stats <- function(kal, targets=c(TRUE), counttype="tpm") {
-#  targets <- filtered_ids
-#  reps <- covariates_to_samples[["condition"]][["Col"]]
-#  counttype <- "est_counts"
-
-  # Initialize dataframe
+calculate_stats2 <- function(df) {
   metrics <- data.frame("target_id"=kal[[1]]$bootstrap[[1]]$target_id[targets], "mean"=NA_real_, "variance"=NA_real_)
-
-  # Extact counts across bootstraps across replicates.
-  counts <- as.data.frame(lapply(kal, function(k) sapply(k$bootstrap, function(b) b[targets, counttype])))
-
-  # Calculate stats
   metrics["mean"] <- rowMeans(counts)
   metrics["variance"] <- rowVars(as.matrix(counts))
-
   return(metrics)
 }
 
+#================================================================================
+#' Calculate the proportion of counts which are assigned to each transcript in a gene
+#'
+#' @param count_data List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+#' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
+#'
+calculate_tx_proportions <- function(count_data) {
 
+  # TODO
+  # try to do mean/var calculations in place rather than creating a new count_data dataframe
+  # calculate the proportions
+
+  # calculate mean and variance across all samples of the same condition
+  metrics <- lapply(count_data, function(condition) calculate_stats(condition))
+  return(metrics)
+}
