@@ -69,10 +69,11 @@ group_samples <- function(covariates) {
 
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
 #'
-#' @param sleuth_data a sleuth object
-#' @param transcripts a dataframe listing the transcripts to process, and their parent genes,
+#' @param sleuth_data A sleuth object
+#' @param transcripts A dataframe listing the transcripts to process, and their parent genes,
 #' with at least column \code{target_id} & \code{parent_id}
-#' @param counts_col the sleuth column to use for the calculation (est_counts or tpm), default est_counts
+#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts
+#' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
 #'
 #' @export
 calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_counts") {
@@ -84,64 +85,139 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   # get full set of target_id filters
   filter <- mark_sibling_targets2(transcripts)
 
+  # get which samples correspond to which condition
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
 
-  # reduce filter to match entries in bootstraps (assumes all bootstraps have same entries)
-  f_to_b_rows <- match(sleuth_data$kal[[1]]$bootstrap[[1]]$target_id, filter$target_id)
-  filter <- filter[f_to_b_rows,]$has_siblings
-  target_ids <- transcripts [f_to_b_rows,]$target_id
+  # assign filter and target_ids for use in filter_and_match loop
+  filter <- filter$has_siblings
+  target_ids <- transcripts$target_id
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
-
   count_data <- lapply(samples_by_condition, function(condition)
     as.data.frame(lapply (condition, function(sample)
-    sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) e[filter,][, counts_col]))))
+    sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, target_ids, filter, counts_col) ))))
+
+  # now set the filtered target ids as rownames on each condition - previous call returns target ids in this order
+  count_data <- lapply(count_data, function(condition) {rownames(condition) <- target_ids[filter]; condition})
+
+  # remove any row containing NAs: some bootstrap did not have an entry for the transcript for the row
+  # TODO this may not be required behaviour
+  count_data <- lapply(count_data, function(condition) condition[complete.cases(condition),])
 
   # calculate mean and variance across all samples of the same condition
   metrics <- lapply(count_data, function(condition) calculate_stats(condition))
-  metrics <- lapply(metrics, function(m) cbind.data.frame(target_id = target_ids[filter],m))
   return(metrics)
 }
 
-calculate_stats <- function(x)
+#' Extract a filtered column from a bootstrap table
+#'
+#' @param bootstrap A bootstrap dataframe
+#' @param transcripts Ids of transcripts matching filter
+#' @param filter A boolean vector for filtering the bootstrap
+#' @param counts_col The column in the bootstrap table to extract
+#' @return The column from the bootstrap table
+filter_and_match <- function(bootstrap, transcripts, filter, counts_col)
 {
-  return (t(apply(x, 1, mean_and_var)))
+  # create map from bootstrap to filter(i.e. main annotation) target ids
+  b_to_f_rows <- match(transcripts, bootstrap$target_id)
+
+  # map the bootstrap to the filter target ids and then apply the filter
+  result <- (bootstrap[b_to_f_rows,][,counts_col])[filter]
+
+  return(result)
 }
 
-mean_and_var <- function(x)
+#' Calculate statistics across the columns of a dataframe
+#'
+#' @param df dataframe
+#' @return A dataframe containing the calculated statistics, one in each column
+calculate_stats <- function(df)
 {
-  return(c(mean = mean(x), variance = var(x)))
+  metric <- as.data.frame(t(apply(df, 1, mean_and_var)))
+  return(metric)
 }
 
-bs_filter <- function(bootstrap, global_filter)
+#' Calculate mean and variance across the columns of a row
+#'
+#' @param row the row
+#' @return A vector containing the mean and variance
+mean_and_var <- function(row)
 {
-  f_to_b_rows <- match(bootstrap$target_id, global_filter$target_id)
-  filter <- filter[f_to_b_rows,]$has_siblings
-  return(filter)
+  return(c(mean = mean(row), variance = var(row)))
 }
-
 
 #' Calculate mean and variance.
 #'
-#' @param targets A logic vector indicating which bootstrap rows are of interest.
-#' @param kal A list of kallisto objects.
+#' @param targets A vector of target_id's.
+#' @param sl A sleuth object.
+#' @param reps A vector indicating which replicates to use.
 #' @param counttype "est_counts" or "tmp".
 #'
-#' Returns a dataframe with \code{target_id}, \code{mean} and \code{variance}.
+#' Returns a dataframe with mean and variance per target_id
 #'
 #' @export
 do_count_stats <- function(targets, sl, reps, counttype="tpm") {
+#  targets <- filtered_ids
+#  reps <- covariates_to_samples[["condition"]][["Col"]]
+#  counttype <- "est_counts"
+
   # Initialize dataframe
-  metrics <- data.frame("target_id"=kal[[1]]$bootstrap[[1]]$target_id[targets], "mean"=NA_real_, "variance"=NA_real_)
+  metrics <- data.frame("target_id"=targets, "mean"=NA, "variance"=NA)
+  rownames(metrics) <- metrics$target_id
 
-  # Get the counts from the bootstraps of all supplied replicates.
-  counts <- as.data.frame(lapply(kal, function(k) sapply(k$bootstrap, function(b) b[targets, counttype])))
+  # I think as.dataframe() will copy the values into a new location of RAM in the requested format, so I might as well name it and re-use it.
+  counts <- as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype])))
+  rownames(counts) <- metrics$target_id   # counts was created based on metrics$target_id so I am able to do this with confidence that it is indeed so.
 
-  # Calculate metrics
+  # Calculate means
   metrics["mean"] <- rowMeans(counts)
-  metrics["variance"] <- matrixStats::rowVars(as.matrix(counts))
+#  metrics["mean"] <- rowMeans( as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype])))  )
+
+  # Calculate variances (from package matrixStats)
+  metrics["variance"] <- rowVars(as.matrix(counts))
 
   return(metrics)
+}
+
+
+#' Main
+#'
+#' @param sl A sleuth object.
+#' @param ids A dataframe with \code{target_id}, corresponding \code{parent_id}, and other corresponding  id's that are ignored.
+#'
+#' Does not produce any visible output. For workflow demonstration purpose.
+#'
+#' @export
+main <- function(sl=At_250genes_50singletx_200multitx_513totaltx, ids=At_tair10_t2g) {
+#  devtools::load_all()
+#  sl <- At_250genes_50singletx_200multitx_513totaltx   # sleuth object
+#  ids <- At_tair10_t2g
+
+  # Create reverse look-up of covariates to samples.
+  covariates_to_samples <- group_samples(sl$sample_to_covariates)
+
+  # Mark target_id's that have alternative transcript siblings.
+  ids <- mark_sibling_targets2(At_tair10_t2g)
+
+  # Assign index to ids
+  rownames(ids) <- ids$target_id      # assign transcript_id as row index, without dropping
+
+  # Assign index to bootstraps
+  for (k in 1:length(sl$kal)) {
+    for (b in 1:length(sl$kal[[k]]$bootstrap)) {
+      rownames(sl$kal[[k]]$bootstrap[[b]]) <- sl$kal[[k]]$bootstrap[[b]]$target_id
+    }
+  }
+
+  # Reduce the ids to the ones actually present in the sleuth object and select those that have alternative splicing siblings.
+  exist_ids <- ids[ ids$target_id[ ids$target_id %in% sl$kal[[1]]$bootstrap[[1]]$target_id ], ]   # still a dataframe
+  filtered_ids <- exist_ids$target_id[exist_ids$has_siblings]                                     # vector
+
+  # Calculate means and variances per transcript (only for those that have alternative transcript siblings).
+  metrics <- do_count_stats(filtered_ids,
+                            sl,
+                            reps=covariates_to_samples[["condition"]][["Col"]],
+                            counttype="est_counts")
 }
 
 
