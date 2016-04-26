@@ -40,7 +40,7 @@ test_that("Mixed order bootstraps give same results as unmixed", {
 })
 
 #================================================================================
-context("Annotation Filtering")
+context("Annotation Preparation")
 
 #================================================================================
 test_that("Sibling IDs identification (Kimon's version)", {
@@ -60,11 +60,7 @@ test_that("Sibling IDs identification (Nick's version)", {
   expect_identical(result, reference)
 })
 
-#================================================================================
-context("Covariates to samples")
-
-#================================================================================
-test_that("Look-up tables creation", {
+test_that("Reverse covariates look-up tables creation", {
   result <- group_samples(pseudo_sleuth$sample_to_covariates)
   expect_length(result, 3)
   expect_equal(result$sample, list("Col-1"=1L, "Col-2"=2L, "Vir-1"=3L))
