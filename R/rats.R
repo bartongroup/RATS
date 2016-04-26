@@ -1,6 +1,34 @@
 # constant declaration - do not export in NAMESPACE
 CONDITION_COL = "condition" # name of condition column in sleuth sample_to_covariates object
 
+#' Calculate differential transcript usage
+#' @param sleuth_data A sleuth object
+#' @param transcripts A dataframe listing the transcripts to process, and their parent genes,
+#' with at least column \code{target_id} & \code{parent_id}
+#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts
+#' @return (TODO) dataframe with a row for each transcript, indicating if it is DTU and giving p-value etc.
+calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
+
+  # get full set of target_id filters
+  filter <- mark_sibling_targets2(transcripts)
+
+  # get which samples correspond to which condition
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
+
+  # assign filter and target_ids for use in filter_and_match loop
+  filter <- filter$has_siblings
+  target_ids <- transcripts$target_id
+
+  # build list of dataframes, one for each condition
+  # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
+  count_data <- make_filtered_bootstraps(sleuth_data, samples_by_condition, target_ids, filter, counts_col)
+
+  # calculate the relative proportion of expression of each transcript
+  proportions <- calculate_tx_proportions(count_data)
+
+  # TODO DTU calc and error of proportion test
+  return(proportions) # for now just return proportions
+}
 
 #' Compute a logical vector filter marking single-target parents in a data frame.
 #'
@@ -66,36 +94,20 @@ group_samples <- function(covariates) {
   return(samplesByVariable)
 }
 
-
-#' Calculate the proportion of counts which are assigned to each transcript in a gene
-#'
+#' For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
+#' filtered according to filter, and ordered according to target_ids
 #' @param sleuth_data A sleuth object
-#' @param transcripts A dataframe listing the transcripts to process, and their parent genes,
-#' with at least column \code{target_id} & \code{parent_id}
-#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts
-#' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
-#'
-#' @export
-calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_counts") {
-
-  # TODO
-  # try to do mean/var calculations in place rather than creating a new count_data dataframe
-  # calculate the proportions
-
-  # get full set of target_id filters
-  filter <- mark_sibling_targets2(transcripts)
-
-  # get which samples correspond to which condition
-  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
-
-  # assign filter and target_ids for use in filter_and_match loop
-  filter <- filter$has_siblings
-  target_ids <- transcripts$target_id
+#' @param samples_by_condition The samples which correspond to each condition
+#' @param target_ids A vector of transcript ids
+#' @param filter A filter for the bootstraps, in the same order as target_ids
+#' @param counts_col The sleuth column to use for the calculation
+#' @return List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+make_filtered_bootstraps <- function(sleuth_data, samples_by_condition, target_ids, filter, counts_col) {
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
   count_data <- lapply(samples_by_condition, function(condition)
     as.data.frame(lapply (condition, function(sample)
-    sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, target_ids, filter, counts_col) ))))
+      sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, target_ids, filter, counts_col) ))))
 
   # now set the filtered target ids as rownames on each condition - previous call returns target ids in this order
   count_data <- lapply(count_data, function(condition) {rownames(condition) <- target_ids[filter]; condition})
@@ -103,6 +115,19 @@ calculate_tx_proportions <- function(sleuth_data, transcripts, counts_col="est_c
   # remove any row containing NAs: some bootstrap did not have an entry for the transcript for the row
   # TODO this may not be required behaviour
   count_data <- lapply(count_data, function(condition) condition[complete.cases(condition),])
+
+  return(count_data)
+}
+
+#' Calculate the proportion of counts which are assigned to each transcript in a gene
+#'
+#' @param count_data List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+#' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
+calculate_tx_proportions <- function(count_data) {
+
+  # TODO
+  # try to do mean/var calculations in place rather than creating a new count_data dataframe
+  # calculate the proportions
 
   # calculate mean and variance across all samples of the same condition
   metrics <- lapply(count_data, function(condition) calculate_stats(condition))

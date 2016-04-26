@@ -5,7 +5,7 @@ test_that("Stats are correct", {
 
   # call calculate_tx_proportions and check result
   # in theory uses lazy loading to get the data, but in practice not sure if it's working
-  stats <- calculate_tx_proportions(pseudo_sleuth, mini_anno)
+  stats <- calculate_DTU(pseudo_sleuth, mini_anno)
 
   m <- c(458.99861,41.24901,55.08233,12.53521)
   expect_equal(sort(stats$Col$mean), sort(m), tolerance = 1e-6)
