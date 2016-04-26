@@ -7,10 +7,12 @@
 calculate_stats2(df)
 }
 \arguments{
-\item{df}{dataframe}
+\item{df}{A dataframe.}
 }
 \value{
-A dataframe containing the calculated statistics, one in each column
+A dataframe containing the calculated statistics, one in each column.
+
+It expects and preserves rownames.
 }
 \description{
 Calculate row-wise statistics in a dataframe.
