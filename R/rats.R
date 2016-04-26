@@ -148,79 +148,29 @@ mean_and_var <- function(row)
 
 #' Calculate mean and variance.
 #'
-#' @param targets A vector of target_id's.
-#' @param sl A sleuth object.
-#' @param reps A vector indicating which replicates to use.
+#' @param kal A list of kallisto objects.
+#' @param targets A logic vector indicating which rows in the bootstraps to calculate for.
 #' @param counttype "est_counts" or "tmp".
 #'
 #' Returns a dataframe with mean and variance per target_id
 #'
 #' @export
-do_count_stats <- function(targets, sl, reps, counttype="tpm") {
+do_count_stats <- function(kal, targets=c(TRUE), counttype="tpm") {
 #  targets <- filtered_ids
 #  reps <- covariates_to_samples[["condition"]][["Col"]]
 #  counttype <- "est_counts"
 
   # Initialize dataframe
-  metrics <- data.frame("target_id"=targets, "mean"=NA, "variance"=NA)
-  rownames(metrics) <- metrics$target_id
+  metrics <- data.frame("target_id"=kal[[1]]$bootstrap[[1]]$target_id[targets], "mean"=NA_real_, "variance"=NA_real_)
 
-  # I think as.dataframe() will copy the values into a new location of RAM in the requested format, so I might as well name it and re-use it.
-  counts <- as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype])))
-  rownames(counts) <- metrics$target_id   # counts was created based on metrics$target_id so I am able to do this with confidence that it is indeed so.
+  # Extact counts across bootstraps across replicates.
+  counts <- as.data.frame(lapply(kal, function(k) sapply(k$bootstrap, function(b) b[targets, counttype])))
 
-  # Calculate means
+  # Calculate stats
   metrics["mean"] <- rowMeans(counts)
-#  metrics["mean"] <- rowMeans( as.data.frame(lapply(sl$kal[reps], function(k) sapply(k$bootstrap, function(b) b[metrics$target_id, counttype])))  )
-
-  # Calculate variances (from package matrixStats)
   metrics["variance"] <- rowVars(as.matrix(counts))
 
   return(metrics)
 }
-
-
-#' Main
-#'
-#' @param sl A sleuth object.
-#' @param ids A dataframe with \code{target_id}, corresponding \code{parent_id}, and other corresponding  id's that are ignored.
-#'
-#' Does not produce any visible output. For workflow demonstration purpose.
-#'
-#' @export
-main <- function(sl=At_250genes_50singletx_200multitx_513totaltx, ids=At_tair10_t2g) {
-#  devtools::load_all()
-#  sl <- At_250genes_50singletx_200multitx_513totaltx   # sleuth object
-#  ids <- At_tair10_t2g
-
-  # Create reverse look-up of covariates to samples.
-  covariates_to_samples <- group_samples(sl$sample_to_covariates)
-
-  # Mark target_id's that have alternative transcript siblings.
-  ids <- mark_sibling_targets2(At_tair10_t2g)
-
-  # Assign index to ids
-  rownames(ids) <- ids$target_id      # assign transcript_id as row index, without dropping
-
-  # Assign index to bootstraps
-  for (k in 1:length(sl$kal)) {
-    for (b in 1:length(sl$kal[[k]]$bootstrap)) {
-      rownames(sl$kal[[k]]$bootstrap[[b]]) <- sl$kal[[k]]$bootstrap[[b]]$target_id
-    }
-  }
-
-  # Reduce the ids to the ones actually present in the sleuth object and select those that have alternative splicing siblings.
-  exist_ids <- ids[ ids$target_id[ ids$target_id %in% sl$kal[[1]]$bootstrap[[1]]$target_id ], ]   # still a dataframe
-  filtered_ids <- exist_ids$target_id[exist_ids$has_siblings]                                     # vector
-
-  # Calculate means and variances per transcript (only for those that have alternative transcript siblings).
-  metrics <- do_count_stats(filtered_ids,
-                            sl,
-                            reps=covariates_to_samples[["condition"]][["Col"]],
-                            counttype="est_counts")
-}
-
-
-
 
 
