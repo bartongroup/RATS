@@ -8,17 +8,28 @@ test_that("Stats are correct", {
   # in theory uses lazy loading to get the data, but not sure if it's working
   stats <- calculate_DTU(pseudo_sleuth, mini_anno)
 
-  m <- c(458.99861,41.24901,55.08233,12.53521)
-  expect_equal(sort(stats$Col$mean), sort(m), tolerance = 1e-6)
+  ids <- c("AT1G03180.1", "AT1G03180.2", "AT1G01020.2", "AT1G01020.1")
+  m <- c(55.08233, 12.53521, 41.24901, 458.99861)
+  v <- c(43.95496, 40.20190, 144.82521, 476.89568)
+  p <- c(0.81461, 0.18538, 0.08245, 0.91754)
+  test <- data.frame(ids,m,v,p)
 
-  v <- c(476.89568,144.82521,43.95496,40.20190)
-  expect_equal(sort(stats$Col$variance), sort(v), tolerance = 1e-6)
+  mapping <- match(test$ids, stats$Col[[TARGET_ID]])
 
-  m <- c(411.072110,34.354291,46.807238,6.068015)
-  expect_equal(sort(stats$Vir$mean), sort(m), tolerance = 1e-6)
+  expect_equal(stats$Col$mean[mapping], test$m, tolerance = 1e-6)
+  expect_equal(stats$Col$variance[mapping], test$v, tolerance = 1e-6)
+  expect_equal(stats$Col$proportion[mapping], test$p, tolerance = 1e-5)
 
-  v <- c(710.51429,62.14951,56.38875,11.68474)
-  expect_equal(sort(stats$Vir$variance), sort(v), tolerance = 1e-6)
+  m <- c(46.807238, 6.068015, 34.354291, 411.072110)
+  v <- c(56.38875, 11.68474, 62.14951, 710.51429)
+  p <- c(0.88523, 0.11476, 0.07712, 0.92287)
+  test <- data.frame(ids,m,v,p)
+
+  mapping <- match(test$ids, stats$Vir[[TARGET_ID]])
+
+  expect_equal(stats$Vir$mean[mapping], test$m, tolerance = 1e-6)
+  expect_equal(stats$Vir$variance[mapping], test$v, tolerance = 1e-6)
+  expect_equal(stats$Vir$proportion[mapping], test$p, tolerance = 1e-5)
 })
 
 #==============================================================================
@@ -35,8 +46,10 @@ test_that("Mixed order bootstraps give same results as unmixed", {
 
   expect_equal(sort(mixed_stats$Col$mean), sort(unmixed_stats$Col$mean), tolerance = 1e-6)
   expect_equal(sort(mixed_stats$Col$variance), sort(unmixed_stats$Col$variance), tolerance = 1e-6)
+  expect_equal(sort(mixed_stats$Col$proportion), sort(unmixed_stats$Col$proportion), tolerance = 1e-6)
   expect_equal(sort(mixed_stats$Vir$mean), sort(unmixed_stats$Vir$mean), tolerance = 1e-6)
   expect_equal(sort(mixed_stats$Vir$variance), sort(unmixed_stats$Vir$variance), tolerance = 1e-6)
+  expect_equal(sort(mixed_stats$Vir$proportion), sort(unmixed_stats$Vir$proportion), tolerance = 1e-6)
 })
 
 #================================================================================

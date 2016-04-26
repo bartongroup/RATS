@@ -1,6 +1,7 @@
 # constant declarations - do not export in NAMESPACE
 CONDITION_COL = "condition" # name of condition column in sleuth sample_to_covariates object
 TARGET_ID = "target_id"     # name of transcript id column in transcripts object
+PARENT_ID = "parent_id"     # name of parent id column in transcripts object
 BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap tables
 
 #================================================================================
@@ -12,6 +13,7 @@ BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap t
 #' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts
 #' @return (TODO) dataframe with a row for each transcript, indicating if it is DTU and giving p-value etc.
 #'
+#' @export
 calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
 
   # get full set of target_id filters
@@ -25,7 +27,7 @@ calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
   count_data <- make_filtered_bootstraps(sleuth_data, samples_by_condition, filter, counts_col)
 
   # calculate the relative proportion of expression of each transcript
-  proportions <- calculate_tx_proportions(count_data)
+  proportions <- lapply(count_data, function(condition) calculate_tx_proportions(condition, transcripts))
 
   # TODO DTU calc and error of proportion test
   return(proportions) # for now just return proportions
@@ -203,16 +205,21 @@ calculate_stats2 <- function(df) {
 #================================================================================
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
 #'
-#' @param count_data List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+#' @param count_data dataframe containing the counts from all bootstraps for one condition
 #' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
 #'
-calculate_tx_proportions <- function(count_data) {
-
-  # TODO
-  # try to do mean/var calculations in place rather than creating a new count_data dataframe
-  # calculate the proportions
+#' @import data.table
+calculate_tx_proportions <- function(count_data, transcripts) {
 
   # calculate mean and variance across all samples of the same condition
-  metrics <- lapply(count_data, function(condition) calculate_stats(condition))
-  return(metrics)
+  metrics <- calculate_stats(count_data)
+
+  # add gene ids to dataframe
+  metrics$parent_id <- transcripts[[PARENT_ID]][match(rownames(metrics), transcripts[[TARGET_ID]])];
+
+  # calculate reads proportion per transcript by gene
+  dt = data.table(target_id=rownames(metrics), metrics)
+  dt[,proportion := mean/sum(mean), by=parent_id] # import data.table needed to make := work
+
+  return(dt)
 }
