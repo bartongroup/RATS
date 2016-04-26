@@ -2,19 +2,23 @@
 % Please edit documentation in R/rats.R
 \name{mark_sibling_targets2}
 \alias{mark_sibling_targets2}
-\title{Compute a logical vector marking as FALSE the single-target parents in a data frame.}
+\title{Compute a logical vector marking as FALSE the single-target parents in a data frame.
+(alternative implementation)}
 \usage{
 mark_sibling_targets2(ids, duptx = FALSE)
 }
 \arguments{
 \item{ids}{a data frame with at least two variables, \code{target_id} & \code{parent_id}}
 
-\item{duptx}{a boolean switch indicating whether to account for duplicate target_ids (default FALSE)
+\item{duptx}{a boolean switch indicating whether to account for duplicate target_ids (default FALSE)}
+}
+\value{
+data.frame An updated version of the input ids.
 
-This is a second implementation of this routine. Faster, but less general.
-Target IDs are assumed to have the format \code{parentID.childextension} .}
+Target IDs are assumed to have the format \code{parentID.childextension}.
 }
 \description{
 Compute a logical vector marking as FALSE the single-target parents in a data frame.
+(alternative implementation)
 }
 

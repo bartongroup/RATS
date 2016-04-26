@@ -4,15 +4,13 @@
 \alias{calculate_tx_proportions}
 \title{Calculate the proportion of counts which are assigned to each transcript in a gene}
 \usage{
-calculate_tx_proportions(sleuth_data, transcripts, counts_col = "est_counts")
+calculate_tx_proportions(count_data, transcripts)
 }
 \arguments{
-\item{sleuth_data}{a sleuth object}
-
-\item{transcripts}{a dataframe listing the transcripts to process, and their parent genes,
-with at least column \code{target_id} & \code{parent_id}}
-
-\item{counts_col}{the sleuth column to use for the calculation (est_counts or tpm), default est_counts}
+\item{count_data}{dataframe containing the counts from all bootstraps for one condition}
+}
+\value{
+Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
 }
 \description{
 Calculate the proportion of counts which are assigned to each transcript in a gene
