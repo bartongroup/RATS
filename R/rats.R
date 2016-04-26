@@ -184,13 +184,19 @@ mean_and_var <- function(row)
 #--------------------------------------------------------------------------------
 #' Calculate row-wise statistics in a dataframe.
 #'
-#' @param df dataframe
-#' @return A dataframe containing the calculated statistics, one in each column
+#' @param df A dataframe.
+#' @return A dataframe containing the calculated statistics, one in each column.
+#'
+#'It expects and preserves rownames.
 #'
 calculate_stats2 <- function(df) {
-  metrics <- data.frame("target_id"=kal[[1]]$bootstrap[[1]]$target_id[targets], "mean"=NA_real_, "variance"=NA_real_)
-  metrics["mean"] <- rowMeans(counts)
-  metrics["variance"] <- rowVars(as.matrix(counts))
+  # Prepare empty dataframe.
+  txid = rownames(df)
+  metrics <- data.frame("mean"=rep(NA_real_, length(txid)), "variance"=NA_real_)
+  rownames(metrics) <- txid
+
+  metrics["mean"] <- rowMeans(df)
+  metrics["variance"] <- matrixStats::rowVars(as.matrix(df))
   return(metrics)
 }
 

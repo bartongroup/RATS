@@ -68,4 +68,18 @@ test_that("Reverse covariates look-up tables creation", {
   expect_equal(result$batch, list("batch1"=c(1L, 2L, 3L)))
 })
 
+#================================================================================
+context("Counts-based calculations")
+
+#================================================================================
+test_that("Row-wise means and variances", {
+  df <- data.frame("a"=c(1,20,300), "b"=c(2,21,301), "c"=c(2,40,600), "d"=c(3, 30, 450))
+  rownames(df) <- c("A", "B", "C")
+  result <- calculate_stats2(df)
+  reference <- data.frame("mean"=c(mean(c(1,2,2,3)), mean(c(20,21,40,30)), mean(c(300,301,600,450))),
+                          "variance"=c(var(c(1,2,2,3)), var(c(20,21,40,30)), var(c(300,301,600,450))))
+  rownames(reference) <- c("A", "B", "C")
+  expect_identical(result, reference)
+})
+
 
