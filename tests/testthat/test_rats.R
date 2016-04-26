@@ -20,3 +20,38 @@ test_that("Stats are correct", {
   expect_equal(sort(stats$Vir$variance), sort(v), tolerance = 1e-6)
 
 })
+
+#================================================================================
+context("Annotation Filtering")
+
+#================================================================================
+test_that("Sibling IDs identification (Kimon's version)", {
+  result <- mark_sibling_targets2(mini_anno)
+  reference <- mini_anno
+  reference["has_siblings"] <- c(FALSE,TRUE,TRUE,TRUE,TRUE)
+  expect_identical(result, reference)
+})
+
+test_that("Sibling IDs identification (Nick's version)", {
+  generalized_anno <- mini_anno
+  generalized_anno$target_id <- c("t1","t2","t3","t4","t5")
+  result <- mark_sibling_targets(generalized_anno)
+  reference <- mini_anno
+  reference["has_siblings"] <- c(FALSE,TRUE,TRUE,TRUE,TRUE)
+  reference$target_id <- c("t1","t2","t3","t4","t5")
+  expect_identical(result, reference)
+})
+
+#================================================================================
+context("Covariates to samples")
+
+#================================================================================
+test_that("Look-up tables creation", {
+  result <- group_samples(pseudo_sleuth$sample_to_covariates)
+  expect_length(result, 3)
+  expect_equal(result$sample, list("Col-1"=1L, "Col-2"=2L, "Vir-1"=3L))
+  expect_equal(result$condition, list("Col"=c(1L, 2L), "Vir"=c(3L)))
+  expect_equal(result$batch, list("batch1"=c(1L, 2L, 3L)))
+})
+
+
