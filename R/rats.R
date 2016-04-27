@@ -24,7 +24,7 @@ calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
 
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
-  count_data <- make_filtered_bootstraps(sleuth_data, samples_by_condition, filter, counts_col)
+  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, filter, counts_col))
 
   # calculate the relative proportion of expression of each transcript
   proportions <- lapply(count_data, function(condition) calculate_tx_proportions(condition, transcripts))
@@ -105,24 +105,23 @@ group_samples <- function(covariates) {
 #' filtered according to filter, and ordered according to target_ids
 #'
 #' @param sleuth_data A sleuth object
-#' @param samples_by_condition The samples which correspond to each condition
+#' @param condition The condition to consider
 #' @param filter A filter for the bootstraps, with corresponding target_ids
 #' @param counts_col The sleuth column to use for the calculation
-#' @return List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+#' @return A dataframe containing the counts from all bootstraps for condition
 #'
-make_filtered_bootstraps <- function(sleuth_data, samples_by_condition, filter, counts_col) {
+make_filtered_bootstraps <- function(sleuth_data, condition, filter, counts_col) {
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
-  count_data <- lapply(samples_by_condition, function(condition)
-    as.data.frame(lapply (condition, function(sample)
-      sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, filter, counts_col) ))))
+  count_data <- as.data.frame(lapply (condition, function(sample)
+      sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, filter, counts_col) )))
 
-  # now set the filtered target ids as rownames on each condition - previous call returns target ids in this order
-  count_data <- lapply(count_data, function(condition) {rownames(condition) <- filter[[TARGET_ID]][filter$has_siblings]; condition})
+  # now set the filtered target ids as rownames - previous call returns target ids in this order
+  rownames(count_data) <- filter[[TARGET_ID]][filter$has_siblings]
 
   # remove any row containing NAs: some bootstrap did not have an entry for the transcript for the row
   # TODO this may not be required behaviour
-  count_data <- lapply(count_data, function(condition) condition[complete.cases(condition),])
+  count_data <- count_data[complete.cases(count_data),]
 
   return(count_data)
 }

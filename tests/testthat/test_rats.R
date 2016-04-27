@@ -36,7 +36,7 @@ test_that("Stats are correct", {
 test_that("Mixed order bootstraps give same results as unmixed", {
 
   # make a pseudo sleuth object with mixed up bootstrap rows
-  mixed_psuedo_sleuth <- pseudo_sleuth
+  mixed_pseudo_sleuth <- pseudo_sleuth
   mixed_pseudo_sleuth$kal[[1]]$bootstrap[[3]] <- mixed_pseudo_sleuth$kal[[1]]$bootstrap[[3]][c(1,3,2,5,4),]
   mixed_pseudo_sleuth$kal[[1]]$bootstrap[[4]] <- mixed_pseudo_sleuth$kal[[1]]$bootstrap[[4]][c(5,4,3,2,1),]
   mixed_pseudo_sleuth$kal[[3]]$bootstrap[[1]] <- mixed_pseudo_sleuth$kal[[3]]$bootstrap[[1]][c(3,5,1,4,2),]
