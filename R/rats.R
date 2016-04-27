@@ -17,14 +17,14 @@ BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap t
 calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
 
   # get full set of target_id filters
-  filter <- mark_sibling_targets2(transcripts)
+  tx_filter <- mark_sibling_targets2(transcripts)
 
   # get which samples correspond to which condition
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
 
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
-  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, filter, counts_col))
+  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col))
 
   # calculate the relative proportion of expression of each transcript
   proportions <- lapply(count_data, function(condition) calculate_tx_proportions(condition, transcripts))
@@ -102,22 +102,22 @@ group_samples <- function(covariates) {
 
 #================================================================================
 #' For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
-#' filtered according to filter, and ordered according to target_ids
+#' filtered according to tx_filter, and ordered according to target_ids
 #'
 #' @param sleuth_data A sleuth object
 #' @param condition The condition to consider
-#' @param filter A filter for the bootstraps, with corresponding target_ids
+#' @param tx_filter A filter for the bootstraps, with corresponding target_ids
 #' @param counts_col The sleuth column to use for the calculation
 #' @return A dataframe containing the counts from all bootstraps for condition
 #'
-make_filtered_bootstraps <- function(sleuth_data, condition, filter, counts_col) {
+make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_col) {
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
   count_data <- as.data.frame(lapply (condition, function(sample)
-      sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, filter, counts_col) )))
+      sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, tx_filter, counts_col) )))
 
   # now set the filtered target ids as rownames - previous call returns target ids in this order
-  rownames(count_data) <- filter[[TARGET_ID]][filter$has_siblings]
+  rownames(count_data) <- tx_filter[[TARGET_ID]][tx_filter$has_siblings]
 
   # remove any row containing NAs: some bootstrap did not have an entry for the transcript for the row
   # TODO this may not be required behaviour
@@ -130,17 +130,17 @@ make_filtered_bootstraps <- function(sleuth_data, condition, filter, counts_col)
 #' Extract a filtered column from a bootstrap table
 #'
 #' @param bootstrap A bootstrap dataframe
-#' @param filter A boolean vector for filtering the bootstrap, with matching transcript ids
+#' @param tx_filter A boolean vector for filtering the bootstrap, with matching transcript ids
 #' @param counts_col The column in the bootstrap table to extract
 #' @return The column from the bootstrap table
 #'
-filter_and_match <- function(bootstrap, filter, counts_col)
+filter_and_match <- function(bootstrap, tx_filter, counts_col)
 {
   # create map from bootstrap to filter(i.e. main annotation) target ids
-  b_to_f_rows <- match(filter[[TARGET_ID]], bootstrap[[BS_TARGET_ID]])
+  b_to_f_rows <- match(tx_filter[[TARGET_ID]], bootstrap[[BS_TARGET_ID]])
 
   # map the bootstrap to the filter target ids and then apply the filter
-  result <- (bootstrap[b_to_f_rows,][,counts_col])[filter$has_siblings]
+  result <- (bootstrap[b_to_f_rows,][,counts_col])[tx_filter$has_siblings]
 
   return(result)
 }
