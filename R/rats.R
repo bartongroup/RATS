@@ -179,23 +179,23 @@ calculate_stats <- function(df)
 #'
 mean_and_var <- function(row)
 {
-  return(c(mean = mean(row), variance = var(row)))
+  return(c(sum = sum(row), mean = mean(row), variance = var(row)))
 }
 
 #--------------------------------------------------------------------------------
 #' Calculate row-wise statistics in a dataframe.
 #'
 #' @param df A dataframe.
-#' @return A dataframe containing the calculated statistics, one in each column.
+#' @return A dataframe containing the sum, mean, variance per row.
 #'
 #'It expects and preserves rownames.
 #'
 calculate_stats2 <- function(df) {
   # Prepare empty dataframe.
   txid = rownames(df)
-  metrics <- data.frame("mean"=rep(NA_real_, length(txid)), "variance"=NA_real_)
+  metrics <- data.frame("sum"=rep(NA_real_, length(txid)), "mean"=NA_real_, "variance"=NA_real_)
   rownames(metrics) <- txid
-
+  metrics["sum"] <- rowSums(df)
   metrics["mean"] <- rowMeans(df)
   metrics["variance"] <- matrixStats::rowVars(as.matrix(df))
   return(metrics)

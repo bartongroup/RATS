@@ -92,9 +92,11 @@ stats_prep_dat <- function() {
 }
 
 stats_prep_ref <- function() {
-  reference <- data.frame("mean"=c(mean(c(1,2,2,3)), mean(c(20,21,40,30)), mean(c(300,301,600,450))),
-                          "variance"=c(var(c(1,2,2,3)), var(c(20,21,40,30)), var(c(300,301,600,450))))
-  rownames(reference) <- c("A", "B", "C")
+  df <- stats_prep_dat()
+  reference <- data.frame("sum"=c(sum(df[1,]), sum(df[2,]), sum(df[3,])))
+  reference["mean"] <- c(mean(unlist(df[1,])), mean(unlist(df[2,])), mean(unlist(df[3,])))
+  reference["variance"] <- c(var(as.vector(unlist(df[1,]))), var(as.vector(unlist(df[2,]))), var(as.vector(unlist(df[3,]))))
+  rownames(reference) <- rownames(df)
   return(reference)
 }
 
