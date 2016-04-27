@@ -4,12 +4,12 @@
 \alias{filter_and_match}
 \title{Extract a filtered column from a bootstrap table}
 \usage{
-filter_and_match(bootstrap, filter, counts_col)
+filter_and_match(bootstrap, tx_filter, counts_col)
 }
 \arguments{
 \item{bootstrap}{A bootstrap dataframe}
 
-\item{filter}{A boolean vector for filtering the bootstrap, with matching transcript ids}
+\item{tx_filter}{A boolean vector for filtering the bootstrap, with matching transcript ids}
 
 \item{counts_col}{The column in the bootstrap table to extract}
 }

@@ -3,24 +3,24 @@
 \name{make_filtered_bootstraps}
 \alias{make_filtered_bootstraps}
 \title{For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
-filtered according to filter, and ordered according to target_ids}
+filtered according to tx_filter, and ordered according to target_ids}
 \usage{
-make_filtered_bootstraps(sleuth_data, samples_by_condition, filter, counts_col)
+make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col)
 }
 \arguments{
 \item{sleuth_data}{A sleuth object}
 
-\item{samples_by_condition}{The samples which correspond to each condition}
+\item{condition}{The condition to consider}
 
-\item{filter}{A filter for the bootstraps, with corresponding target_ids}
+\item{tx_filter}{A filter for the bootstraps, with corresponding target_ids}
 
 \item{counts_col}{The sleuth column to use for the calculation}
 }
 \value{
-List of dataframes, where each dataframe contains the counts from all bootstraps for one condition
+A dataframe containing the counts from all bootstraps for condition
 }
 \description{
 For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
-filtered according to filter, and ordered according to target_ids
+filtered according to tx_filter, and ordered according to target_ids
 }
 
