@@ -223,3 +223,34 @@ calculate_tx_proportions <- function(count_data, transcripts) {
 
   return(dt)
 }
+
+#================================================================================
+#' G test for changes in relative proportion of transcripts of each gene.
+#'
+#' @param cond_counts A list of dataframes containing the counts from all bootstraps for the desired conditions.
+#' @param transcripts A dataframe with at least \code{target_id} and corresponding \code{parent_id}.
+#' @return ???
+#'
+do_G_test <- function(cond_counts, transcripts) {
+  cond_counts <- count_data[c("Vir","Col")]
+  transcripts <- mini_anno
+
+  # Calculate sum, mean and variance across all bootstraps and samples for each condition.
+  cond_metrics <- lapply(cond_counts, function(counts) calculate_stats(counts))
+
+  # Add gene id to the metrics dataframe of each condition. Do it IN-PLACE.
+  for (i in 1:length(cond_metrics)) {
+    cond_metrics[[i]]$parent_id <- transcripts[[PARENT_ID]][match(rownames(cond_metrics[[i]]), transcripts[[TARGET_ID]])];
+  }
+
+  parents <- as.vector(levels(as.factor(cond_metrics[[1]]$parent_id)))
+  for (p in parents) {
+    # Contigency table.
+    p = "AT1G03180"
+    contigency <- as.data.frame.list(lapply(cond_metrics, function (cond) cond$sum[cond$parent_id == p]))
+  }
+
+
+
+
+}
