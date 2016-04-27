@@ -204,7 +204,8 @@ calculate_stats2 <- function(df) {
 #================================================================================
 #' Calculate the proportion of counts which are assigned to each transcript in a gene
 #'
-#' @param count_data dataframe containing the counts from all bootstraps for one condition
+#' @param count_data A dataframe containing the counts from all bootstraps for one condition
+#' @param transcripts A dataframe listing the transcripts to process, and their parent genes
 #' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
 #'
 #' @import data.table

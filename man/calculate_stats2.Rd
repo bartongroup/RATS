@@ -10,7 +10,7 @@ calculate_stats2(df)
 \item{df}{A dataframe.}
 }
 \value{
-A dataframe containing the calculated statistics, one in each column.
+A dataframe containing the sum, mean, variance per row.
 
 It expects and preserves rownames.
 }

@@ -7,7 +7,9 @@
 calculate_tx_proportions(count_data, transcripts)
 }
 \arguments{
-\item{count_data}{dataframe containing the counts from all bootstraps for one condition}
+\item{count_data}{A dataframe containing the counts from all bootstraps for one condition}
+
+\item{transcripts}{A dataframe listing the transcripts to process, and their parent genes}
 }
 \value{
 Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
