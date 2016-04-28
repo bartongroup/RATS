@@ -26,6 +26,10 @@ calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
   count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col))
 
+  # remove entries which are entirely 0 across all conditions
+  subsets <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
+  count_data <- lapply(count_data, function(condition) condition[Reduce("&", subsets),])
+
   # calculate the relative proportion of expression of each transcript
   proportions <- lapply(count_data, function(condition) calculate_tx_proportions(condition, transcripts))
 
@@ -129,9 +133,8 @@ make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_c
   # now set the filtered target ids as rownames - previous call returns target ids in this order
   rownames(count_data) <- tx_filter[[TARGET_ID]][tx_filter$has_siblings]
 
-  # remove any row containing NAs: some bootstrap did not have an entry for the transcript for the row
-  # TODO this may not be required behaviour
-  count_data <- count_data[complete.cases(count_data),]
+  # replace any NAs with 0: some bootstrap did not have an entry for the transcript for the row
+  count_data[is.na(count_data)] <- 0
 
   return(count_data)
 }
