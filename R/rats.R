@@ -268,7 +268,7 @@ do_G_test <- function(condA, condB, ids) {
     targets <- ids$target_id[ids$parent_id == p]
 
 
-#    gt <- g.test(sumsA[targets], sumsB[targets])
+    gt <- g.test(sumsA[targets], sumsB[targets])
     # gt$observed and gt$expected indicate it is not what I intended.
 
     obs <- sumsA[targets]
@@ -279,6 +279,15 @@ do_G_test <- function(condA, condB, ids) {
     gt2 <- g.test(obs, p=exp)
     # gt1 and gt2 p-values differ a lot !!!!!!
 
+    obs <- sumsA[targets]
+    exp <- sumsB[targets] / sum(sumsB[targets])
+    gt1 <- g.test(obs, p=exp, correct="williams")
+    obs <- sumsB[targets]
+    exp <- sumsA[targets] / sum(sumsA[targets])
+    gt2 <- g.test(obs, p=exp, correct="williams")
+
+    # Try with means instead of sums.
+    # =>> difference is smaller
   }
 }
 
