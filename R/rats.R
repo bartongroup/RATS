@@ -79,6 +79,16 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
   return(ids)
 }
 
+#--------------------------------------------------------------------------------
+#' Group targets by parent.
+#'
+#' @param ids A dataframe with \code{target_id} and \code{parent_id}.
+#' @return A list of vectors: one vector for each parent, containing the repsective targets.
+#'
+parent_to_targets <- function(ids) {
+  p2t <- lapply(as.vector(levels(as.factor(ids$parent_id))), function(p) ids$target_id[ids$parent_id == p])
+}
+
 #================================================================================
 #' Group sample numbers by factor.
 #'
@@ -227,30 +237,50 @@ calculate_tx_proportions <- function(count_data, transcripts) {
 #================================================================================
 #' G test for changes in relative proportion of transcripts of each gene.
 #'
-#' @param cond_counts A list of dataframes containing the counts from all bootstraps for the desired conditions.
-#' @param transcripts A dataframe with at least \code{target_id} and corresponding \code{parent_id}.
+#' @param condA A dataframe containing the counts per transcript from all bootstraps for one condition.
+#' @param condB A dataframe containing the counts per transcript from all bootstraps for the other condition.
+#' @param ids A dataframe with at least \code{target_id} and corresponding \code{parent_id}.
 #' @return ???
 #'
-do_G_test <- function(cond_counts, transcripts) {
-  cond_counts <- count_data[c("Vir","Col")]
-  transcripts <- mini_anno
+do_G_test <- function(condA, condB, ids) {
+  condA <- count_data[["Vir"]]
+  condB <- count_data[["Col"]]
+  ids <- mini_anno
 
-  # Calculate sum, mean and variance across all bootstraps and samples for each condition.
-  cond_metrics <- lapply(cond_counts, function(counts) calculate_stats(counts))
+  # Calculate count sums per transcript across all bootstraps.
+  sumsA <- rowSums(condA)
+  sumsB <- rowSums(condB)
+  names(sumsA) <- rownames(condA)
+  names(sumsB) <- rownames(condB)
 
-  # Add gene id to the metrics dataframe of each condition. Do it IN-PLACE.
-  for (i in 1:length(cond_metrics)) {
-    cond_metrics[[i]]$parent_id <- transcripts[[PARENT_ID]][match(rownames(cond_metrics[[i]]), transcripts[[TARGET_ID]])];
-  }
+  # Paranoid check that the transcripts are ordered in the same way.
+  if (any(names(sumsA) != names(sumsB))) stop("Transcript vectors don't match up! This means something fell through our target_ID munging. Please let us know.")
 
-  parents <- as.vector(levels(as.factor(cond_metrics[[1]]$parent_id)))
+  # Vector of parent IDs actually present in my data, common to both datasets.
+  parent_id <- ids[[PARENT_ID]][match(names(sumsA), ids[[TARGET_ID]])]
+  names(parent_id) <- names(sumsA)
+  # Non-redundant vector of parent IDs.
+  parents <- as.vector(levels(as.factor(parent_id)))
+
   for (p in parents) {
-    # Contigency table.
     p = "AT1G03180"
-    contigency <- as.data.frame.list(lapply(cond_metrics, function (cond) cond$sum[cond$parent_id == p]))
+    # Find the relevant targets.
+    targets <- ids$target_id[ids$parent_id == p]
+
+
+#    gt <- g.test(sumsA[targets], sumsB[targets])
+    # gt$observed and gt$expected indicate it is not what I intended.
+
+    obs <- sumsA[targets]
+    exp <- sumsB[targets] / sum(sumsB[targets])
+    gt1 <- g.test(obs, p=exp)
+    obs <- sumsB[targets]
+    exp <- sumsA[targets] / sum(sumsA[targets])
+    gt2 <- g.test(obs, p=exp)
+    # gt1 and gt2 p-values differ a lot !!!!!!
+
   }
-
-
-
-
 }
+
+
+
