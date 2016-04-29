@@ -1,26 +1,38 @@
 # constant declarations - do not export in NAMESPACE
-CONDITION_COL = "condition" # name of condition column in sleuth sample_to_covariates object
 TARGET_ID = "target_id"     # name of transcript id column in transcripts object
 PARENT_ID = "parent_id"     # name of parent id column in transcripts object
 BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap tables
 
 #================================================================================
+#================================================================================
 #' Calculate differential transcript usage.
 #'
 #' @param sleuth_data A sleuth object
-#' @param transcripts A dataframe listing the transcripts to process, and their parent genes,
-#' with at least column \code{target_id} & \code{parent_id}
+#' @param transcripts A dataframe matching the transcript IDs (\code{target_id}) to their corresponding gene IDs (\code{parent_id}).
+#' @param ref_name The sleuth name of the reference condition.
+#' @param comp_name The sleuth name of the condition to compare.
+#' @param varname The sleuth name of the covariate to which the two conditions belong.
 #' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts
-#' @return (TODO) dataframe with a row for each transcript, indicating if it is DTU and giving p-value etc.
+#' @return List of data frames, with gene-level and transcript-level information.
 #'
 #' @export
-calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
+calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname="condition", counts_col="est_counts") {
+#  load("~/workspace/Rats/tests/testthat/mini_anno.rda")
+#  load("~/workspace/Rats/tests/testthat/pseudo_sleuth.rda")
+#  sleuth_data <- pseudo_sleuth
+#  transcripts <- mini_anno
+#  counts_col <- "est_counts"
+#  ref_name <- "Col"
+#  comp_name <- "Vir"
 
-  # get full set of target_id filters
-  tx_filter <- mark_sibling_targets2(transcripts)
+  # Look-up from parent_id to target_id (slow).
+  targets_by_parent <- parent_to_targets(transcripts)
 
-  # get which samples correspond to which condition
-  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[CONDITION_COL]]
+  # Identify genes with a single transcript. Order by gene ID and transcript ID.
+  tx_filter <- mark_sibling_targets3(transcripts, targets_by_parent)
+
+  # Reverse look-up from relicates to covariates.
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
 
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
@@ -30,57 +42,65 @@ calculate_DTU <- function(sleuth_data, transcripts, counts_col="est_counts") {
   subsets <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
   count_data <- lapply(count_data, function(condition) condition[Reduce("&", subsets),])
 
-  # calculate the relative proportion of expression of each transcript
-  proportions <- lapply(count_data, function(condition) calculate_tx_proportions(condition, transcripts))
+  # Which IDs am I actually working with after the filters?
+  actual_targets <- rownames(count_data[[ref_name]])
+  actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
 
-  # TODO DTU calc and error of proportion test
-  return(proportions) # for now just return proportions
+  # Pre-allocate output structure.
+  results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name),
+                  "Genes"=data.frame("considered"=c(FALSE),
+                                     "parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
+                                     "dtu"=NA, "p_value"=NA_real_),
+                  "Transcripts"=data.frame("considered"=c(FALSE), "target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
+                                           "ref_proportion"=NA_real_, "comp_proportion"=NA_real_,
+                                           "ref_sum"=NA_real_, "comp_sum"=NA_real_,
+                                           "ref_mean"=NA_real_, "ref_variance"=NA_real_,
+                                           "comp_mean"=NA_real_, "comp_variance"=NA_real_))
+  rownames(results$Genes) <- results$Genes$parent_id
+  rownames(results$Transcripts) <- results$Transcripts$target_id
+
+  # Statistics per transcript across all bootstraps per condition.
+  results$Transcripts[actual_targets, c("ref_sum", "ref_mean", "ref_variance", "comp_sum", "comp_mean", "comp_variance")] <-
+    c(rowSums(count_data[[ref_name]]), rowMeans(count_data[[ref_name]]), matrixStats::rowVars(as.matrix(count_data[[ref_name]])),
+      rowSums(count_data[[comp_name]]), rowMeans(count_data[[comp_name]]), matrixStats::rowVars(as.matrix(count_data[[comp_name]])))
+
+  # Proportions = sum of tx / sum(sums of all related txs).
+  for (target in results$Transcripts$target_id) {
+    results$Transcripts[target, c("ref_proportion", "comp_proportion")] <-
+      c(results$Transcripts[target, "ref_sum"] / sum(results$Transcripts[ targets_by_parent[[results$Transcripts[target, "parent_id"]]], "ref_sum"]),
+        results$Transcripts[target, "comp_sum"] / sum(results$Transcripts[ targets_by_parent[[results$Transcripts[target, "parent_id"]]], "comp_sum"]))
+  }
+
+  # P values.
+  for (p in actual_parents) {
+    targets <- targets_by_parent[[p]]
+    gt <- g.test(results$Transcripts[targets, "comp_sum"], p=results$Transcripts[targets, "ref_proportion"])
+    results$Genes[p, "p_value"] <- gt$p.value
+    results$Genes[p, c("considered", "dtu")] <- c(TRUE, gt$p.value < 0.05)
+    results$Transcripts[targets, "considered"] <- TRUE
+  }
+
+  # TODO : Multiple testing correction.
+
+  return(results)
 }
+#================================================================================
+#================================================================================
 
 #================================================================================
-#' Compute a logical vector filter marking single-target parents in a data frame.
-#'
-#' @param df a data frame with at least two variables, \code{target_id} & \code{parent_id}
-#'
-#' @export
-mark_sibling_targets <- function(df){
-  parent_group <- dplyr::group_by(df, parent_id)
-  unique_parent_count<-dplyr::summarise(parent_group,n())
-  singles_filter <- unique_parent_count[2]>1
-  multi_parent_ids=unique_parent_count[singles_filter,]
-  df_filter <- apply(df, 1, function(r,s) any(r["parent_id"] %in% s ), s=multi_parent_ids[[1]])
-  if (sum(df_filter)!=sum(multi_parent_ids[2])) {
-    warning("Something went wrong with the identification. The number targets of identified
-            multiple target parent ids does not match the number in the final filter!")
-  }
-  df$has_siblings <- df_filter
-  return(df)
-}
-
-#--------------------------------------------------------------------------------
 #' Compute a logical vector marking as FALSE the single-target parents in a data frame.
-#' (alternative implementation)
 #'
-#' @param ids a data frame with at least two variables, \code{target_id} & \code{parent_id}
-#' @param duptx a boolean switch indicating whether to account for duplicate target_ids (default FALSE)
+#' @param ids a data frame with at least two variables, \code{target_id} & \code{parent_id}.
+#' @param p2t a list of vectors, listing the \code{target_id}s per \code{parent_id}.
 #' @return data.frame An updated version of the input ids.
 #'
-#' Target IDs are assumed to have the format \code{parentID.childextension}.
-#'
-#' @export
-mark_sibling_targets2 <- function(ids, duptx=FALSE) {
-  if (duptx) {
-    # EITHER count for duplicate target_ids. Then I can use the hash keys as a non-redundant list of target_ids.
-    branch_count <- as.data.frame(table(ids$target_id))
-    root_ids <- sapply(branch_count$Var1, function(x) strsplit(as.character(x), "\\.")[[1]][1])
-  } else {
-    # OR assume the target_ids are already non-redundant
-    root_ids <- sapply(ids$target_id, function(x) strsplit(as.character(x), "\\.")[[1]][1])
+mark_sibling_targets3 <- function(ids, p2t) {
+  rownames(ids) <- ids[[TARGET_ID]]
+  for (target in ids[[TARGET_ID]]) {
+    ids[target, "has_siblings"] <- length(p2t[[ ids[target, PARENT_ID] ]]) > 1
   }
-  # Count parents and mark as TRUE targets that share their parent with other targets.
-  root_id_counts <- table(root_ids)
-  ids$has_siblings <- as.vector(root_id_counts[ids$parent_id] > 1)
-  return(ids)
+
+  return(ids[order(ids[[PARENT_ID]], ids[[TARGET_ID]]), ])
 }
 
 #--------------------------------------------------------------------------------
@@ -90,10 +110,17 @@ mark_sibling_targets2 <- function(ids, duptx=FALSE) {
 #' @return A list of vectors: one vector for each parent, containing the repsective targets.
 #'
 parent_to_targets <- function(ids) {
-  p2t <- lapply(as.vector(levels(as.factor(ids$parent_id))), function(p) ids$target_id[ids$parent_id == p])
+#  p <- "AT1G01020"
+#  ids <- transcripts
+
+  parents <- levels(as.factor(ids[[PARENT_ID]]))
+  p2t <- lapply(parents, function(p) ids[[TARGET_ID]][ids[[PARENT_ID]]==p])
+  names(p2t) <- parents
+
+  return(p2t)
 }
 
-#================================================================================
+#--------------------------------------------------------------------------------
 #' Group sample numbers by factor.
 #'
 #' @param covariates a dataframe with different factor variables.
@@ -101,7 +128,6 @@ parent_to_targets <- function(ids) {
 #'
 #' Row number corresponds to sample number.
 #'
-#' @export
 group_samples <- function(covariates) {
   samplesByVariable <- list()
   for(varname in names(covariates)) {
@@ -111,6 +137,7 @@ group_samples <- function(covariates) {
       samplesByVariable[[varname]][[x]] <- which(covariates[, varname] == x)
     }
   }
+
   return(samplesByVariable)
 }
 
@@ -139,7 +166,7 @@ make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_c
   return(count_data)
 }
 
-#================================================================================
+#--------------------------------------------------------------------------------
 #' Extract a filtered column from a bootstrap table
 #'
 #' @param bootstrap A bootstrap dataframe
@@ -157,142 +184,3 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col)
 
   return(result)
 }
-
-#--------------------------------------------------------------------------------
-#' Extract filtered counts, assuming the bootstraps and replicates are identical in their
-#' order, number and presence of transcripts.
-#'
-#' @param kal A list of kallisto objects.
-#' @param tx_filter A logic vector to select bootstap rows (the same ones across all bootstraps).
-#' @param counttype "tpm" or "est_counts".
-#'
-#' @export
-filter_and_match2 <- function(kal, tx_filter=c(TRUE), counttype="tpm") {
-  counts <- as.data.frame(lapply(kal, function(k) sapply(k$bootstrap, function(b) b[tx_filter, counttype])))
-  return(counts)
-}
-
-#================================================================================
-#' Calculate statistics across the columns of a dataframe
-#'
-#' @param df dataframe
-#' @return A dataframe containing the calculated statistics, one in each column
-#'
-calculate_stats <- function(df)
-{
-  metric <- as.data.frame(t(apply(df, 1, mean_and_var)))
-  return(metric)
-}
-
-#--------------------------------------------------------------------------------
-#' Calculate mean and variance across the columns of a row
-#'
-#' @param row the row
-#' @return A vector containing the mean and variance
-#'
-mean_and_var <- function(row)
-{
-  return(c(sum = sum(row), mean = mean(row), variance = var(row)))
-}
-
-#--------------------------------------------------------------------------------
-#' Calculate row-wise statistics in a dataframe.
-#'
-#' @param df A dataframe.
-#' @return A dataframe containing the sum, mean, variance per row.
-#'
-#'It expects and preserves rownames.
-#'
-calculate_stats2 <- function(df) {
-  # Prepare empty dataframe.
-  txid = rownames(df)
-  metrics <- data.frame("sum"=rep(NA_real_, length(txid)), "mean"=NA_real_, "variance"=NA_real_)
-  rownames(metrics) <- txid
-  metrics["sum"] <- rowSums(df)
-  metrics["mean"] <- rowMeans(df)
-  metrics["variance"] <- matrixStats::rowVars(as.matrix(df))
-  return(metrics)
-}
-
-#================================================================================
-#' Calculate the proportion of counts which are assigned to each transcript in a gene
-#'
-#' @param count_data A dataframe containing the counts from all bootstraps for one condition
-#' @param transcripts A dataframe listing the transcripts to process, and their parent genes
-#' @return Proportion of counts which are assigned to each transcript in a gene (but currently just mean and variance per transcript)
-#'
-#' @import data.table
-calculate_tx_proportions <- function(count_data, transcripts) {
-
-  # calculate mean and variance across all samples of the same condition
-  metrics <- calculate_stats(count_data)
-
-  # add gene ids to dataframe
-  metrics$parent_id <- transcripts[[PARENT_ID]][match(rownames(metrics), transcripts[[TARGET_ID]])];
-
-  # calculate reads proportion per transcript by gene
-  dt = data.table(target_id=rownames(metrics), metrics)
-  dt[,proportion := mean/sum(mean), by=parent_id] # import data.table needed to make := work
-
-  return(dt)
-}
-
-#================================================================================
-#' G test for changes in relative proportion of transcripts of each gene.
-#'
-#' @param condA A dataframe containing the counts per transcript from all bootstraps for one condition.
-#' @param condB A dataframe containing the counts per transcript from all bootstraps for the other condition.
-#' @param ids A dataframe with at least \code{target_id} and corresponding \code{parent_id}.
-#' @return ???
-#'
-do_G_test <- function(condA, condB, ids) {
-  condA <- count_data[["Vir"]]
-  condB <- count_data[["Col"]]
-  ids <- mini_anno
-
-  # Calculate count sums per transcript across all bootstraps.
-  sumsA <- rowSums(condA)
-  sumsB <- rowSums(condB)
-  names(sumsA) <- rownames(condA)
-  names(sumsB) <- rownames(condB)
-
-  # Paranoid check that the transcripts are ordered in the same way.
-  if (any(names(sumsA) != names(sumsB))) stop("Transcript vectors don't match up! This means something fell through our target_ID munging. Please let us know.")
-
-  # Vector of parent IDs actually present in my data, common to both datasets.
-  parent_id <- ids[[PARENT_ID]][match(names(sumsA), ids[[TARGET_ID]])]
-  names(parent_id) <- names(sumsA)
-  # Non-redundant vector of parent IDs.
-  parents <- as.vector(levels(as.factor(parent_id)))
-
-  for (p in parents) {
-    p = "AT1G03180"
-    # Find the relevant targets.
-    targets <- ids$target_id[ids$parent_id == p]
-
-
-    gt <- g.test(sumsA[targets], sumsB[targets])
-    # gt$observed and gt$expected indicate it is not what I intended.
-
-    obs <- sumsA[targets]
-    exp <- sumsB[targets] / sum(sumsB[targets])
-    gt1 <- g.test(obs, p=exp)
-    obs <- sumsB[targets]
-    exp <- sumsA[targets] / sum(sumsA[targets])
-    gt2 <- g.test(obs, p=exp)
-    # gt1 and gt2 p-values differ a lot !!!!!!
-
-    obs <- sumsA[targets]
-    exp <- sumsB[targets] / sum(sumsB[targets])
-    gt1 <- g.test(obs, p=exp, correct="williams")
-    obs <- sumsB[targets]
-    exp <- sumsA[targets] / sum(sumsA[targets])
-    gt2 <- g.test(obs, p=exp, correct="williams")
-
-    # Try with means instead of sums.
-    # =>> difference is smaller
-  }
-}
-
-
-

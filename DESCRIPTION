@@ -14,7 +14,5 @@ Suggests:
     biomaRt
 RoxygenNote: 5.0.1
 Imports:
-    dplyr,
     matrixStats,
     sleuth,
-    data.table
