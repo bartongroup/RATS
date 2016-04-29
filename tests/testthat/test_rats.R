@@ -1,5 +1,5 @@
 library(rats)
-context("Transcript proportions")
+context("DTU results")
 
 #==============================================================================
 test_that("Stats are correct", {
@@ -33,6 +33,17 @@ test_that("Stats are correct", {
 })
 
 #==============================================================================
+check_equal <- function(result1, result2) {
+
+  expect_equal(sort(result1$Col$mean), sort(result2$Col$mean), tolerance = 1e-6)
+  expect_equal(sort(result1$Col$variance), sort(result2$Col$variance), tolerance = 1e-6)
+  expect_equal(sort(result1$Col$proportion), sort(result2$Col$proportion), tolerance = 1e-6)
+  expect_equal(sort(result1$Vir$mean), sort(result2$Vir$mean), tolerance = 1e-6)
+  expect_equal(sort(result1$Vir$variance), sort(result2$Vir$variance), tolerance = 1e-6)
+  expect_equal(sort(result1$Vir$proportion), sort(result2$Vir$proportion), tolerance = 1e-6)
+}
+
+#==============================================================================
 test_that("Mixed order bootstraps give same results as unmixed", {
 
   # make a pseudo sleuth object with mixed up bootstrap rows
@@ -44,12 +55,34 @@ test_that("Mixed order bootstraps give same results as unmixed", {
   mixed_stats <- calculate_DTU(mixed_pseudo_sleuth, mini_anno)
   unmixed_stats <- calculate_DTU(pseudo_sleuth, mini_anno)
 
-  expect_equal(sort(mixed_stats$Col$mean), sort(unmixed_stats$Col$mean), tolerance = 1e-6)
-  expect_equal(sort(mixed_stats$Col$variance), sort(unmixed_stats$Col$variance), tolerance = 1e-6)
-  expect_equal(sort(mixed_stats$Col$proportion), sort(unmixed_stats$Col$proportion), tolerance = 1e-6)
-  expect_equal(sort(mixed_stats$Vir$mean), sort(unmixed_stats$Vir$mean), tolerance = 1e-6)
-  expect_equal(sort(mixed_stats$Vir$variance), sort(unmixed_stats$Vir$variance), tolerance = 1e-6)
-  expect_equal(sort(mixed_stats$Vir$proportion), sort(unmixed_stats$Vir$proportion), tolerance = 1e-6)
+  check_equal(mixed_stats, unmixed_stats)
+})
+
+#==============================================================================
+test_that("Bootstraps with all 0 / NA entries are discarded", {
+
+  # add a new transcript which will have zero entries
+  TRANSCRIPT <- "AT1G01020.3"
+  GENE <- "AT1G01020"
+  z_mini_anno <- rbind(mini_anno, c(TRANSCRIPT, GENE,""))
+
+  # make a new sleuth with this transcript added, and give it 0 entries
+  zero_entry_sleuth <- pseudo_sleuth
+  zero_entry_sleuth$kal <- lapply(zero_entry_sleuth$kal, function(kal)
+    lapply(kal, function(bs) lapply(bs, rbind, list(TRANSCRIPT, 0, 0))))
+
+  # make a new sleuth with one of the zero entries set to NA
+  na_entry_sleuth <- zero_entry_sleuth
+  na_entry_sleuth$kal[[2]]$bootstrap[[1]][6,2] <- NA
+
+  # calculate DTU for new sleuths and old one
+  z_result <- calculate_DTU(zero_entry_sleuth, z_mini_anno)
+  n_result <- calculate_DTU(na_entry_sleuth, z_mini_anno)
+  result <- calculate_DTU(pseudo_sleuth, mini_anno)
+
+  # check results are all equal
+  check_equal(z_result, result)
+  check_equal(n_result, result)
 })
 
 #================================================================================
