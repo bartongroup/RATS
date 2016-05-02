@@ -4,18 +4,24 @@
 \alias{calculate_DTU}
 \title{Calculate differential transcript usage.}
 \usage{
-calculate_DTU(sleuth_data, transcripts, counts_col = "est_counts")
+calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
+  varname = "condition", counts_col = "est_counts")
 }
 \arguments{
 \item{sleuth_data}{A sleuth object}
 
-\item{transcripts}{A dataframe listing the transcripts to process, and their parent genes,
-with at least column \code{target_id} & \code{parent_id}}
+\item{transcripts}{A dataframe matching the transcript IDs (\code{target_id}) to their corresponding gene IDs (\code{parent_id}).}
+
+\item{ref_name}{The sleuth name of the reference condition.}
+
+\item{comp_name}{The sleuth name of the condition to compare.}
+
+\item{varname}{The sleuth name of the covariate to which the two conditions belong.}
 
 \item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default est_counts}
 }
 \value{
-(TODO) dataframe with a row for each transcript, indicating if it is DTU and giving p-value etc.
+List of data frames, with gene-level and transcript-level information.
 }
 \description{
 Calculate differential transcript usage.
