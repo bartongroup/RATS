@@ -2,34 +2,91 @@ library(rats)
 context("DTU results")
 
 #==============================================================================
-test_that("Stats are correct", {
+test_that("The output structure is correct", {
+  # All the expectations below should be general, regardless of the exact test data.
+  dtu <- calculate_DTU(pseudo_sleuth, mini_anno, "Col", "Vir")
 
-  # call calculate_tx_proportions and check result
-  # in theory uses lazy loading to get the data, but not sure if it's working
-  stats <- calculate_DTU(pseudo_sleuth, mini_anno)
+  expect_type(dtu, list)
+  expect_equal(length(dtu), 3)
+  expect_identical(names(dtu), c("Comparison", "Genes", "Transcripts"))
 
-  ids <- c("AT1G03180.1", "AT1G03180.2", "AT1G01020.2", "AT1G01020.1")
-  m <- c(55.08233, 12.53521, 41.24901, 458.99861)
-  v <- c(43.95496, 40.20190, 144.82521, 476.89568)
-  p <- c(0.81461, 0.18538, 0.08245, 0.91754)
-  test <- data.frame(ids,m,v,p)
+  expect_type(dtu$Comparison, vector)
+  expect_equal(length(dtu$Comparison), 3)
+  expect_identical(names(dtu$Comparison), c("variable_name", "reference", "compared"))
+  expect_true(is.character(dtu$Comparison))
 
-  mapping <- match(test$ids, stats$Col[[TARGET_ID]])
+  expect_type(dtu$Genes, data.frame)
+  expect_equal(dim(dtu$Genes)[2], 4)
+  expect_identical(names(dtu$Genes), c("considered", "parent_id", "dtu", "p_value"))
+  expect_identical(rownames(dtu$Genes))
+  expect_true(is.logical(dtu$Genes$considered))
+  expect_true(is.factor(dtu$Genes$parent_id))
+  expect_true(is.logical(dtu$Genes$dtu))
+  expect_true(is.numeric(dtu$Genes$p_value))
 
-  expect_equal(stats$Col$mean[mapping], test$m, tolerance = 1e-6)
-  expect_equal(stats$Col$variance[mapping], test$v, tolerance = 1e-6)
-  expect_equal(stats$Col$proportion[mapping], test$p, tolerance = 1e-5)
+  expect_type(dtu$Transcripts, data.frame)
+  expect_equal(dim(dtu$Transcripts)[2], 11)
+  expect_identical(names(dtu$Transcripts), c("considered", "target_id", "parent_id",
+                                             "ref_proportion", "comp_proportion", "ref_sum", "comp_sum",
+                                             "ref_mean", "ref_variance", "comp_mean", "comp_variance" ))
+  expect_true(is.logical(dtu$Transcripts$considered))
+  expect_true(is.factor(dtu$Transcripts$target_id))
+  expect_true(is.factor(dtu$Transcripts$parent_id))
+  expect_true(is.numeric(dtu$Transcripts$ref_proportion))
+  expect_true(is.numeric(dtu$Transcripts$comp_proportion))
+  expect_true(is.numeric(dtu$Transcripts$ref_sum))
+  expect_true(is.numeric(dtu$Transcripts$comp_sum))
+  expect_true(is.numeric(dtu$Transcripts$ref_mean))
+  expect_true(is.numeric(dtu$Transcripts$ref_variance))
+  expect_true(is.numeric(dtu$Transcripts$comp_mean))
+  expect_true(is.numeric(dtu$Transcripts$comp_variance))
+})
 
-  m <- c(46.807238, 6.068015, 34.354291, 411.072110)
-  v <- c(56.38875, 11.68474, 62.14951, 710.51429)
-  p <- c(0.88523, 0.11476, 0.07712, 0.92287)
-  test <- data.frame(ids,m,v,p)
+#==============================================================================
+test_that("The data munging is correct", {
+  # Check that the intermediate values are correct.
+  sl <- pseudo_sleuth
+  ids <- mini_anno
 
-  mapping <- match(test$ids, stats$Vir[[TARGET_ID]])
+  targets_by_parent <- parent_to_targets(ids)
+  # all the parents are here:
+  expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(names(targets_by_parent)))
+  # all the targets are under their parent:
+  for (target in ids$target_id) {
+    expect_true(any(targets_by_parent[[ids[ids$target_id == target, "parent_id"]]] == target))
+  }
 
-  expect_equal(stats$Vir$mean[mapping], test$m, tolerance = 1e-6)
-  expect_equal(stats$Vir$variance[mapping], test$v, tolerance = 1e-6)
-  expect_equal(stats$Vir$proportion[mapping], test$p, tolerance = 1e-5)
+  tx_filter <- mark_sibling_targets3(ids, targets_by_parent)
+  # all the parents are here:
+  expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(levels(as.factor(tx_filter$parent_id))))
+  # all the targets are here:
+  expect_identical(ordered(levels(as.factor(ids$target_id))), ordered(levels(as.factor(tx_filter$target_id))))
+  # count parent duplicates and make sure flag was assigned correctly
+  parent_counts <- table(ids$parent_id)
+  for (parent in parent_counts) {
+    expect_equal(parent_counts[parent] > 1 , tx_filter$has_siblings[tx_filter$parent_id == parent])
+  }
+
+  samples_by_condition <- group_samples(sl$sample_to_covariates)
+  # all the variables are here:
+  expect_identical(names(sl$sample_to_covariates), names(samples_by_condition))
+  # all the variable values are here:
+  for (cond in sl$sample_to_covariates){
+    expect_true(any( ordered(names(samples_by_condition[[cond]])) == ordered(levels(as.factor(sl$sample_to_covariates[[cond]]))) ))
+    # the correct number of samples have been assigned:
+    cond_counts <- table(sl$sample_to_covariates[[cond]])
+    for (subcond in samples_by_condition[[cond]]) {
+      expect_equal(cond_counts[sub_cont], length(samples_by_condition[[cond]][[sub_cond]]))
+      # the samples assigned are the correct ones:
+      for (sample in samples_by_condition[[cond]][[sub_cond]]) {
+        expect_equal(sl$sample_to_covariates[sample, cond], sub_cond)
+      }
+    }
+  }
+
+  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col))
+
+
 })
 
 #==============================================================================
@@ -43,7 +100,7 @@ check_equal <- function(result1, result2) {
   expect_equal(sort(result1$Vir$proportion), sort(result2$Vir$proportion), tolerance = 1e-6)
 }
 
-#==============================================================================
+#-----------------------------------------------------------------------------
 test_that("Mixed order bootstraps give same results as unmixed", {
 
   # make a pseudo sleuth object with mixed up bootstrap rows
@@ -57,6 +114,14 @@ test_that("Mixed order bootstraps give same results as unmixed", {
 
   check_equal(mixed_stats, unmixed_stats)
 })
+
+
+
+
+
+
+
+
 
 #==============================================================================
 test_that("Bootstraps with all 0 / NA entries are discarded", {
@@ -84,66 +149,3 @@ test_that("Bootstraps with all 0 / NA entries are discarded", {
   check_equal(z_result, result)
   check_equal(n_result, result)
 })
-
-#================================================================================
-context("Annotation Preparation")
-
-#================================================================================
-test_that("Sibling IDs identification (Kimon's version)", {
-  result <- mark_sibling_targets2(mini_anno)
-  reference <- mini_anno
-  reference["has_siblings"] <- c(FALSE,TRUE,TRUE,TRUE,TRUE)
-  expect_identical(result, reference)
-})
-
-test_that("Sibling IDs identification (Nick's version)", {
-  generalized_anno <- mini_anno
-  generalized_anno$target_id <- c("t1","t2","t3","t4","t5")
-  result <- mark_sibling_targets(generalized_anno)
-  reference <- mini_anno
-  reference["has_siblings"] <- c(FALSE,TRUE,TRUE,TRUE,TRUE)
-  reference$target_id <- c("t1","t2","t3","t4","t5")
-  expect_identical(result, reference)
-})
-
-test_that("Reverse covariates look-up tables creation", {
-  result <- group_samples(pseudo_sleuth$sample_to_covariates)
-  expect_length(result, 3)
-  expect_equal(result$sample, list("Col-1"=1L, "Col-2"=2L, "Vir-1"=3L))
-  expect_equal(result$condition, list("Col"=c(1L, 2L), "Vir"=c(3L)))
-  expect_equal(result$batch, list("batch1"=c(1L, 2L, 3L)))
-})
-
-#================================================================================
-context("Counts-based calculations")
-
-#================================================================================
-stats_prep_dat <- function() {
-  df <- data.frame("a"=c(1,20,300), "b"=c(2,21,301), "c"=c(2,40,600), "d"=c(3, 30, 450))
-  rownames(df) <- c("A", "B", "C")
-  return(df)
-}
-
-stats_prep_ref <- function() {
-  df <- stats_prep_dat()
-  reference <- data.frame("sum"=c(sum(df[1,]), sum(df[2,]), sum(df[3,])))
-  reference["mean"] <- c(mean(unlist(df[1,])), mean(unlist(df[2,])), mean(unlist(df[3,])))
-  reference["variance"] <- c(var(as.vector(unlist(df[1,]))), var(as.vector(unlist(df[2,]))), var(as.vector(unlist(df[3,]))))
-  rownames(reference) <- rownames(df)
-  return(reference)
-}
-
-test_that("Row-wise means and variances (Kimon's version)", {
-  df <- stats_prep_dat()
-  reference <- stats_prep_ref()
-  result <- calculate_stats2(df)
-  expect_identical(result, reference)
-})
-
-test_that("Row-wise means and variances (Kira's version)", {
-  df <- stats_prep_dat()
-  reference <- stats_prep_ref()
-  result <- calculate_stats(df)
-  expect_identical(result, reference)
-})
-
