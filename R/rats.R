@@ -17,14 +17,6 @@ BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap t
 #'
 #' @export
 calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname="condition", counts_col="est_counts") {
-#  load("~/workspace/Rats/tests/testthat/mini_anno.rda")
-#  load("~/workspace/Rats/tests/testthat/pseudo_sleuth.rda")
-#  sleuth_data <- pseudo_sleuth
-#  transcripts <- mini_anno
-#  counts_col <- "est_counts"
-#  ref_name <- "Col"
-#  comp_name <- "Vir"
-
   # Look-up from parent_id to target_id (slow).
   targets_by_parent <- parent_to_targets(transcripts)
 
@@ -145,11 +137,11 @@ group_samples <- function(covariates) {
 #' For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 #' filtered according to tx_filter, and ordered according to target_ids
 #'
-#' @param sleuth_data A sleuth object
-#' @param condition The condition to consider
-#' @param tx_filter A filter for the bootstraps, with corresponding target_ids
-#' @param counts_col The sleuth column to use for the calculation
-#' @return A dataframe containing the counts from all bootstraps for condition
+#' @param sleuth_data A sleuth object.
+#' @param condition A vector of sample numbers.
+#' @param tx_filter A dataframe containing \code{target_id} and \code{has_siblings}.
+#' @param counts_col The sleuth column name for the type of counts to use.
+#' @return A dataframe containing the counts from all bootstraps of all the samples for the condition.
 #'
 make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_col) {
 
