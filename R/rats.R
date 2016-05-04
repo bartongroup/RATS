@@ -16,7 +16,9 @@ BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap t
 #' @return List of data frames, with gene-level and transcript-level information.
 #'
 #' @export
-calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname="condition", counts_col="est_counts") {
+calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
+                          varname="condition", counts_col="est_counts",
+                          verbose=FALSE) {
 
   # Set up progress bar
   progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
@@ -25,7 +27,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname
                                  "Filtered parent ids", "Allocated output structure", "Calculated statistics",
                                  "Calculated proportions", "Calculated p-values"),
                                stringsAsFactors = FALSE)
-  progress <- BarProgressUpdate(steps=progress_steps)
+  progress <- BarProgressUpdate(steps=progress_steps, on=verbose)
 
   # Look-up from parent_id to target_id
   targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
