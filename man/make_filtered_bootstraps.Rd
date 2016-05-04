@@ -5,7 +5,8 @@
 \title{For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 filtered according to tx_filter, and ordered according to target_ids}
 \usage{
-make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col)
+make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col,
+  TARGET_ID, BS_TARGET_ID)
 }
 \arguments{
 \item{sleuth_data}{A sleuth object.}
@@ -15,6 +16,10 @@ make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col)
 \item{tx_filter}{A dataframe containing \code{target_id} and \code{has_siblings}.}
 
 \item{counts_col}{The sleuth column name for the type of counts to use.}
+
+\item{TARGET_ID}{The name of transcript id column in transcripts object.}
+
+\item{BS_TARGET_ID}{The name of transcript id column in sleuth bootstrap tables.}
 }
 \value{
 A dataframe containing the counts from all bootstraps of all the samples for the condition.

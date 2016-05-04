@@ -4,12 +4,16 @@
 \alias{mark_sibling_targets3}
 \title{Compute a logical vector marking as FALSE the single-target parents in a data frame.}
 \usage{
-mark_sibling_targets3(ids, p2t)
+mark_sibling_targets3(ids, p2t, TARGET_ID, PARENT_ID)
 }
 \arguments{
 \item{ids}{a data frame with at least two variables, \code{target_id} & \code{parent_id}.}
 
 \item{p2t}{a list of vectors, listing the \code{target_id}s per \code{parent_id}.}
+
+\item{TARGET_ID}{The name of transcript id column in transcripts object.}
+
+\item{PARENT_ID}{The name of parent id column in transcripts object.}
 }
 \value{
 data.frame An updated version of the input ids.

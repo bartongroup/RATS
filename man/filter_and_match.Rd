@@ -4,7 +4,7 @@
 \alias{filter_and_match}
 \title{Extract a filtered column from a bootstrap table}
 \usage{
-filter_and_match(bootstrap, tx_filter, counts_col)
+filter_and_match(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID)
 }
 \arguments{
 \item{bootstrap}{A bootstrap dataframe}
@@ -12,6 +12,10 @@ filter_and_match(bootstrap, tx_filter, counts_col)
 \item{tx_filter}{A boolean vector for filtering the bootstrap, with matching transcript ids}
 
 \item{counts_col}{The column in the bootstrap table to extract}
+
+\item{TARGET_ID}{The name of transcript id column in transcripts object.}
+
+\item{BS_TARGET_ID}{The name of transcript id column in sleuth bootstrap tables.}
 }
 \value{
 The column from the bootstrap table

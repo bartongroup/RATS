@@ -5,7 +5,9 @@
 \title{Calculate differential transcript usage.}
 \usage{
 calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
-  varname = "condition", counts_col = "est_counts")
+  varname = "condition", counts_col = "est_counts",
+  TARGET_ID = "target_id", PARENT_ID = "parent_id",
+  BS_TARGET_ID = "target_id", verbose = FALSE)
 }
 \arguments{
 \item{sleuth_data}{A sleuth object}
@@ -18,7 +20,13 @@ calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
 
 \item{varname}{The sleuth name of the covariate to which the two conditions belong.}
 
-\item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default est_counts}
+\item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default est_counts.}
+
+\item{TARGET_ID}{The name of transcript id column in transcripts object.}
+
+\item{PARENT_ID}{The name of parent id column in transcripts object.}
+
+\item{BS_TARGET_ID}{The name of transcript id column in sleuth bootstrap tables.}
 }
 \value{
 List of data frames, with gene-level and transcript-level information.

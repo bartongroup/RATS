@@ -131,8 +131,6 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 
   return(results)
 }
-#================================================================================
-#================================================================================
 
 #================================================================================
 #' Compute a logical vector marking as FALSE the single-target parents in a data frame.
