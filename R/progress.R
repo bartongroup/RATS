@@ -1,38 +1,108 @@
-#================================================================================
-#' Initialise progress reporting
-#' @param progress_steps Vector of values to use as progress bar updates
-#' (should match number of calls being made to update_progress)
-#'
-init_progress <- function(progress_steps)
-{
-  max <- progress_steps[length(progress_steps)]
-  pb <- txtProgressBar(min = 0, max, style = 3)
-  return(pb)
-}
+setOldClass("txtProgressBar")
 
-#================================================================================
-#' Update progress reporting
-#'
-#' @param pb A progress bar
-#' @param progress_steps Vector of values to use as progress bar updates
-#' (should match number of calls being made to update_progress)
-#'
-update_progress <- function(pb, progress_steps)
-{
-  # get current value of progress bar
-  current <- getTxtProgressBar(pb)
+######################################################################
+# Create the base ProgressUpdate class
+#
+# A progress update object.
+ProgressUpdate <- setClass("ProgressUpdate", slots = c(steps = "data.frame", max = "numeric"))
 
-  # work out index of this value in progress_steps
-  if (current == 0)
-  {
-    thisstep <- 0
-  }
-  else
-  {
-    thisstep <- match(current, progress_steps)
-  }
+setMethod(f="initialize",
+          signature="ProgressUpdate",
+          definition=function(.Object, ..., steps=data.frame)
+          {
+            # store the steps dataframe, and calculate the max progress value
+            .Object@steps <- steps
+            .Object@max <- steps[length(steps[,1]),1]
+            return(.Object)
+          })
 
-  # set progress bar to next value
-  setTxtProgressBar(pb, progress_steps[thisstep+1])
-  return(pb)
-}
+# create a method to update the progress
+setGeneric(name="update",
+           def=function(theObject)
+           {
+             standardGeneric("update")
+           }
+)
+
+
+######################################################################
+# Create TxtProgressUpdate subclass
+#
+# A text-output progress update object.
+TxtProgressUpdate <- setClass("TxtProgressUpdate",
+                              slots = c(step = "numeric"),
+                              contains="ProgressUpdate")
+
+  setMethod(f="initialize",
+            signature="TxtProgressUpdate",
+            definition=function(.Object, ...)
+              {
+                # call base class initialisation
+                # should really be at end as just callNextMethod without assignment
+                # but couldn't get it to work that way
+                .Object <- callNextMethod(.Object, ..., pb=pb)
+                .Object@step <- 0
+                return(.Object)
+              })
+
+  setMethod(f="update",
+            signature="TxtProgressUpdate",
+            definition=function(theObject)
+            {
+              theObject@step = theObject@step + 1
+              cat(theObject@steps[theObject@step,2])
+              cat(".....")
+              cat(theObject@steps[theObject@step,1])
+              cat("%\n")
+
+              return(theObject)
+            }
+  )
+
+
+######################################################################
+# Create BarProgressUpdate subclass
+#
+# A progress-bar progress update object.
+BarProgressUpdate <- setClass("BarProgressUpdate",
+                              slots = c(pb = "txtProgressBar"),
+                              contains="ProgressUpdate")
+
+setMethod(f="initialize",
+          signature="BarProgressUpdate",
+          definition=function(.Object, ...)
+          {
+            # call base class initialisation (need max defined)
+            .Object <- callNextMethod(.Object, ..., pb=pb)
+            # init pb
+            .Object@pb <- txtProgressBar(min = 0, .Object@max, style = 3)
+            return(.Object)
+          })
+
+setMethod(f="update",
+          signature="BarProgressUpdate",
+          definition=function(theObject)
+          {
+            # get current value of progress bar
+            current <- getTxtProgressBar(theObject@pb)
+
+            # work out index of this value in steps
+            if (current == 0)
+            {
+              thisstep <- 0
+            }
+            else
+            {
+              thisstep <- match(current, theObject@steps[,1])
+            }
+
+            # set progress bar to next value
+            setTxtProgressBar(theObject@pb, theObject@steps[thisstep+1,1])
+            if (thisstep+1 == theObject@max)
+            {
+              close(theObject@pb)
+            }
+
+            return(theObject)
+          }
+)

@@ -18,43 +18,46 @@ BS_TARGET_ID = "target_id"  # name of transcript id column in sleuth bootstrap t
 #' @export
 calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname="condition", counts_col="est_counts") {
 
-  # set up progress bar
-  progress_steps <- c(10,20,30,40,50,60,70,80,90,100)
-  pb = init_progress(progress_steps)
-  pb = update_progress(pb, progress_steps)
+  # Set up progress bar
+  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
+                               c("Built parent ids to target map","Built multiple transcript filter",
+                                 "Grouped samples by condition","Extracted counts from bootstraps","Removed 0 count cases",
+                                 "Filtered parent ids", "Allocated output structure", "Calculated statistics",
+                                 "Calculated proportions", "Calculated p-values"),
+                               stringsAsFactors = FALSE)
+  progress <- BarProgressUpdate(steps=progress_steps)
 
-  # Look-up from parent_id to target_id (slow).
-  targets_by_parent <- parent_to_targets(transcripts)
+  # Look-up from parent_id to target_id
+  targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
   # Identify genes with a single transcript. Order by gene ID and transcript ID.
   tx_filter <- mark_sibling_targets3(transcripts, targets_by_parent)
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
-  # Reverse look-up from relicates to covariates.
+  # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
 
-  pb = update_progress(pb, progress_steps)
-
+  progress <- update(progress)
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
   count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col))
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
   # remove entries which are entirely 0 across all conditions
   subsets <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
   count_data <- lapply(count_data, function(condition) condition[Reduce("&", subsets),])
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
   # Which IDs am I actually working with after the filters?
   actual_targets <- rownames(count_data[[ref_name]])
   actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
   # Pre-allocate output structure.
   results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name),
@@ -69,14 +72,14 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname
   rownames(results$Genes) <- results$Genes$parent_id
   rownames(results$Transcripts) <- results$Transcripts$target_id
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
   # Statistics per transcript across all bootstraps per condition.
   results$Transcripts[actual_targets, c("ref_sum", "ref_mean", "ref_variance", "comp_sum", "comp_mean", "comp_variance")] <-
     c(rowSums(count_data[[ref_name]]), rowMeans(count_data[[ref_name]]), matrixStats::rowVars(as.matrix(count_data[[ref_name]])),
       rowSums(count_data[[comp_name]]), rowMeans(count_data[[comp_name]]), matrixStats::rowVars(as.matrix(count_data[[comp_name]])))
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs).
   for (target in results$Transcripts$target_id) {
@@ -85,9 +88,9 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname
         results$Transcripts[target, "comp_sum"] / sum(results$Transcripts[ targets_by_parent[[results$Transcripts[target, "parent_id"]]], "comp_sum"]))
   }
 
-  pb = update_progress(pb, progress_steps)
+  progress <- update(progress)
 
-  # P values.
+# P values.
   for (p in actual_parents) {
     targets <- targets_by_parent[[p]]
     gt <- g.test(results$Transcripts[targets, "comp_sum"], p=results$Transcripts[targets, "ref_proportion"])
@@ -98,8 +101,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name, varname
 
   # TODO : Multiple testing correction.
 
-  pb = update_progress(pb, progress_steps)
-  close(pb)
+  progress <- update(progress)
 
   return(results)
 }
@@ -120,23 +122,6 @@ mark_sibling_targets3 <- function(ids, p2t) {
   }
 
   return(ids[order(ids[[PARENT_ID]], ids[[TARGET_ID]]), ])
-}
-
-#--------------------------------------------------------------------------------
-#' Group targets by parent.
-#'
-#' @param ids A dataframe with \code{target_id} and \code{parent_id}.
-#' @return A list of vectors: one vector for each parent, containing the repsective targets.
-#'
-parent_to_targets <- function(ids) {
-#  p <- "AT1G01020"
-#  ids <- transcripts
-
-  parents <- levels(as.factor(ids[[PARENT_ID]]))
-  p2t <- lapply(parents, function(p) ids[[TARGET_ID]][ids[[PARENT_ID]]==p])
-  names(p2t) <- parents
-
-  return(p2t)
 }
 
 #--------------------------------------------------------------------------------

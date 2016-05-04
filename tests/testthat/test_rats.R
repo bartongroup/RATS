@@ -49,7 +49,7 @@ test_that("The data munging is correct", {
   varname <- "condition"
   # Check that the intermediate values are correct.
 
-  targets_by_parent <- parent_to_targets(ids)
+  targets_by_parent <- split(as.matrix(ids[TARGET_ID]), ids[[PARENT_ID]])
   # all the parents are here:
   expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(names(targets_by_parent)))
   # all the targets are under their parent:
