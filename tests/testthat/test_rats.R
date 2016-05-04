@@ -16,12 +16,14 @@ test_that("The output structure is correct", {
   expect_identical(names(dtu$Comparison), c("variable_name", "reference", "compared"))
 
   expect_true(is.data.frame(dtu$Genes))
-  expect_equal(dim(dtu$Genes)[2], 4)
-  expect_identical(names(dtu$Genes), c("considered", "parent_id", "dtu", "p_value"))
+  expect_equal(dim(dtu$Genes)[2], 6)
+  expect_identical(names(dtu$Genes), c("considered", "parent_id", "dtu", "p_value","num_known_transc", "num_applicable_transc"))
   expect_true(is.logical(dtu$Genes$considered))
   expect_true(is.factor(dtu$Genes$parent_id))
   expect_true(is.logical(dtu$Genes$dtu))
   expect_true(is.numeric(dtu$Genes$p_value))
+  expect_true(is.numeric(dtu$Genes$num_known_transc))
+  expect_true(is.numeric(dtu$Genes$num_applicable_transc))
 
   expect_true(is.data.frame(dtu$Transcripts))
   expect_equal(dim(dtu$Transcripts)[2], 11)
@@ -47,9 +49,13 @@ test_that("The data munging is correct", {
   ids <- mini_anno
   counts_col <- "est_counts"
   varname <- "condition"
+  TARGET_ID <- "target_id"
+  BS_TARGET_ID <- "target_id"
+  PARENT_ID <- "parent_id"
   # Check that the intermediate values are correct.
 
   targets_by_parent <- split(as.matrix(ids[TARGET_ID]), ids[[PARENT_ID]])
+
   # all the parents are here:
   expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(names(targets_by_parent)))
   # all the targets are under their parent:
@@ -57,7 +63,7 @@ test_that("The data munging is correct", {
     expect_true(any(targets_by_parent[[ids[ids$target_id == target, "parent_id"]]] == target))
   }
 
-  tx_filter <- mark_sibling_targets3(ids, targets_by_parent)
+  tx_filter <- mark_sibling_targets3(ids, targets_by_parent, TARGET_ID, PARENT_ID)
   # all the parents are here:
   expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(levels(as.factor(tx_filter$parent_id))))
   # all the targets are here:
@@ -86,7 +92,7 @@ test_that("The data munging is correct", {
   }
   samples_by_condition <- samples_by_condition[[varname]]  # focus on one covariate for the rest of the test.
 
-  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sl, condition, tx_filter, counts_col))
+  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sl, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
   for (cond_name in names(count_data)) {
     # all the targets are here:
     expect_identical(ordered(rownames(count_data[[cond_name]])), ordered(tx_filter$target_id[tx_filter$has_siblings]))
@@ -138,7 +144,7 @@ test_that("Bootstraps with all 0 / NA entries are discarded", {
   # calculate DTU for new sleuths and old one
   z_result <- calculate_DTU(zero_entry_sleuth, z_mini_anno, "Col", "Vir")
   n_result <- calculate_DTU(na_entry_sleuth, z_mini_anno, "Col", "Vir")
-  result <- calculate_DTU(pseudo_sleuth, mini_anno, "Col", "Vir")
+  result <- calculate_DTU(pseudo_sleuth, z_mini_anno, "Col", "Vir")
 
   # check results are all equal
   expect_equal(z_result, result)
