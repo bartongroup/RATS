@@ -27,6 +27,8 @@ calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
 \item{PARENT_ID}{The name of parent id column in transcripts object.}
 
 \item{BS_TARGET_ID}{The name of transcript id column in sleuth bootstrap tables.}
+
+\item{verbose}{Whether to update progress updates, default FALSE}
 }
 \value{
 List of data frames, with gene-level and transcript-level information.
