@@ -52,6 +52,10 @@ test_that("The input checks work", {
                "One or both of the specified conditions do not exist.", fixed=TRUE)
   expect_error(calculate_DTU(sl, ids, wrong_name[6], wrong_name[7]),
                "One or both of the specified conditions do not exist.", fixed=TRUE)
+
+  # Verbose is bool.
+  expect_error(calculate_DTU(sl, ids, ref, comp, verbose="yes"),
+               "verbose must be a logical value.", fixed=TRUE)
 })
 
 context("DTU results")

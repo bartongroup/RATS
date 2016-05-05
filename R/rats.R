@@ -21,13 +21,9 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
                           verbose=FALSE)
 {
   # Input checks.
-  if ( ! is.data.frame(transcripts)) stop("transcripts is not a data.frame.")
-  if (any( ! c(TARGET_ID, PARENT_ID) %in% names(transcripts))) stop("The specified target and parent IDs field-names do not exist in transcripts.")
-  if ( ! BS_TARGET_ID %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("The specified target IDs field-name does not exist in the bootstraps.")
-  if ( ! counts_col %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("The specified counts field-name does not exist.")
-  if ( ! correction %in% p.adjust.methods) stop("Invalid p-value correction method name. Refer to stats::p.adjust.methods.")
-  if ( ! varname %in% names(sleuth_data$sample_to_covariates)) stop ("The specified covariate name does not exist.")
-  if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] )) stop("One or both of the specified conditions do not exist.")
+  paramcheck <- parameters_good(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
+                  correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
+  if (paramcheck$error) stop(paramcheck$message)
 
   # Set up progress bar
   progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
@@ -225,4 +221,30 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TAR
   result <- (bootstrap[b_to_f_rows,][,counts_col])[tx_filter$has_siblings]
 
   return(result)
+}
+
+#================================================================================
+#' Check input parameters.
+#'
+#' @return Logical value
+#'
+parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
+                            correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose) {
+  if ( ! is.data.frame(transcripts))
+    return(list("error"=TRUE, "message"="transcripts is not a data.frame."))
+  if (any( ! c(TARGET_ID, PARENT_ID) %in% names(transcripts)))
+    return(list("error"=TRUE, "message"="The specified target and parent IDs field-names do not exist in transcripts."))
+  if ( ! BS_TARGET_ID %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
+    return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps."))
+  if ( ! counts_col %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
+    return(list("error"=TRUE, "message"="The specified counts field-name does not exist."))
+  if ( ! correction %in% p.adjust.methods)
+    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods."))
+  if ( ! varname %in% names(sleuth_data$sample_to_covariates))
+    return(list("error"=TRUE, "message"="The specified covariate name does not exist."))
+  if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] ))
+    return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist."))
+  if ( ! is.logical(verbose))
+    return(list("error"=TRUE, "message"="verbose must be a logical value."))
+  return(list("error"=FALSE, "message"="All good!"))
 }
