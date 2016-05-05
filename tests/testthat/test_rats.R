@@ -2,8 +2,55 @@ library(rats)
 context("DTU results")
 
 #==============================================================================
+test_that("The input checks work", {
+  sl <- pseudo_sleuth
+  ids <- mini_anno
+  counts_col <- "est_counts"
+  varname <- "condition"
+  TARGET_ID <- "target_id"
+  BS_TARGET_ID <- "target_id"
+  PARENT_ID <- "parent_id"
+  ref <- "Col"
+  comp <- "Vir"
+  wrong_name <- c("JUNK_A", "JUNK_B", "JUNK_C", "JUNK_D", "JUNK_E")
+
+  # No false alarms.
+  expect_silent(calculate_DTU(sl, ids, ref, comp))
+  expect_silent(calculate_DTU(sl, ids, ref, comp, counts_col=counts_col, varname=varname,
+                              TARGET_ID=TARGET_ID, PARENT_ID=PARENT_ID, BS_TARGET_ID=BS_TARGET_ID))
+
+  # Transcript ids are not a dataframe.
+  expect_error(calculate_DTU(sl, c("not", "a", "dataframe"), ref, comp), "transcripts is not a data.frame.")
+
+  # Transcript field names.
+  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1]),
+               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, comp, PARENT_ID=wrong_name[2]),
+               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1], PARENT_ID=wrong_name[2]),
+               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
+
+  # Bootstrap field names.
+  expect_error(calculate_DTU(sl, ids, ref, comp, BS_TARGET_ID=wrong_name[1]),
+               "The specified target IDs field-name does not exist in the bootstraps.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, comp, counts_col=wrong_name[3]),
+               "The specified counts field-name does not exist.", fixed=TRUE)
+
+  # Covariate name.
+  expect_error(calculate_DTU(sl, ids, ref, comp, varname=wrong_name[4]),
+               "The specified covariate name does not exist.", fixed=TRUE)
+
+  # Condition names.
+  expect_error(calculate_DTU(sl, ids, wrong_name[5], comp),
+               "One or both of the specified conditions do not exist.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, wrong_name[6]),
+               "One or both of the specified conditions do not exist.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, wrong_name[5], wrong_name[6]),
+               "One or both of the specified conditions do not exist.", fixed=TRUE)
+})
+
+#==============================================================================
 test_that("The output structure is correct", {
-  # All the expectations below should be general, regardless of the exact test data.
   dtu <- calculate_DTU(pseudo_sleuth, mini_anno, "Col", "Vir")
 
   expect_type(dtu, "list")
@@ -149,52 +196,3 @@ test_that("Bootstraps with all 0 / NA entries are discarded", {
   expect_equal(z_result, result)
   expect_equal(n_result, result)
 })
-
-#==============================================================================
-test_that("The input checks work", {
-  sl <- pseudo_sleuth
-  ids <- mini_anno
-  counts_col <- "est_counts"
-  varname <- "condition"
-  TARGET_ID <- "target_id"
-  BS_TARGET_ID <- "target_id"
-  PARENT_ID <- "parent_id"
-  ref <- "Col"
-  comp <- "Vir"
-  wrong_name <- c("JUNK_A", "JUNK_B", "JUNK_C", "JUNK_D", "JUNK_E")
-
-  # No false alarms.
-  expect_silent(calculate_DTU(sl, ids, ref, comp))
-  expect_silent(calculate_DTU(sl, ids, ref, comp, counts_col=counts_col, varname=varname,
-                              TARGET_ID=TARGET_ID, PARENT_ID=PARENT_ID, BS_TARGET_ID=BS_TARGET_ID))
-
-  # Transcript ids are not a dataframe.
-  expect_error(calculate_DTU(sl, c("not", "a", "dataframe"), ref, comp), "transcripts is not a data.frame.")
-
-  # Transcript field names.
-  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1]),
-               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, comp, PARENT_ID=wrong_name[2]),
-               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1], PARENT_ID=wrong_name[2]),
-                "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
-
-  # Bootstrap field names.
-  expect_error(calculate_DTU(sl, ids, ref, comp, BS_TARGET_ID=wrong_name[1]),
-               "The specified target IDs field-name does not exist in the bootstraps.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, comp, counts_col=wrong_name[3]),
-               "The specified counts field-name does not exist.", fixed=TRUE)
-
-  # Covariate name.
-  expect_error(calculate_DTU(sl, ids, ref, comp, varname=wrong_name[4]),
-               "The specified covariate name does not exist.", fixed=TRUE)
-
-  # Condition names.
-  expect_error(calculate_DTU(sl, ids, wrong_name[5], comp),
-               "One or both of the specified conditions do not exist.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, wrong_name[6]),
-               "One or both of the specified conditions do not exist.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, wrong_name[5], wrong_name[6]),
-                "One or both of the specified conditions do not exist.", fixed=TRUE)
-})
-
