@@ -242,5 +242,5 @@ init_progress <- function(on)
                                  "Calculated p-values"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)
-  return progress
+  return(progress)
 }
