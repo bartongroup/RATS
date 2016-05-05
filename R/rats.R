@@ -30,17 +30,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] )) stop("One or both of the specified conditions do not exist.")
 
   # Set up progress bar
-<<<<<<< HEAD
   progress <- init_progress(verbose)
-=======
-  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
-                               c("Built parent ids to target map","Built multiple transcript filter",
-                                 "Grouped samples by condition","Extracted counts from bootstraps","Removed 0 count cases",
-                                 "Filtered parent ids", "Allocated output structure", "Calculated statistics",
-                                 "Calculated proportions", "Calculated p-values", "Finished!"),
-                               stringsAsFactors = FALSE)
-  progress <- TxtProgressUpdate(steps=progress_steps, on=verbose)
->>>>>>> 360a3a675e72e869246a674d99e852937d309680
 
   # Look-up from parent_id to target_id
   targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
