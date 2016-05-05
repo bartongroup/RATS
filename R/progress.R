@@ -11,6 +11,7 @@ ProgressUpdate <- setClass("ProgressUpdate", slots = c(steps = "data.frame", max
 
 #--------------------------------------------------------------------------------
 #' Initialisation of progress update object
+#' @export
 setMethod(f="initialize",
           signature="ProgressUpdate",
           definition=function(.Object, ..., steps, on=FALSE)
@@ -24,6 +25,7 @@ setMethod(f="initialize",
 
 #--------------------------------------------------------------------------------
 #' Progress update generic
+#' @export
 setGeneric(name="update",
            def=function(theObject)
            {
@@ -42,6 +44,7 @@ TxtProgressUpdate <- setClass("TxtProgressUpdate",
 
 #--------------------------------------------------------------------------------
 #' Initialisation of subclass
+#' @export
 setMethod(f="initialize",
           signature="TxtProgressUpdate",
           definition=function(.Object, ...)
@@ -56,6 +59,7 @@ setMethod(f="initialize",
 
 #--------------------------------------------------------------------------------
 #' Update progress with next text string and % complete figure
+#' @export
 setMethod(f="update",
           signature="TxtProgressUpdate",
           definition=function(theObject)
@@ -84,6 +88,7 @@ BarProgressUpdate <- setClass("BarProgressUpdate",
 
 #--------------------------------------------------------------------------------
 #' Initialisation of subclass
+#' @export
 setMethod(f="initialize",
           signature="BarProgressUpdate",
           definition=function(.Object, ...)
@@ -100,6 +105,7 @@ setMethod(f="initialize",
 
 #--------------------------------------------------------------------------------
 #' Update progress by extending progress bar
+#' @export
 setMethod(f="update",
           signature="BarProgressUpdate",
           definition=function(theObject)
