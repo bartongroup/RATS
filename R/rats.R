@@ -2,20 +2,21 @@
 #' Calculate differential transcript usage.
 #'
 #' @param sleuth_data A sleuth object
-#' @param transcripts A dataframe matching the transcript IDs (\code{target_id}) to their corresponding gene IDs (\code{parent_id}).
+#' @param transcripts A dataframe matching the transcript IDs to their corresponding gene IDs.
 #' @param ref_name The sleuth name of the reference condition.
 #' @param comp_name The sleuth name of the condition to compare.
-#' @param varname The sleuth name of the covariate to which the two conditions belong.
-#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts.
-#' @param TARGET_ID The name of the transcript id column in transcripts object.
-#' @param PARENT_ID The name of the parent id column in transcripts object.
-#' @param BS_TARGET_ID The name of the transcript id column in sleuth bootstrap tables.
-#' @param verbose Whether to update progress updates, default FALSE
+#' @param varname The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.
+#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.
+#' @param correction p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
+#' @param TARGET_ID The name of the transcript id column in transcripts object, default \code{"target_id"}
+#' @param PARENT_ID The name of the parent id column in transcripts object, default \code{"parent_id"}.
+#' @param BS_TARGET_ID The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.
+#' @param verbose Whether to update progress updates, default \code{FALSE}.
 #' @return List of data frames, with gene-level and transcript-level information.
 #'
 #' @export
 calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
-                          varname="condition", counts_col="est_counts",
+                          varname="condition", counts_col="est_counts", correction="BH",
                           TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id",
                           verbose=FALSE)
 {
@@ -24,15 +25,16 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   if (any( ! c(TARGET_ID, PARENT_ID) %in% names(transcripts))) stop("The specified target and parent IDs field-names do not exist in transcripts.")
   if ( ! BS_TARGET_ID %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("The specified target IDs field-name does not exist in the bootstraps.")
   if ( ! counts_col %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("The specified counts field-name does not exist.")
+  if ( ! correction %in% p.adjust.methods) stop("Invalid p-value correction method name. Refer to stats::p.adjust.methods.")
   if ( ! varname %in% names(sleuth_data$sample_to_covariates)) stop ("The specified covariate name does not exist.")
   if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] )) stop("One or both of the specified conditions do not exist.")
 
   # Set up progress bar
-  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
+  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
                                c("Built parent ids to target map","Built multiple transcript filter",
                                  "Grouped samples by condition","Extracted counts from bootstraps","Removed 0 count cases",
                                  "Filtered parent ids", "Allocated output structure", "Calculated statistics",
-                                 "Calculated proportions", "Calculated p-values"),
+                                 "Calculated proportions", "Calculated p-values", "Finished!"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=verbose)
 
@@ -116,6 +118,11 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
     results$Transcripts[targets, "considered"] <- TRUE
   }
 
+  # Multiple testing correction.
+  results$Genes[["corrected_p"]] <- p.adjust(results$Genes[["p_value"]], method=correction)
+
+  progress <- update(progress)
+
   # Tidy up some information gaps.
   # Proportion for singletons is 1.
   results$Transcripts[ !tx_filter$has_siblings, "ref_proportion"] <- 1
@@ -126,9 +133,6 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
       results$Genes[p, c("num_known_transc", "num_applicable_transc")] <- c(1,0)
     }
   }
-
-
-  # TODO : Multiple testing correction.
 
   progress <- update(progress)
 

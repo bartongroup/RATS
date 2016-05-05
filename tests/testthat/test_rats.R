@@ -1,5 +1,6 @@
 library(rats)
-context("DTU results")
+
+context("DTU input controls.")
 
 #==============================================================================
 test_that("The input checks work", {
@@ -12,7 +13,7 @@ test_that("The input checks work", {
   PARENT_ID <- "parent_id"
   ref <- "Col"
   comp <- "Vir"
-  wrong_name <- c("JUNK_A", "JUNK_B", "JUNK_C", "JUNK_D", "JUNK_E")
+  wrong_name <- c("JUNK_A", "JUNK_B", "JUNK_C", "JUNK_D", "JUNK_E", "JUNK_F")
 
   # No false alarms.
   expect_silent(calculate_DTU(sl, ids, ref, comp))
@@ -36,18 +37,24 @@ test_that("The input checks work", {
   expect_error(calculate_DTU(sl, ids, ref, comp, counts_col=wrong_name[3]),
                "The specified counts field-name does not exist.", fixed=TRUE)
 
+  # Correction method.
+  expect_error(calculate_DTU(sl, ids, ref, comp, correction=wrong_name[4]),
+               "Invalid p-value correction method name. Refer to stats::p.adjust.methods.", fixed=TRUE)
+
   # Covariate name.
-  expect_error(calculate_DTU(sl, ids, ref, comp, varname=wrong_name[4]),
+  expect_error(calculate_DTU(sl, ids, ref, comp, varname=wrong_name[5]),
                "The specified covariate name does not exist.", fixed=TRUE)
 
   # Condition names.
-  expect_error(calculate_DTU(sl, ids, wrong_name[5], comp),
+  expect_error(calculate_DTU(sl, ids, wrong_name[6], comp),
                "One or both of the specified conditions do not exist.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, wrong_name[6]),
+  expect_error(calculate_DTU(sl, ids, ref, wrong_name[7]),
                "One or both of the specified conditions do not exist.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, wrong_name[5], wrong_name[6]),
+  expect_error(calculate_DTU(sl, ids, wrong_name[6], wrong_name[7]),
                "One or both of the specified conditions do not exist.", fixed=TRUE)
 })
+
+context("DTU results")
 
 #==============================================================================
 test_that("The output structure is correct", {
