@@ -30,11 +30,11 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] )) stop("One or both of the specified conditions do not exist.")
 
   # Set up progress bar
-  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
+  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
                                c("Built parent ids to target map","Built multiple transcript filter",
                                  "Grouped samples by condition","Extracted counts from bootstraps","Removed 0 count cases",
                                  "Filtered parent ids", "Allocated output structure", "Calculated statistics",
-                                 "Calculated proportions", "Calculated p-values"),
+                                 "Calculated proportions", "Calculated p-values", "Finished!"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=verbose)
 
@@ -52,6 +52,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
 
   progress <- update(progress)
+
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
   count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
