@@ -26,13 +26,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   if (paramcheck$error) stop(paramcheck$message)
 
   # Set up progress bar
-  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
-                               c("Built parent ids to target map","Built multiple transcript filter",
-                                 "Grouped samples by condition","Extracted counts from bootstraps","Removed 0 count cases",
-                                 "Filtered parent ids", "Allocated output structure", "Calculated statistics",
-                                 "Calculated proportions", "Calculated p-values", "Finished!"),
-                               stringsAsFactors = FALSE)
-  progress <- TxtProgressUpdate(steps=progress_steps, on=verbose)
+  progress <- init_progress(verbose)
 
   # Look-up from parent_id to target_id
   targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
@@ -226,7 +220,7 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TAR
 #================================================================================
 #' Check input parameters.
 #'
-#' @return Logical value
+#' @return List with a logical value and a message.
 #'
 parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
                             correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose) {
@@ -247,4 +241,29 @@ parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varna
   if ( ! is.logical(verbose))
     return(list("error"=TRUE, "message"="verbose must be a logical value."))
   return(list("error"=FALSE, "message"="All good!"))
+}
+
+#================================================================================
+#' Initialise progress updates
+#'
+#' @param on Flag indicating whether updates are on (TRUE) or not (FALSE)
+#' @return The progress update object
+#'
+init_progress <- function(on)
+{
+  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
+                               c("Built parent ids to target map",
+                                 "Built multiple transcript filter",
+                                 "Grouped samples by condition",
+                                 "Extracted counts from bootstraps",
+                                 "Removed 0 count cases",
+                                 "Filtered parent ids",
+                                 "Allocated output structure",
+                                 "Calculated statistics",
+                                 "Calculated proportions",
+                                 "Calculated p-values",
+                                 "Finished!"),
+                               stringsAsFactors = FALSE)
+  progress <- TxtProgressUpdate(steps=progress_steps, on=on)
+  return(progress)
 }
