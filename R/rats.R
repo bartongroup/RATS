@@ -239,7 +239,8 @@ init_progress <- function(on)
                                  "Allocated output structure",
                                  "Calculated statistics",
                                  "Calculated proportions",
-                                 "Calculated p-values"),
+                                 "Calculated p-values",
+                                 "Finished!"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)
   return(progress)
