@@ -10,6 +10,7 @@
 #' @param TARGET_ID The name of transcript id column in transcripts object.
 #' @param PARENT_ID The name of parent id column in transcripts object.
 #' @param BS_TARGET_ID The name of transcript id column in sleuth bootstrap tables.
+#' @param verbose Whether to update progress updates, default FALSE
 #' @return List of data frames, with gene-level and transcript-level information.
 #'
 #' @export
