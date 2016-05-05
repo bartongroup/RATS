@@ -7,9 +7,10 @@
 #' @param comp_name The sleuth name of the condition to compare.
 #' @param varname The sleuth name of the covariate to which the two conditions belong.
 #' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default est_counts.
-#' @param TARGET_ID The name of transcript id column in transcripts object.
-#' @param PARENT_ID The name of parent id column in transcripts object.
-#' @param BS_TARGET_ID The name of transcript id column in sleuth bootstrap tables.
+#' @param TARGET_ID The name of the transcript id column in transcripts object.
+#' @param PARENT_ID The name of the parent id column in transcripts object.
+#' @param BS_TARGET_ID The name of the transcript id column in sleuth bootstrap tables.
+#' @param verbose A logical value indicating whether to print progress information.
 #' @return List of data frames, with gene-level and transcript-level information.
 #'
 #' @export
@@ -20,10 +21,11 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 {
   # Input checks.
   if ( ! is.data.frame(transcripts)) stop("transcripts is not a data.frame.")
-  if (any(! c(TARGET_ID, PARENT_ID) %in% names(transcripts))) stop("Please specify the field names for the transcript IDs and gene IDs in the annotation.")
-  if ( ! BS_TARGET_ID %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("Please specify the field names for the transcript IDs in the sleuth object.")
+  if (any( ! c(TARGET_ID, PARENT_ID) %in% names(transcripts))) stop("The specified target and parent IDs field-names do not exist in transcripts.")
+  if ( ! BS_TARGET_ID %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("The specified target IDs field-name does not exist in the bootstraps.")
+  if ( ! counts_col %in% names(sleuth_data$kal[[1]]$bootstrap[[1]])) stop("The specified counts field-name does not exist.")
   if ( ! varname %in% names(sleuth_data$sample_to_covariates)) stop ("The specified covariate name does not exist.")
-  if ( ! any(c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] )) stop("One or both of the specified conditions do not exist.")
+  if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] )) stop("One or both of the specified conditions do not exist.")
 
   # Set up progress bar
   progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
@@ -64,7 +66,8 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name),
                   "Genes"=data.frame("considered"=c(FALSE),
                                      "parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
-                                     "dtu"=NA, "p_value"=NA_real_, "num_known_transc"=NA_integer_, "num_applicable_transc"=NA_integer_),
+                                     "dtu"=NA, "p_value"=NA_real_, "corrected_p"=NA_real_,
+                                     "num_known_transc"=NA_integer_, "num_applicable_transc"=NA_integer_),
                   "Transcripts"=data.frame("considered"=c(FALSE), "target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
                                            "ref_proportion"=NA_real_, "comp_proportion"=NA_real_,
                                            "ref_sum"=NA_real_, "comp_sum"=NA_real_,

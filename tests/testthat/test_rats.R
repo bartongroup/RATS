@@ -8,16 +8,16 @@ test_that("The output structure is correct", {
 
   expect_type(dtu, "list")
   expect_equal(length(dtu), 3)
-  expect_identical(names(dtu), c("Comparison", "Genes", "Transcripts"))
+  expect_named(dtu, c("Comparison", "Genes", "Transcripts"))
 
   expect_true(is.vector(dtu$Comparison))
   expect_type(dtu$Comparison, "character")
-  expect_equal(length(dtu$Comparison), 3)
-  expect_identical(names(dtu$Comparison), c("variable_name", "reference", "compared"))
+  expect_length(dtu$Comparison, 3)
+  expect_named(dtu$Comparison, c("variable_name", "reference", "compared"))
 
   expect_true(is.data.frame(dtu$Genes))
-  expect_equal(dim(dtu$Genes)[2], 6)
-  expect_identical(names(dtu$Genes), c("considered", "parent_id", "dtu", "p_value","num_known_transc", "num_applicable_transc"))
+  expect_equal(dim(dtu$Genes)[2], 7)
+  expect_named(dtu$Genes, c("considered", "parent_id", "dtu", "p_value", "corrected_p", "num_known_transc", "num_applicable_transc"))
   expect_true(is.logical(dtu$Genes$considered))
   expect_true(is.factor(dtu$Genes$parent_id))
   expect_true(is.logical(dtu$Genes$dtu))
@@ -27,9 +27,9 @@ test_that("The output structure is correct", {
 
   expect_true(is.data.frame(dtu$Transcripts))
   expect_equal(dim(dtu$Transcripts)[2], 11)
-  expect_identical(names(dtu$Transcripts), c("considered", "target_id", "parent_id",
-                                             "ref_proportion", "comp_proportion", "ref_sum", "comp_sum",
-                                             "ref_mean", "ref_variance", "comp_mean", "comp_variance" ))
+  expect_named(dtu$Transcripts, c("considered", "target_id", "parent_id",
+                                  "ref_proportion", "comp_proportion", "ref_sum", "comp_sum",
+                                  "ref_mean", "ref_variance", "comp_mean", "comp_variance" ))
   expect_true(is.logical(dtu$Transcripts$considered))
   expect_true(is.factor(dtu$Transcripts$target_id))
   expect_true(is.factor(dtu$Transcripts$parent_id))
@@ -55,7 +55,6 @@ test_that("The data munging is correct", {
   # Check that the intermediate values are correct.
 
   targets_by_parent <- split(as.matrix(ids[TARGET_ID]), ids[[PARENT_ID]])
-
   # all the parents are here:
   expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(names(targets_by_parent)))
   # all the targets are under their parent:
@@ -150,3 +149,52 @@ test_that("Bootstraps with all 0 / NA entries are discarded", {
   expect_equal(z_result, result)
   expect_equal(n_result, result)
 })
+
+#==============================================================================
+test_that("The input checks work", {
+  sl <- pseudo_sleuth
+  ids <- mini_anno
+  counts_col <- "est_counts"
+  varname <- "condition"
+  TARGET_ID <- "target_id"
+  BS_TARGET_ID <- "target_id"
+  PARENT_ID <- "parent_id"
+  ref <- "Col"
+  comp <- "Vir"
+  wrong_name <- c("JUNK_A", "JUNK_B", "JUNK_C", "JUNK_D", "JUNK_E")
+
+  # No false alarms.
+  expect_silent(calculate_DTU(sl, ids, ref, comp))
+  expect_silent(calculate_DTU(sl, ids, ref, comp, counts_col=counts_col, varname=varname,
+                              TARGET_ID=TARGET_ID, PARENT_ID=PARENT_ID, BS_TARGET_ID=BS_TARGET_ID))
+
+  # Transcript ids are not a dataframe.
+  expect_error(calculate_DTU(sl, c("not", "a", "dataframe"), ref, comp), "transcripts is not a data.frame.")
+
+  # Transcript field names.
+  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1]),
+               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, comp, PARENT_ID=wrong_name[2]),
+               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1], PARENT_ID=wrong_name[2]),
+                "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
+
+  # Bootstrap field names.
+  expect_error(calculate_DTU(sl, ids, ref, comp, BS_TARGET_ID=wrong_name[1]),
+               "The specified target IDs field-name does not exist in the bootstraps.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, comp, counts_col=wrong_name[3]),
+               "The specified counts field-name does not exist.", fixed=TRUE)
+
+  # Covariate name.
+  expect_error(calculate_DTU(sl, ids, ref, comp, varname=wrong_name[4]),
+               "The specified covariate name does not exist.", fixed=TRUE)
+
+  # Condition names.
+  expect_error(calculate_DTU(sl, ids, wrong_name[5], comp),
+               "One or both of the specified conditions do not exist.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, ref, wrong_name[6]),
+               "One or both of the specified conditions do not exist.", fixed=TRUE)
+  expect_error(calculate_DTU(sl, ids, wrong_name[5], wrong_name[6]),
+                "One or both of the specified conditions do not exist.", fixed=TRUE)
+})
+
