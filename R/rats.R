@@ -15,6 +15,7 @@
 #' @return List of data frames, with gene-level and transcript-level information.
 #'
 #' @export
+#' @import data.table
 calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
                           varname="condition", counts_col="est_counts", correction="BH",
                           TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id",
@@ -22,7 +23,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 {
   # Input checks.
   paramcheck <- parameters_good(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
-                  correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
+                                correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
   if (paramcheck$error) stop(paramcheck$message)
 
   # Set up progress bar
@@ -34,7 +35,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   progress <- update(progress)
 
   # Identify genes with a single transcript. Order by gene ID and transcript ID.
-  tx_filter <- mark_sibling_targets3(transcripts, targets_by_parent, TARGET_ID, PARENT_ID)
+  tx_filter <- mark_sibling_targets(transcripts, targets_by_parent, TARGET_ID, PARENT_ID)
 
   progress <- update(progress)
 
@@ -85,14 +86,12 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   progress <- update(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
-  # The need to access multiple rows and different objects, means this cannot be done in a simple vector-style assignment. Hence the loop.
-  for (target in results$Transcripts$target_id) {
-    results$Transcripts[target, c("ref_proportion", "comp_proportion")] <-
-      c(results$Transcripts[target, "ref_sum"] / sum(results$Transcripts[ targets_by_parent[[results$Transcripts[target, "parent_id"]]], "ref_sum"]),
-        results$Transcripts[target, "comp_sum"] / sum(results$Transcripts[ targets_by_parent[[results$Transcripts[target, "parent_id"]]], "comp_sum"]))
-  }
+  dt = data.table(results$Transcripts)
+  setkey(dt, target_id)
+  tempdt <- dt[,ref_proportion := ref_sum/sum(ref_sum), by=parent_id] # import data.table needed to make := work
+  setkey(tempdt, target_id)
+  results$Transcripts <- dt[,comp_proportion := comp_sum/sum(comp_sum), by=parent_id]
 
-  progress <- update(progress)
 
   # P values, only for parents and targets that survived filtering.
   for (p in actual_parents) {
@@ -103,7 +102,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 
     if (length(targets) < 2) next  # Can't do DTU with less than two transcripts.
 
-    gt <- g.test(results$Transcripts[targets, "comp_sum"], p=results$Transcripts[targets, "ref_proportion"])
+    gt <- g.test(results$Transcripts[targets, comp_sum], p=results$Transcripts[targets, ref_proportion])
     results$Genes[p, "p_value"] <- gt$p.value
     results$Genes[p, c("considered", "dtu")] <- c(TRUE, gt$p.value < 0.05)
     results$Transcripts[targets, "considered"] <- TRUE
@@ -139,14 +138,24 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 #' @param PARENT_ID The name of parent id column in transcripts object.
 #' @return data.frame An updated version of the input ids.
 #'
-mark_sibling_targets3 <- function(ids, p2t, TARGET_ID, PARENT_ID) {
+mark_sibling_targets <- function(ids, p2t, TARGET_ID, PARENT_ID) {
   rownames(ids) <- ids[[TARGET_ID]]
-  for (target in ids[[TARGET_ID]]) {
-    ids[target, "has_siblings"] <- length(p2t[[ ids[target, PARENT_ID] ]]) > 1
-  }
+
+  # function testing for length > 1, for use in aggregate
+  f <- function(x) { length(x) > 1 }
+  # build has_siblings column by PARENT_ID by aggregating count of target ids
+  # and testing if count > 1
+  has_siblings <- aggregate(ids[TARGET_ID], by=ids[PARENT_ID], FUN=f)
+
+  colnames(has_siblings)[2] <- "has_siblings"
+
+  # inner join has_siblings to ids to give has_sibllings value for each target_id
+  ids <- merge(ids, has_siblings, by=PARENT_ID)
 
   return(ids[order(ids[[PARENT_ID]], ids[[TARGET_ID]]), ])
 }
+
+
 
 #--------------------------------------------------------------------------------
 #' Group sample numbers by factor.
@@ -185,7 +194,7 @@ make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_c
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
   count_data <- as.data.frame(lapply (condition, function(sample)
-      sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID) )))
+    sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID) )))
 
   # now set the filtered target ids as rownames - previous call returns target ids in this order
   rownames(count_data) <- tx_filter[[TARGET_ID]][tx_filter$has_siblings]
@@ -267,3 +276,4 @@ init_progress <- function(on)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)
   return(progress)
 }
+

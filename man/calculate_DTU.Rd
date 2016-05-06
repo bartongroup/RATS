@@ -5,30 +5,32 @@
 \title{Calculate differential transcript usage.}
 \usage{
 calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
-  varname = "condition", counts_col = "est_counts",
+  varname = "condition", counts_col = "est_counts", correction = "BH",
   TARGET_ID = "target_id", PARENT_ID = "parent_id",
   BS_TARGET_ID = "target_id", verbose = FALSE)
 }
 \arguments{
 \item{sleuth_data}{A sleuth object}
 
-\item{transcripts}{A dataframe matching the transcript IDs (\code{target_id}) to their corresponding gene IDs (\code{parent_id}).}
+\item{transcripts}{A dataframe matching the transcript IDs to their corresponding gene IDs.}
 
 \item{ref_name}{The sleuth name of the reference condition.}
 
 \item{comp_name}{The sleuth name of the condition to compare.}
 
-\item{varname}{The sleuth name of the covariate to which the two conditions belong.}
+\item{varname}{The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.}
 
-\item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default est_counts.}
+\item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.}
 
-\item{TARGET_ID}{The name of transcript id column in transcripts object.}
+\item{correction}{p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
 
-\item{PARENT_ID}{The name of parent id column in transcripts object.}
+\item{TARGET_ID}{The name of the transcript id column in transcripts object, default \code{"target_id"}}
 
-\item{BS_TARGET_ID}{The name of transcript id column in sleuth bootstrap tables.}
+\item{PARENT_ID}{The name of the parent id column in transcripts object, default \code{"parent_id"}.}
 
-\item{verbose}{Whether to update progress updates, default FALSE}
+\item{BS_TARGET_ID}{The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.}
+
+\item{verbose}{Whether to update progress updates, default \code{FALSE}.}
 }
 \value{
 List of data frames, with gene-level and transcript-level information.

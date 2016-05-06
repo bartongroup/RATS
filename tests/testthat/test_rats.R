@@ -120,7 +120,7 @@ test_that("The data munging is correct", {
     expect_true(any(targets_by_parent[[ids[ids$target_id == target, "parent_id"]]] == target))
   }
 
-  tx_filter <- mark_sibling_targets3(ids, targets_by_parent, TARGET_ID, PARENT_ID)
+  tx_filter <- mark_sibling_targets(ids, targets_by_parent, TARGET_ID, PARENT_ID)
   # all the parents are here:
   expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(levels(as.factor(tx_filter$parent_id))))
   # all the targets are here:
