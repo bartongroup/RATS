@@ -61,7 +61,8 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
                   "Genes"=data.frame("considered"=c(FALSE),
                                      "parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
                                      "dtu"=NA, "p_value"=NA_real_, "corrected_p"=NA_real_,
-                                     "num_known_transc"=NA_integer_, "num_applicable_transc"=NA_integer_),
+                                     "num_known_transc"=NA_integer_,
+                                     "num_applicable_transc"=NA_integer_),
                   "Transcripts"=data.frame("considered"=c(FALSE), "target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
                                            "ref_proportion"=NA_real_, "comp_proportion"=NA_real_,
                                            "ref_sum"=NA_real_, "comp_sum"=NA_real_,
@@ -69,6 +70,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
                                            "comp_mean"=NA_real_, "comp_variance"=NA_real_))
   rownames(results$Genes) <- results$Genes$parent_id
   rownames(results$Transcripts) <- results$Transcripts$target_id
+  results$Genes["num_knowntransc"] <- sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))
 
   progress <- update(progress)
 
@@ -115,14 +117,9 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 
   # Tidy up some information gaps.
   # Proportion for singletons is 1.
-  results$Transcripts[ !tx_filter$has_siblings, "ref_proportion"] <- 1
-  results$Transcripts[ !tx_filter$has_siblings, "comp_proportion"] <- 1
-  # Parents of singletons have 1 known transcript and 0 applicable transcripts.
-  for (p in results$Genes$parent_id) {
-    if (length(targets_by_parent[[p]]) == 1 ) {
-      results$Genes[p, c("num_known_transc", "num_applicable_transc")] <- c(1,0)
-    }
-  }
+  results$Transcripts[ !tx_filter$has_siblings, c("ref_proportion", "comp_proportion")] <- 1
+  # Genes with only 1 transcripts have no applicable transcripts.
+  results$Genes$num_applicable_transc[results$Genes$num_known_transc == 1] <- 0
 
   progress <- update(progress)
 
