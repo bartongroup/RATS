@@ -221,7 +221,7 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TAR
   b_to_f_rows <- match(tx_filter[[TARGET_ID]], bootstrap[[BS_TARGET_ID]])
 
   # map the bootstrap to the filter target ids and then apply the filter
-  result <- (bootstrap[b_to_f_rows,][,counts_col])[tx_filter$has_siblings]
+  result <- (bootstrap[b_to_f_rows,counts_col]) [tx_filter$has_siblings]
 
   return(result)
 }
