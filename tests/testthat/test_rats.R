@@ -70,25 +70,24 @@ test_that("The output structure is correct", {
 
   expect_true(is.vector(dtu$Comparison))
   expect_type(dtu$Comparison, "character")
-  expect_length(dtu$Comparison, 3)
-  expect_named(dtu$Comparison, c("variable_name", "reference", "compared"))
+  expect_length(dtu$Comparison, 4)
+  expect_named(dtu$Comparison, c("variable_name", "reference", "compared", "p_thresh"))
 
   expect_true(is.data.frame(dtu$Genes))
-  expect_equal(dim(dtu$Genes)[2], 7)
-  expect_named(dtu$Genes, c("considered", "parent_id", "dtu", "p_value", "corrected_p", "num_known_transc", "num_applicable_transc"))
-  expect_true(is.logical(dtu$Genes$considered))
+  expect_equal(dim(dtu$Genes)[2], 6)
+  expect_named(dtu$Genes, c("parent_id", "num_known_transc", "num_applic_transc", "p_value", "corrected_p", "dtu"))
   expect_true(is.factor(dtu$Genes$parent_id))
-  expect_true(is.logical(dtu$Genes$dtu))
-  expect_true(is.numeric(dtu$Genes$p_value))
   expect_true(is.numeric(dtu$Genes$num_known_transc))
-  expect_true(is.numeric(dtu$Genes$num_applicable_transc))
+  expect_true(is.numeric(dtu$Genes$num_applic_transc))
+  expect_true(is.numeric(dtu$Genes$p_value))
+  expect_true(is.numeric(dtu$Genes$corrected_p))
+  expect_true(is.logical(dtu$Genes$dtu))
 
   expect_true(is.data.frame(dtu$Transcripts))
-  expect_equal(dim(dtu$Transcripts)[2], 11)
-  expect_named(dtu$Transcripts, c("considered", "target_id", "parent_id",
+  expect_equal(dim(dtu$Transcripts)[2], 10)
+  expect_named(dtu$Transcripts, c("target_id", "parent_id",
                                   "ref_proportion", "comp_proportion", "ref_sum", "comp_sum",
                                   "ref_mean", "ref_variance", "comp_mean", "comp_variance" ))
-  expect_true(is.logical(dtu$Transcripts$considered))
   expect_true(is.factor(dtu$Transcripts$target_id))
   expect_true(is.factor(dtu$Transcripts$parent_id))
   expect_true(is.numeric(dtu$Transcripts$ref_proportion))

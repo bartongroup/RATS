@@ -8,6 +8,7 @@
 #' @param varname The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.
 #' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.
 #' @param correction p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
+#' @param p_thresh p-value threshold, default 0.05.
 #' @param TARGET_ID The name of the transcript id column in transcripts object, default \code{"target_id"}
 #' @param PARENT_ID The name of the parent id column in transcripts object, default \code{"parent_id"}.
 #' @param BS_TARGET_ID The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.
@@ -17,13 +18,13 @@
 #' @export
 #' @import data.table
 calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
-                          varname="condition", counts_col="est_counts", correction="BH",
+                          varname="condition", counts_col="est_counts", correction="BH", p_thresh=0.05,
                           TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id",
                           verbose=FALSE)
 {
   # Input checks.
   paramcheck <- parameters_good(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
-                                correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
+                                correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
   if (paramcheck$error) stop(paramcheck$message)
 
   # Set up progress bar
@@ -31,60 +32,56 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 
   # Look-up from parent_id to target_id
   targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
-
   progress <- update(progress)
 
   # Identify genes with a single transcript. Order by gene ID and transcript ID.
   tx_filter <- mark_sibling_targets(transcripts, targets_by_parent, TARGET_ID, PARENT_ID)
-
   progress <- update(progress)
 
   # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
-
   progress <- update(progress)
 
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
   count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
-
   progress <- update(progress)
 
   # remove entries which are entirely 0 across all conditions
   nonzero <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
   count_data <- lapply(count_data, function(condition) condition[Reduce("&", nonzero),])
-
   progress <- update(progress)
 
   # Pre-allocate output structure.
-  results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name),
-                  "Genes"=data.frame("considered"=c(FALSE),
-                                     "parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
-                                     "dtu"=NA, "p_value"=NA_real_, "corrected_p"=NA_real_,
-                                     "num_known_transc"=NA_integer_,
-                                     "num_applicable_transc"=NA_integer_),
-                  "Transcripts"=data.frame("considered"=c(FALSE), "target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
+  results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name, "p_thresh"=p_thresh),
+                  "Genes"=data.frame("parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
+                                     "num_known_transc"=NA_integer_, "num_applic_transc"=NA_integer_,
+                                     "p_value"=NA_real_, "corrected_p"=NA_real_, "dtu"=NA),
+                  "Transcripts"=data.frame("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
                                            "ref_proportion"=NA_real_, "comp_proportion"=NA_real_,
                                            "ref_sum"=NA_real_, "comp_sum"=NA_real_,
                                            "ref_mean"=NA_real_, "ref_variance"=NA_real_,
                                            "comp_mean"=NA_real_, "comp_variance"=NA_real_))
   rownames(results$Genes) <- results$Genes$parent_id
   rownames(results$Transcripts) <- results$Transcripts$target_id
-  results$Genes["num_knowntransc"] <- sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))
-
+  results$Genes["num_known_transc"] <- sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))
   progress <- update(progress)
 
   # Which IDs am I actually working with after the filters?
   actual_targets <- rownames(count_data[[ref_name]])
   actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
-
+  actual_targets_by_parent <- lapply(actual_parents, function(p)
+    targets_by_parent[[p]][targets_by_parent[[p]] %in% actual_targets]  # the transcripts for which we have non-zero counts.
+  )
+  names(actual_targets_by_parent) <- actual_parents
+  # Applicable transcripts.
+  results$Genes["num_applic_transc"] <- sapply(rownames(results$Genes), function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0) )
   progress <- update(progress)
 
   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
   results$Transcripts[actual_targets, c("ref_sum", "ref_mean", "ref_variance", "comp_sum", "comp_mean", "comp_variance")] <-
     c(rowSums(count_data[[ref_name]]), rowMeans(count_data[[ref_name]]), matrixStats::rowVars(as.matrix(count_data[[ref_name]])),
       rowSums(count_data[[comp_name]]), rowMeans(count_data[[comp_name]]), matrixStats::rowVars(as.matrix(count_data[[comp_name]])))
-
   progress <- update(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
@@ -93,34 +90,15 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   tempdt <- dt[,ref_proportion := ref_sum/sum(ref_sum), by=parent_id] # import data.table needed to make := work
   setkey(tempdt, target_id)
   results$Transcripts <- dt[,comp_proportion := comp_sum/sum(comp_sum), by=parent_id]
-
-
-  # P values, only for parents and targets that survived filtering.
-  for (p in actual_parents) {
-    targets <- targets_by_parent[[p]]  # all the annotated transcripts for the gene.
-    results$Genes[p,"num_known_transc"] <- length(targets)
-    targets <- targets[targets %in% actual_targets]  # the transcripts for which we have non-zero counts.
-    results$Genes[p,"num_applicable_transc"] <- length(targets)
-
-    if (length(targets) < 2) next  # Can't do DTU with less than two transcripts.
-
-    gt <- g.test(results$Transcripts[targets, comp_sum], p=results$Transcripts[targets, ref_proportion])
-    results$Genes[p, "p_value"] <- gt$p.value
-    results$Genes[p, c("considered", "dtu")] <- c(TRUE, gt$p.value < 0.05)
-    results$Transcripts[targets, "considered"] <- TRUE
-  }
-
-  # Multiple testing correction.
-  results$Genes[["corrected_p"]] <- p.adjust(results$Genes[["p_value"]], method=correction)
-
+  # Proportion for singleton transcripts is 1.
+  results$Transcripts[ ! tx_filter$has_siblings, c("ref_proportion", "comp_proportion")] <- 1
   progress <- update(progress)
 
-  # Tidy up some information gaps.
-  # Proportion for singletons is 1.
-  results$Transcripts[ !tx_filter$has_siblings, c("ref_proportion", "comp_proportion")] <- 1
-  # Genes with only 1 transcripts have no applicable transcripts.
-  results$Genes$num_applicable_transc[results$Genes$num_known_transc == 1] <- 0
-
+  # P values, only for parents and targets that survived filtering.
+  results$Genes[actual_parents, "p_value"] <- sapply(actual_targets_by_parent, function(targets)
+                       g.test(results$Transcripts[targets, comp_sum], p=results$Transcripts[targets, ref_proportion])[["p.value"]])
+  results$Genes["corrected_p"] <- p.adjust(results$Genes[["p_value"]], method=correction)
+  results$Genes["dtu"] <- results$Genes[["corrected_p"]] < p_thresh
   progress <- update(progress)
 
   return(results)
@@ -229,7 +207,7 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TAR
 #' @return List with a logical value and a message.
 #'
 parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
-                            correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose) {
+                            correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose) {
   if ( ! is.data.frame(transcripts))
     return(list("error"=TRUE, "message"="transcripts is not a data.frame."))
   if (any( ! c(TARGET_ID, PARENT_ID) %in% names(transcripts)))
@@ -240,6 +218,8 @@ parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varna
     return(list("error"=TRUE, "message"="The specified counts field-name does not exist."))
   if ( ! correction %in% p.adjust.methods)
     return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods."))
+  if ( ( ! is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
+    return(list("error"=TRUE, "message"="Invalid p-value threshold."))
   if ( ! varname %in% names(sleuth_data$sample_to_covariates))
     return(list("error"=TRUE, "message"="The specified covariate name does not exist."))
   if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] ))
@@ -257,18 +237,17 @@ parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varna
 #'
 init_progress <- function(on)
 {
-  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,95,100),
-                               c("Built parent ids to target map",
-                                 "Built multiple transcript filter",
+  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
+                               c("Mapped genes to target targets",
+                                 "Identified genes with multiple transcripts",
                                  "Grouped samples by condition",
                                  "Extracted counts from bootstraps",
-                                 "Removed 0 count cases",
-                                 "Filtered parent ids",
+                                 "Removed all-zero count cases",
                                  "Allocated output structure",
-                                 "Calculated statistics",
-                                 "Calculated proportions",
-                                 "Calculated p-values",
-                                 "Finished!"),
+                                 "Identified genes and transcripts represented in the data",
+                                 "Calculated counts statistics",
+                                 "Calculated transcript proportions",
+                                 "Calculated p-values"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)
   return(progress)
