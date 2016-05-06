@@ -75,10 +75,10 @@ test_that("The output structure is correct", {
 
   expect_true(is.data.frame(dtu$Genes))
   expect_equal(dim(dtu$Genes)[2], 6)
-  expect_named(dtu$Genes, c("parent_id", "num_known_transc", "num_applic_transc", "p_value", "corrected_p", "dtu"))
+  expect_named(dtu$Genes, c("parent_id", "known_transc", "applic_transc", "p_value", "corrected_p", "dtu"))
   expect_true(is.factor(dtu$Genes$parent_id))
-  expect_true(is.numeric(dtu$Genes$num_known_transc))
-  expect_true(is.numeric(dtu$Genes$num_applic_transc))
+  expect_true(is.numeric(dtu$Genes$known_transc))
+  expect_true(is.numeric(dtu$Genes$applic_transc))
   expect_true(is.numeric(dtu$Genes$p_value))
   expect_true(is.numeric(dtu$Genes$corrected_p))
   expect_true(is.logical(dtu$Genes$dtu))
