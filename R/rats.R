@@ -36,6 +36,8 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
 
   # Identify genes with a single transcript. Order by gene ID and transcript ID.
   tx_filter <- mark_sibling_targets(transcripts, targets_by_parent, TARGET_ID, PARENT_ID)
+#  tx_filter <- transcripts[order(transcripts[[PARENT_ID]], transcripts[[TARGET_ID]]), ]
+#  tx_filter["has_siblings"] <- TRUE
   progress <- update(progress)
 
   # Reverse look-up from replicates to covariates.
