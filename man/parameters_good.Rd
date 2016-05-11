@@ -5,7 +5,7 @@
 \title{Check input parameters.}
 \usage{
 parameters_good(sleuth_data, transcripts, ref_name, comp_name, varname,
-  counts_col, correction, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
+  counts_col, correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
 }
 \value{
 List with a logical value and a message.

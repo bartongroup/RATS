@@ -6,7 +6,7 @@
 \usage{
 calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
   varname = "condition", counts_col = "est_counts", correction = "BH",
-  TARGET_ID = "target_id", PARENT_ID = "parent_id",
+  p_thresh = 0.05, TARGET_ID = "target_id", PARENT_ID = "parent_id",
   BS_TARGET_ID = "target_id", verbose = FALSE)
 }
 \arguments{
@@ -23,6 +23,8 @@ calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
 \item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.}
 
 \item{correction}{p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
+
+\item{p_thresh}{p-value threshold, default 0.05.}
 
 \item{TARGET_ID}{The name of the transcript id column in transcripts object, default \code{"target_id"}}
 
