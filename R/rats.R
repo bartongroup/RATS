@@ -67,41 +67,41 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   progress <- update(progress)
 
   # Pre-allocate output structure.
-  results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name, "p_thresh"=p_thresh),
-                  "Genes"=data.frame("parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
+  results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name),
+                  "Parameters"=c("p_threshold"=p_thresh),
+                  "Genes"=data.table("parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
                                      "known_transc"=NA_integer_, "applic_transc"=NA_integer_,
                                      "p_value"=NA_real_, "corrected_p"=NA_real_, "dtu"=NA),
-                  "Transcripts"=data.frame("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
+                  "Transcripts"=data.table("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
                                            "ref_proportion"=NA_real_, "comp_proportion"=NA_real_,
-                                           "ref_sum"=NA_real_, "comp_sum"=NA_real_,
-                                           "ref_mean"=NA_real_, "ref_variance"=NA_real_,
-                                           "comp_mean"=NA_real_, "comp_variance"=NA_real_))
-  rownames(results$Genes) <- results$Genes$parent_id
-  rownames(results$Transcripts) <- results$Transcripts$target_id
-  results$Genes["known_transc"] <- sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))
-  results$Genes["applic_transc"] <- sapply(rownames(results$Genes), function(p)
-                                           ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))
+                                           "ref_mean"=NA_real_, "comp_mean"=NA_real_,
+                                           "ref_variance"=NA_real_, "comp_variance"=NA_real_,
+                                           "ref_sum"=NA_real_, "comp_sum"=NA_real_))
+  setkey(results$Genes, parent_id)
+  setkey(results$Transcripts, target_id)
+  results$Genes[, known_transc := sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
+  results$Genes[, applic_transc := sapply(results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
   progress <- update(progress)
 
   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-  results$Transcripts[actual_targets, c("ref_sum", "ref_mean", "ref_variance", "comp_sum", "comp_mean", "comp_variance")] <-
-    c(rowSums(count_data[[ref_name]]), rowMeans(count_data[[ref_name]]), matrixStats::rowVars(as.matrix(count_data[[ref_name]])),
-      rowSums(count_data[[comp_name]]), rowMeans(count_data[[comp_name]]), matrixStats::rowVars(as.matrix(count_data[[comp_name]])))
+  results$Transcripts[actual_targets, ref_sum :=  rowSums(count_data[[ref_name]])]
+  results$Transcripts[actual_targets, ref_mean :=  rowMeans(count_data[[ref_name]])]
+  results$Transcripts[actual_targets, ref_variance :=  matrixStats::rowVars(as.matrix(count_data[[ref_name]]))]
+  results$Transcripts[actual_targets, comp_sum :=  rowSums(count_data[[comp_name]])]
+  results$Transcripts[actual_targets, comp_mean :=  rowMeans(count_data[[comp_name]])]
+  results$Transcripts[actual_targets, comp_variance :=  matrixStats::rowVars(as.matrix(count_data[[comp_name]]))]
   progress <- update(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
-  dt = data.table(results$Transcripts)
-  setkey(dt, target_id)
-  tempdt <- dt[,ref_proportion := ref_sum/sum(ref_sum), by=parent_id] # import data.table needed to make := work
-  setkey(tempdt, target_id)
-  results$Transcripts <- dt[,comp_proportion := comp_sum/sum(comp_sum), by=parent_id]
+  results$Transcripts[,ref_proportion := ref_mean/sum(ref_mean), by=parent_id]
+  results$Transcripts[,comp_proportion := comp_mean/sum(comp_mean), by=parent_id]
   progress <- update(progress)
 
   # P values, only for parents and targets that survived filtering.
-  results$Genes[actual_parents, "p_value"] <- sapply(actual_targets_by_parent, function(targets)
-                       g.test(results$Transcripts[targets, comp_sum], p=results$Transcripts[targets, ref_proportion])[["p.value"]])
-  results$Genes["corrected_p"] <- p.adjust(results$Genes[["p_value"]], method=correction)
-  results$Genes["dtu"] <- results$Genes[["corrected_p"]] < p_thresh
+  results$Genes[actual_parents, p_value := sapply(actual_targets_by_parent, function(targets)
+                       g.test(results$Transcripts[targets, comp_sum], p=results$Transcripts[targets, ref_proportion])[["p.value"]])]
+  results$Genes[, corrected_p := p.adjust(p_value, method=correction)]
+  results$Genes[, dtu := corrected_p < p_thresh]
   progress <- update(progress)
 
   return(results)
