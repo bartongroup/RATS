@@ -3,11 +3,11 @@
 \docType{methods}
 \name{update,TxtProgressUpdate-method}
 \alias{update,TxtProgressUpdate-method}
-\title{Update progress with next text string and % complete figure}
+\title{Update progress with next text string and percent complete figure}
 \usage{
 \S4method{update}{TxtProgressUpdate}(theObject)
 }
 \description{
-Update progress with next text string and % complete figure
+Update progress with next text string and percent complete figure
 }
 

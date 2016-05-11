@@ -3,7 +3,7 @@ setOldClass("txtProgressBar") #required so that we can use txtProgressBar in a s
 #================================================================================
 #' An S4 base class to represent a progress update object.
 #'
-#' @slot steps A dataframe containing the progress positions (10%,20% etc) and associated text
+#' @slot steps A dataframe containing the progress positions (10\%,20\% etc) and associated text
 #' @slot max The maximum value of the progress positions
 #' @slot on Whether to run the progress update or not, default=FALSE
 ProgressUpdate <- setClass("ProgressUpdate", slots = c(steps = "data.frame", max = "numeric", on = "logical"),
@@ -58,7 +58,7 @@ setMethod(f="initialize",
             })
 
 #--------------------------------------------------------------------------------
-#' Update progress with next text string and % complete figure
+#' Update progress with next text string and percent complete figure
 #' @export
 setMethod(f="update",
           signature="TxtProgressUpdate",
@@ -67,7 +67,7 @@ setMethod(f="update",
             if (theObject@on)
             {
               theObject@step = theObject@step + 1
-              # print out <text string>.....<% complete>
+              # print out <text string>.....<\% complete>
               cat(theObject@steps[theObject@step,2])
               cat(".....")
               cat(theObject@steps[theObject@step,1])

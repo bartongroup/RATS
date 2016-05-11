@@ -11,7 +11,7 @@ An S4 base class to represent a progress update object.
 \section{Slots}{
 
 \describe{
-\item{\code{steps}}{A dataframe containing the progress positions (10%,20% etc) and associated text}
+\item{\code{steps}}{A dataframe containing the progress positions (10\%,20\% etc) and associated text}
 
 \item{\code{max}}{The maximum value of the progress positions}
 
