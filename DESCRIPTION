@@ -1,12 +1,12 @@
 Package: rats
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Relative Abundance of Transcripts
 Version: 0.1
-Date: 2016-04-08
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Date: 2016-05-11
+Author: Kira Mourao, Kimon Froussios, Nick Schurch
+Maintainer: Nick SChurch <n.schurch@dundee.ac.uk>
+Description: Given a Sleuth output object, this package identifies genes where differential transcript usage occurs.
+License: Creative Commons Attribution
 LazyData: TRUE
 Suggests:
     testthat,
