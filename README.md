@@ -48,7 +48,7 @@ With the DTU object calculated, the DTU results for the transcripts associated w
 plotGeneDTU(DTU, "geneid", nreps=7, ptype="proportion")
 ```
 
-where `geneid` is the parent_id that identifies the gene and nreps is the number of biological replicates in the study.
+where `geneid` is the parent_id that identifies the gene and `nreps` is the number of biological replicates in the study.
 
 ## Contact information
 
