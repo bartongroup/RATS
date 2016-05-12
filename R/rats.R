@@ -3,8 +3,8 @@
 #'
 #' @param sleuth_data A sleuth object
 #' @param transcripts A dataframe matching the transcript IDs to their corresponding gene IDs.
-#' @param ref_name The sleuth name of the reference condition.
-#' @param comp_name The sleuth name of the condition to compare.
+#' @param name_A The sleuth name for one condition.
+#' @param name_B The sleuth name for the other condition.
 #' @param varname The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.
 #' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.
 #' @param correction p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
@@ -17,13 +17,13 @@
 #'
 #' @export
 #' @import data.table
-calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
+calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                           varname="condition", counts_col="est_counts", correction="BH", p_thresh=0.05,
                           TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id",
                           verbose=FALSE)
 {
   # Input checks.
-  paramcheck <- parameters_good(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
+  paramcheck <- parameters_good(sleuth_data, transcripts, name_A, name_B, varname, counts_col,
                                 correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose)
   if (paramcheck$error) stop(paramcheck$message)
 
@@ -55,7 +55,7 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   progress <- update(progress)
 
   # Which IDs am I actually working with after the filters?
-  actual_targets <- rownames(count_data[[ref_name]])
+  actual_targets <- rownames(count_data[[name_A]])
   actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
   actual_targets_by_parent <- lapply(actual_parents, function(p) {
     targets_by_parent[[p]][targets_by_parent[[p]] %in% actual_targets]  # the transcripts for which we have non-zero counts.
@@ -67,41 +67,53 @@ calculate_DTU <- function(sleuth_data, transcripts, ref_name, comp_name,
   progress <- update(progress)
 
   # Pre-allocate output structure.
-  results <- list("Comparison"=c("variable_name"=varname, "reference"=ref_name, "compared"=comp_name),
-                  "Parameters"=c("p_threshold"=p_thresh),
+  results <- list("Comparison"=c("variable_name"=varname, "cond_A"=name_A, "cond_B"=name_B),
+                  "Parameters"=c("p_thresh"=p_thresh),
                   "Genes"=data.table("parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
-                                     "known_transc"=NA_integer_, "applic_transc"=NA_integer_,
-                                     "p_value"=NA_real_, "corrected_p"=NA_real_, "dtu"=NA),
+                                     "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
+                                     "pval_AB"=NA_real_, "pval_BA"=NA_real_,
+                                     "pval_AB_corr"=NA_real_, "pval_BA_corr"=NA_real_,
+                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA),
                   "Transcripts"=data.table("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
-                                           "ref_proportion"=NA_real_, "comp_proportion"=NA_real_,
-                                           "ref_mean"=NA_real_, "comp_mean"=NA_real_,
-                                           "ref_variance"=NA_real_, "comp_variance"=NA_real_,
-                                           "ref_sum"=NA_real_, "comp_sum"=NA_real_))
+                                           "prop_A"=NA_real_, "prop_B"=NA_real_,   # proportion of sums across replicates
+                                           "sum_A"=NA_real_, "sum_B"=NA_real_,     # sum across replicates of means across bootstraps
+                                           "mean_A"=NA_real_, "mean_B"=NA_real_,   # mean across replicates of means across bootstraps
+                                           "var_A"=NA_real_, "var_B"=NA_real_))    # var across replicates of means across bootstraps
   setkey(results$Genes, parent_id)
   setkey(results$Transcripts, target_id)
   results$Genes[, known_transc := sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
-  results$Genes[, applic_transc := sapply(results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
+  results$Genes[, usable_transc := sapply(results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
   progress <- update(progress)
 
   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-  results$Transcripts[actual_targets, ref_sum :=  rowSums(count_data[[ref_name]])]
-  results$Transcripts[actual_targets, ref_mean :=  rowMeans(count_data[[ref_name]])]
-  results$Transcripts[actual_targets, ref_variance :=  matrixStats::rowVars(as.matrix(count_data[[ref_name]]))]
-  results$Transcripts[actual_targets, comp_sum :=  rowSums(count_data[[comp_name]])]
-  results$Transcripts[actual_targets, comp_mean :=  rowMeans(count_data[[comp_name]])]
-  results$Transcripts[actual_targets, comp_variance :=  matrixStats::rowVars(as.matrix(count_data[[comp_name]]))]
+  results$Transcripts[actual_targets, sum_A :=  rowSums(count_data[[name_A]])]                         # TODO change to hybrid
+  results$Transcripts[actual_targets, sum_B :=  rowSums(count_data[[name_B]])]                         # TODO change to hybrid
+  results$Transcripts[actual_targets, mean_A :=  rowMeans(count_data[[name_A]])]                       # TODO change to hybrid
+  results$Transcripts[actual_targets, mean_B :=  rowMeans(count_data[[name_B]])]                       # TODO change to hybrid
+  results$Transcripts[actual_targets, var_A :=  matrixStats::rowVars(as.matrix(count_data[[name_A]]))] # TODO change to hybrid
+  results$Transcripts[actual_targets, var_B :=  matrixStats::rowVars(as.matrix(count_data[[name_B]]))] # TODO change to hybrid
   progress <- update(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
-  results$Transcripts[,ref_proportion := ref_mean/sum(ref_mean), by=parent_id]
-  results$Transcripts[,comp_proportion := comp_mean/sum(comp_mean), by=parent_id]
+  results$Transcripts[, prop_A := sum_A/sum(sum_A), by=parent_id]
+  results$Transcripts[, prop_B := sum_B/sum(sum_B), by=parent_id]
   progress <- update(progress)
 
   # P values, only for parents and targets that survived filtering.
-  results$Genes[actual_parents, p_value := sapply(actual_targets_by_parent, function(targets)
-                       g.test(results$Transcripts[targets, comp_sum], p=results$Transcripts[targets, ref_proportion])[["p.value"]])]
-  results$Genes[, corrected_p := p.adjust(p_value, method=correction)]
-  results$Genes[, dtu := corrected_p < p_thresh]
+  # Compare B counts to A ratios:
+  results$Genes[actual_parents, pval_AB := sapply(actual_targets_by_parent, function(targets)
+                                                  g.test(results$Transcripts[targets, sum_B],
+                                                         p=results$Transcripts[targets, prop_A])[["p.value"]])]
+  results$Genes[, pval_AB_corr := p.adjust(pval_AB, method=correction)]
+  results$Genes[, dtu_AB := pval_AB < p_thresh]
+  # Compare A counts to B ratios:
+  results$Genes[actual_parents, pval_BA := sapply(actual_targets_by_parent, function(targets)
+                                                  g.test(results$Transcripts[targets, sum_A],
+                                                         p=results$Transcripts[targets, prop_B])[["p.value"]])]
+  results$Genes[, pval_BA_corr := p.adjust(pval_BA, method=correction)]
+  results$Genes[, dtu_BA := pval_BA < p_thresh]
+  # Find the agreements.
+  results$Genes[, dtu := dtu_AB & dtu_BA ]
   progress <- update(progress)
 
   return(results)
