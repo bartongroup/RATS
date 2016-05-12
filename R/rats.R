@@ -51,14 +51,14 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
 
   # remove entries which are entirely 0 across all conditions
   nonzero <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
-  count_data <- lapply(count_data, function(condition) condition[Reduce("&", nonzero),])
+  count_data <- lapply(count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
   progress <- update(progress)
 
   # Which IDs am I actually working with after the filters?
   actual_targets <- rownames(count_data[[name_A]])
   actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
-  actual_targets_by_parent <- lapply(actual_parents, function(p) {
-    targets_by_parent[[p]][targets_by_parent[[p]] %in% actual_targets]  # the transcripts for which we have non-zero counts.
+  actual_targets_by_parent <- lapply(actual_parents, function(p) {                                                                # BOTTLENECK
+    targets_by_parent[[p]][targets_by_parent[[p]] %in% actual_targets]  # the transcripts for which we have non-zero counts.      # BOTTLENECK
   })
   names(actual_targets_by_parent) <- actual_parents
   # Reject parents that now are left with a single child, as g.test() won't accept them.
@@ -67,8 +67,9 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update(progress)
 
   # Pre-allocate output structure.
-  results <- list("Comparison"=c("variable_name"=varname, "cond_A"=name_A, "cond_B"=name_B),
-                  "Parameters"=c("p_thresh"=p_thresh),
+  results <- list("Parameters"=list("var_name"=varname, "cond_A"=name_A, "cond_B"=name_B,
+                                    "replicates_A"=dim(count_data[[name_A]])[2], "replicates_B"=dim(count_data[[name_B]])[2],
+                                    "p_thresh"=p_thresh),
                   "Genes"=data.table("parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
                                      "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                                      "pval_AB"=NA_real_, "pval_BA"=NA_real_,
@@ -169,7 +170,7 @@ group_samples <- function(covariates) {
 }
 
 #================================================================================
-#' For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
+#' For a given condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 #' filtered according to tx_filter, and ordered according to target_ids
 #'
 #' @param sleuth_data A sleuth object.
@@ -183,8 +184,9 @@ group_samples <- function(covariates) {
 make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID) {
 
   # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
-  count_data <- as.data.frame(lapply (condition, function(sample)
-    sapply(sleuth_data$kal[[sample]]$bootstrap, function(e) filter_and_match(e, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID) )))
+  count_data <- as.data.frame(lapply(condition, function(sample)
+    rowMeans(sapply(sleuth_data$kal[[sample]]$bootstrap, function(e)
+      filter_and_match(e, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID) )) ))
 
   # now set the filtered target ids as rownames - previous call returns target ids in this order
   rownames(count_data) <- tx_filter[[TARGET_ID]][tx_filter$has_siblings]
@@ -211,7 +213,7 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TAR
   b_to_f_rows <- match(tx_filter[[TARGET_ID]], bootstrap[[BS_TARGET_ID]])
 
   # map the bootstrap to the filter target ids and then apply the filter
-  result <- (bootstrap[b_to_f_rows,counts_col]) [tx_filter$has_siblings]
+  result <- (bootstrap[b_to_f_rows, counts_col]) [tx_filter$has_siblings]
 
   return(result)
 }

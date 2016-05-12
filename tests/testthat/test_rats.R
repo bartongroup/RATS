@@ -65,18 +65,12 @@ test_that("The output structure is correct", {
   dtu <- calculate_DTU(pseudo_sleuth, mini_anno, "Col", "Vir")
 
   expect_type(dtu, "list")
-  expect_equal(length(dtu), 4)
-  expect_named(dtu, c("Comparison", "Parameters", "Genes", "Transcripts"))
+  expect_equal(length(dtu), 3)
+  expect_named(dtu, c("Parameters", "Genes", "Transcripts"))
 
-  expect_true(is.vector(dtu$Comparison))
-  expect_type(dtu$Comparison, "character")
-  expect_length(dtu$Comparison, 3)
-  expect_named(dtu$Comparison, c("variable_name", "cond_A", "cond_B"))
-
-  expect_true(is.vector(dtu$Parameters))
-  expect_true(is.numeric(dtu$Parameters))
-  expect_length(dtu$Parameters, 1)
-  expect_named(dtu$Parameters, c("p_thresh"))
+  expect_type(dtu$Parameters, "list")
+  expect_length(dtu$Parameters, 6)
+  expect_named(dtu$Parameters, c("var_name", "cond_A", "cond_B", "replicates_A", "replicates_B", "p_thresh"))
 
   expect_true(is.data.frame(dtu$Genes))
   expect_equal(dim(dtu$Genes)[2], 10)
@@ -159,18 +153,8 @@ test_that("The data munging is correct", {
   for (cond_name in names(count_data)) {
     # all the targets are here:
     expect_identical(ordered(rownames(count_data[[cond_name]])), ordered(tx_filter$target_id[tx_filter$has_siblings]))
-    # the correct number of counts have been gathered:
-    tot_boots <- 0
-    # the correct counts have been assigned:
-    for (smpl in samples_by_condition[[cond_name]]) {
-      for (boot in sl$kal[[smpl]]$bootstrap) {
-        for (target in rownames(count_data[[cond_name]])) {
-          expect_true(boot[boot$target_id == target, counts_col] %in% count_data[[cond_name]][target, ])
-        }
-        tot_boots <- tot_boots + 1
-      }
-    }
-    expect_equal(tot_boots, dim(count_data[[cond_name]])[2])
+    # the number of replicates is correct
+    expect_equal(dim(count_data[[cond_name]])[2], length(sl$kal[samples_by_condition[[cond_name]]]))
   }
 })
 
