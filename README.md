@@ -26,7 +26,7 @@ For our example we will call our sleuth object, `so`.
 
 Next we will need a data frame that maps the transcript IDs to their parent gene IDs. This needs to have at least two variables - `target_id` and `parent_id` - but can also contain other annotation variable as well.
 
-With out annotation data and out sleuth object defined, calling DTU on this data is then as easy as:
+With our annotation data and out sleuth object defined, calling DTU on this data is then as easy as:
 
 ```r
 DTU = calculate_DTU(so, t2g, "x", "y")
