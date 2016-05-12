@@ -45,7 +45,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update(progress)
 
   # build list of dataframes, one for each condition
-  # each dataframe contains filtered and correctly ordered counts from all the bootstraps for the condition
+  # each dataframe contains filtered and correctly ordered mean counts per sample from the bootstraps
   count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
   progress <- update(progress)
 
@@ -87,12 +87,12 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update(progress)
 
   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-  results$Transcripts[actual_targets, sum_A :=  rowSums(count_data[[name_A]])]                         # TODO change to hybrid
-  results$Transcripts[actual_targets, sum_B :=  rowSums(count_data[[name_B]])]                         # TODO change to hybrid
-  results$Transcripts[actual_targets, mean_A :=  rowMeans(count_data[[name_A]])]                       # TODO change to hybrid
-  results$Transcripts[actual_targets, mean_B :=  rowMeans(count_data[[name_B]])]                       # TODO change to hybrid
-  results$Transcripts[actual_targets, var_A :=  matrixStats::rowVars(as.matrix(count_data[[name_A]]))] # TODO change to hybrid
-  results$Transcripts[actual_targets, var_B :=  matrixStats::rowVars(as.matrix(count_data[[name_B]]))] # TODO change to hybrid
+  results$Transcripts[actual_targets, sum_A :=  rowSums(count_data[[name_A]])]
+  results$Transcripts[actual_targets, sum_B :=  rowSums(count_data[[name_B]])]
+  results$Transcripts[actual_targets, mean_A :=  rowMeans(count_data[[name_A]])]
+  results$Transcripts[actual_targets, mean_B :=  rowMeans(count_data[[name_B]])]
+  results$Transcripts[actual_targets, var_A :=  matrixStats::rowVars(as.matrix(count_data[[name_A]]))]
+  results$Transcripts[actual_targets, var_B :=  matrixStats::rowVars(as.matrix(count_data[[name_B]]))]
   progress <- update(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
