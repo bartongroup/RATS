@@ -15,7 +15,7 @@ Checkout the rats package from github and install in R. The simplest way to do t
 Once you ahve installed the library, load rats with:
 
 ```r
-library(rats)
+library("rats")
 ```
 
 With the library loaded, you can now use it to identify the Differential Transcript Usage. 
