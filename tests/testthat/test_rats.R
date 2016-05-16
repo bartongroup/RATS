@@ -90,21 +90,21 @@ test_that("The output structure is correct", {
   expect_equal(dim(dtu$Transcripts)[2], 10)
   expect_named(dtu$Transcripts, c("target_id", "parent_id",
                                   "prop_A", "prop_B", "sum_A", "sum_B",
-                                  "mean_A", "mean_B", "var_A", "var_B"))
+                                  "mean_A", "mean_B", "stdev_A", "stdev_B"))
   expect_true(is.numeric(dtu$Transcripts$prop_A))
   expect_true(is.numeric(dtu$Transcripts$prop_B))
   expect_true(is.numeric(dtu$Transcripts$sum_A))
   expect_true(is.numeric(dtu$Transcripts$sum_B))
   expect_true(is.numeric(dtu$Transcripts$mean_A))
   expect_true(is.numeric(dtu$Transcripts$mean_B))
-  expect_true(is.numeric(dtu$Transcripts$var_A))
-  expect_true(is.numeric(dtu$Transcripts$var_B))
+  expect_true(is.numeric(dtu$Transcripts$stdev_A))
+  expect_true(is.numeric(dtu$Transcripts$stdev_B))
 })
 
 #==============================================================================
 test_that("The data munging is correct", {
   sl <- pseudo_sleuth
-  ids <- mini_anno
+  transcripts <- mini_anno
   counts_col <- "est_counts"
   varname <- "condition"
   TARGET_ID <- "target_id"
@@ -112,25 +112,11 @@ test_that("The data munging is correct", {
   PARENT_ID <- "parent_id"
   # Check that the intermediate values are correct.
 
-  targets_by_parent <- split(as.matrix(ids[TARGET_ID]), ids[[PARENT_ID]])
-  # all the parents are here:
-  expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(names(targets_by_parent)))
-  # all the targets are under their parent:
-  for (target in ids$target_id) {
-    expect_true(any(targets_by_parent[[ids[ids$target_id == target, "parent_id"]]] == target))
-  }
-
-  tx_filter <- mark_sibling_targets(ids, targets_by_parent, TARGET_ID, PARENT_ID)
-  # all the parents are here:
-  expect_identical(ordered(levels(as.factor(ids$parent_id))), ordered(levels(as.factor(tx_filter$parent_id))))
-  # all the targets are here:
-  expect_identical(ordered(levels(as.factor(ids$target_id))), ordered(levels(as.factor(tx_filter$target_id))))
-  # count parent duplicates and make sure flag was assigned correctly
-  parent_counts <- table(ids$parent_id)
-  for (parent in names(parent_counts)) {
-    expect_true(all((parent_counts[[parent]] > 1) == (tx_filter$has_siblings[tx_filter$parent_id == parent])))  # lengths may differ
-  }
-
+  targets <- data.table("target_id"=transcripts[[TARGET_ID]], "parent_id"=transcripts[[PARENT_ID]])
+  setkey(targets, target_id)
+  parents <- data.table(targets)
+  setkey(parents, parent_id)
+  
   samples_by_condition <- group_samples(sl$sample_to_covariates)
   # all the variables are here:
   expect_identical(names(sl$sample_to_covariates), names(samples_by_condition))
@@ -149,10 +135,10 @@ test_that("The data munging is correct", {
   }
   samples_by_condition <- samples_by_condition[[varname]]  # focus on one covariate for the rest of the test.
 
-  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sl, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
+  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sl, condition, targets, counts_col, BS_TARGET_ID))
   for (cond_name in names(count_data)) {
     # all the targets are here:
-    expect_identical(ordered(rownames(count_data[[cond_name]])), ordered(tx_filter$target_id[tx_filter$has_siblings]))
+    expect_identical(ordered(rownames(count_data[[cond_name]])), ordered(targets$target_id))
     # the number of replicates is correct
     expect_equal(dim(count_data[[cond_name]])[2], length(sl$kal[samples_by_condition[[cond_name]]]))
   }
