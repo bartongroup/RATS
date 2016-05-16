@@ -106,13 +106,13 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                                                   g.test(results$Transcripts[targets, sum_B],
                                                          p=results$Transcripts[targets, prop_A])[["p.value"]])]
   results$Genes[, pval_AB_corr := p.adjust(pval_AB, method=correction)]
-  results$Genes[, dtu_AB := pval_AB < p_thresh]
+  results$Genes[, dtu_AB := pval_A_corrB < p_thresh]
   # Compare A counts to B ratios:
   results$Genes[actual_parents, pval_BA := sapply(actual_targets_by_parent, function(targets)
                                                   g.test(results$Transcripts[targets, sum_A],
                                                          p=results$Transcripts[targets, prop_B])[["p.value"]])]
   results$Genes[, pval_BA_corr := p.adjust(pval_BA, method=correction)]
-  results$Genes[, dtu_BA := pval_BA < p_thresh]
+  results$Genes[, dtu_BA := pval_BA_corr < p_thresh]
   # Find the agreements.
   results$Genes[, dtu := dtu_AB & dtu_BA ]
   progress <- update(progress)
