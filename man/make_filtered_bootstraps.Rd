@@ -2,30 +2,30 @@
 % Please edit documentation in R/rats.R
 \name{make_filtered_bootstraps}
 \alias{make_filtered_bootstraps}
-\title{For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
+\title{For a given condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 filtered according to tx_filter, and ordered according to target_ids}
 \usage{
 make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col,
-  TARGET_ID, BS_TARGET_ID)
+  BS_TARGET_ID)
 }
 \arguments{
 \item{sleuth_data}{A sleuth object.}
 
 \item{condition}{A vector of sample numbers.}
 
-\item{tx_filter}{A dataframe containing \code{target_id} and \code{has_siblings}.}
+\item{tx_filter}{A dataframe containing \code{target_id}.}
 
 \item{counts_col}{The sleuth column name for the type of counts to use.}
 
-\item{TARGET_ID}{The name of transcript id column in transcripts object.}
-
 \item{BS_TARGET_ID}{The name of transcript id column in sleuth bootstrap tables.}
+
+\item{TARGET_ID}{The name of transcript id column in transcripts object.}
 }
 \value{
 A dataframe containing the counts from all bootstraps of all the samples for the condition.
 }
 \description{
-For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
+For a given condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 filtered according to tx_filter, and ordered according to target_ids
 }
 
