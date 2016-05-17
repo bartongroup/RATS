@@ -106,7 +106,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                                                   g.test(results$Transcripts[targets, sum_B],
                                                          p=results$Transcripts[targets, prop_A])[["p.value"]])]
   results$Genes[, pval_AB_corr := p.adjust(pval_AB, method=correction)]
-  results$Genes[, dtu_AB := pval_A_corrB < p_thresh]
+  results$Genes[, dtu_AB := pval_AB_corr < p_thresh]
   # Compare A counts to B ratios:
   results$Genes[actual_parents, pval_BA := sapply(actual_targets_by_parent, function(targets)
                                                   g.test(results$Transcripts[targets, sum_A],
