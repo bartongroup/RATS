@@ -2,15 +2,27 @@
 % Please edit documentation in R/rangedat-gen.R
 \name{rangedat_gen}
 \alias{rangedat_gen}
-\title{Generate artificial 2-transcript-genes read-count data, systematically covering a broad range of proportions and magnitudes.}
+\title{Generate artificial read-count data for simulated 2-transcript genes, 
+systematically covering a broad range of proportions, magnitudes and fold-changes.}
 \usage{
-rangedat_gen()
+rangedat_gen(propfrom = 0, propto = 1, propby = 0.05, magfrom = -5,
+  magto = 5, magby = 1, foldfrom = -7, foldto = 7, foldby = 1)
+}
+\arguments{
+\item{propfrom, }{propto, propby: Range and step of proportions for 1st transcript. Sibling transcript complemented from these.}
+
+\item{magfrom, }{magto, magby: Range of count magnitudes, in powers of 10.}
+
+\item{foldfrom, }{foldto, foldby: Range of transcript ratio fold changes, in powers of 2.}
 }
 \value{
 sleuth-like object. Contains \code{"kal"} ans \code{"bootstrap"} with the simulated data and the non-sleuth 
         \code{"rangesim"} with the simulation details.
+
+minimal sleuth-like object. Includes list of tables with the simulation details for each transcript in each condition.
 }
 \description{
-Generate artificial 2-transcript-genes read-count data, systematically covering a broad range of proportions and magnitudes.
+Generate artificial read-count data for simulated 2-transcript genes, 
+systematically covering a broad range of proportions, magnitudes and fold-changes.
 }
 

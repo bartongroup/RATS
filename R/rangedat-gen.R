@@ -1,22 +1,32 @@
 #===============================================================================
-#' Generate artificial 2-transcript-genes read-count data, systematically covering a broad range of proportions and magnitudes.
+#' Generate artificial read-count data for simulated 2-transcript genes, 
+#' systematically covering a broad range of proportions, magnitudes and fold-changes.
 #' 
 #' @return sleuth-like object. Contains \code{"kal"} ans \code{"bootstrap"} with the simulated data and the non-sleuth 
 #'         \code{"rangesim"} with the simulation details.
 #'
+#' @param propfrom, propto, propby: Range and step of proportions for 1st transcript. Sibling transcript complemented from these.
+#' @param magfrom, magto, magby: Range of count magnitudes, in powers of 10.
+#' @param foldfrom, foldto, foldby: Range of transcript ratio fold changes, in powers of 2.
+#' @return list containing: \code{data} a minimal sleuth-like object.
+#'                          \code{anno} a dataframe matching \code{target_id} to \code{parent_id}.
+#'                          \code{sim} a list of dataframes with the simulation parameters per transcript per condition.
+#'
 #' @export
-rangedat_gen <- function() {
+rangedat_gen <- function(propfrom=0, propto=1, propby=0.05,
+                         magfrom=-5, magto=5, magby=1,
+                         foldfrom=-7, foldto=7, foldby=1) {
   # Range of proportions. (21 levels)
   # Although the relationship between transcript is symmetric and the ranges 0-0.5 and 0.5-1 are equivalent, 
   # they are not redundant: The two sibling transcripts receive different treatment when fold-changes are applied.
-  proportions_A_T1 <- seq(from=0, to=1, by=0.05)
+  proportions_A_T1 <- seq(from=propfrom, to=propto, by=propby)
   proportions_A_T2 <- 1-proportions_A_T1
   
   # Range of magnitudes. (11 levels)
-  magnitudes <- seq(from=-5, to=5, by=1)
+  magnitudes <- seq(from=-magfrom, to=magto, by=magby)
   
   # Range of ratio fold-changes. (15 levels)
-  folds <- seq(from=-7, to=7, by=1)
+  folds <- seq(from=foldfrom, to=foldto, by=foldby)
   
   
   # Combine proportions and magnitudes. (3465 rows)
@@ -60,7 +70,7 @@ rangedat_gen <- function() {
   # Make a sleuth-like object.
   sl <- list()
   sl["kal"] <- list()
-  sl[["samples_to_covariates"]] <- data.frame("sample"=c("a-1", "b-1"), "condition"=c("A", "B"))
+  sl[["sample_to_covariates"]] <- data.frame("sample"=c("A-1", "B-1"), "condition"=c("A", "B"))
   
   sl$kal[[1]] <- list()
   sl$kal[[1]]["bootstrap"] <- list()
@@ -70,12 +80,11 @@ rangedat_gen <- function() {
   sl$kal[[2]]["bootstrap"] <- list()
   sl$kal[[2]]$bootstrap[[1]] <- data.frame("target_id"=c(b1$target_id, b2$target_id), "est_counts"=c(b1$est_counts, b2$est_counts))
   
-  # Store simulation for ease.
-  sl[rangesim] <- list()
-  sl$rangesim[["a1"]] <- a1
-  sl$rangesim[["a2"]] <- a2
-  sl$rangesim[["b1"]] <- b1
-  sl$rangesim[["b2"]] <- b2
+  # Create annotation:
+  anno <- data.frame("target_id"=c(a1$target_id, a2$target_id), "parent_id"=c(a1$parent_id, a2$parent_id))
   
-  return(sl)
+  # Store simulation for ease.
+  results <- list("data"=sl, "anno"=anno, "sim" = list("A_t1"=a1 , "A_t2"=a2, "B_t1"=b1, "B_t2"=b2))
+  
+  return(results)
 }
