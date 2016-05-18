@@ -84,7 +84,10 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.05,
   anno <- data.frame("target_id"=c(a1$target_id, a2$target_id), "parent_id"=c(a1$parent_id, a2$parent_id))
   
   # Store simulation for ease.
-  results <- list("data"=sl, "anno"=anno, "sim" = list("A_t1"=a1 , "A_t2"=a2, "B_t1"=b1, "B_t2"=b2))
+  A <- rbind(a1, a2)
+  B <- rbind(b1, b2)
+  results <- list("data"=sl, "anno"=anno, "sim" = list("A"=A[order(A$target_id), ], "B"=B[order(B$target_id), ]))
+  results <
   
   return(results)
 }
