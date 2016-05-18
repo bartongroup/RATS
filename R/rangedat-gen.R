@@ -117,7 +117,7 @@ combine_sim_dtu <- function(sim, dtu) {
 #' 
 #' @export
 plot_covariance <- function(data) {
-  ggplot(data, aes(x=prop, y=fold, color=as.factor(dtu))) +
+  ggplot(data, aes(x=fold, y=prop, color=as.factor(dtu))) +
     geom_point() + 
     facet_grid(. ~ mag)
 }
