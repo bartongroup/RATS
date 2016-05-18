@@ -13,12 +13,10 @@
 #'                          \code{sim} a list of dataframes with the simulation parameters per transcript per condition.
 #'
 #' @export
-rangedat_gen <- function(propfrom=0, propto=1, propby=0.05,
+rangedat_gen <- function(propfrom=0, propto=0.5, propby=0.01,
                          magfrom=-5, magto=5, magby=1,
                          foldfrom=-7, foldto=7, foldby=1) {
   # Range of proportions. (21 levels)
-  # Although the relationship between transcript is symmetric and the ranges 0-0.5 and 0.5-1 are equivalent, 
-  # they are not redundant: The two sibling transcripts receive different treatment when fold-changes are applied.
   proportions_A_T1 <- seq(from=propfrom, to=propto, by=propby)
   proportions_A_T2 <- 1-proportions_A_T1
   
@@ -84,10 +82,43 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.05,
   anno <- data.frame("target_id"=c(a1$target_id, a2$target_id), "parent_id"=c(a1$parent_id, a2$parent_id))
   
   # Store simulation for ease.
-  A <- rbind(a1, a2)
-  B <- rbind(b1, b2)
-  results <- list("data"=sl, "anno"=anno, "sim" = list("A"=A[order(A$target_id), ], "B"=B[order(B$target_id), ]))
-  results <
+  results <- list("data"=sl, "anno"=anno, "sim" = list("A_t1"=a1, "A_t2"=a2, "B_t1"=b1, "B_t2"=b2))
   
   return(results)
 }
+
+
+#===============================================================================
+#' Combine simulatation details with DTU calls, in preparation for plotting.
+#' 
+#' @param sim An object generated with rangedata_gen(), containing the simulated data details with which the \code{dtu} object was calculated.
+#' @param dtu The object with the DTU results corresponding to the \code{sim} object's data.
+#' @return dataframe
+#'
+#' @export
+combine_sim_dtu <- function(sim, dtu) {
+  results <- data.table(dtu$Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu)])
+  setkey(results, parent_id)
+  tmp <- data.table(sim$sim$A_t1[, c("parent_id", "prop", "mag", "fold")])
+  setkey(tmp, parent_id)
+  results <- merge(results, tmp, by="parent_id")
+  #results[, mag := 10^mag]
+  #results[, fold := 2^fold]
+  return(results)
+}
+
+
+#===============================================================================
+#' Plot relationship of parameters.
+#' 
+#' @param x, y parameter names to plot on x, y axes
+#' @param grd parameter name to represent as grid
+#' @param colour parameter name to represent as colour
+#' 
+#' @export
+plot_covariance <- function(data) {
+  ggplot(data, aes(x=prop, y=fold, color=as.factor(dtu))) +
+    geom_point() + 
+    facet_grid(. ~ mag)
+}
+
