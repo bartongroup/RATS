@@ -23,7 +23,7 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.05,
   proportions_A_T2 <- 1-proportions_A_T1
   
   # Range of magnitudes. (11 levels)
-  magnitudes <- seq(from=-magfrom, to=magto, by=magby)
+  magnitudes <- seq(from=magfrom, to=magto, by=magby)
   
   # Range of ratio fold-changes. (15 levels)
   folds <- seq(from=foldfrom, to=foldto, by=foldby)
