@@ -2,7 +2,7 @@
 % Please edit documentation in R/rats.R
 \name{make_filtered_bootstraps}
 \alias{make_filtered_bootstraps}
-\title{For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
+\title{For a given condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 filtered according to tx_filter, and ordered according to target_ids}
 \usage{
 make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col,
@@ -25,7 +25,7 @@ make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col,
 A dataframe containing the counts from all bootstraps of all the samples for the condition.
 }
 \description{
-For each condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
+For a given condition in the sleuth object, construct a dataframe containing counts from each bootstrap,
 filtered according to tx_filter, and ordered according to target_ids
 }
 
