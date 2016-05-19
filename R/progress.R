@@ -26,10 +26,10 @@ setMethod(f="initialize",
 #--------------------------------------------------------------------------------
 #' Progress update generic
 #'
-setGeneric(name="update",
+setGeneric(name="update_progress",
            def=function(theObject)
            {
-             standardGeneric("update")
+             standardGeneric("update_progress")
            }
 )
 
@@ -60,7 +60,7 @@ setMethod(f="initialize",
 #--------------------------------------------------------------------------------
 #' Update progress with next text string and percent complete figure
 #'
-setMethod(f="update",
+setMethod(f="update_progress",
           signature="TxtProgressUpdate",
           definition=function(theObject)
           {
@@ -106,7 +106,7 @@ setMethod(f="initialize",
 #--------------------------------------------------------------------------------
 #' Update progress by extending progress bar
 #'
-setMethod(f="update",
+setMethod(f="update_progress",
           signature="BarProgressUpdate",
           definition=function(theObject)
           {

@@ -32,7 +32,7 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 
 \item{BS_TARGET_ID}{The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.}
 
-\item{verbose}{Whether to update progress updates, default \code{FALSE}.}
+\item{verbose}{Whether to progress updates, default \code{FALSE}.}
 }
 \value{
 List of data frames, with gene-level and transcript-level information.
