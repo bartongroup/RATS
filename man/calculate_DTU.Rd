@@ -4,9 +4,9 @@
 \alias{calculate_DTU}
 \title{Calculate differential transcript usage.}
 \usage{
-calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
-  varname = "condition", counts_col = "est_counts", correction = "BH",
-  p_thresh = 0.05, TARGET_ID = "target_id", PARENT_ID = "parent_id",
+calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
+  counts_col = "est_counts", correction = "BH", p_thresh = 0.05,
+  TARGET_ID = "target_id", PARENT_ID = "parent_id",
   BS_TARGET_ID = "target_id", verbose = FALSE)
 }
 \arguments{
@@ -14,9 +14,9 @@ calculate_DTU(sleuth_data, transcripts, ref_name, comp_name,
 
 \item{transcripts}{A dataframe matching the transcript IDs to their corresponding gene IDs.}
 
-\item{ref_name}{The sleuth name of the reference condition.}
+\item{name_A}{The sleuth name for one condition.}
 
-\item{comp_name}{The sleuth name of the condition to compare.}
+\item{name_B}{The sleuth name for the other condition.}
 
 \item{varname}{The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.}
 

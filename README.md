@@ -32,13 +32,13 @@ With our annotation data and out sleuth object defined, calling DTU on this data
 DTU = calculate_DTU(so, t2g, "x", "y")
 ```
 
-where `x` is the name of the reference condition to use (typically the 'wild-type')  and `y` is the name of the condition to compare with the reference (for example a mutant or drug treatment).
+where `x` and `y` are the names of the conditions to compare. For additional parameters, please refer to the documentation of this function.
 
 The output is a List object with three elements: 
 
-1. `Comparison`: This contains the details of the comparison that was run.
-2. `Genes`: a data frame summarising the identified DTU at the gene level
-3. `Transcripts`: a data table containing the transcript level evidence that was used to compute the DTU.
+1. `Parameters`: A list that contains the details of the comparison that was run.
+2. `Genes`: A data table summarising the identified DTU at the gene level.
+3. `Transcripts`: A data table containing the transcript level evidence that was used to compute the DTU.
 
 ## Examining the results
 
