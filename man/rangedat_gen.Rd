@@ -5,8 +5,8 @@
 \title{Generate artificial read-count data for simulated 2-transcript genes, 
 systematically covering a broad range of proportions, magnitudes and fold-changes.}
 \usage{
-rangedat_gen(propfrom = 0, propto = 0.5, propby = 0.01, magfrom = -5,
-  magto = 5, magby = 1, foldfrom = -7, foldto = 7, foldby = 1)
+rangedat_gen(propfrom = 0, propto = 1, propby = 0.01, magfrom = 0,
+  magto = 3, magby = 0.25, foldfrom = 0, foldto = 7, foldby = 0.1)
 }
 \arguments{
 \item{propfrom, }{propto, propby: Range and step of proportions for 1st transcript. Sibling transcript complemented from these.}

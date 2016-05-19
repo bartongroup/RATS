@@ -14,8 +14,8 @@
 #'
 #' @export
 rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
-                         magfrom=-1, magto=4, magby=1,
-                         foldfrom=0, foldto=10, foldby=1) {
+                         magfrom=0, magto=3, magby=0.25,
+                         foldfrom=0, foldto=7, foldby=0.1) {
   # Range of proportions. (21 levels)
   proportions_A_T1 <- seq(from=propfrom, to=propto, by=propby)
   proportions_A_T2 <- 1-proportions_A_T1
@@ -116,9 +116,24 @@ combine_sim_dtu <- function(sim, dtu) {
 #' @param colour parameter name to represent as colour
 #' 
 #' @export
-plot_covariance <- function(data) {
-  ggplot(data, aes(x=fold, y=prop, color=as.factor(dtu))) +
+plot_range <- function(data) {
+  ggplot(data, aes(x=fold, y=prop, color=dtu)) +
     labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+    scale_color_manual(values=c("blue","red")) +
+    #coord_trans(x="log10") +
+    geom_point() + 
+    facet_grid(. ~ mag)
+  
+  ggplot(data, aes(x=fold, y=prop, color=pval_AB)) +
+    labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+    scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.5001,1)) +
+    #coord_trans(x="log10") +
+    geom_point() + 
+    facet_grid(. ~ mag)
+  
+  ggplot(data, aes(x=fold, y=prop, color=pval_BA)) +
+    labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+    scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.5001,1)) +
     #coord_trans(x="log10") +
     geom_point() + 
     facet_grid(. ~ mag)
