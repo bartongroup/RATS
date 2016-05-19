@@ -13,9 +13,9 @@
 #'                          \code{sim} a list of dataframes with the simulation parameters per transcript per condition.
 #'
 #' @export
-rangedat_gen <- function(propfrom=0, propto=0.5, propby=0.01,
-                         magfrom=-5, magto=5, magby=1,
-                         foldfrom=-7, foldto=7, foldby=1) {
+rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
+                         magfrom=-1, magto=4, magby=1,
+                         foldfrom=0, foldto=10, foldby=1) {
   # Range of proportions. (21 levels)
   proportions_A_T1 <- seq(from=propfrom, to=propto, by=propby)
   proportions_A_T2 <- 1-proportions_A_T1
@@ -44,8 +44,8 @@ rangedat_gen <- function(propfrom=0, propto=0.5, propby=0.01,
   a1["est_counts"] <- a1$prop * (10 ^ a1$mag)
   a2["est_counts"] <- a2$prop * (10 ^ a2$mag)
   # Apply foldchange symmetrically to the transcripts. The total ratio change is the nominal foldchange.
-  b1["est_counts"] <- b1$prop * (10 ^ b1$mag) * (1 / sqrt(2 ^ b1$fold))
-  b2["est_counts"] <- b2$prop * (10 ^ b2$mag) * sqrt(2 ^ b2$fold)
+  b1["est_counts"] <- b1$prop * (10 ^ b1$mag) * sqrt(2 ^ a1$fold)
+  b2["est_counts"] <- b2$prop * (10 ^ b2$mag) * (1 / sqrt(2 ^ b2$fold))
   
   
   # Name the "transcripts".
@@ -118,6 +118,7 @@ combine_sim_dtu <- function(sim, dtu) {
 #' @export
 plot_covariance <- function(data) {
   ggplot(data, aes(x=fold, y=prop, color=as.factor(dtu))) +
+    labs(x="Ratio A/B fold-change (2^x)", y = "Proportion in A") +
     geom_point() + 
     facet_grid(. ~ mag)
 }
