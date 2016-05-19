@@ -39,13 +39,16 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
   names(b1) <- c("prop", "mag", "fold")
   names(b2) <- c("prop", "mag", "fold")
   
+  # Apply foldchange. Normalize back to 1.
+  b1_scaled <- b1$fold * b1$prop
+  b1$prop <- b1_scaled / (b1_scaled + b2$prop)
+  b2$prop <- b2$prop / (b1_scaled + b2$prop)
   
   # Calculate "counts".
   a1["est_counts"] <- a1$prop * (10 ^ a1$mag)
   a2["est_counts"] <- a2$prop * (10 ^ a2$mag)
-  # Apply foldchange symmetrically to the transcripts. The total ratio change is the nominal foldchange.
-  b1["est_counts"] <- b1$prop * (10 ^ b1$mag) * sqrt(2 ^ b1$fold)
-  b2["est_counts"] <- b2$prop * (10 ^ b2$mag) * (1 / sqrt(2 ^ b2$fold))
+  b1["est_counts"] <- b1$prop * (10 ^ b1$mag)
+  b2["est_counts"] <- b2$prop * (10 ^ b2$mag)
   
   
   # Name the "transcripts".
@@ -53,14 +56,14 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
   options(scipen=0, digits=3)
   
   a1["parent_id"] <- paste("p", a1$prop, "_m", a1$mag, "_x", a1$fold, sep="")
-  a2["parent_id"] <- paste("p", a1$prop, "_m", a2$mag, "_x", a2$fold, sep="")
-  b1["parent_id"] <- paste("p", b1$prop, "_m", b1$mag, "_x", b1$fold, sep="")
-  b2["parent_id"] <- paste("p", b1$prop, "_m", b2$mag, "_x", b2$fold, sep="")
+  a2["parent_id"] <- a1$parent_id
+  b1["parent_id"] <- a1$parent_id
+  b2["parent_id"] <- a1$parent_id
   
   a1["target_id"] <- paste(a1$parent_id, "_t1", sep="")
   a2["target_id"] <- paste(a2$parent_id, "_t2", sep="")
-  b1["target_id"] <- paste(b1$parent_id, "_t1", sep="")
-  b2["target_id"] <- paste(b1$parent_id, "_t2", sep="")
+  b1["target_id"] <- a1$target_id
+  b2["target_id"] <- a2$target_id
   
   options(scipen=opts$scipen, digits=opts$digits)
   
@@ -116,26 +119,28 @@ combine_sim_dtu <- function(sim, dtu) {
 #' @param colour parameter name to represent as colour
 #' 
 #' @export
-plot_range <- function(data) {
-  ggplot(data, aes(x=fold, y=prop, color=dtu)) +
-    labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
-    scale_color_manual(values=c("blue","red")) +
-    #coord_trans(x="log10") +
-    geom_point() + 
-    facet_grid(. ~ mag)
-  
-  ggplot(data, aes(x=fold, y=prop, color=pval_AB)) +
-    labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
-    scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.5001,1)) +
-    #coord_trans(x="log10") +
-    geom_point() + 
-    facet_grid(. ~ mag)
-  
-  ggplot(data, aes(x=fold, y=prop, color=pval_BA)) +
-    labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
-    scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.5001,1)) +
-    #coord_trans(x="log10") +
-    geom_point() + 
-    facet_grid(. ~ mag)
+plot_range <- function(data, type = 1) {
+  if(type ==1){
+    ggplot(data, aes(x=fold, y=prop, color=dtu)) +
+     labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      scale_color_manual(values=c("blue","red")) +
+      #coord_trans(x="log10") +
+      geom_point() + 
+      facet_grid(. ~ mag)
+  } else if(type == 2) {
+    ggplot(data, aes(x=fold, y=prop, color=pval_AB)) +
+      labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
+      #coord_trans(x="log10") +
+      geom_point() + 
+      facet_grid(. ~ mag)
+  } else if(type ==3) {
+    ggplot(data, aes(x=fold, y=prop, color=pval_BA)) +
+      labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
+      #coord_trans(x="log10") +
+      geom_point() + 
+      facet_grid(. ~ mag)
+  }
 }
 
