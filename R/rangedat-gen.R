@@ -114,33 +114,29 @@ combine_sim_dtu <- function(sim, dtu) {
 #===============================================================================
 #' Plot relationship of parameters.
 #' 
-#' @param x, y parameter names to plot on x, y axes
-#' @param grd parameter name to represent as grid
-#' @param colour parameter name to represent as colour
+#' @param data the output from combine_sim_dtu()
+#' @param type 1: dtu, 2: pval_AB, 3: pval_BA
 #' 
 #' @export
-plot_range <- function(data, type = 1) {
+plot_sim <- function(data, type = 1) {
   if(type ==1){
-    ggplot(data, aes(x=fold, y=prop, color=dtu)) +
-     labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
-      scale_color_manual(values=c("blue","red")) +
-      #coord_trans(x="log10") +
-      geom_point() + 
-      facet_grid(. ~ mag)
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=dtu)) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_manual(values=c("blue","red")) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
   } else if(type == 2) {
-    ggplot(data, aes(x=fold, y=prop, color=pval_AB)) +
-      labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
-      scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
-      #coord_trans(x="log10") +
-      geom_point() + 
-      facet_grid(. ~ mag)
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=pval_AB)) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
   } else if(type ==3) {
-    ggplot(data, aes(x=fold, y=prop, color=pval_BA)) +
-      labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
-      scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
-      #coord_trans(x="log10") +
-      geom_point() + 
-      facet_grid(. ~ mag)
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=pval_BA)) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
   }
 }
 
