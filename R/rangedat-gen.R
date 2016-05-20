@@ -31,22 +31,17 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
   # Start by griding the values for easier visualization and naming, instead of compbing the outer products directly.
   a1 <- expand.grid(proportions_A_T1, magnitudes, folds)  # condition A, transcript 1, to remain the same
   a2 <- expand.grid(proportions_A_T2, magnitudes, folds)  # conditions A, transcript 2, to remain the same
-  b1 <- expand.grid(proportions_A_T1, magnitudes, folds)  # condition B, transcript 1, to be decreased
-  b2 <- expand.grid(proportions_A_T2, magnitudes, folds)  # condition B, transcript 2, to be increased
-  
   names(a1) <- c("prop", "mag", "fold")
   names(a2) <- c("prop", "mag", "fold")
-  names(b1) <- c("prop", "mag", "fold")
-  names(b2) <- c("prop", "mag", "fold")
-  
-  # Apply foldchange. Normalize back to 1.
-  b1_scaled <- b1$fold * b1$prop
-  b1$prop <- b1_scaled / (b1_scaled + b2$prop)
-  b2$prop <- b2$prop / (b1_scaled + b2$prop)
-  
   # Calculate "counts".
   a1["est_counts"] <- a1$prop * (10 ^ a1$mag)
   a2["est_counts"] <- a2$prop * (10 ^ a2$mag)
+  
+  # Apply foldchange to proportion of A_t1 and re-scale into range 0-1: b = xa / (1 + a(x-1))
+  b1 <- data.frame("prop" = (2 ^ a1$fold) * a1$prop / (1 + a1$prop * ((2 ^ a1$fold) - 1)),
+                   "mag" = a1$mag,
+                   "fold" = a1$fold)
+  b2 <- data.frame("prop" = 1 - b1$prop, "mag" = b1$mag, "fold" = b1$fold)
   b1["est_counts"] <- b1$prop * (10 ^ b1$mag)
   b2["est_counts"] <- b2$prop * (10 ^ b2$mag)
   
