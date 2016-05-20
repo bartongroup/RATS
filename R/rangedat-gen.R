@@ -110,7 +110,7 @@ combine_sim_dtu <- function(sim, dtu) {
 #' Plot relationship of parameters.
 #' 
 #' @param data the output from combine_sim_dtu()
-#' @param type 1: dtu, 2: pval_AB, 3: pval_BA
+#' @param type 1: dtu, 2: pval_AB, 3: pval_BA, 4: diff dtu_AB - dtu_BA
 #' 
 #' @export
 plot_sim <- function(data, type = 1) {
@@ -126,10 +126,16 @@ plot_sim <- function(data, type = 1) {
       ggplot2::scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
       ggplot2::geom_point() + 
       ggplot2::facet_grid(. ~ mag)
-  } else if(type ==3) {
+  } else if(type == 3) {
     ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=pval_BA)) +
       ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
       ggplot2::scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
+  } else if(type == 4) {
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=as.factor(ifelse(dtu_AB,1,0)+ifelse(dtu_BA,10,0)))) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_manual(values=c("blue", "cyan", "lightblue", "red")) +
       ggplot2::geom_point() + 
       ggplot2::facet_grid(. ~ mag)
   }

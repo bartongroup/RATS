@@ -9,7 +9,7 @@ plot_sim(data, type = 1)
 \arguments{
 \item{data}{the output from combine_sim_dtu()}
 
-\item{type}{1: dtu, 2: pval_AB, 3: pval_BA}
+\item{type}{1: dtu, 2: pval_AB, 3: pval_BA, 4: diff dtu_AB - dtu_BA}
 }
 \description{
 Plot relationship of parameters.
