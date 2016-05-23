@@ -35,7 +35,6 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update_progress(progress)
 
   # Identify genes with a single transcript. Order by gene ID and transcript ID.
-#  tx_filter <- mark_sibling_targets(transcripts, targets_by_parent, TARGET_ID, PARENT_ID)
   tx_filter <- transcripts[order(transcripts[[PARENT_ID]], transcripts[[TARGET_ID]]), ]
   tx_filter["has_siblings"] <- TRUE
   progress <- update_progress(progress)
@@ -57,10 +56,9 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   # Which IDs am I actually working with after the filters?
   actual_targets <- rownames(count_data[[name_A]])
   actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
-  actual_targets_by_parent <- lapply(actual_parents, function(p) {                                                                # BOTTLENECK
-    targets_by_parent[[p]][targets_by_parent[[p]] %in% actual_targets]  # the transcripts for which we have non-zero counts.      # BOTTLENECK
-  })
-  names(actual_targets_by_parent) <- actual_parents
+  actual_txs <- transcripts[transcripts[[TARGET_ID]] %in% actual_targets,]
+  actual_targets_by_parent <- (split(as.matrix(actual_txs[TARGET_ID]), actual_txs[[PARENT_ID]]))[actual_parents]
+
   # Reject parents that now are left with a single child, as g.test() won't accept them.
   actual_targets_by_parent <- actual_targets_by_parent[sapply(actual_targets_by_parent, function(targets) length(targets) > 1)]
   actual_parents <- names(actual_targets_by_parent)
