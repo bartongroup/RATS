@@ -8,11 +8,11 @@ The aim is to make this a simple package available in [bioconductor](http://bioc
 
 ## Installation
 
-Checkout the rats package from github and install in R. The simplest way to do this is to use [rstudio](https://www.rstudio.com/) to chekout, build and install the package directly.
+Checkout the rats package from github and install in R. The simplest way to do this is to use [rstudio](https://www.rstudio.com/) to checkout, build and install the package directly.
 
 ## loading and using rats
 
-Once you ahve installed the library, load rats with:
+Once you have installed the library, load rats with:
 
 ```r
 library("rats")
@@ -26,7 +26,7 @@ For our example we will call our sleuth object, `so`.
 
 Next we will need a data frame that maps the transcript IDs to their parent gene IDs. This needs to have at least two variables - `target_id` and `parent_id` - but can also contain other annotation variable as well.
 
-With our annotation data and out sleuth object defined, calling DTU on this data is then as easy as:
+With our annotation data and our sleuth object defined, calling DTU on this data is then as easy as:
 
 ```r
 DTU = calculate_DTU(so, t2g, "x", "y")
