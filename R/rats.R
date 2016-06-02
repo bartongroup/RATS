@@ -94,8 +94,8 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update_progress(progress)
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
-  results$Transcripts[, prop_A := sum_A/sum(sum_A), by=parent_id]
-  results$Transcripts[, prop_B := sum_B/sum(sum_B), by=parent_id]
+  results$Transcripts[actual_targets, prop_A := sum_A/sum(sum_A), by=parent_id]
+  results$Transcripts[actual_targets, prop_B := sum_B/sum(sum_B), by=parent_id]
   progress <- update_progress(progress)
 
   # P values, only for parents and targets that survived filtering.
