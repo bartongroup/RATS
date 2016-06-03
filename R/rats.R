@@ -72,12 +72,13 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                                      "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                                      "pval_AB"=NA_real_, "pval_BA"=NA_real_,
                                      "pval_AB_corr"=NA_real_, "pval_BA_corr"=NA_real_,
-                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA),
+                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA, "pprop_corr"=NA_real_, "prop_dtu"=NA),
                   "Transcripts"=data.table("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
                                            "prop_A"=NA_real_, "prop_B"=NA_real_,   # proportion of sums across replicates
                                            "sum_A"=NA_real_, "sum_B"=NA_real_,     # sum across replicates of means across bootstraps
                                            "mean_A"=NA_real_, "mean_B"=NA_real_,   # mean across replicates of means across bootstraps
-                                           "var_A"=NA_real_, "var_B"=NA_real_))    # var across replicates of means across bootstraps
+                                           "var_A"=NA_real_, "var_B"=NA_real_,     # var across replicates of means across bootstraps
+                                           "pprop"=NA_real_, "pprop_corr"=NA_real_))                      # pvalue for prop.test
   setkey(results$Genes, parent_id)
   setkey(results$Transcripts, target_id)
   results$Genes[, known_transc := sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
@@ -113,6 +114,19 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   results$Genes[, dtu_BA := pval_BA_corr < p_thresh]
   # Find the agreements.
   results$Genes[, dtu := dtu_AB & dtu_BA ]
+  
+  # Try with prop.test
+  # For now just plonk in proportions, but better to use actual counts
+  results$Transcripts[actual_targets, pprop:= unlist(lapply(actual_targets, function(target) 
+    prop.test(x=c(results$Transcripts[target, prop_A]*100, 
+                  results$Transcripts[target, prop_B]*100), n=c(100,100), correct=TRUE)[["p.value"]]))]
+  results$Transcripts[actual_targets, pprop_corr:= p.adjust(results$Transcripts[actual_targets, pprop], method=correction)]
+  
+  # Fish out the lowest corrected p-value per gene, and threshold for dtu result
+  actual_targets <- stack(actual_targets_by_parent)[1] 
+  results$Genes[actual_parents, pprop_corr := results$Transcripts[actual_targets, min(pprop_corr), by="parent_id"] [[2]] ]
+  results$Genes[,prop_dtu := pprop_corr < p_thresh]
+
   progress <- update_progress(progress)
 
   return(results)
