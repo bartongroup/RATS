@@ -16,14 +16,14 @@
 rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
                          magfrom=0, magto=3, magby=0.25,
                          foldfrom=0, foldto=7, foldby=0.1) {
-  # Range of proportions. (21 levels)
+  # Range of proportions.
   proportions_A_T1 <- seq(from=propfrom, to=propto, by=propby)
   proportions_A_T2 <- 1-proportions_A_T1
   
-  # Range of magnitudes. (11 levels)
+  # Range of magnitudes.
   magnitudes <- seq(from=magfrom, to=magto, by=magby)
   
-  # Range of ratio fold-changes. (15 levels)
+  # Range of ratio fold-changes.
   folds <- seq(from=foldfrom, to=foldto, by=foldby)
   
   
@@ -95,9 +95,9 @@ rangedat_gen <- function(propfrom=0, propto=1, propby=0.01,
 #'
 #' @export
 combine_sim_dtu <- function(sim, dtu) {
-  results <- data.table(dtu$Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu)])
+  results <- data.table::data.table(dtu$Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu, pprop_corr, prop_dtu)])
   setkey(results, parent_id)
-  tmp <- data.table(sim$sim$A_t1[, c("parent_id", "prop", "mag", "fold")])
+  tmp <- data.table::data.table(sim$sim$A_t1[, c("parent_id", "prop", "mag", "fold")])
   setkey(tmp, parent_id)
   results <- merge(results, tmp, by="parent_id")
   #results[, mag := 10^mag]
@@ -110,7 +110,8 @@ combine_sim_dtu <- function(sim, dtu) {
 #' Plot relationship of parameters.
 #' 
 #' @param data the output from combine_sim_dtu()
-#' @param type 1: dtu, 2: pval_AB, 3: pval_BA, 4: diff dtu_AB - dtu_BA
+#' @param type (int) 1: dtu, 2: pval_AB, 3: pval_BA, 4: diff dtu_AB - dtu_BA
+#'        5: pprop, 6: prop_dtu, 7: diff dtu - prop_dtu
 #' 
 #' @export
 plot_sim <- function(data, type = 1) {
@@ -134,6 +135,24 @@ plot_sim <- function(data, type = 1) {
       ggplot2::facet_grid(. ~ mag)
   } else if(type == 4) {
     ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=as.factor(ifelse(dtu_AB,1,0)+ifelse(dtu_BA,10,0)))) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_manual(values=c("blue", "cyan", "lightblue", "red")) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
+  } else if(type == 5) {
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=pprop_corr)) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_gradientn(colors=c("red", "white", "blue"), values=c(0,0.04999,0.05001,1)) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
+  } else if (type == 6) {
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=prop_dtu)) +
+      ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
+      ggplot2::scale_color_manual(values=c("blue","red")) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
+  } else if(type == 7) {
+    ggplot2::ggplot(data, ggplot2::aes(x=fold, y=prop, color=as.factor(ifelse(dtu,1,0)+ifelse(prop_dtu,10,0)))) +
       ggplot2::labs(x="Ratio A1/A2 fold-change (2^x)", y = "Proportion of A1") +
       ggplot2::scale_color_manual(values=c("blue", "cyan", "lightblue", "red")) +
       ggplot2::geom_point() + 

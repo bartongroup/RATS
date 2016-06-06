@@ -72,7 +72,8 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                                      "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                                      "pval_AB"=NA_real_, "pval_BA"=NA_real_,
                                      "pval_AB_corr"=NA_real_, "pval_BA_corr"=NA_real_,
-                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA, "pprop_corr"=NA_real_, "prop_dtu"=NA),
+                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA, 
+                                     "pprop_corr"=NA_real_, "prop_dtu"=NA),
                   "Transcripts"=data.table("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
                                            "prop_A"=NA_real_, "prop_B"=NA_real_,   # proportion of sums across replicates
                                            "sum_A"=NA_real_, "sum_B"=NA_real_,     # sum across replicates of means across bootstraps
@@ -99,21 +100,21 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   results$Transcripts[actual_targets, prop_B := sum_B/sum(sum_B), by=parent_id]
   progress <- update_progress(progress)
 
-  # P values, only for parents and targets that survived filtering.
-  # Compare B counts to A ratios:
-  results$Genes[actual_parents, pval_AB := sapply(actual_targets_by_parent, function(targets)
-                                                  g.test(results$Transcripts[targets, sum_B],
-                                                         p=results$Transcripts[targets, prop_A])[["p.value"]])]
-  results$Genes[, pval_AB_corr := p.adjust(pval_AB, method=correction)]
-  results$Genes[, dtu_AB := pval_AB_corr < p_thresh]
-  # Compare A counts to B ratios:
-  results$Genes[actual_parents, pval_BA := sapply(actual_targets_by_parent, function(targets)
-                                                  g.test(results$Transcripts[targets, sum_A],
-                                                         p=results$Transcripts[targets, prop_B])[["p.value"]])]
-  results$Genes[, pval_BA_corr := p.adjust(pval_BA, method=correction)]
-  results$Genes[, dtu_BA := pval_BA_corr < p_thresh]
-  # Find the agreements.
-  results$Genes[, dtu := dtu_AB & dtu_BA ]
+#   # P values, only for parents and targets that survived filtering.
+#   # Compare B counts to A ratios:
+#   results$Genes[actual_parents, pval_AB := sapply(actual_targets_by_parent, function(targets)
+#                                                   g.test(results$Transcripts[targets, sum_B],
+#                                                          p=results$Transcripts[targets, prop_A])[["p.value"]])]
+#   results$Genes[, pval_AB_corr := p.adjust(pval_AB, method=correction)]
+#   results$Genes[, dtu_AB := pval_AB_corr < p_thresh]
+#   # Compare A counts to B ratios:
+#   results$Genes[actual_parents, pval_BA := sapply(actual_targets_by_parent, function(targets)
+#                                                   g.test(results$Transcripts[targets, sum_A],
+#                                                          p=results$Transcripts[targets, prop_B])[["p.value"]])]
+#   results$Genes[, pval_BA_corr := p.adjust(pval_BA, method=correction)]
+#   results$Genes[, dtu_BA := pval_BA_corr < p_thresh]
+#   # Find the agreements.
+#   results$Genes[, dtu := dtu_AB & dtu_BA ]
   
   # Try with prop.test
   # For now just plonk in proportions, but better to use actual counts
