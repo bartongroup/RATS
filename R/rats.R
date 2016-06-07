@@ -1,19 +1,19 @@
 #================================================================================
 #' Calculate differential transcript usage.
 #'
-#' @param sleuth_data A sleuth object
-#' @param transcripts A dataframe matching the transcript IDs to their corresponding gene IDs.
-#' @param name_A The sleuth name for one condition.
-#' @param name_B The sleuth name for the other condition.
-#' @param varname The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.
-#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.
-#' @param correction p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
-#' @param p_thresh p-value threshold, default 0.05.
-#' @param TARGET_ID The name of the transcript id column in transcripts object, default \code{"target_id"}
-#' @param PARENT_ID The name of the parent id column in transcripts object, default \code{"parent_id"}.
-#' @param BS_TARGET_ID The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.
-#' @param verbose Whether to progress updates, default \code{FALSE}.
-#' @return List of data frames, with gene-level and transcript-level information.
+#' @param sleuth_data A sleuth object.
+#' @param transcripts A dataframe matching the transcript identifiers to their corresponding gene identifiers.
+#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
+#' @param counts_col The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
+#' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
+#' @param p_thresh The p-value threshold, default 0.05.
+#' @param TARGET_ID The name of the transcript identifier column in the transcripts object, default \code{"target_id"}
+#' @param PARENT_ID The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.
+#' @param BS_TARGET_ID The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
+#' @param verbose Display progress updates, default \code{FALSE}.
+#' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @export
 #' @import data.table
