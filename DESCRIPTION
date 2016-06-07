@@ -5,15 +5,15 @@ Version: 0.1
 Date: 2016-05-11
 Author: Kira Mourao, Kimon Froussios, Nick Schurch
 Maintainer: Nick SChurch <n.schurch@dundee.ac.uk>
-Description: Given a Sleuth output object, this package identifies genes where differential transcript usage occurs.
-License: Creative Commons Attribution
+Description: Given a Sleuth output object and a transcript-to-gene index of identifiers, this package identifies genes where differential transcript usage occurs.
+License: Creative Commons Attribution (CC BY)
 LazyData: TRUE
 Suggests:
     testthat,
     wasabi,
-    biomaRt
+    biomaRt,
+    sleuth
 RoxygenNote: 5.0.1
 Imports:
     matrixStats,
-    sleuth,
     data.table
