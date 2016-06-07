@@ -1,10 +1,3 @@
----
-title: "README"
-author: "NS, KF, KM"
-date: "7 June 2016"
-output: html_document
----
-
 # Relative Abundance of Transcripts (rats)
 
 ## Description
