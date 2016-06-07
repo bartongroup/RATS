@@ -15,7 +15,7 @@ Detecting DTU is supplementary to the quantification of transcripts by tools lik
 
 As input it requires an R object similar to the output of [sleuth](http://pachterlab.github.io/sleuth/). It also requires an index table matching transcript identifiers to respective gene identifiers.
 
-The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) available through CRAN.
+The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html), both available through CRAN.
 
 ## Who it is by
 
@@ -35,7 +35,7 @@ install.packages("data.table")
 install.packages("matrixStats")
 ```
 
-Eventually we hope to make it available through [Bioconductor](https://bioconductor.org/). Instructions on how to install packages through Bioconductor can be found on the [Bioconductor installation guide](https://www.bioconductor.org/install/). Installing thorugh Bioconductor should take care of dependencies automatically.
+Eventually we hope to make it available through [Bioconductor](https://bioconductor.org/). Instructions on how to install packages through Bioconductor can be found on the [Bioconductor installation guide](https://www.bioconductor.org/install/). Installing through Bioconductor should take care of dependencies automatically.
 
 
 ## Loading and using rats
@@ -54,7 +54,7 @@ library("path/to/rats")
 
 ## Detecting Differential Transcript Usage
 
-First we will need a sleuth object containing the transcript abundance estimate data. The input format recognized is the the output of
+First we will need a sleuth object containing the transcript abundance estimate data. The input format recognized is the output of
 [sleuth](http://pachterlab.github.io/sleuth/). See the [introduction to sleuth](https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how to load the transcript abundance estimate data from [kallisto](https://pachterlab.github.io/kallisto/) into a sleuth object, and see the [wasabi](https://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance estimate data from   [Sailfish](https://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) into a sleuth object.
 
 For our example we will call our sleuth object, `so`. 
@@ -86,7 +86,7 @@ plotGeneDTU(DTU, "geneid", nreps=7, ptype="proportion")
 
 where `geneid` is the parent_id that identifies the gene and `nreps` is the number of biological replicates in the study.
 
-More visualization option may be made available in the future. Suggestions are welcome!
+More visualization options may be made available in the future. Suggestions are welcome!
 
 ## Example data
 
