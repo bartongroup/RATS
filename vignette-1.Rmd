@@ -1,0 +1,68 @@
+---
+title: "vignette-1"
+author: "KF"
+date: "7 June 2016"
+output: html_document
+runtime: shiny
+---
+
+# Relative Abundance of Transcripts (rats)
+
+## Example 1: Syntax
+
+First let's create some input. For this example we'll use the bundled data simulator. This frees us from the need to find real data and have sleuth and kallisto (or wasabi, salmon, sailfish) installed and available and allows us to focus on syntax and output structure.  
+
+The data simulator was created to help us understand the detection thresholds of different decision mechanisms, over a broad range of possible transcript abundance scenarios. The data generated has two transcripts for each gene. In a different example we'll demonstrate how **rats** handles more realistic cases.  
+
+First, _load the package_ (assuming it has been installed, as instructed in the README). 
+
+```{r}
+library("rats")
+```
+
+_Simulate some data_. The parameters of the simulation set up the range of abundance values for the data. More details on them are not relevant to this example. The values used here create a small dataset with the absolute minimum format needed by the package.
+
+```{r}
+simdat <- rangedat_gen(propfrom = 0, propto = 1, propby = 0.2,
+                       magfrom = 1, magto = 2, magby = 1,
+                       foldfrom = 0, foldto = 1, foldby = 1)
+```
+
+Feel free to explore the contents of simdad:
+
+```{r}
+summary(simdat)
+summary(simdat$data)  # Bear in mind it is a minimal object. A real sleuth has a lot more stuff in it.
+```
+
+```{r}
+simdat$data$sample_to_covariates  # Names of the samples and conditions.
+head(simdat$data$kal[[1]]$bootstrap[[1]])  # Transcript abundance estimates.
+```
+
+```{r}
+head(simdat$anno)  # Transcript ID to gene ID correspondence.
+```
+
+The transcript and gene identifiers look weird, but remember it is simulated data. The identifiers are synthetic and represent the parameters used in creating each transcript. In a real scenario, these would be Ensembl identifiers or similar.  
+
+Now we're ready to run the DTU detection:
+
+```{r}
+mydtu <- calculate_DTU(simdat$data, simdat$anno, "A", "B")
+```
+
+A and B are the names for the two conditions being compared, as you saw when displaying the `sample_to_covariates` table earlier.  
+
+Let's view the results (more about the returned fields and values in a following example, with more realistic data):
+
+```{r}
+mydtu$Parameters
+View(mydtu$Genes)
+View(mydtu$Transcripts)
+```
+
+In the `Transcripts` table you get the identifier of the transcript and the gene, the proportion of the gene expression represented by that transcript in each of the two conditions A and B, as well as some descriptive statistics (sum, mean, variance) of each transcript's abundance across replicates in each of the two conditions. You also get the p-value of the proportion test for each transcript between the two conditions.
+
+In the `Genes` table you get the identifier of the gene, the number of transcripts encountered in the annotation table, the number of transcripts that can be used for DTU (must be >2 with non-zero abundance in at least one of the conditions), the p-values and corrected for multiple testing p-values of the G test of both A vs. B and B vs. A, the vedict of DTU of either comparison, the verdict of DTU requiring both comparisons to be significant. Alternatively you also get the pvalue of the least significant proportion test of the gene's transcripts and the corresponding DTU verdict.
+
