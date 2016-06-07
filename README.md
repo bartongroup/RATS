@@ -2,23 +2,23 @@
 
 ## Description
 
-### Who it is for
+#### Who it is for
 
 Anyone working in transcriptomics, analyzing gene expression and transcript abundancies.
 
-### What it does
+#### What it does
 
 It provides a method to detect changes in the relative abundance of the alternative transcripts (isomorphs) of genes. This is called **Differential Transcript Usage (DTU)**.  
 
 Detecting DTU is supplementary to the quantification of transcripts by tools like [salmon](http://combine-lab.github.io/salmon/), [sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) and [kallisto](http://pachterlab.github.io/kallisto/) and the detection of Differential Transcript Expression (DTE) by tools such as [sleuth](http://pachterlab.github.io/sleuth/).
 
-### What it needs
+#### What it needs
 
 As input it requires an R object similar to the output of [sleuth](http://pachterlab.github.io/sleuth/). It also requires an index table matching transcript identifiers to respective gene identifiers.  
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, both available through CRAN.
 
-### Who it is by
+#### Who it is by
 
 The rats R package was developed by members of [The Barton Group] (http://www.compbio.dundee.ac.uk) at [The University of Dundee] (http://www.dundee.ac.uk).
 
@@ -56,7 +56,7 @@ or
 library("path/to/rats")
 ```
 
-### Detecting Differential Transcript Usage
+### Detecting Differential Transcript Usage with rats
 
 First we will need a sleuth object containing the transcript abundance estimate data. The input format recognized is the output of
 [sleuth](http://pachterlab.github.io/sleuth/). See the [introduction to sleuth](https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how to load the transcript abundance estimate data from [kallisto](https://pachterlab.github.io/kallisto/) into a sleuth object, and see the [wasabi](https://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance estimate data from   [Sailfish](https://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) into a sleuth object.
@@ -80,7 +80,7 @@ The output is a List object with three elements:
 2. `Genes`: A data table summarising the identified DTU at the gene level.
 3. `Transcripts`: A data table containing the transcript level evidence that was used to compute the DTU.
 
-### Examining the results
+### Examining the results of rats
 
 With the DTU object calculated, the DTU results for the transcripts associated with a given gene can be investigated graphically with:
 
@@ -92,7 +92,7 @@ where `geneid` is the parent_id that identifies the gene and `nreps` is the numb
 
 More visualization options may be made available in the future. Suggestions are welcome!
 
-### Example data
+### Example data for rats
 
 Example input and output structures are provided in the `data` subdirectory. They should be automatically loaded when requested by name (without the .rda file extension). Otherwise try loading them explicitly:
 
@@ -100,7 +100,7 @@ Example input and output structures are provided in the `data` subdirectory. The
 load("path/to/file.rda")
 ```
 
-### Documentation
+### Documentation for rats
 
 Documentation for the package's functions can be obtained in the standard R way, for example:
 
