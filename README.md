@@ -57,11 +57,10 @@ library("path/to/rats")
 First we will need a sleuth object containing the transcript abundance estimate data. The input format recognized is the output of
 [sleuth](http://pachterlab.github.io/sleuth/). See the [introduction to sleuth](https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how to load the transcript abundance estimate data from [kallisto](https://pachterlab.github.io/kallisto/) into a sleuth object, and see the [wasabi](https://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance estimate data from   [Sailfish](https://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) into a sleuth object.
 
-For our example we will call our sleuth object, `so`. 
-
 We will also need a data frame that maps the transcript IDs to their parent gene IDs. This needs to have at least two variables - `target_id` and `parent_id` - but can also contain other annotation variable as well (which will be ignored by the current implementation).
 It is also possible to specify different column names. Each row must represent one transcript and provide a `target_id` and a `parent_id` for it.
 
+For our example we will call our sleuth object `so` and the identifiers table `t2g`. 
 With our annotation data and our sleuth object defined, calling DTU on this data is then as easy as:
 
 ```r
