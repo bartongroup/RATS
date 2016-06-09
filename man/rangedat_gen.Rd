@@ -6,19 +6,16 @@
 systematically covering a broad range of proportions, magnitudes and fold-changes.}
 \usage{
 rangedat_gen(propfrom = 0, propto = 1, propby = 0.01, magfrom = 0,
-  magto = 3, magby = 0.25, foldfrom = 0, foldto = 7, foldby = 0.1)
+  magto = 3, magby = 0.25, foldfrom = 0, foldto = 10, foldby = 1)
 }
 \arguments{
 \item{propfrom, }{propto, propby: Range and step of proportions for 1st transcript. Sibling transcript complemented from these.}
 
 \item{magfrom, }{magto, magby: Range of count magnitudes, in powers of 10.}
 
-\item{foldfrom, }{foldto, foldby: Range of transcript ratio fold changes, in powers of 2.}
+\item{foldfrom, }{foldto, foldby: Range of transcript ratio fold changes.}
 }
 \value{
-sleuth-like object. Contains \code{"kal"} ans \code{"bootstrap"} with the simulated data and the non-sleuth 
-        \code{"rangesim"} with the simulation details.
-
 list containing: \code{data} a minimal sleuth-like object.
                          \code{anno} a dataframe matching \code{target_id} to \code{parent_id}.
                          \code{sim} a list of dataframes with the simulation parameters per transcript per condition.
