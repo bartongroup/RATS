@@ -173,10 +173,10 @@ plot_sim <- function(data, type = 1) {
 #'                          \code{sim} a dataframe with the simulation parameters per transcript.
 #'
 #' @export
-countrange_sim <- function(propfrom=0, propto=1, propby=0.01,
+countrange_sim <- function(proportions=seq(0, 1, 0.01),
                       magnitudes=c(1,5,10,30,100,500,1000)) {
   # Range of proportions.
-  proportions <- seq(from=propfrom, to=propto, by=propby)
+  proportions <- 
   
   # Combine proportions and magnitudes.
   # Start by grid-ing the values for easier visualization and naming, instead of computing the outer products directly.
@@ -225,7 +225,7 @@ countrange_sim <- function(propfrom=0, propto=1, propby=0.01,
 combine_sim2_dtu <- function(sim, dtu) {
   results <- data.table::data.table(dtu$Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu, pprop_corr, prop_dtu)])
   setkey(results, parent_id)
-  tmp <- data.table::data.table(sim$sim[, c("parent_id", "propA", "mag", "propB")])
+  tmp <- data.table::data.table(sim$sim[sim$sim["sibl"]=="t2", c("parent_id", "propA", "mag", "propB")])
   setkey(tmp, parent_id)
   results <- merge(results, tmp, by="parent_id")
   return(results)
@@ -240,16 +240,28 @@ combine_sim2_dtu <- function(sim, dtu) {
 #' 
 #' @export
 plot_sim2 <- function(data, type = "AvBvM") {
+  
   if(type =="AvBvM"){
-    ggplot2::ggplot(data, ggplot2::aes(x=propA, y=propB, color=dtu)) +
-      ggplot2::labs(x="Prop in A", y = "Prop in B") +
-      ggplot2::scale_color_manual(values=c("blue","red")) +
+    ggplot2::ggplot(data[order(dtu, propA, propB), ], ggplot2::aes(x=propA, y=propB, color=dtu)) +
+      ggplot2::labs(x="Prop t1 in A", y = "Prop t1 in B") +
+      ggplot2::scale_color_manual(values=c("lightblue","red")) +
       ggplot2::geom_point() + 
       ggplot2::facet_grid(. ~ mag)
   } else if(type == "A/BvM") {
-    ggplot2::ggplot(data, ggplot2::aes(x=propB/propA, y=mag, color=pval_AB)) +
-      ggplot2::labs(x="Prop in B / Prop in A", y = "Magnitude (log10)") +
-      ggplot2::scale_color_manual(values=c("blue","red")) +
+    ggplot2::ggplot(data[order(dtu, mag), ], ggplot2::aes(x=propB/propA, y=mag, color=dtu)) +
+      ggplot2::labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
+      ggplot2::scale_color_manual(values=c("lightblue","red")) +
+      ggplot2::geom_point()
+  } else if(type =="AvBvMprop"){
+    ggplot2::ggplot(data[order(dtu, propA, propB), ], ggplot2::aes(x=propA, y=propB, color=prop_dtu)) +
+      ggplot2::labs(x="Prop t1 in A", y = "Prop t1 in B") +
+      ggplot2::scale_color_manual(values=c("lightblue","red")) +
+      ggplot2::geom_point() + 
+      ggplot2::facet_grid(. ~ mag)
+  } else if(type == "A/BvMprop") {
+    ggplot2::ggplot(data[order(dtu, mag), ], ggplot2::aes(x=propB/propA, y=mag, color=prop_dtu)) +
+      ggplot2::labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
+      ggplot2::scale_color_manual(values=c("lightblue","red")) +
       ggplot2::geom_point()
   }
 }
