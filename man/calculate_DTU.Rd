@@ -10,32 +10,38 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
   BS_TARGET_ID = "target_id", verbose = FALSE)
 }
 \arguments{
-\item{sleuth_data}{A sleuth object}
+\item{sleuth_data}{A sleuth object.}
 
-\item{transcripts}{A dataframe matching the transcript IDs to their corresponding gene IDs.}
+\item{transcripts}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
 
+<<<<<<< HEAD
 \item{name_A}{The sleuth name for one condition.}
 
 \item{name_B}{The sleuth name for the other condition.}
+=======
+\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
 
-\item{varname}{The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.}
+\item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
+>>>>>>> master
 
-\item{counts_col}{The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.}
+\item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.}
 
-\item{correction}{p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
+\item{counts_col}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
 
-\item{p_thresh}{p-value threshold, default 0.05.}
+\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
 
-\item{TARGET_ID}{The name of the transcript id column in transcripts object, default \code{"target_id"}}
+\item{p_thresh}{The p-value threshold, default 0.05.}
 
-\item{PARENT_ID}{The name of the parent id column in transcripts object, default \code{"parent_id"}.}
+\item{TARGET_ID}{The name of the transcript identifier column in the transcripts object, default \code{"target_id"}}
 
-\item{BS_TARGET_ID}{The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.}
+\item{PARENT_ID}{The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.}
 
-\item{verbose}{Whether to update progress updates, default \code{FALSE}.}
+\item{BS_TARGET_ID}{The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.}
+
+\item{verbose}{Display progress updates, default \code{FALSE}.}
 }
 \value{
-List of data frames, with gene-level and transcript-level information.
+List of data tables, with gene-level and transcript-level information.
 }
 \description{
 Calculate differential transcript usage.

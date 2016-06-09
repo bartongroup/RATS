@@ -1,19 +1,19 @@
 #================================================================================
 #' Calculate differential transcript usage.
 #'
-#' @param sleuth_data A sleuth object
-#' @param transcripts A dataframe matching the transcript IDs to their corresponding gene IDs.
-#' @param name_A The sleuth name for one condition.
-#' @param name_B The sleuth name for the other condition.
-#' @param varname The sleuth name of the covariate to which the two conditions belong, default \code{"condition"}.
-#' @param counts_col The sleuth column to use for the calculation (est_counts or tpm), default \code{"est_counts"}.
-#' @param correction p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
-#' @param p_thresh p-value threshold, default 0.05.
-#' @param TARGET_ID The name of the transcript id column in transcripts object, default \code{"target_id"}
-#' @param PARENT_ID The name of the parent id column in transcripts object, default \code{"parent_id"}.
-#' @param BS_TARGET_ID The name of the transcript id column in sleuth bootstrap tables, default \code{"target_id"}.
-#' @param verbose Whether to update progress updates, default \code{FALSE}.
-#' @return List of data frames, with gene-level and transcript-level information.
+#' @param sleuth_data A sleuth object.
+#' @param transcripts A dataframe matching the transcript identifiers to their corresponding gene identifiers.
+#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
+#' @param counts_col The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
+#' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
+#' @param p_thresh The p-value threshold, default 0.05.
+#' @param TARGET_ID The name of the transcript identifier column in the transcripts object, default \code{"target_id"}
+#' @param PARENT_ID The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.
+#' @param BS_TARGET_ID The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
+#' @param verbose Display progress updates, default \code{FALSE}.
+#' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @export
 #' @import data.table
@@ -30,6 +30,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   # Set up progress bar
   progress <- init_progress(verbose)
 
+<<<<<<< HEAD
   # Look-up from target_id to parent_id.
   targets <- data.table("target_id"=transcripts[[TARGET_ID]], "parent_id"=transcripts[[PARENT_ID]])
   setkey(targets, target_id)
@@ -49,11 +50,32 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, targets, counts_col, BS_TARGET_ID))
   progress <- update(progress)
   
+=======
+  # Look-up from parent_id to target_id
+  targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
+  progress <- update_progress(progress)
+
+  # Identify genes with a single transcript. Order by gene ID and transcript ID.
+  tx_filter <- transcripts[order(transcripts[[PARENT_ID]], transcripts[[TARGET_ID]]), ]
+  tx_filter["has_siblings"] <- TRUE
+  progress <- update_progress(progress)
+
+  # Reverse look-up from replicates to covariates.
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
+  progress <- update_progress(progress)
+
+  # build list of dataframes, one for each condition
+  # each dataframe contains filtered and correctly ordered mean counts per sample from the bootstraps
+  count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
+  progress <- update_progress(progress)
+
+>>>>>>> master
   # remove entries which are entirely 0 across all conditions
   nonzero <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
   count_data <- lapply(count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
-  progress <- update(progress)
+  progress <- update_progress(progress)
 
+<<<<<<< HEAD
   # Which IDs am I actually working with after the 0-count filters?
   actual_targets <- targets[rownames(count_data[[name_A]])]
   setkey(actual_targets, target_id)
@@ -67,6 +89,19 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   setkey(parent_in_actual, parent_id)
   progress <- update(progress)
   
+=======
+  # Which IDs am I actually working with after the filters?
+  actual_targets <- rownames(count_data[[name_A]])
+  actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
+  actual_txs <- transcripts[transcripts[[TARGET_ID]] %in% actual_targets,]
+  actual_targets_by_parent <- (split(as.matrix(actual_txs[TARGET_ID]), actual_txs[[PARENT_ID]]))[actual_parents]
+
+  # Reject parents that now are left with a single child, as g.test() won't accept them.
+  actual_targets_by_parent <- actual_targets_by_parent[sapply(actual_targets_by_parent, function(targets) length(targets) > 1)]
+  actual_parents <- names(actual_targets_by_parent)
+  progress <- update_progress(progress)
+
+>>>>>>> master
   # Pre-allocate output structure.
   results <- list("Parameters"=list("var_name"=varname, "cond_A"=name_A, "cond_B"=name_B,
                                     "replicates_A"=dim(count_data[[name_A]])[2], "replicates_B"=dim(count_data[[name_B]])[2],
@@ -75,6 +110,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                                      "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                                      "pval_AB"=NA_real_, "pval_BA"=NA_real_,
                                      "pval_AB_corr"=NA_real_, "pval_BA_corr"=NA_real_,
+<<<<<<< HEAD
                                      "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA),
                   "Transcripts"=data.table("target_id"=targets$target_id, "parent_id"=targets$parent_id,
                                            "prop_A"=NA_real_, "prop_B"=NA_real_,   # proportion of sums across replicates
@@ -95,11 +131,35 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   results$Transcripts[actual_targets$target_id, stdev_A :=  sqrt(matrixStats::rowVars(as.matrix(count_data[[name_A]])))]
   results$Transcripts[actual_targets$target_id, stdev_B :=  sqrt(matrixStats::rowVars(as.matrix(count_data[[name_B]])))]
   progress <- update(progress)
+=======
+                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA, 
+                                     "pprop_corr"=NA_real_, "prop_dtu"=NA),
+                  "Transcripts"=data.table("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
+                                           "prop_A"=NA_real_, "prop_B"=NA_real_,   # proportion of sums across replicates
+                                           "sum_A"=NA_real_, "sum_B"=NA_real_,     # sum across replicates of means across bootstraps
+                                           "mean_A"=NA_real_, "mean_B"=NA_real_,   # mean across replicates of means across bootstraps
+                                           "var_A"=NA_real_, "var_B"=NA_real_,     # var across replicates of means across bootstraps
+                                           "pprop"=NA_real_, "pprop_corr"=NA_real_))                      # pvalue for prop.test
+  setkey(results$Genes, parent_id)
+  setkey(results$Transcripts, target_id)
+  results$Genes[, known_transc := sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
+  results$Genes[, usable_transc := sapply(results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
+  progress <- update_progress(progress)
+
+  # Statistics per transcript across all bootstraps per condition, for filtered targets only.
+  results$Transcripts[actual_targets, sum_A :=  rowSums(count_data[[name_A]])]
+  results$Transcripts[actual_targets, sum_B :=  rowSums(count_data[[name_B]])]
+  results$Transcripts[actual_targets, mean_A :=  rowMeans(count_data[[name_A]])]
+  results$Transcripts[actual_targets, mean_B :=  rowMeans(count_data[[name_B]])]
+  results$Transcripts[actual_targets, var_A :=  matrixStats::rowVars(as.matrix(count_data[[name_A]]))]
+  results$Transcripts[actual_targets, var_B :=  matrixStats::rowVars(as.matrix(count_data[[name_B]]))]
+  progress <- update_progress(progress)
+>>>>>>> master
 
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
-  results$Transcripts[, prop_A := sum_A/sum(sum_A), by=parent_id]
-  results$Transcripts[, prop_B := sum_B/sum(sum_B), by=parent_id]
-  progress <- update(progress)
+  results$Transcripts[actual_targets, prop_A := sum_A/sum(sum_A), by=parent_id]
+  results$Transcripts[actual_targets, prop_B := sum_B/sum(sum_B), by=parent_id]
+  progress <- update_progress(progress)
 
   # P values, only for parents and targets that survived filtering.
   # Compare B counts to A ratios:
@@ -116,7 +176,20 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   results$Genes[, dtu_BA := pval_BA_corr < p_thresh]
   # Find the agreements.
   results$Genes[, dtu := dtu_AB & dtu_BA ]
-  progress <- update(progress)
+  
+  # Try with prop.test
+  # For now just plonk in proportions, but better to use actual counts
+  results$Transcripts[actual_targets, pprop:= unlist(lapply(actual_targets, function(target) 
+    prop.test(x=c(results$Transcripts[target, prop_A]*100, 
+                  results$Transcripts[target, prop_B]*100), n=c(100,100), correct=TRUE)[["p.value"]]))]
+  results$Transcripts[actual_targets, pprop_corr:= p.adjust(results$Transcripts[actual_targets, pprop], method=correction)]
+  
+  # Fish out the lowest corrected p-value per gene, and threshold for dtu result
+  actual_targets <- stack(actual_targets_by_parent)[1] 
+  results$Genes[actual_parents, pprop_corr := results$Transcripts[actual_targets, min(pprop_corr), by="parent_id"] [[2]] ]
+  results$Genes[,prop_dtu := pprop_corr < p_thresh]
+
+  progress <- update_progress(progress)
 
   return(results)
 }
