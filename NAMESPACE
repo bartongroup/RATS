@@ -6,10 +6,7 @@ export(combine_sim_dtu)
 export(countrange_sim)
 export(gen_example_sleuth)
 export(plotGeneDTU)
-<<<<<<< HEAD
-=======
 export(plot_sim)
 export(plot_sim2)
->>>>>>> master
 export(rangedat_gen)
 import(data.table)
