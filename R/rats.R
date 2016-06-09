@@ -23,14 +23,15 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                           TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id",
                           verbose=FALSE, threads=parallel::detectCores())
 {
+  # Set up progress bar
+  progress <- init_progress(verbose)
+  
   # Input checks.
+  progress <- update_progress(progress)
   threads <- as.integer(threads)  # Plain numbers default to double, unless integer R syntax is explicitly used.
   paramcheck <- parameters_good(sleuth_data, transcripts, name_A, name_B, varname, counts_col,
                                 correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose, threads)
   if (paramcheck$error) stop(paramcheck$message)
-  
-  # Set up progress bar
-  progress <- init_progress(verbose)
   
   # Initialize workers cluster.
   singleT <- (threads == 1)
@@ -38,29 +39,29 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
     wcl <- parallel::makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
   
   # Look-up from parent_id to target_id
-  targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
   progress <- update_progress(progress)
+  targets_by_parent <- split(as.matrix(transcripts[TARGET_ID]), transcripts[[PARENT_ID]])
   
   # Identify genes with a single transcript. Order by gene ID and transcript ID.
+  progress <- update_progress(progress)
   tx_filter <- transcripts[order(transcripts[[PARENT_ID]], transcripts[[TARGET_ID]]), ]
   tx_filter["has_siblings"] <- TRUE
-  progress <- update_progress(progress)
   
   # Reverse look-up from replicates to covariates.
-  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
   progress <- update_progress(progress)
+  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
   
   # build list of dataframes, one for each condition
   # each dataframe contains filtered and correctly ordered mean counts per sample from the bootstraps
+  progress <- update_progress(progress)
   if (singleT) {
     count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
   } else {
     count_data <- parallel::parLapply(wcl, samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
   }
   
-  progress <- update_progress(progress)
-  
   # remove entries which are entirely 0 across all conditions
+  progress <- update_progress(progress)
   if (singleT) {
     nonzero <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
     count_data <- lapply(count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
@@ -68,9 +69,9 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
     nonzero <-  parallel::parLapply(wcl, count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
     count_data <- parallel::parLapply(wcl, count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
   }
-  progress <- update_progress(progress)
   
   # Which IDs am I actually working with after the filters?
+  progress <- update_progress(progress)
   actual_targets <- rownames(count_data[[name_A]])
   actual_parents <- levels(as.factor(tx_filter[[PARENT_ID]][match(actual_targets, tx_filter[[TARGET_ID]])]))
   actual_txs <- transcripts[transcripts[[TARGET_ID]] %in% actual_targets,]
@@ -83,9 +84,9 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
     actual_targets_by_parent <- actual_targets_by_parent[parallel::parSapply(wcl, actual_targets_by_parent, function(targets) length(targets) > 1)]
   }
   actual_parents <- names(actual_targets_by_parent)
-  progress <- update_progress(progress)
   
   # Pre-allocate output structure.
+  progress <- update_progress(progress)
   results <- list("Parameters"=list("var_name"=varname, "cond_A"=name_A, "cond_B"=name_B,
                                     "replicates_A"=dim(count_data[[name_A]])[2], "replicates_B"=dim(count_data[[name_B]])[2],
                                     "p_thresh"=p_thresh),
@@ -110,23 +111,22 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
     results$Genes[, known_transc := parallel::parSapply(wcl, results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
     results$Genes[, usable_transc := parallel::parSapply(wcl, results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
   }
-  progress <- update_progress(progress)
   
   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
+  progress <- update_progress(progress)
   results$Transcripts[actual_targets, sum_A :=  rowSums(count_data[[name_A]])]
   results$Transcripts[actual_targets, sum_B :=  rowSums(count_data[[name_B]])]
   results$Transcripts[actual_targets, mean_A :=  rowMeans(count_data[[name_A]])]
   results$Transcripts[actual_targets, mean_B :=  rowMeans(count_data[[name_B]])]
   results$Transcripts[actual_targets, var_A :=  matrixStats::rowVars(as.matrix(count_data[[name_A]]))]
   results$Transcripts[actual_targets, var_B :=  matrixStats::rowVars(as.matrix(count_data[[name_B]]))]
-  progress <- update_progress(progress)
   
   # Proportions = sum of tx / sum(sums of all related txs), for filtered targets only.
   results$Transcripts[actual_targets, prop_A := sum_A/sum(sum_A), by=parent_id]
   results$Transcripts[actual_targets, prop_B := sum_B/sum(sum_B), by=parent_id]
-  progress <- update_progress(progress)
   
   # P values, only for parents and targets that survived filtering.
+  progress <- update_progress(progress)
   if (singleT) {
     # Compare B counts to A ratios:
     results$Genes[actual_parents, pval_AB := sapply(actual_targets_by_parent, function(targets)
@@ -171,11 +171,10 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   results$Genes[actual_parents, pprop_corr := results$Transcripts[actual_targets, min(pprop_corr), by="parent_id"] [[2]] ]
   results$Genes[,prop_dtu := pprop_corr < p_thresh]
   
-  progress <- update_progress(progress)
-  
   # Dismiss workers.
   stopCluster(wcl)
   
+  progress <- update_progress(progress)
   return(results)
 }
 
@@ -318,17 +317,18 @@ parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varna
 #'
 init_progress <- function(on)
 {
-  progress_steps <- data.frame(c(10,20,30,40,50,60,70,80,90,100),
-                               c("Mapped genes to target targets",
-                                 "Identified genes with multiple transcripts",
-                                 "Grouped samples by condition",
-                                 "Extracted counts from bootstraps",
-                                 "Removed all-zero count cases",
-                                 "Allocated output structure",
-                                 "Identified genes and transcripts represented in the data",
-                                 "Calculated counts statistics",
-                                 "Calculated transcript proportions",
-                                 "Calculated p-values"),
+  progress_steps <- data.frame(c(1, 3, 6, 8, 10, 20, 25, 27, 30, 35, 100),
+                               c("Checking parameters...",
+                                 "Mapping genes to transcripts...",
+                                 "Identifying genes with multiple transcripts...",
+                                 "Grouping samples by condition...",
+                                 "Extracting counts from bootstraps...",
+                                 "Removing all-zero count cases...",
+                                 "Allocating output structure...",
+                                 "Identifying genes and transcripts represented in the data...",
+                                 "Calculating counts statistics...",
+                                 "Calculating p-values...",
+                                 "All done!"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)
   return(progress)

@@ -113,7 +113,7 @@ Documentation for the package's functions can be obtained in the standard R way,
 
 For further information or assistance with this repository please contact one of the authors (accurate as of June 2016):
 
-* Nick Schurch: <nschurch@dundee.ac.uk>
+* Nick Schurch: <n.schurch@dundee.ac.uk>
 * Kimon Froussios: <k.froussios@dundee.ac.uk>
 * Kira Mourao <k.mourao@dundee.ac.uk>
 * Geoff Barton: <gjbarton@dundee.ac.uk>
