@@ -7,22 +7,17 @@
 calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
   counts_col = "est_counts", correction = "BH", p_thresh = 0.05,
   TARGET_ID = "target_id", PARENT_ID = "parent_id",
-  BS_TARGET_ID = "target_id", verbose = FALSE)
+  BS_TARGET_ID = "target_id", verbose = FALSE,
+  threads = parallel::detectCores())
 }
 \arguments{
 \item{sleuth_data}{A sleuth object.}
 
 \item{transcripts}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
 
-<<<<<<< HEAD
-\item{name_A}{The sleuth name for one condition.}
-
-\item{name_B}{The sleuth name for the other condition.}
-=======
 \item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
 
 \item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
->>>>>>> master
 
 \item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.}
 
@@ -39,6 +34,8 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 \item{BS_TARGET_ID}{The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.}
 
 \item{verbose}{Display progress updates, default \code{FALSE}.}
+
+\item{threads}{Enable parallel processing. Defaults to the value returned by parallel::detectCores(). Try setting to 1 if you are having issues.}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.
