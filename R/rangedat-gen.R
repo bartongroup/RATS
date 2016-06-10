@@ -94,13 +94,13 @@ plot_sim <- function(data, type = "AvBvM") {
       ggplot2::scale_color_manual(values=c("lightblue","red")) +
       ggplot2::geom_point()
   } else if(type =="AvBvMprop"){
-    ggplot2::ggplot(data[order(dtu, propA, propB), ], ggplot2::aes(x=propA, y=propB, color=dtu_prop)) +
+    ggplot2::ggplot(data[order(dtu_prop, propA, propB), ], ggplot2::aes(x=propA, y=propB, color=dtu_prop)) +
       ggplot2::labs(x="Prop t1 in A", y = "Prop t1 in B") +
       ggplot2::scale_color_manual(values=c("lightblue","red")) +
       ggplot2::geom_point() + 
       ggplot2::facet_grid(. ~ mag)
   } else if(type == "A/BvMprop") {
-    ggplot2::ggplot(data[order(dtu, mag), ], ggplot2::aes(x=propB/propA, y=mag, color=dtu_prop)) +
+    ggplot2::ggplot(data[order(dtu_prop, mag), ], ggplot2::aes(x=propB/propA, y=mag, color=dtu_prop)) +
       ggplot2::labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
       ggplot2::scale_color_manual(values=c("lightblue","red")) +
       ggplot2::geom_point()

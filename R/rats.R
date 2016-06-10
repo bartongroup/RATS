@@ -160,13 +160,13 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update_progress(progress)
   # Proportion test.
   if (singleT) {
-    results$Transcripts[actual_targets, pprop:= unlist(lapply(actual_targets, function(target) 
+    results$Transcripts[actual_targets, pval_prop:= unlist(lapply(actual_targets, function(target) 
       prop.test(x=c(results$Transcripts[target, sum_A], results$Transcripts[target, sum_B]), 
                 n=c(results$Transcripts[target, total_A], results$Transcripts[target, total_B]), 
                 correct=TRUE
             )[["p.value"]] )) ]
   } else {
-    results$Transcripts[actual_targets, pprop:= unlist(parallel::parLapply(wcl, actual_targets, function(target) 
+    results$Transcripts[actual_targets, pval_prop:= unlist(parallel::parLapply(wcl, actual_targets, function(target) 
       prop.test(x=c(results$Transcripts[target, sum_A], results$Transcripts[target, sum_B]), 
                 n=c(results$Transcripts[target, total_A], results$Transcripts[target, total_B]), 
                 correct=TRUE
