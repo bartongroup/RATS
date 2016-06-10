@@ -6,9 +6,9 @@
 \usage{
 calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
   counts_col = "est_counts", correction = "BH", p_thresh = 0.05,
+  verbose = FALSE, threads = parallel::detectCores(),
   TARGET_ID = "target_id", PARENT_ID = "parent_id",
-  BS_TARGET_ID = "target_id", verbose = FALSE,
-  threads = parallel::detectCores())
+  BS_TARGET_ID = "target_id")
 }
 \arguments{
 \item{sleuth_data}{A sleuth object.}
@@ -27,15 +27,15 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
+\item{verbose}{Display progress updates, default \code{FALSE}.}
+
+\item{threads}{Enable parallel processing. Defaults to the value returned by parallel::detectCores(). Try setting to 1 if you are having issues.}
+
 \item{TARGET_ID}{The name of the transcript identifier column in the transcripts object, default \code{"target_id"}}
 
 \item{PARENT_ID}{The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.}
 
 \item{BS_TARGET_ID}{The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.}
-
-\item{verbose}{Display progress updates, default \code{FALSE}.}
-
-\item{threads}{Enable parallel processing. Defaults to the value returned by parallel::detectCores(). Try setting to 1 if you are having issues.}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.

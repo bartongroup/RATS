@@ -7,7 +7,7 @@
 combine_sim_dtu(sim, dtu)
 }
 \arguments{
-\item{sim}{An object generated with rangedata_gen(), containing the simulated data details with which the \code{dtu} object was calculated.}
+\item{sim}{An object generated with countrange_sim(), containing the simulated data details with which the \code{dtu} object was calculated.}
 
 \item{dtu}{The object with the DTU results corresponding to the \code{sim} object's data.}
 }

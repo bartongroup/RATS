@@ -5,8 +5,8 @@
 \title{Generate artificial read-count data for simulated 2-transcript genes, 
 systematically covering a broad range of proportions and magnitudes.}
 \usage{
-countrange_sim(propfrom = 0, propto = 1, propby = 0.01,
-  magnitudes = c(1, 5, 10, 30, 100, 500, 1000))
+countrange_sim(proportions = seq(0, 1, 0.01), magnitudes = c(1, 5, 10, 30,
+  100, 500, 1000))
 }
 \arguments{
 \item{propfrom, }{propto, propby: Range and step of proportions for 1st transcript. Sibling transcript complemented from these.}

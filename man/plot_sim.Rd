@@ -4,13 +4,12 @@
 \alias{plot_sim}
 \title{Plot relationship of parameters.}
 \usage{
-plot_sim(data, type = 1)
+plot_sim(data, type = "AvBvM")
 }
 \arguments{
 \item{data}{the output from combine_sim_dtu()}
 
-\item{type}{(int) 1: dtu, 2: pval_AB, 3: pval_BA, 4: diff dtu_AB - dtu_BA
-5: pprop, 6: prop_dtu, 7: diff dtu - prop_dtu}
+\item{type}{(str) "AvBvM", "A/BvM", "AvBvMprop", "A/BvMprop"}
 }
 \description{
 Plot relationship of parameters.

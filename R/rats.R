@@ -176,7 +176,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   # Fish out the lowest corrected p-value per gene, and threshold for dtu result
   actual_targets <- stack(actual_targets_by_parent)[1] 
   results$Genes[actual_parents, pval_prop_min := results$Transcripts[actual_targets, min(pval_prop_corr), by="parent_id"] [[2]] ]
-  results$Genes[, dtu_prop := pval_prop_corr < p_thresh]
+  results$Genes[, dtu_prop := pval_prop_min < p_thresh]
   
   # Dismiss workers.
   if ( ! singleT)
