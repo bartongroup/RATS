@@ -102,7 +102,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
                                            "total_A"=NA_real_, "total_B"=NA_real_, # sum of all transcripts for that gene
                                            "mean_A"=NA_real_, "mean_B"=NA_real_,   # mean across replicates of means across bootstraps
                                            "var_A"=NA_real_, "var_B"=NA_real_,     # var across replicates of means across bootstraps
-                                           "pval_prop"=NA_real_, "pval_prop_corr"=NA_real_))  # pvalue for prop.test
+                                           "pval_prop"=NA_real_, "pval_prop_corr"=NA_real_, "dtu_prop"=NA))  # pvalue for prop.test
   setkey(results$Genes, parent_id)
   setkey(results$Transcripts, target_id)
   if (singleT) {
@@ -174,7 +174,8 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   }
   results$Transcripts[actual_targets, pval_prop_corr:= p.adjust(results$Transcripts[actual_targets, pval_prop], method=correction)]
   # Fish out the lowest corrected p-value per gene, and threshold for dtu result
-  actual_targets <- stack(actual_targets_by_parent)[1] 
+  actual_targets <- stack(actual_targets_by_parent)[1]
+  results$Transcripts[, dtu_prop := pval_prop_corr < p.thresh]
   results$Genes[actual_parents, pval_prop_min := results$Transcripts[actual_targets, min(pval_prop_corr), by="parent_id"] [[2]] ]
   results$Genes[, dtu_prop := pval_prop_min < p_thresh]
   
