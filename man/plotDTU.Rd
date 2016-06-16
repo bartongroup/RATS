@@ -9,7 +9,10 @@ plotDTU(dtuo, type = "propVmag")
 \arguments{
 \item{dtuo}{A DTU object.}
 
-\item{type}{Type of plot: "propVmag", "dpropVmag", "volcano", "dprop"}
+\item{type}{Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "dprop"}
+}
+\value{
+a ggplot2 object. Simply display it or you can also customize it.
 }
 \description{
 Plot DTU results.

@@ -10,7 +10,7 @@ dtuSummary(dtuo)
 \item{dtuo}{a DTU object.}
 }
 \value{
-named numerical vector
+named numerical vector giving a quick overview of the results
 }
 \description{
 Summary of DTU

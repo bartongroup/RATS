@@ -9,7 +9,7 @@ plot_sim(data, type = "AvBvM")
 \arguments{
 \item{data}{the output from combine_sim_dtu()}
 
-\item{type}{(str) "AvBvM", "A/BvM", "AvBvMprop", "A/BvMprop"}
+\item{type}{(str) "AvBvM", "B/AvM", "AvBvMprop", "B/AvMprop", "B-AvM"}
 }
 \description{
 Plot relationship of parameters.
