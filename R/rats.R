@@ -7,10 +7,12 @@
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
 #' @param counts_col The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
-#' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
 #' @param verbose Display progress updates, default \code{FALSE}.
 #' @param p_thresh The p-value threshold, default 0.05.
-#' @param threads Enable parallel processing. Defaults to the value returned by parallel::detectCores(). Try setting to 1 if you are having issues.
+#' @param count_thresh Transcripts with fewer reads will be ignored (default 5).
+#' @param testmode One of "G-test", "proportion-test", "both" (default both).
+#' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
+#' @param threads Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.
 #' @param TARGET_ID The name of the transcript identifier column in the transcripts object, default \code{"target_id"}
 #' @param PARENT_ID The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.
 #' @param BS_TARGET_ID The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
@@ -19,10 +21,10 @@
 #' @export
 #' @import data.table
 calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
-                          varname="condition", counts_col="est_counts", correction="BH", p_thresh=0.05, 
+                          varname="condition", counts_col="est_counts",
+                          p_thresh=0.05, count_thresh=5, testmode="both", correction="BH", 
                           verbose=FALSE, threads=parallel::detectCores(),
-                          TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id")
-{
+                          TARGET_ID="target_id", PARENT_ID="parent_id", BS_TARGET_ID="target_id") {
   # Set up progress bar
   progress <- init_progress(verbose)
   
@@ -30,14 +32,12 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   # Input checks.
   threads <- as.integer(threads)  # Plain numbers default to double, unless integer R syntax is explicitly used.
   paramcheck <- parameters_good(sleuth_data, transcripts, name_A, name_B, varname, counts_col,
-                                correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose, threads)
+                                correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose, threads, count_thresh, testmode)
   if (paramcheck$error) stop(paramcheck$message)
   
   progress <- update_progress(progress)
   # Initialize workers cluster.
-  singleT <- (threads == 1)
-  if ( ! singleT)
-    wcl <- parallel::makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
+  wcl <- parallel::makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
   
   progress <- update_progress(progress)
   # Look-up from parent_id to target_id
@@ -55,21 +55,12 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update_progress(progress)
   # Build list of dataframes, one for each condition.
   # Each dataframe contains filtered and correctly ordered mean counts per sample from the bootstraps
-  if (singleT) {
-    count_data <- lapply(samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
-  } else {
-    count_data <- parallel::parLapply(wcl, samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
-  }
+  count_data <- parallel::parLapply(wcl, samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_ID, BS_TARGET_ID))
   
   progress <- update_progress(progress)
   # Remove entries which are entirely 0 across all conditions.
-  if (singleT) {
-    nonzero <-  lapply(count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
-    count_data <- lapply(count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
-  } else {
-    nonzero <-  parallel::parLapply(wcl, count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
-    count_data <- parallel::parLapply(wcl, count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
-  }
+  nonzero <-  parallel::parLapply(wcl, count_data, function(condition) apply(condition, 1, function(row) !all(row == 0 )))
+  count_data <- parallel::parLapply(wcl, count_data, function(condition) condition[Reduce("&", nonzero),, drop=FALSE])
   
   progress <- update_progress(progress)
   # Which IDs am I actually working with after the filters?
@@ -78,110 +69,83 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   actual_txs <- transcripts[transcripts[[TARGET_ID]] %in% actual_targets,]
   actual_targets_by_parent <- (split(as.matrix(actual_txs[TARGET_ID]), actual_txs[[PARENT_ID]]))[actual_parents]
   # Reject parents that now are left with a single child, as g.test() won't accept them.
-  if (singleT) {
-    actual_targets_by_parent <- actual_targets_by_parent[sapply(actual_targets_by_parent, function(targets) length(targets) > 1)]
-  } else {
-    actual_targets_by_parent <- actual_targets_by_parent[parallel::parSapply(wcl, actual_targets_by_parent, function(targets) length(targets) > 1)]
-  }
+  actual_targets_by_parent <- actual_targets_by_parent[parallel::parSapply(wcl, actual_targets_by_parent, function(targets) length(targets) > 1)]
   actual_parents <- names(actual_targets_by_parent)
   
   progress <- update_progress(progress)
   # Pre-allocate output structure.
   results <- list("Parameters"=list("var_name"=varname, "cond_A"=name_A, "cond_B"=name_B,
                                     "replicates_A"=dim(count_data[[name_A]])[2], "replicates_B"=dim(count_data[[name_B]])[2],
-                                    "p_thresh"=p_thresh),
+                                    "p_thresh"=p_thresh, "count_thresh"=count_thresh, "tests"=testmode),
                   "Genes"=data.table("parent_id"=levels(as.factor(tx_filter[[PARENT_ID]])),
                                      "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
-                                     "pval_AB"=NA_real_, "pval_BA"=NA_real_,
-                                     "pval_AB_corr"=NA_real_, "pval_BA_corr"=NA_real_,
-                                     "dtu_AB"=NA, "dtu_BA"=NA, "dtu"=NA, 
-                                     "pval_prop_min"=NA_real_, "dtu_prop"=NA),
+                                     "Gt_DTU"=NA, "Pt_DTU"=NA,
+                                     "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
+                                     "Gt_pvalAB_stdev"=NA_real_, "Gt_pvalBA_stdev"=NA_real_,
+                                     "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
+                                     "Gt_dtuAB"=NA, "Gt_dtuBA"=NA),
                   "Transcripts"=data.table("target_id"=tx_filter[[TARGET_ID]], "parent_id"=tx_filter[[PARENT_ID]],
-                                           "prop_A"=NA_real_, "prop_B"=NA_real_,   # proportion of sums across replicates
-                                           "sum_A"=NA_real_, "sum_B"=NA_real_,     # sum across replicates of means across bootstraps
-                                           "total_A"=NA_real_, "total_B"=NA_real_, # sum of all transcripts for that gene
-                                           "mean_A"=NA_real_, "mean_B"=NA_real_,   # mean across replicates of means across bootstraps
-                                           "var_A"=NA_real_, "var_B"=NA_real_,     # var across replicates of means across bootstraps
-                                           "pval_prop"=NA_real_, "pval_prop_corr"=NA_real_, "dtu_prop"=NA))  # pvalue for prop.test
+                                           "propA"=NA_real_, "propB"=NA_real_,   # proportion of sums across replicates
+                                           "Dprop"=NA_real_,                       # propB - propA
+                                           "Gt_DTU"=NA, "Pt_DTU"=NA,
+                                           "Pt_pval"=NA_real_, "Pt_pval_stdev"=NA_real_,  # proportion test
+                                           "Pt_pval_corr"=NA_real_, 
+                                           "sumA"=NA_real_, "sumB"=NA_real_,     # sum across replicates of means across bootstraps
+                                           "meanA"=NA_real_, "meanB"=NA_real_,   # mean across replicates of means across bootstraps
+                                           "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
+                                           "totalA"=NA_real_, "totalB"=NA_real_))  # sum of all transcripts for that gene
+                                           
+                                           
   setkey(results$Genes, parent_id)
   setkey(results$Transcripts, target_id)
-  if (singleT) {
-    results$Genes[, known_transc := sapply(results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
-    results$Genes[, usable_transc := sapply(results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
-  } else {
-    results$Genes[, known_transc := parallel::parSapply(wcl, results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
-    results$Genes[, usable_transc := parallel::parSapply(wcl, results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
-  }
+  results$Genes[, known_transc := parallel::parSapply(wcl, results$Genes[[PARENT_ID]], function(p) length(targets_by_parent[[p]]))]
+  results$Genes[, usable_transc := parallel::parSapply(wcl, results$Genes[[PARENT_ID]], function(p) ifelse(any(actual_parents == p), length(actual_targets_by_parent[[p]]), 0))]
   
   progress <- update_progress(progress)
   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-  results$Transcripts[actual_targets, sum_A :=  rowSums(count_data[[name_A]])]
-  results$Transcripts[actual_targets, sum_B :=  rowSums(count_data[[name_B]])]
-  results$Transcripts[actual_targets, mean_A :=  rowMeans(count_data[[name_A]])]
-  results$Transcripts[actual_targets, mean_B :=  rowMeans(count_data[[name_B]])]
-  results$Transcripts[actual_targets, var_A :=  matrixStats::rowVars(as.matrix(count_data[[name_A]]))]
-  results$Transcripts[actual_targets, var_B :=  matrixStats::rowVars(as.matrix(count_data[[name_B]]))]
+  results$Transcripts[actual_targets, sumA :=  rowSums(count_data[[name_A]])]
+  results$Transcripts[actual_targets, sumB :=  rowSums(count_data[[name_B]])]
+  results$Transcripts[actual_targets, meanA :=  rowMeans(count_data[[name_A]])]
+  results$Transcripts[actual_targets, meanB :=  rowMeans(count_data[[name_B]])]
+  results$Transcripts[actual_targets, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(count_data[[name_A]]))) ]
+  results$Transcripts[actual_targets, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(count_data[[name_B]]))) ]
   
   # Sums and proportions, for filtered targets only.
-  results$Transcripts[actual_targets, total_A := sum(sum_A), by=parent_id]
-  results$Transcripts[actual_targets, total_B := sum(sum_B), by=parent_id]
-  results$Transcripts[actual_targets, prop_A := sum_A/total_A]
-  results$Transcripts[actual_targets, prop_B := sum_B/total_B]
+  results$Transcripts[actual_targets, totalA := sum(sumA), by=parent_id]
+  results$Transcripts[actual_targets, totalB := sum(sumB), by=parent_id]
+  results$Transcripts[actual_targets, propA := sumA/totalA]
+  results$Transcripts[actual_targets, propB := sumB/totalB]
   
   progress <- update_progress(progress)
   # G test, only for parents and targets that survived filtering.
-  if (singleT) {
-    # Compare B counts to A ratios:
-    results$Genes[actual_parents, pval_AB := sapply(actual_targets_by_parent, function(targets)
-      g.test(results$Transcripts[targets, sum_B],
-             p=results$Transcripts[targets, prop_A])[["p.value"]])]
-    # Compare A counts to B ratios:
-    results$Genes[actual_parents, pval_BA := sapply(actual_targets_by_parent, function(targets)
-      g.test(results$Transcripts[targets, sum_A],
-             p=results$Transcripts[targets, prop_B])[["p.value"]])]
-  } else {
-    # Compare B counts to A ratios:
-    results$Genes[actual_parents, pval_AB := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
-      g.test(results$Transcripts[targets, sum_B],
-             p=results$Transcripts[targets, prop_A])[["p.value"]])]
-    # Compare A counts to B ratios:
-    results$Genes[actual_parents, pval_BA := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
-      g.test(results$Transcripts[targets, sum_A],
-             p=results$Transcripts[targets, prop_B])[["p.value"]])]
-  }
+  # Compare B counts to A ratios:
+  results$Genes[actual_parents, Gt_pvalAB := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
+    g.test(results$Transcripts[targets, sumB],
+           p=results$Transcripts[targets, propA])[["p.value"]])]
+  # Compare A counts to B ratios:
+  results$Genes[actual_parents, Gt_pvalBA := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
+    g.test(results$Transcripts[targets, sumA],
+           p=results$Transcripts[targets, propB])[["p.value"]])]
   # Correct p-values and apply threshold.
-  results$Genes[, pval_AB_corr := p.adjust(pval_AB, method=correction)]
-  results$Genes[, dtu_AB := pval_AB_corr < p_thresh]
-  results$Genes[, pval_BA_corr := p.adjust(pval_BA, method=correction)]
-  results$Genes[, dtu_BA := pval_BA_corr < p_thresh]
+  results$Genes[, Gt_pvalAB_corr := p.adjust(Gt_pvalAB, method=correction)]
+  results$Genes[, Gt_dtuAB := Gt_pvalAB_corr < p_thresh]
+  results$Genes[, Gt_pvalBA_corr := p.adjust(Gt_pvalBA, method=correction)]
+  results$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
   # Find the agreements.
-  results$Genes[, dtu := dtu_AB & dtu_BA ]
+  results$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
   
   progress <- update_progress(progress)
   # Proportion test.
-  if (singleT) {
-    results$Transcripts[actual_targets, pval_prop:= unlist(lapply(actual_targets, function(target) 
-      prop.test(x=c(results$Transcripts[target, sum_A], results$Transcripts[target, sum_B]), 
-                n=c(results$Transcripts[target, total_A], results$Transcripts[target, total_B]), 
-                correct=TRUE
-            )[["p.value"]] )) ]
-  } else {
-    results$Transcripts[actual_targets, pval_prop:= unlist(parallel::parLapply(wcl, actual_targets, function(target) 
-      prop.test(x=c(results$Transcripts[target, sum_A], results$Transcripts[target, sum_B]), 
-                n=c(results$Transcripts[target, total_A], results$Transcripts[target, total_B]), 
-                correct=TRUE
-            )[["p.value"]] )) ]
-  }
-  results$Transcripts[actual_targets, pval_prop_corr:= p.adjust(results$Transcripts[actual_targets, pval_prop], method=correction)]
-  # Fish out the lowest corrected p-value per gene, and threshold for dtu result
-  actual_targets <- stack(actual_targets_by_parent)[1]
-  results$Transcripts[, dtu_prop := pval_prop_corr < p.thresh]
-  results$Genes[actual_parents, pval_prop_min := results$Transcripts[actual_targets, min(pval_prop_corr), by="parent_id"] [[2]] ]
-  results$Genes[, dtu_prop := pval_prop_min < p_thresh]
+  results$Transcripts[actual_targets, Pt_pval:= unlist(parallel::parLapply(wcl, actual_targets, function(target) 
+    prop.test(x=c(results$Transcripts[target, sumA], results$Transcripts[target, sumB]), 
+              n=c(results$Transcripts[target, totalA], results$Transcripts[target, totalB]), 
+              correct=TRUE
+          )[["p.value"]] )) ]
+  results$Transcripts[actual_targets, Pt_pval_corr:= p.adjust(results$Transcripts[actual_targets, Pt_pval], method=correction)]
+  results$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
   
   # Dismiss workers.
-  if ( ! singleT)
-    parallel::stopCluster(wcl)
+  parallel::stopCluster(wcl)
   
   progress <- update_progress(progress)
   return(results)
@@ -294,29 +258,36 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_ID, BS_TAR
 #' @return List with a logical value and a message.
 #'
 parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
-                            correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose, threads) {
+                            correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose, 
+                            threads, count_thresh, testmode) {
   if ( ! is.data.frame(transcripts))
-    return(list("error"=TRUE, "message"="transcripts is not a data.frame."))
+    return(list("error"=TRUE, "message"="transcripts is not a data.frame!"))
   if (any( ! c(TARGET_ID, PARENT_ID) %in% names(transcripts)))
-    return(list("error"=TRUE, "message"="The specified target and parent IDs field-names do not exist in transcripts."))
+    return(list("error"=TRUE, "message"="The specified target and parent IDs field-names do not exist in transcripts!"))
   if ( ! BS_TARGET_ID %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
-    return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps."))
+    return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps!"))
   if ( ! counts_col %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
-    return(list("error"=TRUE, "message"="The specified counts field-name does not exist."))
+    return(list("error"=TRUE, "message"="The specified counts field-name does not exist!"))
   if ( ! correction %in% p.adjust.methods)
-    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods."))
+    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods!"))
   if ( ( ! is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
-    return(list("error"=TRUE, "message"="Invalid p-value threshold."))
+    return(list("error"=TRUE, "message"="Invalid p-value threshold!"))
   if ( ! varname %in% names(sleuth_data$sample_to_covariates))
-    return(list("error"=TRUE, "message"="The specified covariate name does not exist."))
+    return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
   if ( any( ! c(ref_name, comp_name) %in% sleuth_data$sample_to_covariates[[varname]] ))
-    return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist."))
+    return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
   if ( ! is.logical(verbose))
-    return(list("error"=TRUE, "message"="verbose must be a logical value."))
+    return(list("error"=TRUE, "message"="verbose must be a logical value!"))
   if ( ( ! is.numeric(threads)) || threads < 1) {
-    return(list("error"=TRUE, "message"="Invalid number of threads."))
+    return(list("error"=TRUE, "message"="Invalid number of threads!"))
   } else if (threads > parallel::detectCores()) {
-    return(list("error"=TRUE, "message"=paste("The system does not support that many threads. MAX available: ", parallel::detectCores())))
+    return(list("error"=TRUE, "message"=paste("The system does not support that many threads! MAX available: ", parallel::detectCores())))
+  }
+  if ( (! is.numeric(count_thresh)) || count_thresh < 0 ) {
+    return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be zero or a positive number."))
+  }
+  if ( ! testmode %in% c("G-test", "proportion-test", "both")){
+    return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   }
   return(list("error"=FALSE, "message"="All good!"))
 }

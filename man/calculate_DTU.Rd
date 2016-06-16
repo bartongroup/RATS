@@ -5,10 +5,10 @@
 \title{Calculate differential transcript usage.}
 \usage{
 calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
-  counts_col = "est_counts", correction = "BH", p_thresh = 0.05,
-  verbose = FALSE, threads = parallel::detectCores(),
-  TARGET_ID = "target_id", PARENT_ID = "parent_id",
-  BS_TARGET_ID = "target_id")
+  counts_col = "est_counts", p_thresh = 0.05, count_thresh = 5,
+  testmode = "both", correction = "BH", verbose = FALSE,
+  threads = parallel::detectCores(), TARGET_ID = "target_id",
+  PARENT_ID = "parent_id", BS_TARGET_ID = "target_id")
 }
 \arguments{
 \item{sleuth_data}{A sleuth object.}
@@ -23,13 +23,17 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 
 \item{counts_col}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
 
-\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
-
 \item{p_thresh}{The p-value threshold, default 0.05.}
+
+\item{count_thresh}{Transcripts with fewer reads will be ignored (default 5).}
+
+\item{testmode}{One of "G-test", "proportion-test", "both" (default both).}
+
+\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
 
 \item{verbose}{Display progress updates, default \code{FALSE}.}
 
-\item{threads}{Enable parallel processing. Defaults to the value returned by parallel::detectCores(). Try setting to 1 if you are having issues.}
+\item{threads}{Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.}
 
 \item{TARGET_ID}{The name of the transcript identifier column in the transcripts object, default \code{"target_id"}}
 
