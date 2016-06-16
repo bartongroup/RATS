@@ -6,7 +6,7 @@
 \usage{
 calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
   counts_col = "est_counts", p_thresh = 0.05, count_thresh = 5,
-  testmode = "both", correction = "BH", verbose = FALSE,
+  testmode = "both", correction = "BH", boots = 100, verbose = FALSE,
   threads = parallel::detectCores(), TARGET_ID = "target_id",
   PARENT_ID = "parent_id", BS_TARGET_ID = "target_id")
 }
@@ -30,6 +30,8 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 \item{testmode}{One of "G-test", "proportion-test", "both" (default both).}
 
 \item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
+
+\item{boots}{Number of bootstrap iterations for the p.value of the DTU calls (default TRUE).}
 
 \item{verbose}{Display progress updates, default \code{FALSE}.}
 

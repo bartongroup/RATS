@@ -64,23 +64,23 @@ dtuSummary <- function(dtuo) {
 
 
 #================================================================================
-#' Plot DTU results.
+#' Plot DTU results from the proportions test.
 #' 
 #' @param dtuo A DTU object.
 #' @param type Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "dprop"
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #' 
 #' @export
-plotDTU <- function(dtuo, type="propVmag") {
+plotDTU_prop <- function(dtuo, type="propVmag") {
   if (type == "propVcount") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(prop_A, total_A, color = dtu_prop)) +
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(propA, genreadsA, color = Pt_DTU)) +
       ggplot2::ggtitle("Relative abundances of transcripts") +
       ggplot2::labs(x = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), y = paste("Gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
       ggplot2::scale_y_continuous(trans = "log10") +
       ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
       ggplot2::geom_point(alpha = 0.3)
   } else if (type == "dpropVcount") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(total_A, prop_B - prop_A, color = dtu_prop)) +
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(genreadsA, Dprop, color = Pt_DTU)) +
       ggplot2::ggtitle("Abundance change of transcripts ") +
       ggplot2::labs(y = paste("prop( ", dtuo$Parameters$cond_B, " ) - prop( ", dtuo$Parameters$cond_A, " )", sep=""), 
                     x = paste("Gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
@@ -89,7 +89,7 @@ plotDTU <- function(dtuo, type="propVmag") {
       ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
       ggplot2::geom_point(alpha = 0.3)
   } else if (type == "propfoldVsig") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(prop_B/prop_A, pval_prop_corr, color = dtu_prop)) +
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(propfold, Pt_pval_corr, color = Pt_DTU)) +
       ggplot2::ggtitle("Proportion fold-change VS significance") +
       ggplot2::labs(y = "P-value", x = paste("prop( ", dtuo$Parameters$cond_B, " ) / prop( ", dtuo$Parameters$cond_A, " )", sep="")) +
       ggplot2::geom_hline(yintercept = dtuo$Parameters$p_thresh, colour = "blue", linetype = "dotted") +
@@ -98,7 +98,7 @@ plotDTU <- function(dtuo, type="propVmag") {
       ggplot2::scale_x_continuous(trans="log2") + 
       ggplot2::geom_point(alpha = 0.3)
   } else if (type == "dpropVsig") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(prop_B - prop_A, pval_prop_corr, colour = dtu_prop)) +
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, Pt_pval_corr, colour = Pr_dtu)) +
       ggplot2::ggtitle("Proportion change VS significance") +
       ggplot2::labs(x = paste("Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, sep=""), 
                     y ="P-value") +
@@ -106,17 +106,16 @@ plotDTU <- function(dtuo, type="propVmag") {
       ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2))
   } else if (type == "dprop") {
     tmp <- copy(dtuo$Transcripts)  # I don't want the intermediate calculattions to modify the dtu object
-    tmp[, abma := abs(prop_B - prop_A)]
+    tmp[, abma := abs(Dprop)]
     tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
     # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
     setkey(tmp, Group.1)
-    tmp[, dtu := dtuo$Genes[tmp$Group.1, dtuo$Genes$dtu_prop]]
+    tmp[, dtu := dtuo$Genes[tmp$Group.1, dtuo$Genes$Pt_dtu]]
     # ok, plotting time
     result <- ggplot2::ggplot(data = na.omit(tmp), ggplot2::aes(x, fill=dtu)) +
       ggplot2::ggtitle("Distribution of largest proportion change per gene") +
       ggplot2::labs(x = paste("abs( Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, " )", sep=""), y ="Number of genes") +
       ggplot2::geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-      #ggplot2::stat_bin(ggplot2::aes(y=..count.., label=..count..), binwidth = 0.01, geom="text") +
       ggplot2::scale_x_continuous(breaks = seq(0, 1, 0.1)) +
       ggplot2::scale_y_continuous(trans="sqrt")
   }
