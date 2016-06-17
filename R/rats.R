@@ -6,13 +6,13 @@
 #' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
-#' @param counts_col The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
 #' @param verbose Display progress updates, default \code{FALSE}.
 #' @param p_thresh The p-value threshold, default 0.05.
 #' @param count_thresh Transcripts with fewer reads will be ignored (default 5).
 #' @param testmode One of "G-test", "proportion-test", "both" (default both).
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
 #' @param threads Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.
+#' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
 #' @param TARGET_COL The name of the transcript identifier column in the transcripts object, default \code{"target_id"}
 #' @param PARENT_COL The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.
 #' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
@@ -20,18 +20,17 @@
 #'
 #' @export
 #' @import data.table
-calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
-                          varname="condition", counts_col="est_counts",
+calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B, varname="condition", 
                           p_thresh=0.05, count_thresh=5, testmode="both", correction="BH", 
                           verbose=FALSE, threads=parallel::detectCores(),
-                          TARGET_COL="target_id", PARENT_COL="parent_id", BS_TARGET_COL="target_id") {
+                          COUNTS_COL="est_counts", TARGET_COL="target_id", PARENT_COL="parent_id", BS_TARGET_COL="target_id") {
   # Set up progress bar
   progress <- init_progress(verbose)
   
   progress <- update_progress(progress)
   # Input checks.
   threads <- as.integer(threads)  # Plain numbers default to double, unless integer R syntax is explicitly used.
-  paramcheck <- parameters_good(sleuth_data, transcripts, name_A, name_B, varname, counts_col,
+  paramcheck <- parameters_good(sleuth_data, transcripts, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads, count_thresh, testmode)
   if (paramcheck$error) stop(paramcheck$message)
   
@@ -55,7 +54,7 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B,
   progress <- update_progress(progress)
   # Build list of dataframes, one for each condition.
   # Each dataframe contains filtered and correctly ordered mean counts per sample from the bootstraps
-  count_data <- parallel::parLapply(wcl, samples_by_condition, function(condition) make_filtered_bootstraps(sleuth_data, condition, tx_filter, counts_col, TARGET_COL, BS_TARGET_COL))
+  count_data <- parallel::parLapply(wcl, samples_by_condition, function(samples) make_filtered_bootstraps(sleuth_data, samples, tx_filter, COUNTS_COL, TARGET_COL, BS_TARGET_COL))
   
   progress <- update_progress(progress)
   # Remove entries which are entirely 0 across all conditions.
@@ -208,19 +207,18 @@ group_samples <- function(covariates) {
 #' filtered according to tx_filter, and ordered according to target_ids
 #'
 #' @param sleuth_data A sleuth object.
-#' @param condition A vector of sample numbers.
+#' @param samples A vector of sample numbers.
 #' @param tx_filter A dataframe containing \code{target_id} and \code{has_siblings}.
-#' @param counts_col The sleuth column name for the type of counts to use.
+#' @param COUNTS_COL The sleuth column name for the type of counts to use.
 #' @param TARGET_COL The name of transcript id column in transcripts object.
 #' @param BS_TARGET_COL The name of transcript id column in sleuth bootstrap tables.
 #' @return A dataframe containing the counts from all bootstraps of all the samples for the condition.
 #'
-make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_col, TARGET_COL, BS_TARGET_COL) {
-  
-  # make a list of dataframes, one df for each condition, containing the counts from its bootstraps
-  count_data <- as.data.frame(lapply(condition, function(sample)
+make_filtered_bootstraps <- function(sleuth_data, samples, tx_filter, COUNTS_COL, TARGET_COL, BS_TARGET_COL) {
+  # make a dataframe, containing the mean count from the bootstraps of these samples
+  count_data <- as.data.frame(lapply(samples, function(sample)
     rowMeans(sapply(sleuth_data$kal[[sample]]$bootstrap, function(e)
-      filter_and_match(e, tx_filter, counts_col, TARGET_COL, BS_TARGET_COL) )) ))
+      filter_and_match(e, tx_filter, COUNTS_COL, TARGET_COL, BS_TARGET_COL) )) ))
   
   # now set the filtered target ids as rownames - previous call returns target ids in this order
   rownames(count_data) <- tx_filter[[TARGET_COL]][tx_filter$has_siblings]
@@ -236,18 +234,18 @@ make_filtered_bootstraps <- function(sleuth_data, condition, tx_filter, counts_c
 #'
 #' @param bootstrap A bootstrap dataframe
 #' @param tx_filter A boolean vector for filtering the bootstrap, with matching transcript ids
-#' @param counts_col The column in the bootstrap table to extract
+#' @param COUNTS_COL The column in the bootstrap table to extract
 #' @param TARGET_COL The name of transcript id column in transcripts object.
 #' @param BS_TARGET_COL The name of transcript id column in sleuth bootstrap tables.
 #' @return The column from the bootstrap table
 #'
-filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_COL, BS_TARGET_COL)
+filter_and_match <- function(bootstrap, tx_filter, COUNTS_COL, TARGET_COL, BS_TARGET_COL)
 {
   # create map from bootstrap to filter(i.e. main annotation) target ids
   b_to_f_rows <- match(tx_filter[[TARGET_COL]], bootstrap[[BS_TARGET_COL]])
   
   # map the bootstrap to the filter target ids and then apply the filter
-  result <- (bootstrap[b_to_f_rows, counts_col]) [tx_filter$has_siblings]
+  result <- (bootstrap[b_to_f_rows, COUNTS_COL]) [tx_filter$has_siblings]
   
   return(result)
 }
@@ -257,7 +255,7 @@ filter_and_match <- function(bootstrap, tx_filter, counts_col, TARGET_COL, BS_TA
 #'
 #' @return List with a logical value and a message.
 #'
-parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varname, counts_col,
+parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, 
                             threads, count_thresh, testmode) {
   if ( ! is.data.frame(transcripts))
@@ -266,7 +264,7 @@ parameters_good <- function(sleuth_data, transcripts, ref_name, comp_name, varna
     return(list("error"=TRUE, "message"="The specified target and parent IDs field-names do not exist in transcripts!"))
   if ( ! BS_TARGET_COL %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps!"))
-  if ( ! counts_col %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
+  if ( ! COUNTS_COL %in% names(sleuth_data$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified counts field-name does not exist!"))
   if ( ! correction %in% p.adjust.methods)
     return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods!"))
