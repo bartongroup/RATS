@@ -5,8 +5,8 @@
 \title{Check input parameters.}
 \usage{
 parameters_good(sleuth_data, transcripts, ref_name, comp_name, varname,
-  counts_col, correction, p_thresh, TARGET_ID, PARENT_ID, BS_TARGET_ID, verbose,
-  threads)
+  COUNTS_COL, correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL,
+  verbose, threads, count_thresh, testmode, boots)
 }
 \value{
 List with a logical value and a message.

@@ -42,3 +42,82 @@ plotGeneDTU <- function(DTUdata, pid, nreps=7, ptype="counts") {
                                      DTUdata$Parameters["cond_B"][[1]]),
                        values = c("blue", "red"))
 }
+
+
+#================================================================================
+#' Summary of DTU
+#' 
+#' @param dtuo a DTU object.
+#' @return named numerical vector giving a quick overview of the results
+#'
+#'@export
+dtuSummary <- function(dtuo) {
+  g <- table(dtuo$Genes$dtu, useNA="always")
+  p <- table(dtuo$Genes$dtu_prop, useNA="always")
+  result <- c("DTU_g" = g["TRUE"], 
+              "non-DTU_g" = g["FALSE"], 
+              "DT_prop" = p["TRUE"], 
+              "non-DTU_prop" = p["FALSE"], 
+              "na" = p[3])
+  return(result)
+}
+
+
+#================================================================================
+#' Plot DTU results from the proportions test.
+#' 
+#' @param dtuo A DTU object.
+#' @param type Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "dprop"
+#' @return a ggplot2 object. Simply display it or you can also customize it.
+#' 
+#' @export
+plotDTU_prop <- function(dtuo, type="propVmag") {
+  if (type == "propVcount") {
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(propA, genreadsA, color = Pt_DTU)) +
+      ggplot2::ggtitle("Relative abundances of transcripts") +
+      ggplot2::labs(x = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), y = paste("Gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
+      ggplot2::scale_y_continuous(trans = "log10") +
+      ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
+      ggplot2::geom_point(alpha = 0.3)
+  } else if (type == "dpropVcount") {
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(genreadsA, Dprop, color = Pt_DTU)) +
+      ggplot2::ggtitle("Abundance change of transcripts ") +
+      ggplot2::labs(y = paste("prop( ", dtuo$Parameters$cond_B, " ) - prop( ", dtuo$Parameters$cond_A, " )", sep=""), 
+                    x = paste("Gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
+      ggplot2::scale_x_continuous(trans="log10") +
+      ggplot2::scale_y_continuous(breaks = seq(-1, 1, 0.2)) +
+      ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
+      ggplot2::geom_point(alpha = 0.3)
+  } else if (type == "propfoldVsig") {
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(propfold, Pt_pval_corr, color = Pt_DTU)) +
+      ggplot2::ggtitle("Proportion fold-change VS significance") +
+      ggplot2::labs(y = "P-value", x = paste("prop( ", dtuo$Parameters$cond_B, " ) / prop( ", dtuo$Parameters$cond_A, " )", sep="")) +
+      ggplot2::geom_hline(yintercept = dtuo$Parameters$p_thresh, colour = "blue", linetype = "dotted") +
+      ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
+      ggplot2::scale_y_continuous(trans="log10") + 
+      ggplot2::scale_x_continuous(trans="log2") + 
+      ggplot2::geom_point(alpha = 0.3)
+  } else if (type == "dpropVsig") {
+    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, Pt_pval_corr, colour = Pr_dtu)) +
+      ggplot2::ggtitle("Proportion change VS significance") +
+      ggplot2::labs(x = paste("Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, sep=""), 
+                    y ="P-value") +
+      ggplot2::geom_point(alpha = 0.3) +
+      ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2))
+  } else if (type == "dprop") {
+    tmp <- copy(dtuo$Transcripts)  # I don't want the intermediate calculattions to modify the dtu object
+    tmp[, abma := abs(Dprop)]
+    tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
+    # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
+    setkey(tmp, Group.1)
+    tmp[, dtu := dtuo$Genes[tmp$Group.1, dtuo$Genes$Pt_dtu]]
+    # ok, plotting time
+    result <- ggplot2::ggplot(data = na.omit(tmp), ggplot2::aes(x, fill=dtu)) +
+      ggplot2::ggtitle("Distribution of largest proportion change per gene") +
+      ggplot2::labs(x = paste("abs( Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, " )", sep=""), y ="Number of genes") +
+      ggplot2::geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
+      ggplot2::scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+      ggplot2::scale_y_continuous(trans="sqrt")
+  }
+  return(result)
+}
