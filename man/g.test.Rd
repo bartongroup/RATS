@@ -27,8 +27,9 @@ TOI Yates' correction taken from Mike Camann's 2x2 G-test fn.
 GOF Yates' correction as described in Zar (2000)
 more stuff taken from ctest's chisq.test()
 
-Sourced from: http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
-V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca}
+Sourced and adapted from from:
+V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca
+http://www.psych.ualberta.ca/~phurd/cruft/g.test.r}
 }
 \description{
 Log-likelihood tests of independence & goodness of fit

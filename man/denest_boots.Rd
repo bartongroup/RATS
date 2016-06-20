@@ -23,6 +23,7 @@ denest_boots(wcl, slo, tx, samples, COUNTS_COL, BS_TARGET_COL)
 a list of data.tables, one per sample, containing all the bootstrap counts.
 }
 \description{
-NA replaced with 0.
+NA replaced with 0. Means counts per transcripts are calculated and included as
+a column per sample.
 }
 

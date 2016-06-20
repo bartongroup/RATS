@@ -4,7 +4,7 @@
 \alias{calculate_DTU}
 \title{Calculate differential transcript usage.}
 \usage{
-calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
+calculate_DTU(sleuth_data, annot, name_A, name_B, varname = "condition",
   p_thresh = 0.05, count_thresh = 5, testmode = "both",
   correction = "BH", verbose = FALSE, boots = TRUE,
   threads = parallel::detectCores(), COUNTS_COL = "est_counts",
@@ -14,7 +14,7 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 \arguments{
 \item{sleuth_data}{A sleuth object.}
 
-\item{transcripts}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
+\item{annot}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
 
 \item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
 
@@ -38,9 +38,9 @@ calculate_DTU(sleuth_data, transcripts, name_A, name_B, varname = "condition",
 
 \item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
 
-\item{TARGET_COL}{The name of the transcript identifier column in the transcripts object, default \code{"target_id"}}
+\item{TARGET_COL}{The name of the transcript identifier column in the annot object, default \code{"target_id"}}
 
-\item{PARENT_COL}{The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.}
+\item{PARENT_COL}{The name of the parent identifier column in the annot object, default \code{"parent_id"}.}
 
 \item{BS_TARGET_COL}{The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.}
 }

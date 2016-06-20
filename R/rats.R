@@ -2,7 +2,7 @@
 #' Calculate differential transcript usage.
 #'
 #' @param sleuth_data A sleuth object.
-#' @param transcripts A dataframe matching the transcript identifiers to their corresponding gene identifiers.
+#' @param annot A dataframe matching the transcript identifiers to their corresponding gene identifiers.
 #' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
@@ -14,94 +14,94 @@
 #' @param boots Bootstrap the p-values. Default TRUE.
 #' @param threads Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.
 #' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
-#' @param TARGET_COL The name of the transcript identifier column in the transcripts object, default \code{"target_id"}
-#' @param PARENT_COL The name of the parent identifier column in the transcripts object, default \code{"parent_id"}.
+#' @param TARGET_COL The name of the transcript identifier column in the annot object, default \code{"target_id"}
+#' @param PARENT_COL The name of the parent identifier column in the annot object, default \code{"parent_id"}.
 #' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import data.table
+#' @import parallel
 #' @export
-calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B, varname="condition", 
+calculate_DTU <- function(sleuth_data, annot, name_A, name_B, varname="condition", 
                           p_thresh=0.05, count_thresh=5, testmode="both", correction="BH", 
                           verbose=FALSE, boots = TRUE, threads=parallel::detectCores(),
                           COUNTS_COL="est_counts", TARGET_COL="target_id", PARENT_COL="parent_id", BS_TARGET_COL="target_id") {
   #---------- PREP
+  
   # Set up progress bar
   progress <- init_progress(verbose)
   
   progress <- update_progress(progress)
   # Input checks.
   threads <- as.integer(threads)  # Plain numbers default to double, unless integer R syntax is explicitly used.
-  paramcheck <- parameters_good(sleuth_data, transcripts, name_A, name_B, varname, COUNTS_COL,
+  paramcheck <- parameters_good(sleuth_data, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads, count_thresh, testmode, boots)
   if (paramcheck$error) stop(paramcheck$message)
   
   progress <- update_progress(progress)
   # Initialize workers cluster.
-  wcl <- parallel::makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
+  wcl <- makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
   
-  #----------- LOOK UPS
+  #----------- LOOK UP
+  
   progress <- update_progress(progress)
-  # Look-up from parent_id to target_id
-  targets_by_parent <- split(as.matrix(transcripts[TARGET_COL]), transcripts[[PARENT_COL]])
+  # Look-up from parent_id to target_id.
+  targets_by_parent <- split(annot[[TARGET_COL]], annot[[PARENT_COL]])
   
-  # Look-up from target_id to parent_id
-  tx_filter <- data.table(target_id = transcripts[[TARGET_COL]], parent_id = transcripts[[PARENT_COL]])
+  # Look-up from target_id to parent_id.
+  tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
   setkey(tx_filter, target_id)
   
   # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
   
   #---------- EXTRACT DATA
+  
   progress <- update_progress(progress)
-  # De-nest and index the counts from the bootstraps.
+  # De-nest, average and index the counts from the bootstraps. 
+  # For each condition, a list holds a dataframe for each replicate. 
+  # Each dataframe holds the counts from ALL the bootstraps AND the mean counts across the bootstraps, indexed by transcript.
+  # Transcripts found in the bootstraps but missing from the annotation are left out.
   data_A <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
   data_B <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
+  bootmeans_A <- as.data.frame(parLapply(wcl, data_A, function(b) b[, mean_count]))
+  bootmeans_B <- as.data.frame(parLapply(wcl, data_B, function(b) b[, mean_count]))
   
-  #----------
+  #---------- PRE-ALLOCATE
+  
   progress <- update_progress(progress)
   # Pre-allocate output structure.
-  results <- list("Parameters"=list("var_name"=varname, "cond_A"=name_A, "cond_B"=name_B,
-                                    "num_replic_A"=length(data_A), "num_replic_B"=length(data_B),
-                                    "p_thresh"=p_thresh, "count_thresh"=count_thresh, "tests"=testmode),
-                  "Genes"=data.table("parent_id"=levels(as.factor(tx_filter[[PARENT_COL]])),
-                                     "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
-                                     "Gt_DTU"=NA, "Pt_DTU"=NA,
-                                     "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
-                                     "Gt_pvalAB_stdev"=NA_real_, "Gt_pvalBA_stdev"=NA_real_,
-                                     "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
-                                     "Gt_dtuAB"=NA, "Gt_dtuBA"=NA),
-                  "Transcripts"=data.table("target_id"=tx_filter[[TARGET_COL]], "parent_id"=tx_filter[[PARENT_COL]],
-                                           "propA"=NA_real_, "propB"=NA_real_,   # proportion of sums across replicates
-                                           "Dprop"=NA_real_,                       # propB - propA
-                                           "Gt_DTU"=NA, "Pt_DTU"=NA,
-                                           "Pt_pval"=NA_real_, "Pt_pval_stdev"=NA_real_,  # proportion test
-                                           "Pt_pval_corr"=NA_real_, 
-                                           "sumA"=NA_real_, "sumB"=NA_real_,     # sum across replicates of means across bootstraps
-                                           "meanA"=NA_real_, "meanB"=NA_real_,   # mean across replicates of means across bootstraps
-                                           "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
-                                           "totalA"=NA_real_, "totalB"=NA_real_))  # sum of all transcripts for that gene
+  results <- alloc_out(tx_filter)
+  results$Parameters["num_replic_A"] <- length(data_A)
+  results$Parameters["num_replic_B"] <- length(data_B)
+  results$Parameters["p_thresh"] <- p_thresh 
+  results$Parameters["count_thresh"] <- count_thresh
+  results$Parameters["tests"] <- testmode
+  results$Genes[, known_transc := parSapply(wcl, results$Genes[, parent_id], function(p) length(targets_by_parent[[p]])) ]
+
+  #---------- STATS
   
+  progress <- update_progress(progress)
+  # Statistics per transcript across all bootstraps per condition, for filtered targets only.
+  results$Transcripts[, sumA :=  rowSums(bootmeans_A) ]
+  results$Transcripts[, sumB :=  rowSums(bootmeans_B) ]
+  results$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
+  results$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
+  results$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
+  results$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
   
-  setkey(results$Genes, parent_id)
-  setkey(results$Transcripts, target_id)
-  results$Genes[, known_transc := parallel::parSapply(wcl, results$Genes[[PARENT_COL]], function(p) length(targets_by_parent[[p]]))]
+  # Sums and proportions, for filtered targets only.
+  results$Transcripts[, totalA := sum(sumA), by=parent_id]
+  results$Transcripts[, totalB := sum(sumB), by=parent_id]
+  results$Transcripts[, propA := sumA/totalA]
+  results$Transcripts[, propB := sumB/totalB]
+  results$Transcripts[, Dprop := propB - propA]
   
-#   progress <- update_progress(progress)
-#   # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-#   results$Transcripts[actual_targets, sumA :=  rowSums(count_data[[name_A]])]
-#   results$Transcripts[actual_targets, sumB :=  rowSums(count_data[[name_B]])]
-#   results$Transcripts[actual_targets, meanA :=  rowMeans(count_data[[name_A]])]
-#   results$Transcripts[actual_targets, meanB :=  rowMeans(count_data[[name_B]])]
-#   results$Transcripts[actual_targets, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(count_data[[name_A]]))) ]
-#   results$Transcripts[actual_targets, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(count_data[[name_B]]))) ]
-#   
-#   # Sums and proportions, for filtered targets only.
-#   results$Transcripts[actual_targets, totalA := sum(sumA), by=parent_id]
-#   results$Transcripts[actual_targets, totalB := sum(sumB), by=parent_id]
-#   results$Transcripts[actual_targets, propA := sumA/totalA]
-#   results$Transcripts[actual_targets, propB := sumB/totalB]
-#   
+  # Filter transcripts to reduce number of tests:
+  # Exclude transcripts with no sibling isoforms (proportion == 1 in both conditions)
+  # Exclude transcripts with no counts in either condition.
+  results$Transcripts[, test_elig := (sumA + sumB != 0 & propA + propB != 2)]
+
 #   progress <- update_progress(progress)
 #   # G test, only for parents and targets that survived filtering.
 #   # Compare B counts to A ratios:
@@ -119,16 +119,16 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B, varname="con
 #   results$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
 #   # Find the agreements.
 #   results$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
-#   
-#   progress <- update_progress(progress)
-#   # Proportion test.
-#   results$Transcripts[actual_targets, Pt_pval:= unlist(parallel::parLapply(wcl, actual_targets, function(target) 
-#     prop.test(x=c(results$Transcripts[target, sumA], results$Transcripts[target, sumB]), 
-#               n=c(results$Transcripts[target, totalA], results$Transcripts[target, totalB]), 
-#               correct=TRUE
-#     )[["p.value"]] )) ]
-#   results$Transcripts[actual_targets, Pt_pval_corr:= p.adjust(results$Transcripts[actual_targets, Pt_pval], method=correction)]
-#   results$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
+  
+  progress <- update_progress(progress)
+  # Proportion test.
+  results$Transcripts[, Pt_pval:= unlist(parallel::parLapply(wcl, rowfilter, function(target) 
+    prop.test(x=c(results$Transcripts[target, sumA], results$Transcripts[target, sumB]), 
+              n=c(results$Transcripts[target, totalA], results$Transcripts[target, totalB]), 
+              correct=TRUE
+    )[["p.value"]] )) ]
+  results$Transcripts[rowfilter, Pt_pval_corr:= p.adjust(results$Transcripts[rowfilter, Pt_pval], method=correction)]
+  results$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
   
   # Dismiss workers.
   parallel::stopCluster(wcl)
@@ -136,6 +136,9 @@ calculate_DTU <- function(sleuth_data, transcripts, name_A, name_B, varname="con
   progress <- update_progress(progress)
   return(results)
 }
+
+
+
 
 
 
@@ -160,15 +163,16 @@ group_samples <- function(covariates) {
       samplesByVariable[[varname]][[x]] <- which(covariates[, varname] == x)
     }
   }
-  
   return(samplesByVariable)
 }
+
 
 
 #================================================================================
 #' Extract bootstrap counts into a less nested structure.
 #' 
-#' NA replaced with 0.
+#' NA replaced with 0. Means counts per transcripts are calculated and included as
+#' a column per sample.
 #' 
 #' @param wcl A cluster of workers (threads).
 #' @param slo A sleuth object.
@@ -183,17 +187,53 @@ denest_boots <- function(wcl, slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
     dt <- as.data.frame( parallel::parLapply(wcl, slo$kal[[smpl]]$bootstrap, function(boot) {
       roworder <- match(tx, boot[[BS_TARGET_COL]])
       boot[roworder, COUNTS_COL]
-    }))
+    }), useNA=TRUE)
     # Do something about the ugly huge default names.
     nm <- names(dt)
     names(dt) <- seq(1, length(nm), 1)
     # replace any NAs with 0. Happens when annotation different from that used for DTE.
-    dt[is.na(dt),] <- 0
-    # Add target_id as index.
+    dt[is.na(dt)] <- 0
+    # data tables are better
     dt <- data.table(dt)
+    # Add mean count per transcript.
+    means <- rowMeans(dt)
+    dt[, mean_count := means]
+    # Add target_id as index.
     dt[, target_id := tx]
     setkey(dt, target_id)
   })
+}
+
+
+#================================================================================
+#' Create output structure.
+#' 
+#' @param annot a dataframe with at least 2 columns: target_id and parent_id.
+#' @return a list-based structure of class dtu.
+#' 
+alloc_out <- function(annot){
+  Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
+                     "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
+                     "p_thresh"=NA_real_, "count_thresh"=NA_real_, "tests"=NA_character_)
+  Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
+                      "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
+                      "Gt_DTU"=NA, "Pt_DTU"=NA,
+                      "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
+                      "Gt_pvalAB_stdev"=NA_real_, "Gt_pvalBA_stdev"=NA_real_,
+                      "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
+                      "Gt_dtuAB"=NA, "Gt_dtuBA"=NA)
+  Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
+                            "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
+                            "Gt_DTU"=NA, "Pt_DTU"=NA,
+                            "Pt_pval"=NA_real_, "Pt_pval_stdev"=NA_real_,  "Pt_pval_corr"=NA_real_, 
+                            "sumA"=NA_real_, "sumB"=NA_real_,     # sum across replicates of means across bootstraps
+                            "meanA"=NA_real_, "meanB"=NA_real_,   # mean across replicates of means across bootstraps
+                            "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
+                            "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
+                            "test_elig"=NA)                        # eligible for testing (reduce number of tests)
+  setkey(Genes, parent_id)
+  setkey(Transcripts, target_id)
+  return(structure(list("Parameters"=Parameters, "Genes"=Genes, "Transcripts"=Transcripts), class="dtu"))
 }
 
 
