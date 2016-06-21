@@ -38,103 +38,123 @@ calculate_DTU <- function(sleuth_data, annot, name_A, name_B, varname="condition
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads, count_thresh, testmode, boots)
   if (paramcheck$error) stop(paramcheck$message)
   
+  result <- tryCatch({  # The cluster of workers is persistent, so I need to explicitly dismiss it even if execution is interrupted by errors.
+    progress <- update_progress(progress)
+    # Initialize workers cluster.
+    wcl <- makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
+    
+    #----------- LOOK UP
+    
+    progress <- update_progress(progress)
+    # Look-up from parent_id to target_id.
+    targets_by_parent <- split(annot[[TARGET_COL]], annot[[PARENT_COL]])
+    
+    # Look-up from target_id to parent_id.
+    tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
+    setkey(tx_filter, target_id)
+    
+    # Reverse look-up from replicates to covariates.
+    samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
+    
+    #---------- EXTRACT DATA
+    
+    progress <- update_progress(progress)
+    # De-nest, average and index the counts from the bootstraps. 
+    # For each condition, a list holds a dataframe for each replicate. 
+    # Each dataframe holds the counts from ALL the bootstraps AND the mean counts across the bootstraps, indexed by transcript.
+    # Transcripts found in the bootstraps but missing from the annotation are left out.
+    data_A <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
+    data_B <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
+    bootmeans_A <- as.data.frame(parLapply(wcl, data_A, function(b) b[, mean_count]))
+    bootmeans_B <- as.data.frame(parLapply(wcl, data_B, function(b) b[, mean_count]))
+    
+    #---------- PRE-ALLOCATE
+    
+    progress <- update_progress(progress)
+    # Pre-allocate output structure.
+    results <- alloc_out(tx_filter)
+    # Fill in some stuff I already know.
+    results$Parameters["num_replic_A"] <- length(data_A)
+    results$Parameters["num_replic_B"] <- length(data_B)
+    results$Parameters["p_thresh"] <- p_thresh 
+    results$Parameters["count_thresh"] <- count_thresh
+    results$Parameters["tests"] <- testmode
+    results$Parameters["threads"] <- threads
+    results$Genes[, known_transc := parSapply(wcl, results$Genes[, parent_id], function(p) length(targets_by_parent[[p]])) ]
+    
+    #---------- STATS
+    
+    progress <- update_progress(progress)
+    # Statistics per transcript across all bootstraps per condition, for filtered targets only.
+    results$Transcripts[, sumA :=  rowSums(bootmeans_A) ]
+    results$Transcripts[, sumB :=  rowSums(bootmeans_B) ]
+    results$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
+    results$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
+    results$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
+    results$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
+    
+    # Sums and proportions, for filtered targets only.
+    results$Transcripts[, totalA := sum(sumA), by=parent_id]
+    results$Transcripts[, totalB := sum(sumB), by=parent_id]
+    results$Transcripts[, propA := sumA/totalA]
+    results$Transcripts[, propB := sumB/totalB]
+    results$Transcripts[, Dprop := propB - propA]
+    
+    # Filter transcripts to reduce number of tests:
+    # Exclude transcripts with no detected sibling isoforms (proportion == 1 in both conditions)
+    # Exclude transcripts that where not detected (proportion == 0 in both conditions).
+    results$Transcripts[, test_elig := (propA + propB != 0  &  propA + propB != 2)]
+    
+    #---------- TESTS
+    
+    #   progress <- update_progress(progress)
+    #   # G test, only for parents and targets that survived filtering.
+    #   # Compare B counts to A ratios:
+    #   results$Genes[actual_parents, Gt_pvalAB := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
+    #     g.test(results$Transcripts[targets, sumB],
+    #            p=results$Transcripts[targets, propA])[["p.value"]])]
+    #   # Compare A counts to B ratios:
+    #   results$Genes[actual_parents, Gt_pvalBA := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
+    #     g.test(results$Transcripts[targets, sumA],
+    #            p=results$Transcripts[targets, propB])[["p.value"]])]
+    #   # Correct p-values and apply threshold.
+    #   results$Genes[, Gt_pvalAB_corr := p.adjust(Gt_pvalAB, method=correction)]
+    #   results$Genes[, Gt_dtuAB := Gt_pvalAB_corr < p_thresh]
+    #   results$Genes[, Gt_pvalBA_corr := p.adjust(Gt_pvalBA, method=correction)]
+    #   results$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
+    #   # Find the agreements.
+    #   results$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
+    
+    progress <- update_progress(progress)
+    # Proportion test.
+    # The test function is not vectorised, nor easily vectorisable. Looping is needed.
+    # Data tables allow values to be changed in place, and the table is pre-allocated. 
+    # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
+    results$Transcripts[(test_elig), Pt_pval := as.vector(parApply(wcl, results$Transcripts[(test_elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
+        FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], n = row[c("totalA", "totalB")], correct = TRUE)[["p.value"]] } )) ]
+    results$Transcripts[(test_elig), Pt_pval_corr := p.adjust(Pt_pval, method=correction)]
+    results$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
+    
+    # Return value for the try block.
+    results
+    
+  }, warning = function(war) {
+    print(war)
+    traceback()
+    results
+  
+  }, error = function(err) {
+    print(err)
+    traceback()
+    results
+    
+  }, finally = {
+    # Dismiss workers.
+    parallel::stopCluster(wcl)
+  })
+  
   progress <- update_progress(progress)
-  # Initialize workers cluster.
-  wcl <- makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
-  
-  #----------- LOOK UP
-  
-  progress <- update_progress(progress)
-  # Look-up from parent_id to target_id.
-  targets_by_parent <- split(annot[[TARGET_COL]], annot[[PARENT_COL]])
-  
-  # Look-up from target_id to parent_id.
-  tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
-  setkey(tx_filter, target_id)
-  
-  # Reverse look-up from replicates to covariates.
-  samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
-  
-  #---------- EXTRACT DATA
-  
-  progress <- update_progress(progress)
-  # De-nest, average and index the counts from the bootstraps. 
-  # For each condition, a list holds a dataframe for each replicate. 
-  # Each dataframe holds the counts from ALL the bootstraps AND the mean counts across the bootstraps, indexed by transcript.
-  # Transcripts found in the bootstraps but missing from the annotation are left out.
-  data_A <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
-  data_B <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
-  bootmeans_A <- as.data.frame(parLapply(wcl, data_A, function(b) b[, mean_count]))
-  bootmeans_B <- as.data.frame(parLapply(wcl, data_B, function(b) b[, mean_count]))
-  
-  #---------- PRE-ALLOCATE
-  
-  progress <- update_progress(progress)
-  # Pre-allocate output structure.
-  results <- alloc_out(tx_filter)
-  results$Parameters["num_replic_A"] <- length(data_A)
-  results$Parameters["num_replic_B"] <- length(data_B)
-  results$Parameters["p_thresh"] <- p_thresh 
-  results$Parameters["count_thresh"] <- count_thresh
-  results$Parameters["tests"] <- testmode
-  results$Genes[, known_transc := parSapply(wcl, results$Genes[, parent_id], function(p) length(targets_by_parent[[p]])) ]
-
-  #---------- STATS
-  
-  progress <- update_progress(progress)
-  # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-  results$Transcripts[, sumA :=  rowSums(bootmeans_A) ]
-  results$Transcripts[, sumB :=  rowSums(bootmeans_B) ]
-  results$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
-  results$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
-  results$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
-  results$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
-  
-  # Sums and proportions, for filtered targets only.
-  results$Transcripts[, totalA := sum(sumA), by=parent_id]
-  results$Transcripts[, totalB := sum(sumB), by=parent_id]
-  results$Transcripts[, propA := sumA/totalA]
-  results$Transcripts[, propB := sumB/totalB]
-  results$Transcripts[, Dprop := propB - propA]
-  
-  # Filter transcripts to reduce number of tests:
-  # Exclude transcripts with no sibling isoforms (proportion == 1 in both conditions)
-  # Exclude transcripts with no counts in either condition.
-  results$Transcripts[, test_elig := (sumA + sumB != 0 & propA + propB != 2)]
-
-#   progress <- update_progress(progress)
-#   # G test, only for parents and targets that survived filtering.
-#   # Compare B counts to A ratios:
-#   results$Genes[actual_parents, Gt_pvalAB := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
-#     g.test(results$Transcripts[targets, sumB],
-#            p=results$Transcripts[targets, propA])[["p.value"]])]
-#   # Compare A counts to B ratios:
-#   results$Genes[actual_parents, Gt_pvalBA := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
-#     g.test(results$Transcripts[targets, sumA],
-#            p=results$Transcripts[targets, propB])[["p.value"]])]
-#   # Correct p-values and apply threshold.
-#   results$Genes[, Gt_pvalAB_corr := p.adjust(Gt_pvalAB, method=correction)]
-#   results$Genes[, Gt_dtuAB := Gt_pvalAB_corr < p_thresh]
-#   results$Genes[, Gt_pvalBA_corr := p.adjust(Gt_pvalBA, method=correction)]
-#   results$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
-#   # Find the agreements.
-#   results$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
-  
-  progress <- update_progress(progress)
-  # Proportion test.
-  results$Transcripts[, Pt_pval:= unlist(parallel::parLapply(wcl, rowfilter, function(target) 
-    prop.test(x=c(results$Transcripts[target, sumA], results$Transcripts[target, sumB]), 
-              n=c(results$Transcripts[target, totalA], results$Transcripts[target, totalB]), 
-              correct=TRUE
-    )[["p.value"]] )) ]
-  results$Transcripts[rowfilter, Pt_pval_corr:= p.adjust(results$Transcripts[rowfilter, Pt_pval], method=correction)]
-  results$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
-  
-  # Dismiss workers.
-  parallel::stopCluster(wcl)
-  
-  progress <- update_progress(progress)
-  return(results)
+  return(result)
 }
 
 
@@ -214,7 +234,7 @@ denest_boots <- function(wcl, slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
 alloc_out <- function(annot){
   Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                      "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
-                     "p_thresh"=NA_real_, "count_thresh"=NA_real_, "tests"=NA_character_)
+                     "p_thresh"=NA_real_, "count_thresh"=NA_real_, "tests"=NA_character_, threads=NA_integer_)
   Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                       "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                       "Gt_DTU"=NA, "Pt_DTU"=NA,
