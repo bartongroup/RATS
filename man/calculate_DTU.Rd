@@ -4,7 +4,7 @@
 \alias{calculate_DTU}
 \title{Calculate differential transcript usage.}
 \usage{
-calculate_DTU(sleuth_data, annot, name_A, name_B, varname = "condition",
+calculate_DTU(slo, annot, name_A, name_B, varname = "condition",
   p_thresh = 0.05, count_thresh = 5, testmode = "both",
   correction = "BH", verbose = FALSE, boots = TRUE,
   threads = parallel::detectCores(), COUNTS_COL = "est_counts",
@@ -12,7 +12,7 @@ calculate_DTU(sleuth_data, annot, name_A, name_B, varname = "condition",
   BS_TARGET_COL = "target_id")
 }
 \arguments{
-\item{sleuth_data}{A sleuth object.}
+\item{slo}{A sleuth object.}
 
 \item{annot}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
 
@@ -24,9 +24,9 @@ calculate_DTU(sleuth_data, annot, name_A, name_B, varname = "condition",
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
-\item{count_thresh}{Transcripts with fewer reads will be ignored (default 5).}
+\item{count_thresh}{Transcripts with fewer reads per replicate than this will be ignored (default 5).}
 
-\item{testmode}{One of "G-test", "proportion-test", "both" (default both).}
+\item{testmode}{One of "G-test", "prop-test", "both" (default both).}
 
 \item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
 
