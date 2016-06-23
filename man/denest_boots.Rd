@@ -4,11 +4,9 @@
 \alias{denest_boots}
 \title{Extract bootstrap counts into a less nested structure.}
 \usage{
-denest_boots(wcl, slo, tx, samples, COUNTS_COL, BS_TARGET_COL)
+denest_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL)
 }
 \arguments{
-\item{wcl}{A cluster of workers (threads).}
-
 \item{slo}{A sleuth object.}
 
 \item{tx}{A vector of transcript ids.}

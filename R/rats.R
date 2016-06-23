@@ -50,7 +50,58 @@ calculate_DTU <- function(sleuth_data, annot, name_A, name_B, varname="condition
   
   # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(sleuth_data$sample_to_covariates)[[varname]]
+
+
   
+  #---------- EXTRACT DATA
+  
+  progress <- update_progress(progress)
+  # De-nest, average and index the counts from the bootstraps. 
+  # For each condition, a list holds a dataframe for each replicate. 
+  # Each dataframe holds the counts from ALL the bootstraps AND the mean counts across the bootstraps, indexed by transcript.
+  # Transcripts found in the bootstraps but missing from the annotation are left out.
+  data_A <- denest_boots(sleuth_data, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
+  data_B <- denest_boots(sleuth_data, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
+  bootmeans_A <- as.data.table(lapply(data_A, function(b) b[, mean_count]))
+  bootmeans_B <- as.data.table(lapply(data_B, function(b) b[, mean_count]))
+  
+  #---------- PRE-ALLOCATE
+  
+  progress <- update_progress(progress)
+  # Pre-allocate results object.
+  resobj <- alloc_out(tx_filter)
+  # Fill in some stuff I already know.
+  resobj$Parameters["num_replic_A"] <- length(data_A)
+  resobj$Parameters["num_replic_B"] <- length(data_B)
+  resobj$Parameters["p_thresh"] <- p_thresh 
+  resobj$Parameters["count_thresh"] <- count_thresh
+  resobj$Parameters["tests"] <- testmode
+  resobj$Parameters["threads"] <- threads
+  resobj$Genes[, known_transc := resobj$Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
+  
+  #---------- STATS
+  
+  progress <- update_progress(progress)
+  # Statistics per transcript across all bootstraps per condition, for filtered targets only.
+  resobj$Transcripts[, sumA :=  rowSums(bootmeans_A) ]
+  resobj$Transcripts[, sumB :=  rowSums(bootmeans_B) ]
+  resobj$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
+  resobj$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
+  resobj$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
+  resobj$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
+  
+  # Sums and proportions, for filtered targets only.
+  resobj$Transcripts[, totalA := sum(sumA), by=parent_id]
+  resobj$Transcripts[, totalB := sum(sumB), by=parent_id]
+  resobj$Transcripts[, propA := sumA/totalA]
+  resobj$Transcripts[, propB := sumB/totalB]
+  resobj$Transcripts[, Dprop := propB - propA]
+  
+  # Filter transcripts to reduce number of tests:
+  # Exclude transcripts with no detected sibling isoforms (proportion == 1 in both conditions)
+  # Exclude transcripts that where not detected (proportion == 0 in both conditions).
+  resobj$Transcripts[, test_elig := (propA + propB != 0  &  propA + propB != 2)]
+    
   #---------- PREP
   
   progress <- update_progress(progress)
@@ -58,55 +109,6 @@ calculate_DTU <- function(sleuth_data, annot, name_A, name_B, varname="condition
   wcl <- makeCluster(threads, type="PSOCK")  # PSOCK is the most portable option but may get blocked by over-zealous security software.
   
   result <- tryCatch({  # The cluster of workers is persistent, so I need to explicitly dismiss it even if execution is interrupted by errors.
-    
-    #---------- EXTRACT DATA
-    
-    progress <- update_progress(progress)
-    # De-nest, average and index the counts from the bootstraps. 
-    # For each condition, a list holds a dataframe for each replicate. 
-    # Each dataframe holds the counts from ALL the bootstraps AND the mean counts across the bootstraps, indexed by transcript.
-    # Transcripts found in the bootstraps but missing from the annotation are left out.
-    data_A <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
-    data_B <- denest_boots(wcl, sleuth_data, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
-    bootmeans_A <- as.data.table(parLapply(wcl, data_A, function(b) b[, mean_count]))
-    bootmeans_B <- as.data.table(parLapply(wcl, data_B, function(b) b[, mean_count]))
-    
-    #---------- PRE-ALLOCATE
-    
-    progress <- update_progress(progress)
-    # Pre-allocate results object.
-    resobj <- alloc_out(tx_filter)
-    # Fill in some stuff I already know.
-    resobj$Parameters["num_replic_A"] <- length(data_A)
-    resobj$Parameters["num_replic_B"] <- length(data_B)
-    resobj$Parameters["p_thresh"] <- p_thresh 
-    resobj$Parameters["count_thresh"] <- count_thresh
-    resobj$Parameters["tests"] <- testmode
-    resobj$Parameters["threads"] <- threads
-    resobj$Genes[, known_transc := parSapply(wcl, resobj$Genes[, parent_id], function(p) length(targets_by_parent[[p]])) ]  # TODO redo using by= aggregation
-    
-    #---------- STATS
-    
-    progress <- update_progress(progress)
-    # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-    resobj$Transcripts[, sumA :=  rowSums(bootmeans_A) ]
-    resobj$Transcripts[, sumB :=  rowSums(bootmeans_B) ]
-    resobj$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
-    resobj$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
-    resobj$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
-    resobj$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
-    
-    # Sums and proportions, for filtered targets only.
-    resobj$Transcripts[, totalA := sum(sumA), by=parent_id]
-    resobj$Transcripts[, totalB := sum(sumB), by=parent_id]
-    resobj$Transcripts[, propA := sumA/totalA]
-    resobj$Transcripts[, propB := sumB/totalB]
-    resobj$Transcripts[, Dprop := propB - propA]
-    
-    # Filter transcripts to reduce number of tests:
-    # Exclude transcripts with no detected sibling isoforms (proportion == 1 in both conditions)
-    # Exclude transcripts that where not detected (proportion == 0 in both conditions).
-    resobj$Transcripts[, test_elig := (propA + propB != 0  &  propA + propB != 2)]
     
     #---------- TESTS
     
@@ -133,7 +135,7 @@ calculate_DTU <- function(sleuth_data, annot, name_A, name_B, varname="condition
     # The test function is not vectorised, nor easily vectorisable. Looping is needed.
     # Data tables allow values to be changed in place, and the table is pre-allocated. 
     # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
-    resobj$Transcripts[(test_elig), Pt_pval := as.vector(parApply(wcl, resobj$Transcripts[(test_elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
+    resobj$Transcripts[(test_elig), Pt_pval := as.vector(apply(resobj$Transcripts[(test_elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
         FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], n = row[c("totalA", "totalB")], correct = TRUE)[["p.value"]] } )) ]
     resobj$Transcripts[(test_elig), Pt_pval_corr := p.adjust(Pt_pval, method=correction)]
     resobj$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
@@ -141,14 +143,15 @@ calculate_DTU <- function(sleuth_data, annot, name_A, name_B, varname="condition
     # Return value for the try block.
     resobj
     
-  }, warning = function(war) {
-    print(war)
-    traceback()
-    if (exists("resobj")) {
-      resobj  # Inspecting half-baked tables could be useful in understanding some errors.
-    } else {
-      NULL
-    }
+    # Commented out to prevent the execution from aborting on warnings.
+#   }, warning = function(war) {
+#     print(war)
+#     traceback()
+#     if (exists("resobj")) {
+#       resobj  # Inspecting half-baked tables could be useful in understanding some errors.
+#     } else {
+#       NULL
+#     }
     
   }, error = function(err) {
     print(err)
@@ -205,7 +208,6 @@ group_samples <- function(covariates) {
 #' NA replaced with 0. Means counts per transcripts are calculated and included as
 #' a column per sample.
 #' 
-#' @param wcl A cluster of workers (threads).
 #' @param slo A sleuth object.
 #' @param tx A vector of transcript ids.
 #' @param samples A numeric vector of samples to extract counts for.
@@ -213,10 +215,10 @@ group_samples <- function(covariates) {
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
 #' @return a list of data.tables, one per sample, containing all the bootstrap counts.
 #'
-denest_boots <- function(wcl, slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
-  lapply(samples, function(smpl) {                                                        # TODO try keying each table and then merging, instead of the apply/match.
+denest_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
+  lapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
-    dt <- as.data.table( parallel::parLapply(wcl, slo$kal[[smpl]]$bootstrap, function(boot) {
+    dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
       roworder <- match(tx, boot[[BS_TARGET_COL]])
       boot[roworder, COUNTS_COL]
     }))
