@@ -3,6 +3,7 @@
 \name{countrange_sim}
 \alias{countrange_sim}
 \title{Generate artificial read-count data for simulated 2-transcript genes, 
+Generate artificial read-count data for simulated 2-transcript genes, 
 systematically covering a broad range of proportions and magnitudes.}
 \usage{
 countrange_sim(proportions = seq(0, 1, 0.01), magnitudes = c(1, 5, 10, 30,

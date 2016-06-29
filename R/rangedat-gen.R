@@ -1,5 +1,7 @@
 #===============================================================================
 #' Generate artificial read-count data for simulated 2-transcript genes, 
+#===============================================================================
+#' Generate artificial read-count data for simulated 2-transcript genes, 
 #' systematically covering a broad range of proportions and magnitudes.
 #' 
 #' For each level of transcript proportions in condition A, all proportion levels are
