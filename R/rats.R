@@ -96,11 +96,11 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   # Filter transcripts and genes to reduce number of tests:
   resobj$Transcripts[, test_elig := (propA + propB > 0  &  
-                                       propA + propB < 2  &  
-                                       sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
-                                       sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
+                                     propA + propB < 2  &  
+                                     sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
+                                     sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
   resobj$Genes[, usable_transc :=  resobj$Transcripts[, .(parent_id, ifelse(test_elig, 1, 0))][, sum(V2), by = parent_id][, V1] ]
-  resobj$Gene[, test_elig := usable_transc >= 2]
+  resobj$Genes[, test_elig := usable_transc >= 2]
   
   #---------- TESTS
   
@@ -149,6 +149,18 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   if (boots) {
     # TODO
+    
+    selA <- lapply(data_A, function (replic) { sample(1:(dim(replic)[2]-2), 10000, replace=TRUE) } )
+    
+    # TODO ACtually, probably best to have the bootstraps (10000) as the first level, to ease coordination across tables.
+    
+    bootmeans_A <- as.data.table(lapply(data_A, function(b) b[,  ]))
+    bootmeans_B <- as.data.table(lapply(data_B, function(b) b[, mean_count]))
+    
+    if (testmode %in% c("prop-test", "both")) {
+      
+    }
+      
   }
   
   #---------- DONE
@@ -316,8 +328,5 @@ alloc_out <- function(annot){
   setkey(Transcripts, parent_id, target_id)
   return(list("Parameters"=Parameters, "Genes"=Genes, "Transcripts"=Transcripts))
 }
-
-
-#================================================================================
 
 
