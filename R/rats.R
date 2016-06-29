@@ -76,6 +76,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   resobj$Parameters["p_thresh"] <- p_thresh 
   resobj$Parameters["count_thresh"] <- count_thresh
   resobj$Parameters["tests"] <- testmode
+  resobj$Parameters["bootstrap"] <- boots
   resobj$Parameters["threads"] <- threads
   resobj$Genes[, known_transc :=  resobj$Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
   
@@ -229,7 +230,7 @@ alloc_out <- function(annot){
   Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                      "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                      "p_thresh"=NA_real_, "count_thresh"=NA_real_, 
-                     "tests"=NA_character_, "bootstrap"=boots, "threads"=NA_integer_)
+                     "tests"=NA_character_, "bootstrap"=NA, "threads"=NA_integer_)
   Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                       "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                       "test_elig"=NA,                              # eligible for testing (reduce number of tests)
