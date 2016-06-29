@@ -9,7 +9,7 @@ denest_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL)
 \arguments{
 \item{slo}{A sleuth object.}
 
-\item{tx}{A vector of transcript ids.}
+\item{tx}{A vector of transcript ids. The results will be ordered according to this vector.}
 
 \item{samples}{A numeric vector of samples to extract counts for.}
 
@@ -19,6 +19,9 @@ denest_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL)
 }
 \value{
 a list of data.tables, one per sample, containing all the bootstrap counts.
+
+Transcripts in slo that are missing from tx will be skipped completely.
+Transcripts in tx that are missing from slo are automatically padded with NA, which we re-assign as 0.
 }
 \description{
 NA replaced with 0. Means counts per transcripts are calculated and included as

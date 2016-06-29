@@ -30,6 +30,8 @@ more stuff taken from ctest's chisq.test()
 Sourced and adapted from from:
 V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca
 http://www.psych.ualberta.ca/~phurd/cruft/g.test.r}
+
+\item{x}{a numeric vector of positive numebrs, with at least one non-zero value.}
 }
 \description{
 Log-likelihood tests of independence & goodness of fit

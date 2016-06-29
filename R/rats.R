@@ -45,7 +45,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   # Look-up from target_id to parent_id.
   tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
-  setkey(tx_filter, target_id)
+  setkey(tx_filter, parent_id, target_id) # Fixates the order of genes and transcripts to be used throughout the rest of this package.
   
   # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
@@ -68,13 +68,16 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   # Pre-allocate results object.
   resobj <- alloc_out(tx_filter)
   # Fill in some stuff I already know.
+  resobj$Parameters["var_name"] <- varname
+  resobj$Parameters["cond_A"] <- name_A
+  resobj$Parameters["cond_B"] <- name_B
   resobj$Parameters["num_replic_A"] <- length(data_A)
   resobj$Parameters["num_replic_B"] <- length(data_B)
   resobj$Parameters["p_thresh"] <- p_thresh 
   resobj$Parameters["count_thresh"] <- count_thresh
   resobj$Parameters["tests"] <- testmode
   resobj$Parameters["threads"] <- threads
-  resobj$Genes[, known_transc := resobj$Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
+  resobj$Genes[, known_transc :=  resobj$Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
   
   #---------- STATS
   
@@ -99,34 +102,16 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
                                      propA + propB < 2  &  
                                      sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
                                      sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
-  resobj$Genes[, usable_transc := resobj$Transcripts[, .(parent_id, ifelse(test_elig, 1, 0))][, sum(V2), by = parent_id][, V1] ]  # Assign 1 for eligible transcripts, 0 for non, then sum to get the number of eligible trascripts per gene.
+  resobj$Genes[, usable_transc :=  resobj$Transcripts[, .(parent_id, ifelse(test_elig, 1, 0))][, sum(V2), by = parent_id][, V1] ]
   resobj$Gene[, test_elig := usable_transc >= 2]
 
   #---------- TESTS
-    
-  progress <- update_progress(progress)
-  if (testmode %in% c("prop-test", "both")) {
-    #   # G test, only for parents and targets that survived filtering.
-    #   # Compare B counts to A ratios:
-    #   results$Genes[actual_parents, Gt_pvalAB := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
-    #     g.test(results$Transcripts[targets, sumB],
-    #            p=results$Transcripts[targets, propA])[["p.value"]])]
-    #   # Compare A counts to B ratios:
-    #   results$Genes[actual_parents, Gt_pvalBA := parallel::parSapply(wcl, actual_targets_by_parent, function(targets)
-    #     g.test(results$Transcripts[targets, sumA],
-    #            p=results$Transcripts[targets, propB])[["p.value"]])]
-    #   # Correct p-values and apply threshold.
-    #   results$Genes[, Gt_pvalAB_corr := p.adjust(Gt_pvalAB, method=correction)]
-    #   results$Genes[, Gt_dtuAB := Gt_pvalAB_corr < p_thresh]
-    #   results$Genes[, Gt_pvalBA_corr := p.adjust(Gt_pvalBA, method=correction)]
-    #   results$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
-    #   # Find the agreements.
-    #   results$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
-  }
+  
+  # PROP
 
   progress <- update_progress(progress)
+  # Proportion test.
   if (testmode %in% c("prop-test", "both")) {
-    # Proportion test.
     # The test function is not vectorised, nor easily vectorisable. Looping is needed.
     # Data tables allow values to be changed in place, and the table is pre-allocated. 
     # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
@@ -134,11 +119,33 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
         FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], n = row[c("totalA", "totalB")], correct = TRUE)[["p.value"]] } )) ]
     resobj$Transcripts[(test_elig), Pt_pval_corr := p.adjust(Pt_pval, method=correction)]
     resobj$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
-    tmp <- resobj$Transcripts[, any(Pt_DTU), by = parent_id][, V1]
-    
-    #resobj$Genes[, Pt_DTU := tmp]
-    
-    
+    # Inform genes table of the result.
+    resobj$Genes[, Pt_DTU :=  resobj$Transcripts[, any(Pt_DTU), by = parent_id][, V1] ]
+  }
+  
+  # G
+  
+  progress <- update_progress(progress)
+  # G test.
+  if (testmode %in% c("G-test", "g-test", "both")) {
+    # Set key to parents only. Was previously set to (parent, target) to ensure consistent order of targets for un-keyed manipulations.
+    setkey(resobj$Transcripts, parent_id)
+    resobj$Genes[(test_elig), c("Gt_pvalAB", "Gt_pvalBA") := 
+        as.data.frame( t( as.data.frame( lapply(resobj$Genes[(test_elig), parent_id], function(parent) {
+            # Extract all relevant data to avoid repeated look ups in the large table.
+            subdt <- resobj$Transcripts[parent, .(sumA, sumB, propA, propB)]
+            pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])[["p.value"]] 
+            pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])[["p.value"]]
+            c(pAB, pBA) }) ))) ]
+    # Correct p-values and apply threshold.
+    resobj$Genes[, Gt_pvalAB_corr := p.adjust(Gt_pvalAB, method=correction)]
+    resobj$Genes[, Gt_dtuAB := Gt_pvalAB_corr < p_thresh]
+    resobj$Genes[, Gt_pvalBA_corr := p.adjust(Gt_pvalBA, method=correction)]
+    resobj$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
+    # Find the agreements.
+    resobj$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
+    # Inform transcripts table of the result.
+    resobj$Transcripts[, Gt_DTU := sapply(parent_id, function(parent) { resobj$Genes[parent, Gt_DTU] }) ]
   }
   
   #---------- DONE
@@ -184,11 +191,14 @@ group_samples <- function(covariates) {
 #' a column per sample.
 #' 
 #' @param slo A sleuth object.
-#' @param tx A vector of transcript ids.
+#' @param tx A vector of transcript ids. The results will be ordered according to this vector.
 #' @param samples A numeric vector of samples to extract counts for.
 #' @param COUNTS_COL The name of the column with the counts.
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
 #' @return a list of data.tables, one per sample, containing all the bootstrap counts.
+#'
+#' Transcripts in slo that are missing from tx will be skipped completely.
+#' Transcripts in tx that are missing from slo are automatically padded with NA, which we re-assign as 0.
 #'
 denest_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
   lapply(samples, function(smpl) {
@@ -218,7 +228,8 @@ denest_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
 alloc_out <- function(annot){
   Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                      "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
-                     "p_thresh"=NA_real_, "count_thresh"=NA_real_, "tests"=NA_character_, threads=NA_integer_)
+                     "p_thresh"=NA_real_, "count_thresh"=NA_real_, 
+                     "tests"=NA_character_, "bootstrap"=boots, "threads"=NA_integer_)
   Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                       "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                       "test_elig"=NA,                              # eligible for testing (reduce number of tests)
@@ -238,7 +249,7 @@ alloc_out <- function(annot){
                             "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
   setkey(Genes, parent_id)
   setkey(Transcripts, parent_id, target_id)
-  return(structure(list("Parameters"=Parameters, "Genes"=Genes, "Transcripts"=Transcripts), class="dtu"))
+  return(list("Parameters"=Parameters, "Genes"=Genes, "Transcripts"=Transcripts))
 }
 
 
@@ -275,7 +286,7 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
   }
   if ( (! is.numeric(count_thresh)) || count_thresh < 0 )
     return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be zero or a positive number."))
-  if ( ! testmode %in% c("G-test", "proportion-test", "both"))
+  if ( ! testmode %in% c("G-test", "g-test", "prop-test", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   if ( ! is.logical(boots))
     return(list("error"=TRUE, "message"="Boots must be a logical value."))
@@ -296,8 +307,8 @@ init_progress <- function(on)
                                  "Extracting counts from bootstraps...",
                                  "Allocating output structure...",
                                  "Calculating counts statistics...",
+                                 "Calculating prop-test p-values...",
                                  "Calculating G-test p-values...",
-                                 "Calculating proportions-test p-values...",
                                  "All done!"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)

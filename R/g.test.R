@@ -2,7 +2,8 @@
 ##' Does Williams' and Yates' correction
 ##' does Monte Carlo simulation of p-values, via gtestsim.c
 #'
-#' @param x	a numeric vector or matrix. x and y can also both be factors.
+##' @param x	a numeric vector or matrix. x and y can also both be factors.
+#' @param x	a numeric vector of positive numebrs, with at least one non-zero value.
 ##' @param y	a numeric vector; ignored if x is a matrix. If x is a factor, y should be a factor of the same length.
 ##' @param correct	a logical indicating whether to apply continuity correction when computing the test statistic for 2 by 2 tables: one half is subtracted from all |O - E| differences; however, the correction will not be bigger than the differences themselves. No correction is done if simulate.p.value = TRUE.
 #' @param p	a vector of probabilities of the same length of x. An error is given if any entry of p is negative.
@@ -19,7 +20,7 @@
 #' http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
 #'
 g.test <- function(x, y = NULL, correct="none",
-                   p = rep(1/length(x), length(x)), simulate.p.value = FALSE, B = 2000)
+                     p = rep(1/length(x), length(x)), simulate.p.value = FALSE, B = 2000)
 {
   DNAME <- deparse(substitute(x))
 #   if (is.data.frame(x)) x <- as.matrix(x)
@@ -42,6 +43,7 @@ g.test <- function(x, y = NULL, correct="none",
 #     stop("all entries of x must be nonnegative and finite")
 #   if ((n <- sum(x)) == 0)
 #     stop("at least one entry of x must be positive")
+  n <- sum(x)  # Taken care of externally.
 #   #If x is matrix, do test of independence
 #   if (is.matrix(x)) {
 #     #Test of Independence
