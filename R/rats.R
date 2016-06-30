@@ -148,6 +148,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   #---------- BOOTSTRAP
   
   if (boots) {
+    # Number of bootstraps to perform.
     bootnum <- 10000
     
     # Number of sleuth bootstraps per sample.
@@ -157,13 +158,16 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
     # Compound replicates into one table. This reduces the number of tables I must access.
     data_A <- Reduce(function(x, y) { merge(x, y, by="target_id") }, data_A)
     data_B <- Reduce(function(x, y) { merge(x, y, by="target_id") }, data_B)
-    # Reset order to ensure consistency.
-    setkey(data_A, NULL)
-    setkey(data_B, NULL)
-    data_A <- data_A[match(tx_filter[, target_id], data_A[, target_id]), ]
-    data_B <- data_B[match(tx_filter[, target_id], data_B[, target_id]), ]  
+    setkey(resobj$Transcripts, target_id)  # Match order, to allow linear access across all 3 dataframes.
+    nA <- names(data_A)
+    nB <- names(data_B)
     
     # 
+    for (r in 1:dim(resobj$Transcripts)[1]) {  # Can't think of a better way to access the same row in 3 tables.
+      va <- data_A[r, nA[2:]]  # The first column is the target_id.
+      vb <- data_B[r, nB[2:]]
+      
+    }
   }
   
   #---------- DONE
@@ -287,14 +291,9 @@ denest_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
       roworder <- match(tx, boot[[BS_TARGET_COL]])
       boot[roworder, COUNTS_COL]
     }))
-    # Do something about the ugly huge default names.
-#     nm <- names(dt)
-#     setnames(dt, nm, as.character(seq(1, length(nm), 1)))
     # Replace any NAs with 0. Happens when annotation different from that used for DTE.
     dt[is.na(dt)] <- 0
-    # Add mean count and transcript ID.
-#     means <- rowMeans(dt)
-#     dt[, c("mean_count", "target_id") := list(means, tx)]
+    # Add transcript ID.
     dt[, "target_id" := tx]
   })
 }
