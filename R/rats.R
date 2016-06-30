@@ -51,11 +51,11 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   progress <- update_progress(progress)
   # De-nest, average and index the counts from the bootstraps. 
   # For each condition, a list holds a dataframe for each replicate. 
-  # Each dataframe holds the counts from ALL the bootstraps AND the mean counts across the bootstraps, indexed by transcript.
+  # Each dataframe holds the counts from ALL the bootstraps. Target_id is included but NOT used as key so as to ensure the order keeps matching tx_filter.
   data_A <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
   data_B <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
-  bootmeans_A <- as.data.table(lapply(data_A, function(b) b[, mean_count]))
-  bootmeans_B <- as.data.table(lapply(data_B, function(b) b[, mean_count]))
+  bootmeans_A <- as.data.table(lapply(data_A, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))  # Tables don't have access to column ranges by index so I have to fis out the names?
+  bootmeans_B <- as.data.table(lapply(data_B, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))
   
   #---------- PRE-ALLOCATE
   
@@ -148,19 +148,22 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   #---------- BOOTSTRAP
   
   if (boots) {
-    # TODO
+    bootnum <- 10000
     
-    selA <- lapply(data_A, function (replic) { sample(1:(dim(replic)[2]-2), 10000, replace=TRUE) } )
+    # Number of sleuth bootstraps per sample.
+    numboots_A <- sapply(data_A, function(smpl) { dim(smpl)[2] - 1 } )  # The last column is the target_id.
+    numboots_B <- sapply(data_B, function(smpl) { dim(smpl)[2] - 1 } )
     
-    # TODO ACtually, probably best to have the bootstraps (10000) as the first level, to ease coordination across tables.
+    # Compound replicates into one table. This reduces the number of tables I must access.
+    data_A <- Reduce(function(x, y) { merge(x, y, by="target_id") }, data_A)
+    data_B <- Reduce(function(x, y) { merge(x, y, by="target_id") }, data_B)
+    # Reset order to ensure consistency.
+    setkey(data_A, NULL)
+    setkey(data_B, NULL)
+    data_A <- data_A[match(tx_filter[, target_id], data_A[, target_id]), ]
+    data_B <- data_B[match(tx_filter[, target_id], data_B[, target_id]), ]  
     
-    bootmeans_A <- as.data.table(lapply(data_A, function(b) b[,  ]))
-    bootmeans_B <- as.data.table(lapply(data_B, function(b) b[, mean_count]))
-    
-    if (testmode %in% c("prop-test", "both")) {
-      
-    }
-      
+    # 
   }
   
   #---------- DONE
@@ -285,13 +288,14 @@ denest_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
       boot[roworder, COUNTS_COL]
     }))
     # Do something about the ugly huge default names.
-    nm <- names(dt)
-    setnames(dt, nm, as.character(seq(1, length(nm), 1)))
+#     nm <- names(dt)
+#     setnames(dt, nm, as.character(seq(1, length(nm), 1)))
     # Replace any NAs with 0. Happens when annotation different from that used for DTE.
     dt[is.na(dt)] <- 0
     # Add mean count and transcript ID.
-    means <- rowMeans(dt)  # Compute it while the table is purely counts.
-    dt[, c("mean_count", "target_id") := list(means, tx)]
+#     means <- rowMeans(dt)
+#     dt[, c("mean_count", "target_id") := list(means, tx)]
+    dt[, "target_id" := tx]
   })
 }
 
