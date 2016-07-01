@@ -67,6 +67,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   #-------- ADD INFO
   
+  progress <- update_progress(progress)
   # Fill in run info.
   resobj$Parameters["var_name"] <- varname
   resobj$Parameters["cond_A"] <- name_A
@@ -84,11 +85,11 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   resobj$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
   resobj$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
   # Process results.
-  if (testmode %in% c("prop-test", "both")) {
+  if (any(testmode == c("prop-test", "both"))) {
     resobj$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
     resobj$Genes[, Pt_DTU :=  resobj$Transcripts[, any(Pt_DTU), by = parent_id][, V1] ]
   }
-  if (testmode %in% c("G-test", "g-test", "both")) {
+  if (any(testmode == c("G-test", "g-test", "both"))) {
     resobj$Genes[, Gt_dtuAB := Gt_pvalAB_corr < p_thresh]
     resobj$Genes[, Gt_dtuBA := Gt_pvalBA_corr < p_thresh]
     resobj$Genes[, Gt_DTU := Gt_dtuAB & Gt_dtuBA ]
@@ -97,27 +98,27 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   #---------- BOOTSTRAP
   
-#   if (boots != "none") {
-#     # Number of bootstraps to perform.
-#     bootnum <- 10000
-#     
-#     # Number of sleuth bootstraps per sample.
-#     numboots_A <- sapply(data_A, function(smpl) { dim(smpl)[2] - 1 } )  # The last column is the target_id.
-#     numboots_B <- sapply(data_B, function(smpl) { dim(smpl)[2] - 1 } )
-#     
-#     # Compound replicates into one table. This reduces the number of tables I must access.
-#     data_A <- Reduce(function(x, y) { merge(x, y, by="target_id") }, data_A)
-#     data_B <- Reduce(function(x, y) { merge(x, y, by="target_id") }, data_B)
-#     setkey(resobj$Transcripts, target_id)  # Match order, to allow linear access across all 3 dataframes.
-#     nA <- names(data_A)
-#     nB <- names(data_B)
-#     
-#     # 
-#     for (b in 1:bootnum) {
-#       
-#     }
-#   
-#   }
+  progress <- update_progress(progress)
+  if (boots != "none") {
+    bootres <- lapply(1:bootnum, function(b) {
+      # Grab a bootstrap from each replicate. 
+      counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))  # Have to use list syntax to get a vector back. 
+                                                                                                                         # Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+      counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
+      # Do the work.
+      bout <- do_tests(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, correction)
+      return (list("P" = bout$Transcripts[, Pt_pval_corr], 
+                   "G" = bout$Genes[, Gt_pval_corr])) 
+    })
+    
+    # Stats
+    if (any(testmode == c("prop-test", "both"))) {
+      pres <- lapply(bootres, function(b) { b[["P"]] })
+    }
+    if (any(testmode == c("G-test", "g-test", "both"))) {
+      gres <- lapply(bootres, function(b) { b[["G"]] })
+    }
+  }
   
   #---------- DONE
   
@@ -287,8 +288,7 @@ alloc_out <- function(annot, full){
                         "usable_transc"=NA_integer_,
                         "test_elig"=NA,                              # eligible for testing (reduce number of tests)
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
-                        "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
-                        "Gt_dtuAB"=NA, "Gt_dtuBA"=NA)
+                        "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
                               "test_elig"=NA,                        # eligible for testing (reduce number of tests)
@@ -377,3 +377,6 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
   
   return(resobj)
 }
+
+
+

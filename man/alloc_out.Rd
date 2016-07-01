@@ -4,10 +4,12 @@
 \alias{alloc_out}
 \title{Create output structure.}
 \usage{
-alloc_out(annot)
+alloc_out(annot, full)
 }
 \arguments{
 \item{annot}{a dataframe with at least 2 columns: target_id and parent_id.}
+
+\item{full}{Full-sized structure or core fields only. Either "full" or "short".}
 }
 \value{
 a list-based structure of class dtu.

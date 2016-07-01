@@ -6,7 +6,7 @@
 \usage{
 calculate_DTU(slo, annot, name_A, name_B, varname = "condition",
   p_thresh = 0.05, count_thresh = 5, testmode = "both",
-  correction = "BH", verbose = FALSE, boots = TRUE,
+  correction = "BH", verbose = FALSE, boots = "none", bootnum = 10000L,
   threads = parallel::detectCores(), COUNTS_COL = "est_counts",
   TARGET_COL = "target_id", PARENT_COL = "parent_id",
   BS_TARGET_COL = "target_id")
@@ -32,9 +32,11 @@ calculate_DTU(slo, annot, name_A, name_B, varname = "condition",
 
 \item{verbose}{Display progress updates, default \code{FALSE}.}
 
-\item{boots}{Bootstrap the p-values. Default TRUE.}
+\item{boots}{Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").}
 
-\item{threads}{Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.}
+\item{bootnum}{Number of bootstraps (default 10000).}
+
+\item{threads}{(Not in use currently) Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.}
 
 \item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
 

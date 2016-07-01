@@ -6,7 +6,7 @@
 \usage{
 parameters_good(slo, annot, ref_name, comp_name, varname, COUNTS_COL,
   correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads,
-  count_thresh, testmode, boots)
+  count_thresh, testmode, boots, bootnum)
 }
 \value{
 List with a logical value and a message.
