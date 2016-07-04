@@ -4,59 +4,93 @@ context("DTU input controls.")
 
 #==============================================================================
 test_that("The input checks work", {
-  sl <- pseudo_sleuth
-  ids <- mini_anno
-  counts_col <- "est_counts"
-  varname <- "condition"
-  TARGET_ID <- "target_id"
-  BS_TARGET_ID <- "target_id"
-  PARENT_ID <- "parent_id"
-  ref <- "Col"
-  comp <- "Vir"
-  wrong_name <- c("JUNK_A", "JUNK_B", "JUNK_C", "JUNK_D", "JUNK_E", "JUNK_F")
+  # Sensible values.
+  slo <- pseudo_sleuth
+  annot <- mini_anno
+  name_A <- "Col"
+  name_B <- "Vir"
+  varname="condition"
+  p_thresh = 0.05
+  count_thresh = 5
+  testmode = "both"
+  correction = "BH"
+  verbose = FALSE
+  boots = "none"
+  bootnum = 10L
+  threads = parallel::detectCores()
+  COUNTS_COL="est_counts" 
+  TARGET_COL="target_id" 
+  PARENT_COL="parent_id"
+  BS_TARGET_COL="target_id"
+  
+  wrong_name <- "JUNK_TEST_NAME"
 
   # No false alarms.
-  expect_silent(calculate_DTU(sl, ids, ref, comp))
-  expect_silent(calculate_DTU(sl, ids, ref, comp, counts_col=counts_col, varname=varname,
-                              TARGET_ID=TARGET_ID, PARENT_ID=PARENT_ID, BS_TARGET_ID=BS_TARGET_ID))
+  expect_silent(calculate_DTU(slo, annot, name_A, name_B))
+  expect_silent(calculate_DTU(slo, annot, name_A, name_B, varname = varname, p_thresh = p_thresh, count_thresh = count_thresh,
+                              testmode = testmode, correction = correction, verbose = verbose, boots = boots,
+                              bootnum = bootnum, threads = threads, COUNTS_COL = COUNTS_COL, TARGET_COL = TARGET_COL, 
+                              PARENT_COL = PARENT_COL, BS_TARGET_COL = BS_TARGET_COL))
 
-  # Transcript ids are not a dataframe.
-  expect_error(calculate_DTU(sl, c("not", "a", "dataframe"), ref, comp), "transcripts is not a data.frame.")
-
-  # Transcript field names.
-  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1]),
-               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, comp, PARENT_ID=wrong_name[2]),
-               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, comp, TARGET_ID=wrong_name[1], PARENT_ID=wrong_name[2]),
-               "The specified target and parent IDs field-names do not exist in transcripts.", fixed=TRUE)
-
+  # Annottaion is not a dataframe.
+  expect_error(calculate_DTU(slo, c("not", "a", "dataframe"), name_A, name_B), "annot is not a data.frame.")
+  # Annotation field names.
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, TARGET_COL=wrong_name),
+               "target and/or parent IDs field-names do not exist in annot", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, PARENT_COL=wrong_name),
+               "target and/or parent IDs field-names do not exist in annot", fixed=TRUE)
+  
   # Bootstrap field names.
-  expect_error(calculate_DTU(sl, ids, ref, comp, BS_TARGET_ID=wrong_name[1]),
-               "The specified target IDs field-name does not exist in the bootstraps.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, comp, counts_col=wrong_name[3]),
-               "The specified counts field-name does not exist.", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, BS_TARGET_COL=wrong_name),
+               "target IDs field-name does not exist in the bootstraps", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, COUNTS_COL=wrong_name),
+               "counts field-name does not exist in the bootstraps", fixed=TRUE)
 
   # Correction method.
-  expect_error(calculate_DTU(sl, ids, ref, comp, correction=wrong_name[4]),
-               "Invalid p-value correction method name. Refer to stats::p.adjust.methods.", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, correction=wrong_name),
+               "Invalid p-value correction method name", fixed=TRUE)
 
   # Covariate name.
-  expect_error(calculate_DTU(sl, ids, ref, comp, varname=wrong_name[5]),
-               "The specified covariate name does not exist.", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, varname=wrong_name),
+               "covariate name does not exist", fixed=TRUE)
 
   # Condition names.
-  expect_error(calculate_DTU(sl, ids, wrong_name[6], comp),
-               "One or both of the specified conditions do not exist.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, ref, wrong_name[7]),
-               "One or both of the specified conditions do not exist.", fixed=TRUE)
-  expect_error(calculate_DTU(sl, ids, wrong_name[6], wrong_name[7]),
-               "One or both of the specified conditions do not exist.", fixed=TRUE)
-
+  expect_error(calculate_DTU(slo, annot, wrong_name, name_B),
+               "conditions do not exist", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, wrong_name),
+               "conditions do not exist", fixed=TRUE)
+  
   # Verbose is bool.
-  expect_error(calculate_DTU(sl, ids, ref, comp, verbose="yes"),
-               "verbose must be a logical value.", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, verbose="yes"),
+               "verbose must be a logical", fixed=TRUE)
+  
+  # Probability threshold.
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, p_thresh = 666),
+               "Invalid p-value threshold", fixed=TRUE)
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, p_thresh = -0.05),
+               "Invalid p-value threshold", fixed=TRUE)
+  
+  # Read counts threshold.
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, count_thresh = -5),
+               "Invalid read-count threshold", fixed=TRUE)
+  
+  # Tests.
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, testmode="GCSE"),
+               "Unrecognized value for testmode", fixed=TRUE)
+  expect_silent(calculate_DTU(slo, annot, name_A, name_B, testmode="g-test"))
+  expect_silent(calculate_DTU(slo, annot, name_A, name_B, testmode="prop-test"))
+  
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, boots="GCSE"),
+               "Unrecognized value for boots", fixed=TRUE)
+  expect_silent(calculate_DTU(slo, annot, name_A, name_B, boots="g-test"))
+  expect_silent(calculate_DTU(slo, annot, name_A, name_B, boots="prop-test"))
+  
+  # Number of bootstraps.
+  expect_error(calculate_DTU(slo, annot, name_A, name_B, bootnum = -5),
+               "Invalid number of bootstraps", fixed=TRUE)
 })
+
+
 
 context("DTU results")
 
@@ -69,36 +103,68 @@ test_that("The output structure is correct", {
   expect_named(dtu, c("Parameters", "Genes", "Transcripts"))
 
   expect_type(dtu$Parameters, "list")
-  expect_length(dtu$Parameters, 6)
-  expect_named(dtu$Parameters, c("var_name", "cond_A", "cond_B", "replicates_A", "replicates_B", "p_thresh"))
+  expect_length(dtu$Parameters, 11)
+  expect_named(dtu$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
+                                 "count_thresh", "tests", "bootstrap", "bootnum", "threads"))
 
   expect_true(is.data.frame(dtu$Genes))
-  expect_equal(dim(dtu$Genes)[2], 10)
-  expect_named(dtu$Genes, c("parent_id", "known_transc", "usable_transc", "pval_AB", "pval_BA",
-                            "pval_AB_corr", "pval_BA_corr", "dtu_AB", "dtu_BA", "dtu"))
+  expect_equal(dim(dtu$Genes)[2], 23)
+  expect_named(dtu$Genes, c("parent_id", "known_transc", "detect_transc", "eligible", "Pt_DTU", "Gt_DTU", 
+                            "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
+                            "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
+                            "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 
+                            "Gt_boot_na"))
   expect_true(is.numeric(dtu$Genes$known_transc))
-  expect_true(is.numeric(dtu$Genes$usable_transc))
-  expect_true(is.numeric(dtu$Genes$pval_AB))
-  expect_true(is.numeric(dtu$Genes$pval_BA))
-  expect_true(is.numeric(dtu$Genes$pval_AB_corr))
-  expect_true(is.numeric(dtu$Genes$pval_BA_corr))
-  expect_true(is.logical(dtu$Genes$dtu_AB))
-  expect_true(is.logical(dtu$Genes$dtu_BA))
-  expect_true(is.logical(dtu$Genes$dtu))
-
+  expect_true(is.numeric(dtu$Genes$detect_transc))
+  expect_true(is.logical(dtu$Genes$eligible))
+  expect_true(is.logical(dtu$Genes$Pt_DTU))
+  expect_true(is.logical(dtu$Genes$Gt_DTU))
+  expect_true(is.logical(dtu$Genes$Gt_dtuAB))
+  expect_true(is.logical(dtu$Genes$Gt_dtuBA))
+  expect_true(is.numeric(dtu$Genes$Gt_pvalAB))
+  expect_true(is.numeric(dtu$Genes$Gt_pvalBA))
+  expect_true(is.numeric(dtu$Genes$Gt_pvalAB_corr))
+  expect_true(is.numeric(dtu$Genes$Gt_pvalBA_corr))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_dtuAB))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_dtuBA))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_meanAB))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_meanBA))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_stdevAB))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_stdevBA))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_minAB))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_minBA))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_maxAB))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_maxBA))
+  expect_true(is.numeric(dtu$Genes$Gt_boot_na))
+  
   expect_true(is.data.frame(dtu$Transcripts))
-  expect_equal(dim(dtu$Transcripts)[2], 10)
-  expect_named(dtu$Transcripts, c("target_id", "parent_id",
-                                  "prop_A", "prop_B", "sum_A", "sum_B",
-                                  "mean_A", "mean_B", "stdev_A", "stdev_B"))
+  expect_equal(dim(dtu$Transcripts)[2], 24)
+  expect_named(dtu$Transcripts, c("target_id", "parent_id", "propA", "propB", "Dprop", "eligible", "Gt_DTU", "Pt_DTU", 
+                                  "Pt_pval", "Pt_pval_corr", "Pt_boot_dtu", "Pt_boot_mean", "Pt_boot_stdev", 
+                                  "Pt_boot_min", "Pt_boot_max", "Pt_boot_na",
+                                  "sumA", "sumB", "meanA", "meanB", "stdevA", "stdevB", "totalA", "totalB"))
   expect_true(is.numeric(dtu$Transcripts$prop_A))
   expect_true(is.numeric(dtu$Transcripts$prop_B))
+  expect_true(is.numeric(dtu$Transcripts$Dprop))
+  expect_true(is.logical(dtu$Transcripts$eligible))
+  expect_true(is.logical(dtu$Transcripts$Gt_DTU))
+  expect_true(is.logical(dtu$Transcripts$Pt_DTU))
+  expect_true(is.numeric(dtu$Transcripts$Pt_pval))
+  expect_true(is.numeric(dtu$Transcripts$Pt_pva_corrl))
+  expect_true(is.numeric(dtu$Transcripts$Pt_boot_dtu))
+  expect_true(is.numeric(dtu$Transcripts$Pt_boot_mean))
+  expect_true(is.numeric(dtu$Transcripts$Pt_boot_stdev))
+  expect_true(is.numeric(dtu$Transcripts$Pt_boot_min))
+  expect_true(is.numeric(dtu$Transcripts$Pt_boot_max))
+  expect_true(is.numeric(dtu$Transcripts$Pt_boot_na))
   expect_true(is.numeric(dtu$Transcripts$sum_A))
   expect_true(is.numeric(dtu$Transcripts$sum_B))
   expect_true(is.numeric(dtu$Transcripts$mean_A))
   expect_true(is.numeric(dtu$Transcripts$mean_B))
   expect_true(is.numeric(dtu$Transcripts$stdev_A))
   expect_true(is.numeric(dtu$Transcripts$stdev_B))
+  expect_true(is.numeric(dtu$Transcripts$total_A))
+  expect_true(is.numeric(dtu$Transcripts$total_B))
 })
 
 #==============================================================================

@@ -25,12 +25,9 @@
 #' @export
 calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition", 
                           p_thresh = 0.05, count_thresh = 5, testmode = "both", correction = "BH", 
-                          verbose = FALSE, boots = "none", bootnum = 10000L, threads = parallel::detectCores(),
+                          verbose = FALSE, boots = "none", bootnum = 100L, threads = parallel::detectCores(),
                           COUNTS_COL="est_counts", TARGET_COL="target_id", PARENT_COL="parent_id", BS_TARGET_COL="target_id") {
   #---------- PREP
-  
-  # Set up progress bar
-  progress <- init_progress(verbose)
   
   progress <- update_progress(progress)
   # Input checks.
@@ -39,6 +36,9 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   if (paramcheck$error) stop(paramcheck$message)
   threads <- as.integer(threads)  # Plain numbers default to double, unless integer R syntax is explicitly used.
   bootnum <- as.integer(bootnum)
+  
+  # Set up progress bar
+  progress <- init_progress(verbose)
   
   #----------- LOOK-UP
   
@@ -119,7 +119,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
     
     #----- Stats
     
-    if (any(testmode == c("prop-test", "both"))) {
+    if (any(boots == c("prop-test", "both"))) {
       # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
       pres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
       # Only for eligible transcripts.
@@ -130,7 +130,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
       resobj$Transcripts[(eligible), Pt_boot_max := rowMaxs(pres[resobj$Transcripts[, eligible], ], na.rm = TRUE)]
       resobj$Transcripts[(eligible), Pt_boot_na := rowCounts(pres[resobj$Transcripts[, eligible], ], value = NA)]
     }
-    if (any(testmode == c("G-test", "g-test", "both"))) {
+    if (any(boots == c("G-test", "g-test", "both"))) {
       # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
       gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pgab"]] })))
       gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pgba"]] })))
@@ -170,10 +170,10 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, 
                             threads, count_thresh, testmode, boots, bootnum) {
   if ( ! is.data.frame(annot))
-    return(list("error"=TRUE, "message"="transcripts is not a data.frame!"))
+    return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
   
   if (any( ! c(TARGET_COL, PARENT_COL) %in% names(annot)))
-    return(list("error"=TRUE, "message"="The specified target and parent IDs field-names do not exist in transcripts!"))
+    return(list("error"=TRUE, "message"="The specified target and/or parent IDs field-names do not exist in annot!"))
   if ( ! BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps!"))
   
@@ -206,7 +206,7 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
   if ( ! testmode %in% c("G-test", "g-test", "prop-test", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   
-  if ( ! boots %in% c("G-test", "prop-test", "both", "none"))
+  if ( ! boots %in% c("G-test", "g-test","prop-test", "both", "none"))
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
   
   if ( (! is.numeric(bootnum)) || bootnum < 1)
@@ -224,7 +224,7 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
 init_progress <- function(on)
 {
   progress_steps <- data.frame(c(1, 2, 3, 10, 11, 15, 30, 31, 100),
-                               c("Checking parameters...",
+                               c("Checked parameters...",
                                  "Creating look-up structures...",
                                  "Extracting counts from bootstraps...",
                                  "Allocating output structure...",
