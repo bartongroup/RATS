@@ -305,7 +305,7 @@ alloc_out <- function(annot, full){
                        "p_thresh"=NA_real_, "count_thresh"=NA_real_, 
                        "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_, "threads"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
+                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_,
                         "eligible"=NA,                              # eligible for testing (reduce number of tests)
                         "Pt_DTU"=NA, "Gt_DTU"=NA, "Gt_dtuAB"=NA, "Gt_dtuBA"=NA,
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_, "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
@@ -328,7 +328,7 @@ alloc_out <- function(annot, full){
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "usable_transc"=NA_integer_,
+                        "detect_transc"=NA_integer_,
                         "eligible"=NA,                              # eligible for testing (reduce number of tests)
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
                         "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_)
@@ -384,12 +384,13 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
   #---------- FILTER
   
   # Filter transcripts and genes to reduce number of tests:
-  resobj$Transcripts[, eligible := (propA + propB > 0  &  
-                                     propA + propB < 2  &  
-                                     sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
-                                     sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
-  resobj$Genes[, usable_transc :=  resobj$Transcripts[, .(parent_id, ifelse(eligible, 1, 0))][, sum(V2), by = parent_id][, V1] ]
-  resobj$Genes[, eligible := usable_transc >= 2]
+  detected = resobj$Transcripts[, (propA + propB)] > 0
+  resobj$Transcripts[, eligible := (detected &  
+                                    Dprop != 0  &  
+                                    sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
+                                    sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
+  resobj$Genes[, detect_transc :=  resobj$Transcripts[, .(parent_id, ifelse(detected, 1, 0))][, sum(V2), by = parent_id][, V1] ]
+  resobj$Genes[, eligible := detect_transc >= 2]
   
   #---------- TESTS
   
