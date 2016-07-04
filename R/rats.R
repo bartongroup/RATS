@@ -123,29 +123,28 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
       # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
       pres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
       # Only for eligible transcripts.
-      resobj$Transcripts[(test_elig), Pt_boot_dtu := apply(pres[resobj$Transcripts[, test_elig], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]  # fraction of passes
-      resobj$Transcripts[(test_elig), Pt_boot_mean := rowMeans(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
-      resobj$Transcripts[(test_elig), Pt_boot_stdev := rowSds(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
-      resobj$Transcripts[(test_elig), Pt_boot_min := rowMins(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
-      resobj$Transcripts[(test_elig), Pt_boot_max := rowMaxs(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
-      resobj$Transcripts[(test_elig), Pt_boot_na := rowCounts(pres[resobj$Transcripts[, test_elig], ], value = NA)]
+      resobj$Transcripts[(eligible), Pt_boot_dtu := apply(pres[resobj$Transcripts[, eligible], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]  # fraction of passes
+      resobj$Transcripts[(eligible), Pt_boot_mean := rowMeans(pres[resobj$Transcripts[, eligible], ], na.rm = TRUE)]
+      resobj$Transcripts[(eligible), Pt_boot_stdev := rowSds(pres[resobj$Transcripts[, eligible], ], na.rm = TRUE)]
+      resobj$Transcripts[(eligible), Pt_boot_min := rowMins(pres[resobj$Transcripts[, eligible], ], na.rm = TRUE)]
+      resobj$Transcripts[(eligible), Pt_boot_max := rowMaxs(pres[resobj$Transcripts[, eligible], ], na.rm = TRUE)]
+      resobj$Transcripts[(eligible), Pt_boot_na := rowCounts(pres[resobj$Transcripts[, eligible], ], value = NA)]
     }
     if (any(testmode == c("G-test", "g-test", "both"))) {
       # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
       gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pgab"]] })))
       gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pgba"]] })))
-      resobj$Genes[(test_elig), Gt_boot_dtuAB := apply(gabres[resobj$Genes[, test_elig], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]
-      resobj$Genes[(test_elig), Gt_boot_dtuBA := apply(gbares[resobj$Genes[, test_elig], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]
-      resobj$Genes[(test_elig), Gt_boot_meanAB := rowMeans(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_meanBA := rowMeans(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_stdevAB := rowSds(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_stdevBA := rowSds(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_minAB := rowMins(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_minBA := rowMins(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_maxAB := rowMaxs(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_maxBA := rowMaxs(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
-      resobj$Genes[(test_elig), Gt_boot_naAB := rowCounts(gabres[resobj$Genes[, test_elig], ], value = NA)]
-      resobj$Genes[(test_elig), Gt_boot_naBA := rowCounts(gbares[resobj$Genes[, test_elig], ], value = NA)]
+      resobj$Genes[(eligible), Gt_boot_dtuAB := apply(gabres[resobj$Genes[, eligible], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]
+      resobj$Genes[(eligible), Gt_boot_dtuBA := apply(gbares[resobj$Genes[, eligible], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]
+      resobj$Genes[(eligible), Gt_boot_meanAB := rowMeans(gabres[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_meanBA := rowMeans(gbares[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_stdevAB := rowSds(gabres[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_stdevBA := rowSds(gbares[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_minAB := rowMins(gabres[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_minBA := rowMins(gbares[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_maxAB := rowMaxs(gabres[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_maxBA := rowMaxs(gbares[resobj$Genes[, eligible], ], na.rm = TRUE)]
+      resobj$Genes[(eligible), Gt_boot_na := rowCounts(gabres[resobj$Genes[, eligible], ], value = NA)]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
     }
   }
   
@@ -172,22 +171,30 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
                             threads, count_thresh, testmode, boots, bootnum) {
   if ( ! is.data.frame(annot))
     return(list("error"=TRUE, "message"="transcripts is not a data.frame!"))
+  
   if (any( ! c(TARGET_COL, PARENT_COL) %in% names(annot)))
     return(list("error"=TRUE, "message"="The specified target and parent IDs field-names do not exist in transcripts!"))
   if ( ! BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps!"))
+  
   if ( ! COUNTS_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified counts field-name does not exist!"))
+  
   if ( ! correction %in% p.adjust.methods)
     return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods!"))
+  
   if ( ( ! is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
     return(list("error"=TRUE, "message"="Invalid p-value threshold!"))
+  
   if ( ! varname %in% names(slo$sample_to_covariates))
     return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
+  
   if ( any( ! c(ref_name, comp_name) %in% slo$sample_to_covariates[[varname]] ))
     return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
+  
   if ( ! is.logical(verbose))
     return(list("error"=TRUE, "message"="verbose must be a logical value!"))
+  
   if ( ( ! is.numeric(threads)) || threads < 1) {
     return(list("error"=TRUE, "message"="Invalid number of threads!"))
   } else if (threads > parallel::detectCores()) {
@@ -195,10 +202,13 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
   }
   if ( (! is.numeric(count_thresh)) || count_thresh < 0 )
     return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be zero or a positive number."))
+  
   if ( ! testmode %in% c("G-test", "g-test", "prop-test", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
+  
   if ( ! boots %in% c("G-test", "prop-test", "both", "none"))
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
+  
   if ( (! is.numeric(bootnum)) || bootnum < 1)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive number."))
   return(list("error"=FALSE, "message"="All good!"))
@@ -213,14 +223,15 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
 #'
 init_progress <- function(on)
 {
-  progress_steps <- data.frame(c(1, 3, 7, 14, 15, 20, 60, 100),
+  progress_steps <- data.frame(c(1, 2, 3, 10, 11, 15, 30, 31, 100),
                                c("Checking parameters...",
                                  "Creating look-up structures...",
                                  "Extracting counts from bootstraps...",
                                  "Allocating output structure...",
                                  "Calculating counts statistics...",
-                                 "Calculating prop-test p-values...",
-                                 "Calculating G-test p-values...",
+                                 "Calculating p-values...",
+                                 "Filling in more info...",
+                                 "Bootstrapping p-values (if applicable)...",
                                  "All done!"),
                                stringsAsFactors = FALSE)
   progress <- TxtProgressUpdate(steps=progress_steps, on=on)
@@ -295,16 +306,16 @@ alloc_out <- function(annot, full){
                        "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_, "threads"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                         "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
-                        "test_elig"=NA,                              # eligible for testing (reduce number of tests)
+                        "eligible"=NA,                              # eligible for testing (reduce number of tests)
                         "Pt_DTU"=NA, "Gt_DTU"=NA, "Gt_dtuAB"=NA, "Gt_dtuBA"=NA,
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_, "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
                         "Gt_boot_dtuAB"=NA_real_, "Gt_boot_dtuBA"=NA_real_,
                         "Gt_boot_meanAB"=NA_real_, "Gt_boot_meanBA"=NA_real_, "Gt_boot_stdevAB"=NA_real_, "Gt_boot_stdevBA"=NA_real_,
                         "Gt_boot_minAB"=NA_real_, "Gt_boot_minBA"=NA_real_, "Gt_boot_maxAB"=NA_real_, "Gt_boot_maxBA"=NA_real_,
-                        "Gt_boot_naAB"=NA_integer_, "Gt_boot_naBA"=NA_integer_)
+                        "Gt_boot_na"=NA_integer_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
-                              "test_elig"=NA,                        # eligible for testing (reduce number of tests)
+                              "eligible"=NA,                        # eligible for testing (reduce number of tests)
                               "Gt_DTU"=NA, "Pt_DTU"=NA,
                               "Pt_pval"=NA_real_,  "Pt_pval_corr"=NA_real_, 
                               "Pt_boot_dtu"=NA_real_, "Pt_boot_mean"=NA_real_, "Pt_boot_stdev"=NA_real_, "Pt_boot_min"=NA_real_,"Pt_boot_max"=NA_real_,
@@ -318,12 +329,12 @@ alloc_out <- function(annot, full){
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                         "usable_transc"=NA_integer_,
-                        "test_elig"=NA,                              # eligible for testing (reduce number of tests)
+                        "eligible"=NA,                              # eligible for testing (reduce number of tests)
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
                         "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
-                              "test_elig"=NA,                        # eligible for testing (reduce number of tests)
+                              "eligible"=NA,                        # eligible for testing (reduce number of tests)
                               "Pt_pval"=NA_real_,  "Pt_pval_corr"=NA_real_,
                               "sumA"=NA_real_, "sumB"=NA_real_,      # sum across replicates of means across bootstraps
                               "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
@@ -373,12 +384,12 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
   #---------- FILTER
   
   # Filter transcripts and genes to reduce number of tests:
-  resobj$Transcripts[, test_elig := (propA + propB > 0  &  
+  resobj$Transcripts[, eligible := (propA + propB > 0  &  
                                      propA + propB < 2  &  
                                      sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
                                      sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
-  resobj$Genes[, usable_transc :=  resobj$Transcripts[, .(parent_id, ifelse(test_elig, 1, 0))][, sum(V2), by = parent_id][, V1] ]
-  resobj$Genes[, test_elig := usable_transc >= 2]
+  resobj$Genes[, usable_transc :=  resobj$Transcripts[, .(parent_id, ifelse(eligible, 1, 0))][, sum(V2), by = parent_id][, V1] ]
+  resobj$Genes[, eligible := usable_transc >= 2]
   
   #---------- TESTS
   
@@ -387,17 +398,17 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
     # The test function is not vectorised, nor easily vectorisable. Looping is needed.
     # Data tables allow values to be changed in place, and the table is pre-allocated. 
     # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
-    resobj$Transcripts[(test_elig), Pt_pval := as.vector(apply(resobj$Transcripts[(test_elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
+    resobj$Transcripts[(eligible), Pt_pval := as.vector(apply(resobj$Transcripts[(eligible), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
                                                                FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], n = row[c("totalA", "totalB")], correct = TRUE)[["p.value"]] } )) ]
-    resobj$Transcripts[(test_elig), Pt_pval_corr := p.adjust(Pt_pval, method=correction)]
+    resobj$Transcripts[(eligible), Pt_pval_corr := p.adjust(Pt_pval, method=correction)]
   }
   
   # G test.
   if ( any(testmode == c("G-test", "g-test", "both"))) {
     # Set key to parents only. Was previously set to (parent, target) to ensure consistent order of targets for un-keyed manipulations.
     setkey(resobj$Transcripts, parent_id)
-    resobj$Genes[(test_elig), c("Gt_pvalAB", "Gt_pvalBA") := 
-                   as.data.frame( t( as.data.frame( lapply(resobj$Genes[(test_elig), parent_id], function(parent) {
+    resobj$Genes[(eligible), c("Gt_pvalAB", "Gt_pvalBA") := 
+                   as.data.frame( t( as.data.frame( lapply(resobj$Genes[(eligible), parent_id], function(parent) {
                      # Extract all relevant data to avoid repeated look ups in the large table.
                      subdt <- resobj$Transcripts[parent, .(sumA, sumB, propA, propB)]
                      pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])[["p.value"]] 
