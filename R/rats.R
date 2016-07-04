@@ -21,6 +21,7 @@
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import data.table
+#' @import matrixStats
 #' @export
 calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition", 
                           p_thresh = 0.05, count_thresh = 5, testmode = "both", correction = "BH", 
@@ -82,8 +83,8 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   resobj$Genes[, known_transc :=  resobj$Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
   resobj$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
   resobj$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
-  resobj$Transcripts[, stdevA :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_A))) ]
-  resobj$Transcripts[, stdevB :=  sqrt(matrixStats::rowVars(as.matrix(bootmeans_B))) ]
+  resobj$Transcripts[, stdevA :=  rowSds(as.matrix(bootmeans_A)) ]
+  resobj$Transcripts[, stdevB :=  rowSds(as.matrix(bootmeans_B)) ]
   # Process results.
   if (any(testmode == c("prop-test", "both"))) {
     resobj$Transcripts[, Pt_DTU := Pt_pval_corr < p_thresh]
@@ -100,23 +101,51 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   progress <- update_progress(progress)
   if (boots != "none") {
+    
+    #----- Iterations
+    
     bootres <- lapply(1:bootnum, function(b) {
       # Grab a bootstrap from each replicate. 
       counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))  # Have to use list syntax to get a vector back. 
                                                                                                                          # Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+                                                                                                                         # Also, the last column is the target_id, so I leave it out.
       counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
       # Do the work.
       bout <- do_tests(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, correction)
-      return (list("P" = bout$Transcripts[, Pt_pval_corr], 
-                   "G" = bout$Genes[, Gt_pval_corr])) 
+      return (list("pp" = bout$Transcripts[, Pt_pval_corr], 
+                   "pgab" = bout$Genes[, Gt_pvalAB_corr],
+                   "pgba" = bout$Genes[, Gt_pvalBA_corr] ))
     })
     
-    # Stats
+    #----- Stats
+    
     if (any(testmode == c("prop-test", "both"))) {
-      pres <- lapply(bootres, function(b) { b[["P"]] })
+      # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
+      pres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
+      # Only for eligible transcripts.
+      resobj$Transcripts[(test_elig), Pt_boot_dtu := apply(pres[resobj$Transcripts[, test_elig], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]  # fraction of passes
+      resobj$Transcripts[(test_elig), Pt_boot_mean := rowMeans(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
+      resobj$Transcripts[(test_elig), Pt_boot_stdev := rowSds(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
+      resobj$Transcripts[(test_elig), Pt_boot_min := rowMins(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
+      resobj$Transcripts[(test_elig), Pt_boot_max := rowMaxs(pres[resobj$Transcripts[, test_elig], ], na.rm = TRUE)]
+      resobj$Transcripts[(test_elig), Pt_boot_na := rowCounts(pres[resobj$Transcripts[, test_elig], ], value = NA)]
     }
     if (any(testmode == c("G-test", "g-test", "both"))) {
-      gres <- lapply(bootres, function(b) { b[["G"]] })
+      # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
+      gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pgab"]] })))
+      gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pgba"]] })))
+      resobj$Genes[(test_elig), Gt_boot_dtuAB := apply(gabres[resobj$Genes[, test_elig], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]
+      resobj$Genes[(test_elig), Gt_boot_dtuBA := apply(gbares[resobj$Genes[, test_elig], ], MARGIN=1, function(row) { mean(ifelse(row > p_thresh | is.na(row), 0, 1)) } )]
+      resobj$Genes[(test_elig), Gt_boot_meanAB := rowMeans(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_meanBA := rowMeans(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_stdevAB := rowSds(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_stdevBA := rowSds(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_minAB := rowMins(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_minBA := rowMins(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_maxAB := rowMaxs(gabres[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_maxBA := rowMaxs(gbares[resobj$Genes[, test_elig], ], na.rm = TRUE)]
+      resobj$Genes[(test_elig), Gt_boot_naAB := rowCounts(gabres[resobj$Genes[, test_elig], ], value = NA)]
+      resobj$Genes[(test_elig), Gt_boot_naBA := rowCounts(gbares[resobj$Genes[, test_elig], ], value = NA)]
     }
   }
   
@@ -267,16 +296,19 @@ alloc_out <- function(annot, full){
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                         "known_transc"=NA_integer_, "usable_transc"=NA_integer_,
                         "test_elig"=NA,                              # eligible for testing (reduce number of tests)
-                        "Pt_DTU"=NA, "Gt_DTU"=NA,
-                        "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
-                        "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
-                        "Gt_pvalAB_stdev"=NA_real_, "Gt_pvalBA_stdev"=NA_real_, "Gt_confAB"=NA_real_, "Gt_confBA"=NA_real_,
-                        "Gt_dtuAB"=NA, "Gt_dtuBA"=NA)
+                        "Pt_DTU"=NA, "Gt_DTU"=NA, "Gt_dtuAB"=NA, "Gt_dtuBA"=NA,
+                        "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_, "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
+                        "Gt_boot_dtuAB"=NA_real_, "Gt_boot_dtuBA"=NA_real_,
+                        "Gt_boot_meanAB"=NA_real_, "Gt_boot_meanBA"=NA_real_, "Gt_boot_stdevAB"=NA_real_, "Gt_boot_stdevBA"=NA_real_,
+                        "Gt_boot_minAB"=NA_real_, "Gt_boot_minBA"=NA_real_, "Gt_boot_maxAB"=NA_real_, "Gt_boot_maxBA"=NA_real_,
+                        "Gt_boot_naAB"=NA_integer_, "Gt_boot_naBA"=NA_integer_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
                               "test_elig"=NA,                        # eligible for testing (reduce number of tests)
                               "Gt_DTU"=NA, "Pt_DTU"=NA,
-                              "Pt_pval"=NA_real_,  "Pt_pval_corr"=NA_real_, "Pt_pval_stdev"=NA_real_, "Pt_conf"=NA_real_,
+                              "Pt_pval"=NA_real_,  "Pt_pval_corr"=NA_real_, 
+                              "Pt_boot_dtu"=NA_real_, "Pt_boot_mean"=NA_real_, "Pt_boot_stdev"=NA_real_, "Pt_boot_min"=NA_real_,"Pt_boot_max"=NA_real_,
+                              "Pt_boot_na"=NA_integer_,
                               "sumA"=NA_real_, "sumB"=NA_real_,      # sum across replicates of means across bootstraps
                               "meanA"=NA_real_, "meanB"=NA_real_,    # mean across replicates of means across bootstraps
                               "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
