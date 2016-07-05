@@ -29,7 +29,6 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
                           COUNTS_COL="est_counts", TARGET_COL="target_id", PARENT_COL="parent_id", BS_TARGET_COL="target_id") {
   #---------- PREP
   
-  progress <- update_progress(progress)
   # Input checks.
   paramcheck <- parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads, count_thresh, testmode, boots, bootnum)
@@ -39,6 +38,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   # Set up progress bar
   progress <- init_progress(verbose)
+  progress <- update_progress(progress)
   
   #----------- LOOK-UP
   
@@ -412,8 +412,8 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
                    as.data.frame( t( as.data.frame( lapply(resobj$Genes[(eligible), parent_id], function(parent) {
                      # Extract all relevant data to avoid repeated look ups in the large table.
                      subdt <- resobj$Transcripts[parent, .(sumA, sumB, propA, propB)]
-                     pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])[["p.value"]] 
-                     pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])[["p.value"]]
+                     pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
+                     pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
                      c(pAB, pBA) }) ))) ]
     resobj$Genes[, Gt_pvalAB_corr := p.adjust(Gt_pvalAB, method=correction)]
     resobj$Genes[, Gt_pvalBA_corr := p.adjust(Gt_pvalBA, method=correction)]
@@ -423,4 +423,26 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
 }
 
 
-
+#' Log-likelihood test of goodness of fit.
+#'
+#' @param x	a numeric vector of positive numbers, with at least one non-zero value.
+#' @param p	a vector of probabilities of the same length of x.
+#'
+#' Sourced and adapted from from:
+#' V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca
+#' http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
+#'
+g.test <- function(x, p = rep(1/length(x), length(x)))
+{
+  n <- sum(x)
+  E <- n * p
+  names(E) <- names(x)
+  g <- 0
+  for (i in 1:length(x)){
+    if (x[i] != 0) g <- g + x[i] * log(x[i]/E[i])
+  }
+  q <- 1
+  STATISTIC <- G <- 2*g/q
+  PARAMETER <- length(x) - 1
+  PVAL <- pchisq(STATISTIC, PARAMETER, lower = FALSE)
+}
