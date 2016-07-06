@@ -6,7 +6,7 @@
 \usage{
 calculate_DTU(slo, annot, name_A, name_B, varname = "condition",
   p_thresh = 0.05, count_thresh = 5, testmode = "both",
-  correction = "BH", verbose = FALSE, boots = "none", bootnum = 10000L,
+  correction = "BH", verbose = FALSE, boots = "none", bootnum = 100L,
   threads = parallel::detectCores(), COUNTS_COL = "est_counts",
   TARGET_COL = "target_id", PARENT_COL = "parent_id",
   BS_TARGET_COL = "target_id")

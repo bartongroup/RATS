@@ -1,53 +1,3 @@
-sim_sleuth_data <- function(varnames=c("condition","foobar"), COUNTS_COL="est_counts", TARGET_COL="target_id" , PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("one","two")) {
-  tx <- data.frame("target_id" <- c("a","b","c","d","e"), "parent_id"=c("AC","B","AC","DE","DE"))
-  names(tx) <- c(TARGET_COL, PARENT_COL)
-  
-  sl <- list()
-  sl[["sample_to_covariates"]] <- data.frame("foo"=c(cnames[1],cnames[2],cnames[1],cnames[2]), "bar"=c("ba","ba", "bb","bb"))
-  names(sl[["sample_to_covariates"]]) <- varnames
-  
-  sl[["kal"]] <- list()
-  sl$kal[[1]] <- list()
-  sl$kal[[1]]["bootstrap"] <- list()
-  sl$kal[[1]]$bootstrap[[1]] <- data.frame("target"=c("e","c","a","b","d"), "my_counts"=c(15,13,11,12,14))
-  sl$kal[[1]]$bootstrap[[2]] <- data.frame("target"=c("a","c","e","d","b"), "my_counts"=c(21,23,25,24,22))
-  sl$kal[[1]]$bootstrap[[3]] <- data.frame("target"=c("e","d","c","b","a"), "my_counts"=c(35,34,33,32,31))
-  
-  sl$kal[[2]] <- list()
-  sl$kal[[2]]["bootstrap"] <- list()
-  sl$kal[[2]]$bootstrap[[1]] <- data.frame("target"=c("e","c","a","b","d"), "my_counts"=c(500,300,100,200,400))
-  sl$kal[[2]]$bootstrap[[2]] <- data.frame("target"=c("a","c","e","d","b"), "my_counts"=c(1100,1300,1500,1400,1200))
-  sl$kal[[2]]$bootstrap[[3]] <- data.frame("target"=c("e","d","c","b","a"), "my_counts"=c(2500,2400,2300,2200,2100))
-  
-  sl$kal[[3]] <- list()
-  sl$kal[[3]]["bootstrap"] <- list()
-  sl$kal[[3]]$bootstrap[[1]] <- data.frame("target"=c("c","a","d","b","e"), "my_counts"=c(103,101,104,102,105))
-  sl$kal[[3]]$bootstrap[[2]] <- data.frame("target"=c("e","b","a","d","c"), "my_counts"=c(115,112,111,114,113))
-  sl$kal[[3]]$bootstrap[[3]] <- data.frame("target"=c("b","a","c","e","d"), "my_counts"=c(122,121,123,125,124))
-  
-  sl$kal[[4]] <- list()
-  sl$kal[[4]]["bootstrap"] <- list()
-  sl$kal[[4]]$bootstrap[[1]] <- data.frame("target"=c("e","c","a","b","d"), "my_counts"=c(50000,30000,10000,20000,4000))
-  sl$kal[[4]]$bootstrap[[2]] <- data.frame("target"=c("a","c","e","d","b"), "my_counts"=c(11000,13000,15000,14000,12000))
-  sl$kal[[4]]$bootstrap[[3]] <- data.frame("target"=c("e","d","c","b","a"), "my_counts"=c(25000,24000,23000,22000,21000))
-  
-  names(sl$kal[[1]]$bootstrap[[1]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[1]]$bootstrap[[2]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[1]]$bootstrap[[3]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[2]]$bootstrap[[1]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[2]]$bootstrap[[2]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[2]]$bootstrap[[3]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[3]]$bootstrap[[1]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[3]]$bootstrap[[2]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[3]]$bootstrap[[3]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[4]]$bootstrap[[1]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[4]]$bootstrap[[2]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  names(sl$kal[[4]]$bootstrap[[3]]) <- c(BS_TARGET_COL, COUNTS_COL)
-  
-  return(list("annot" = tx, "slo" = sl))
-}
-
-
 context("DTU Input checks.")
 
 #==============================================================================
@@ -57,8 +7,8 @@ test_that("The input checks don't work", {
   wrong_name <- "RUBBISH_COLUMN_NAME"
   
   # No false alarms.
-  sim <- sim_sleuth_data(varnames=c("foo","bar"), COUNTS_COL="counts", TARGET_COL="target" , PARENT_COL="parent", BS_TARGET_COL="id", cnames=c("AAAA","BBBB"))
-  expect_silent(calculate_DTU(sim$slo, sim$annot, "AAAA", "BBBB", varname = "foo", p_thresh = 0.01, count_thresh = 10,
+  sim <- sim_sleuth_data(varname="waffles", COUNTS_COL="counts", TARGET_COL="target" , PARENT_COL="parent", BS_TARGET_COL="id", cnames=c("AAAA","BBBB"))
+  expect_silent(calculate_DTU(sim$slo, sim$annot, "AAAA", "BBBB", varname = "waffles", p_thresh = 0.01, count_thresh = 10,
                               testmode = "prop-test", correction = "bonferroni", verbose = FALSE, boots = "g-test",
                               bootnum = 2, threads = 1, COUNTS_COL = "counts", TARGET_COL = "target", 
                               PARENT_COL = "parent", BS_TARGET_COL = "id"))
@@ -266,8 +216,19 @@ test_that("Bootstrapped counts are not extracted correctly", {
   sim <- sim_sleuth_data(COUNTS_COL = "counts", BS_TARGET_COL = "id")
   lr <- denest_boots(sim$slo, sim$annot[[1]], samples, "counts", "id")
   
-  expect_equal(length(lr), length(samples))
-  # browser()
+  expect_equal(length(lr), length(samples))  # number or samples
+  for (i in 1:length(lr)) {
+    expect_equal(dim(lr[[i]])[1], dim(sim$slo$kal[[1]]$bootstrap[[1]])[1] )  # number of bootstraps
+    for (j in 1:( dim(lr[[i]])[2] - 1)) {
+      # Actual count values. 
+      expect_equal(lr[[i]][[j]][ order(lr[[i]][[j]]) ],
+                       sim$slo$kal[[samples[i]]]$bootstrap[[j]][["counts"]][ order(sim$slo$kal[[samples[i]]]$bootstrap[[j]][["counts"]]) ])
+      # The extraction function sorts the counts according to annotation order, 
+      # so the count vectors need to be sorted to a common order for the comparison.
+      # Sorting without use of the target_ids does not guarantee correctness in general, but it is enough for the test dataset.
+    }
+  }
+  
 })
 
 

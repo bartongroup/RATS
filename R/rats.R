@@ -390,7 +390,7 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
                                     sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
                                     sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
   resobj$Genes[, detect_transc :=  resobj$Transcripts[, .(parent_id, ifelse(detected, 1, 0))][, sum(V2), by = parent_id][, V1] ]
-  resobj$Genes[, eligible := detect_transc >= 2]
+  resobj$Genes[(is.na(detect_transc)), detect_transc := 0]
   
   #---------- TESTS
   
@@ -423,6 +423,7 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
 }
 
 
+#================================================================================
 #' Log-likelihood test of goodness of fit.
 #'
 #' @param x	a numeric vector of positive numbers, with at least one non-zero value.
@@ -446,3 +447,4 @@ g.test <- function(x, p = rep(1/length(x), length(x)))
   PARAMETER <- length(x) - 1
   PVAL <- pchisq(STATISTIC, PARAMETER, lower = FALSE)
 }
+
