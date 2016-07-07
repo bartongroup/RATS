@@ -161,6 +161,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
 
 
 
+
 #================================================================================
 #' Check input parameters.
 #'
@@ -169,48 +170,55 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
 parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, 
                             threads, count_thresh, testmode, boots, bootnum) {
-  if ( ! is.data.frame(annot))
+  if (!is.data.frame(annot))
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
   
-  if (any( ! c(TARGET_COL, PARENT_COL) %in% names(annot)))
+  if (any(! c(TARGET_COL, PARENT_COL) %in% names(annot)))
     return(list("error"=TRUE, "message"="The specified target and/or parent IDs field-names do not exist in annot!"))
-  if ( ! BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
+  if (! BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps!"))
   
-  if ( ! COUNTS_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
+  if (! COUNTS_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
     return(list("error"=TRUE, "message"="The specified counts field-name does not exist!"))
   
-  if ( ! correction %in% p.adjust.methods)
+  if (! correction %in% p.adjust.methods)
     return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods!"))
   
-  if ( ( ! is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
+  if ((!is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
     return(list("error"=TRUE, "message"="Invalid p-value threshold!"))
   
-  if ( ! varname %in% names(slo$sample_to_covariates))
+  if (! varname %in% names(slo$sample_to_covariates))
     return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
   
-  if ( any( ! c(ref_name, comp_name) %in% slo$sample_to_covariates[[varname]] ))
+  if (any(! c(ref_name, comp_name) %in% slo$sample_to_covariates[[varname]] ))
     return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
   
-  if ( ! is.logical(verbose))
+  if (!is.logical(verbose))
     return(list("error"=TRUE, "message"="verbose must be a logical value!"))
   
-  if ( ( ! is.numeric(threads)) || threads < 1) {
+  if ((!is.numeric(threads)) || threads < 1) {
     return(list("error"=TRUE, "message"="Invalid number of threads!"))
   } else if (threads > parallel::detectCores()) {
     return(list("error"=TRUE, "message"=paste("The system does not support that many threads! MAX available: ", parallel::detectCores())))
   }
-  if ( (! is.numeric(count_thresh)) || count_thresh < 0 )
+  if ((!is.numeric(count_thresh)) || count_thresh < 0 )
     return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be zero or a positive number."))
   
-  if ( ! testmode %in% c("G-test", "g-test", "prop-test", "both"))
+  if (! testmode %in% c("G-test", "g-test", "prop-test", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   
-  if ( ! boots %in% c("G-test", "g-test","prop-test", "both", "none"))
+  if (! boots %in% c("G-test", "g-test","prop-test", "both", "none"))
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
   
-  if ( (! is.numeric(bootnum)) || bootnum < 1)
+  if ((!is.numeric(bootnum)) || bootnum < 1)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive number."))
+  
+  tx <- slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]]) ]
+  for (k in 2:length(slo$kal)) {
+    if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
+      return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs! Please try again, using the same annotation for all your samples!"))
+  }
+  
   return(list("error"=FALSE, "message"="All good!"))
 }
 

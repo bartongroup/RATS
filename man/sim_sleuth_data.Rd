@@ -6,7 +6,8 @@
 \usage{
 sim_sleuth_data(varname = "condition", COUNTS_COL = "est_counts",
   TARGET_COL = "target_id", PARENT_COL = "parent_id",
-  BS_TARGET_COL = "target_id", cnames = c("one", "two"))
+  BS_TARGET_COL = "target_id", cnames = c("one", "two"),
+  errannot_inconsistent = FALSE)
 }
 \arguments{
 \item{varname}{Name for the variables by which to compare.}
@@ -20,9 +21,16 @@ sim_sleuth_data(varname = "condition", COUNTS_COL = "est_counts",
 \item{BS_TARGET_COL}{Name for bootstraps column containing transcript identification.}
 
 \item{cnames}{A vector of (two) name values for the comparison variable.}
+
+\item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks.}
 }
 \value{
-a list with: a minimal sleuth-like object, a corresponding annotation data.frame.
+a list with: \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 
+        \code{isx} a vector of trancripts common between generated annotation and bootstraps (useful for code testing).
+
+The simulated data will have non-uniform number of bootstraps per sample and non-uniform order of
+transcript id's among samples and bootstraps. These conditions are unlikely to occur in real data,
+but this allows testing that the code can handle it.
 }
 \description{
 The default values here should match the default values expected by calculate_DTU().

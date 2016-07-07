@@ -1,3 +1,101 @@
+context("DTU internal structures")
+
+#==============================================================================
+test_that("The reporting structures are not created correctly", {
+  full <- alloc_out(mini_anno, "full")
+  short <- alloc_out(mini_anno, "short")
+  
+  expect_type(full, "list")
+  expect_type(short, "list")
+  expect_equal(length(full), 3)
+  expect_equal(length(full), length(short))
+  expect_named(full, c("Parameters", "Genes", "Transcripts"))
+  expect_true(all(names(full) == names(short)))
+  
+  expect_type(full$Parameters, "list")
+  expect_true(typeof(full$Parameters) == typeof(short$Parameters))
+  expect_length(full$Parameters, 11)
+  expect_length(short$Parameters, 2)
+  expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
+                                  "count_thresh", "tests", "bootstrap", "bootnum", "threads"))
+  expect_true(all(names(short$Parameters) %in% names(full$Parameters)))
+  
+  expect_true(is.data.frame(full$Genes))
+  expect_true(is.data.frame(short$Genes))
+  expect_equal(dim(full$Genes)[2], 23)
+  expect_equal(dim(short$Genes)[2], 7)
+  expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "eligible", "Pt_DTU", "Gt_DTU", 
+                             "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
+                             "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
+                             "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 
+                             "Gt_boot_na"))
+  expect_true(all(names(short$Genes) %in% names(full$Genes)))
+  
+  expect_true(is.data.frame(full$Transcripts))
+  expect_true(is.data.frame(short$Transcripts))
+  expect_equal(dim(full$Transcripts)[2], 24)
+  expect_equal(dim(short$Transcripts)[2], 12)
+  expect_named(full$Transcripts, c("target_id", "parent_id", "propA", "propB", "Dprop", "eligible", "Gt_DTU", "Pt_DTU", 
+                                   "Pt_pval", "Pt_pval_corr", "Pt_boot_dtu", "Pt_boot_mean", "Pt_boot_stdev", 
+                                   "Pt_boot_min", "Pt_boot_max", "Pt_boot_na",
+                                   "sumA", "sumB", "meanA", "meanB", "stdevA", "stdevB", "totalA", "totalB"))
+  expect_true(all(names(short$Transcripts) %in% names(full$Transcripts)))
+})
+
+
+context("DTU internal data munging")
+
+#==============================================================================
+test_that("Samples are not grouped correctly", {
+  sim <- sim_sleuth_data()
+  r <- group_samples(sim$slo$sample_to_covariates)
+  
+  # number of covariates
+  expect_equal(length(r), length(sim$slo$sample_to_covariates))
+  # names of covariates
+  expect_named(r, names(sim$slo$sample_to_covariates))
+  # number of values of each covariate
+  expect_equal(length(r[[1]]), length(levels(as.factor(sim$slo$sample_to_covariates[[1]]))))
+  expect_equal(length(r[[2]]), length(levels(as.factor(sim$slo$sample_to_covariates[[2]]))))
+  # total number of samples
+  expect_equal(sum(sapply(r[[1]],length)), length(sim$slo$sample_to_covariates[[1]]))
+  expect_equal(sum(sapply(r[[2]],length)), length(sim$slo$sample_to_covariates[[2]]))
+})
+
+
+#==============================================================================
+test_that("Bootstrapped counts are not extracted correctly", {
+  samples <- c(1,3)
+  bst <- "id"
+  cnt <- "counts"
+  sim <- sim_sleuth_data(COUNTS_COL = cnt, BS_TARGET_COL = bst)
+  lr <- denest_boots(sim$slo, sim$annot[[1]], samples, cnt, bst)
+  
+  for (i in 1:length(lr)) {
+    # The transcripts supposed to be there are there.
+    expect_true(all(sim$isx %in% as.character(lr[[i]]$target_id)))
+    # No NA.
+    expect_false(any(is.na(lr[[i]])))
+    
+    # Number of bootstraps per sample.
+    expect_equal(length(lr[[i]]) - 1, length(sim$slo$kal[[samples[i]]]$bootstrap))  # the last column in lr[] is ID
+    # All target counts pulled from the correct bootstraps.
+    for (j in 1:(length(lr[[i]]) - 1)) {
+      fltr <- match(sim$isx, sim$slo$kal[[samples[i]]]$bootstrap[[j]][[bst]])  # Where in the boot are the expected IDs.
+      expect_false(any(is.na(fltr)))                                           # By definition isx is a subset.
+      expect_true(all( sim$slo$kal[[samples[i]]]$bootstrap[[j]][[cnt]][fltr] %in% lr[[i]][[j]] ))
+      # There is a very small chance that the same combination of counts could result from a different source, but in
+      # the context of a controlled artificial set or a transcriptome-sized real data set that chance is negligible.
+    }
+    
+    # Counts pulled from the correct targets.
+    for (tgt in sim$isx) {
+      
+    }
+  }
+})
+
+
 context("DTU Input checks.")
 
 #==============================================================================
@@ -14,63 +112,68 @@ test_that("The input checks don't work", {
                               PARENT_COL = "parent", BS_TARGET_COL = "id"))
   sim <- sim_sleuth_data(cnames=c(name_A, name_B))
   expect_silent(calculate_DTU(sim$slo, sim$annot, name_A, name_B))
-
+  
   # Annottaion is not a dataframe.
   expect_error(calculate_DTU(sim$slo, c("not", "a", "dataframe"), name_A, name_B), "annot is not a data.frame.")
   # Annotation field names.
-  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, TARGET_COL=wrong_name),
-               "target and/or parent IDs field-names do not exist in annot", fixed=TRUE)
-  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, PARENT_COL=wrong_name),
-               "target and/or parent IDs field-names do not exist in annot", fixed=TRUE)
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, TARGET_COL= wrong_name),
+               "target and/or parent IDs field-names do not exist in annot", fixed= TRUE)
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, PARENT_COL= wrong_name),
+               "target and/or parent IDs field-names do not exist in annot", fixed= TRUE)
   
   # Bootstrap field names.
-  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, BS_TARGET_COL=wrong_name),
-               "target IDs field-name does not exist in the bootstraps", fixed=TRUE)
-  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, COUNTS_COL=wrong_name),
-               "counts field-name does not exist", fixed=TRUE)
-
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, BS_TARGET_COL= wrong_name),
+               "target IDs field-name does not exist in the bootstraps", fixed= TRUE)
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, COUNTS_COL= wrong_name),
+               "counts field-name does not exist", fixed= TRUE)
+  
   # Correction method.
-  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, correction=wrong_name),
-               "Invalid p-value correction method name", fixed=TRUE)
-
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, correction= wrong_name),
+               "Invalid p-value correction method name", fixed= TRUE)
+  
   # Covariate name.
-  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, varname=wrong_name),
-               "covariate name does not exist", fixed=TRUE)
-
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, varname= wrong_name),
+               "covariate name does not exist", fixed= TRUE)
+  
   # Condition names.
   expect_error(calculate_DTU(sim$slo, sim$annot, wrong_name, name_B),
-               "conditions do not exist", fixed=TRUE)
+               "conditions do not exist", fixed= TRUE)
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, wrong_name),
-               "conditions do not exist", fixed=TRUE)
+               "conditions do not exist", fixed= TRUE)
   
   # Verbose is bool.
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, verbose="yes"),
-               "verbose must be a logical", fixed=TRUE)
+               "verbose must be a logical", fixed= TRUE)
   
   # Probability threshold.
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, p_thresh = 666),
-               "Invalid p-value threshold", fixed=TRUE)
+               "Invalid p-value threshold", fixed= TRUE)
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, p_thresh = -0.05),
-               "Invalid p-value threshold", fixed=TRUE)
+               "Invalid p-value threshold", fixed= TRUE)
   
   # Read counts threshold.
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, count_thresh = -5),
-               "Invalid read-count threshold", fixed=TRUE)
+               "Invalid read-count threshold", fixed= TRUE)
   
   # Tests.
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, testmode="GCSE"),
-               "Unrecognized value for testmode", fixed=TRUE)
+               "Unrecognized value for testmode", fixed= TRUE)
   expect_silent(calculate_DTU(sim$slo, sim$annot, name_A, name_B, testmode="g-test"))
   expect_silent(calculate_DTU(sim$slo, sim$annot, name_A, name_B, testmode="prop-test"))
   
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, boots="GCSE"),
-               "Unrecognized value for boots", fixed=TRUE)
+               "Unrecognized value for boots", fixed= TRUE)
   expect_silent(calculate_DTU(sim$slo, sim$annot, name_A, name_B, boots="g-test", bootnum = 2))
   expect_silent(calculate_DTU(sim$slo, sim$annot, name_A, name_B, boots="prop-test", bootnum = 2))
   
   # Number of bootstraps.
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, bootnum = -5),
-               "Invalid number of bootstraps", fixed=TRUE)
+               "Invalid number of bootstraps", fixed= TRUE)
+  
+  # Inconsistent annotation.
+  sim <- sim_sleuth_data(errannot_inconsistent = TRUE)
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B),
+               "Inconsistent set of transcript IDs", fixed= TRUE)
 })
 
 
@@ -80,11 +183,11 @@ context("DTU Output")
 test_that("The output structure is not correct", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
   full <- calculate_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="both", bootnum=2)
-
+  
   expect_type(full, "list")
   expect_equal(length(full), 3)
   expect_named(full, c("Parameters", "Genes", "Transcripts"))
-
+  
   expect_type(full$Parameters, "list")
   expect_length(full$Parameters, 11)
   expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
@@ -149,126 +252,3 @@ test_that("The output structure is not correct", {
   expect_true(is.numeric(full$Transcripts[["Pt_boot_max"]]))
   expect_true(is.numeric(full$Transcripts[["Pt_boot_na"]]))
 })
-
-
-context("DTU internal")
-
-#==============================================================================
-test_that("The reporting structures are not created correctly", {
-  full <- alloc_out(mini_anno, "full")
-  short <- alloc_out(mini_anno, "short")
-  
-  expect_type(full, "list")
-  expect_type(short, "list")
-  expect_equal(length(full), 3)
-  expect_equal(length(full), length(short))
-  expect_named(full, c("Parameters", "Genes", "Transcripts"))
-  expect_true(all(names(full) == names(short)))
-  
-  expect_type(full$Parameters, "list")
-  expect_true(typeof(full$Parameters) == typeof(short$Parameters))
-  expect_length(full$Parameters, 11)
-  expect_length(short$Parameters, 2)
-  expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                  "count_thresh", "tests", "bootstrap", "bootnum", "threads"))
-  expect_true(all(names(short$Parameters) %in% names(full$Parameters)))
-  
-  expect_true(is.data.frame(full$Genes))
-  expect_true(is.data.frame(short$Genes))
-  expect_equal(dim(full$Genes)[2], 23)
-  expect_equal(dim(short$Genes)[2], 7)
-  expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "eligible", "Pt_DTU", "Gt_DTU", 
-                             "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
-                             "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
-                             "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 
-                             "Gt_boot_na"))
-  expect_true(all(names(short$Genes) %in% names(full$Genes)))
-  
-  expect_true(is.data.frame(full$Transcripts))
-  expect_true(is.data.frame(short$Transcripts))
-  expect_equal(dim(full$Transcripts)[2], 24)
-  expect_equal(dim(short$Transcripts)[2], 12)
-  expect_named(full$Transcripts, c("target_id", "parent_id", "propA", "propB", "Dprop", "eligible", "Gt_DTU", "Pt_DTU", 
-                                   "Pt_pval", "Pt_pval_corr", "Pt_boot_dtu", "Pt_boot_mean", "Pt_boot_stdev", 
-                                   "Pt_boot_min", "Pt_boot_max", "Pt_boot_na",
-                                   "sumA", "sumB", "meanA", "meanB", "stdevA", "stdevB", "totalA", "totalB"))
-  expect_true(all(names(short$Transcripts) %in% names(full$Transcripts)))
-})
-
-
-#==============================================================================
-test_that("Samples are not grouped correctly", {
-  sim <- sim_sleuth_data()
-  r <- group_samples(sim$slo$sample_to_covariates)
-  
-  expect_equal(length(r), length(sim$slo$sample_to_covariates))  # number of covariates
-  expect_named(r, names(sim$slo$sample_to_covariates))  # names of covariates
-  expect_equal( length(r[[1]]), length(levels(as.factor(sim$slo$sample_to_covariates[[1]]))) )  # number of values of each covariate
-  expect_equal( length(r[[2]]), length(levels(as.factor(sim$slo$sample_to_covariates[[2]]))) )
-  expect_equal( sum(sapply(r[[1]], length)), length(sim$slo$sample_to_covariates[[1]]) )  # total number of samples
-  expect_equal( sum(sapply(r[[2]], length)), length(sim$slo$sample_to_covariates[[2]]) )
-})
-
-
-#==============================================================================
-test_that("Bootstrapped counts are not extracted correctly", {
-  samples <- c(1,3)
-  sim <- sim_sleuth_data(COUNTS_COL = "counts", BS_TARGET_COL = "id")
-  lr <- denest_boots(sim$slo, sim$annot[[1]], samples, "counts", "id")
-  
-  expect_equal(length(lr), length(samples))  # number or samples
-  for (i in 1:length(lr)) {
-    expect_equal(dim(lr[[i]])[1], dim(sim$slo$kal[[1]]$bootstrap[[1]])[1] )  # number of bootstraps
-    for (j in 1:( dim(lr[[i]])[2] - 1)) {
-      # Actual count values. 
-      expect_equal(lr[[i]][[j]][ order(lr[[i]][[j]]) ],
-                       sim$slo$kal[[samples[i]]]$bootstrap[[j]][["counts"]][ order(sim$slo$kal[[samples[i]]]$bootstrap[[j]][["counts"]]) ])
-      # The extraction function sorts the counts according to annotation order, 
-      # so the count vectors need to be sorted to a common order for the comparison.
-      # Sorting without use of the target_ids does not guarantee correctness in general, but it is enough for the test dataset.
-    }
-  }
-  
-})
-
-
-#==============================================================================
-test_that("Mixed order bootstraps don't give same results as unmixed", {
-  sim <- sim_sleuth_data(cnames=c("one","two"))
-  mixed_pseudo_sleuth <- sim$slo
-  mixed_pseudo_sleuth$kal[[1]]$bootstrap[[3]] <- mixed_pseudo_sleuth$kal[[1]]$bootstrap[[3]][c(1,3,2,5,4),]
-  mixed_pseudo_sleuth$kal[[1]]$bootstrap[[2]] <- mixed_pseudo_sleuth$kal[[1]]$bootstrap[[2]][c(5,4,3,2,1),]
-  mixed_pseudo_sleuth$kal[[3]]$bootstrap[[1]] <- mixed_pseudo_sleuth$kal[[3]]$bootstrap[[1]][c(3,5,1,4,2),]
-
-  expect_equal(calculate_DTU(mixed_pseudo_sleuth, sim$annot, "one", "two"),
-               calculate_DTU(sim$slo, sim$annot, "one", "two"))
-})
-
-
-#==============================================================================
-test_that("Bootstraps with all 0 / NA entries are not filtered out", {
-  # add a new transcript which will have zero entries
-  TRANSCRIPT <- "AT1G01020.3"
-  GENE <- "AT1G01020"
-  z_mini_anno <- rbind(mini_anno, c(TRANSCRIPT, GENE,""))
-
-  # make a new sleuth with this transcript added, and give it 0 entries
-  zero_entry_sleuth <- pseudo_sleuth
-  zero_entry_sleuth$kal <- lapply(zero_entry_sleuth$kal, function(kal)
-    lapply(kal, function(bs) lapply(bs, rbind, list(TRANSCRIPT, 0, 0))))
-
-  # make a new sleuth with one of the zero entries set to NA
-  na_entry_sleuth <- zero_entry_sleuth
-  na_entry_sleuth$kal[[2]]$bootstrap[[1]][6,2] <- NA
-
-  # calculate DTU for new sleuths and old one
-  z_result <- calculate_DTU(zero_entry_sleuth, z_mini_anno, "Col", "Vir")
-  n_result <- calculate_DTU(na_entry_sleuth, z_mini_anno, "Col", "Vir")
-  result <- calculate_DTU(pseudo_sleuth, z_mini_anno, "Col", "Vir")
-
-  # check results are all equal
-  expect_equal(z_result, result)
-  expect_equal(n_result, result)
-})
-
-
