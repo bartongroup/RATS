@@ -79,19 +79,29 @@ test_that("Bootstrapped counts are not extracted correctly", {
     
     # Number of bootstraps per sample.
     expect_equal(length(lr[[i]]) - 1, length(sim$slo$kal[[samples[i]]]$bootstrap))  # the last column in lr[] is ID
-    # All target counts pulled from the correct bootstraps.
-    for (j in 1:(length(lr[[i]]) - 1)) {
-      fltr <- match(sim$isx, sim$slo$kal[[samples[i]]]$bootstrap[[j]][[bst]])  # Where in the boot are the expected IDs.
-      expect_false(any(is.na(fltr)))                                           # By definition isx is a subset.
-      expect_true(all( sim$slo$kal[[samples[i]]]$bootstrap[[j]][[cnt]][fltr] %in% lr[[i]][[j]] ))
-      # There is a very small chance that the same combination of counts could result from a different source, but in
-      # the context of a controlled artificial set or a transcriptome-sized real data set that chance is negligible.
-    }
     
-    # Counts pulled from the correct targets.
-    for (tgt in sim$isx) {
+    # All target counts pulled from the correct bootstraps and the correct transcripts.
+    counts_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
+      fltr1 <- match(sim$isx, sim$slo$kal[[samples[i]]]$bootstrap[[j]][[bst]])  # Where in the boot are the expected IDs.
+      fltr2 <- match(sim$isx, lr[[i]][["target_id"]])                           # Where in the extracted counts are the expected IDs.
+      all(sim$slo$kal[[samples[i]]]$bootstrap[[j]][[cnt]][fltr1] == lr[[i]][[j]][fltr2])  # Both vectors' elements are ordered by the same IDs.
+    })
+    expect_true(all(counts_ok))
+    
+    # IDs in annotation, but not in bootstraps, should be 0.
+    missing_from_boots_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
+      nib <- setdiff(sim$annot$target_id, sim$isx)
+      nib <- match(nib, lr[[i]][["target_id"]])
+      all(lr[[i]][[j]][nib] == 0)
+    })
+    expect_true(all(missing_from_boots_ok))
       
-    }
+    # IDs in bootstrap, but not in annotation, should be absent.
+    missing_from_annot_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
+      nia <- setdiff(sim$slo$kal[[i]]$bootstrap[[j]], sim$isx)
+      any(nia %in% lr[[i]][["target_id"]])
+    })
+    expect_false(any(missing_from_annot_ok))
   }
 })
 

@@ -21,13 +21,8 @@
 #' 
 sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET_COL="target_id" , 
                             PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("one","two"), 
-                            errannot_inconsistent=FALSE) {
-  
-  # !!! Some of the testthat TESTS for rats depend on the specific properties of this dataset in order to
-  # !!! verify that data extraction and filtering works correctly. 
-  # !!! *ANY CHANGE* to this dataset risks affecting the tests. This concerns particularly the entries that 
-  # !!! are deliberately missing from either the annotation or the bootstraps.
-
+                            errannot_inconsistent=FALSE)
+{
   tx <- data.frame("target_id"= c("NIB.1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.1", "1B1C.2", "CC_a", "CC_b", "1NN", "2NN", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d"), 
                    "parent_id"= c("NIB", "1A1N", "1D1C", "1D1C", "1B1C", "1B1C", "CC", "CC", "NN", "NN", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6"))
   names(tx) <- c(TARGET_COL, PARENT_COL)
