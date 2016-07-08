@@ -14,10 +14,10 @@ test_that("The reporting structures are not created correctly", {
   
   expect_type(full$Parameters, "list")
   expect_true(typeof(full$Parameters) == typeof(short$Parameters))
-  expect_length(full$Parameters, 11)
+  expect_length(full$Parameters, 12)
   expect_length(short$Parameters, 2)
   expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                  "count_thresh", "tests", "bootstrap", "bootnum", "threads"))
+                                  "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum", "threads"))
   expect_true(all(names(short$Parameters) %in% names(full$Parameters)))
   
   expect_true(is.data.frame(full$Genes))
@@ -115,11 +115,12 @@ test_that("The input checks don't work", {
   wrong_name <- "RUBBISH_COLUMN_NAME"
   
   # No false alarms.
-  sim <- sim_sleuth_data(varname="waffles", COUNTS_COL="counts", TARGET_COL="target" , PARENT_COL="parent", BS_TARGET_COL="id", cnames=c("AAAA","BBBB"))
-  expect_silent(calculate_DTU(sim$slo, sim$annot, "AAAA", "BBBB", varname = "waffles", p_thresh = 0.01, count_thresh = 10,
-                              testmode = "prop-test", correction = "bonferroni", verbose = FALSE, boots = "g-test",
-                              bootnum = 2, threads = 1, COUNTS_COL = "counts", TARGET_COL = "target", 
-                              PARENT_COL = "parent", BS_TARGET_COL = "id"))
+  sim <- sim_sleuth_data(varname= "waffles", COUNTS_COL= "counts", TARGET_COL= "target" , PARENT_COL= "parent", 
+                         BS_TARGET_COL= "id", cnames= c("AAAA","BBBB"))
+  expect_silent(calculate_DTU(sim$slo, sim$annot, "AAAA", "BBBB", varname= "waffles", p_thresh= 0.01, count_thresh= 10,
+                              testmode= "prop-test", correction= "bonferroni", verbose= FALSE, boots= "g-test",
+                              bootnum= 2, threads= 1, COUNTS_COL= "counts", TARGET_COL= "target", 
+                              PARENT_COL= "parent", BS_TARGET_COL= "id"))
   sim <- sim_sleuth_data(cnames=c(name_A, name_B))
   expect_silent(calculate_DTU(sim$slo, sim$annot, name_A, name_B))
   
@@ -180,8 +181,14 @@ test_that("The input checks don't work", {
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, bootnum = -5),
                "Invalid number of bootstraps", fixed= TRUE)
   
+  # Proportion change threshold.
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, dprop_thresh = -2),
+               "Invalid proportion difference threshold", fixed= TRUE)
+  expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B, dprop_thresh = 2),
+               "Invalid proportion difference threshold", fixed= TRUE)
+  
   # Inconsistent annotation.
-  sim <- sim_sleuth_data(errannot_inconsistent = TRUE)
+  sim <- sim_sleuth_data(errannot_inconsistent= TRUE, cnames= c(name_A, name_B))
   expect_error(calculate_DTU(sim$slo, sim$annot, name_A, name_B),
                "Inconsistent set of transcript IDs", fixed= TRUE)
 })
@@ -199,9 +206,9 @@ test_that("The output structure is not correct", {
   expect_named(full, c("Parameters", "Genes", "Transcripts"))
   
   expect_type(full$Parameters, "list")
-  expect_length(full$Parameters, 11)
+  expect_length(full$Parameters, 12)
   expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                  "count_thresh", "tests", "bootstrap", "bootnum", "threads"))
+                                  "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum", "threads"))
   
   expect_true(is.data.frame(full$Genes))
   expect_equal(dim(full$Genes)[2], 23)

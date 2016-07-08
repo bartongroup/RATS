@@ -20,7 +20,7 @@
 #' @export
 #' 
 sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET_COL="target_id" , 
-                            PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("one","two"), 
+                            PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("A","B"), 
                             errannot_inconsistent=FALSE)
 {
   tx <- data.frame("target_id"= c("NIB.1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.1", "1B1C.2", "CC_a", "CC_b", "1NN", "2NN", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d"), 
@@ -30,7 +30,7 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
   sl <- list()
   sl[["sample_to_covariates"]] <- data.frame("foo"=c(cnames[1], cnames[2], cnames[1], cnames[2]), 
                                              "bar"=c("ba", "ba", "bb", "bb"))
-  names(sl[["sample_to_covariates"]]) <- c(varname, "foodbar")
+  names(sl[["sample_to_covariates"]]) <- c(varname, "batch")
   
   sl[["kal"]] <- list()
   sl$kal[[1]] <- list()

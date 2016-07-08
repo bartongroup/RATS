@@ -8,7 +8,8 @@
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
 #' @param verbose Display progress updates, default \code{FALSE}.
 #' @param p_thresh The p-value threshold, default 0.05.
-#' @param count_thresh Transcripts with fewer reads per replicate than this will be ignored (default 5).
+#' @param count_thresh Minimum count of fragments per sample for transcripts to be considered (default 5).
+#' @param dprop_thresh Minimum change in proportion of a transcript for it to be considered (default 0.1).
 #' @param testmode One of "G-test", "prop-test", "both" (default both).
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
 #' @param boots Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").
@@ -23,15 +24,16 @@
 #' @import data.table
 #' @import matrixStats
 #' @export
-calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition", 
-                          p_thresh = 0.05, count_thresh = 5, testmode = "both", correction = "BH", 
-                          verbose = FALSE, boots = "none", bootnum = 100L, threads = parallel::detectCores(),
-                          COUNTS_COL="est_counts", TARGET_COL="target_id", PARENT_COL="parent_id", BS_TARGET_COL="target_id") {
+calculate_DTU <- function(slo, annot, name_A, name_B, varname= "condition", 
+                          p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, testmode= "both", correction= "BH", 
+                          verbose= FALSE, boots= "none", bootnum= 100L, threads= parallel::detectCores(),
+                          COUNTS_COL= "est_counts", TARGET_COL= "target_id", PARENT_COL= "parent_id", BS_TARGET_COL= "target_id") {
   #---------- PREP
   
   # Input checks.
   paramcheck <- parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
-                                correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads, count_thresh, testmode, boots, bootnum)
+                                correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads, count_thresh, testmode, 
+                                boots, bootnum, dprop_thresh)
   if (paramcheck$error) stop(paramcheck$message)
   threads <- as.integer(threads)  # Plain numbers default to double, unless integer R syntax is explicitly used.
   bootnum <- as.integer(bootnum)
@@ -64,7 +66,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   
   progress <- update_progress(progress)
   # Do the core work.
-  resobj <- do_tests(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, correction)
+  resobj <- do_tests(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, dprop_thresh, correction)
   
   #-------- ADD INFO
   
@@ -75,6 +77,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
   resobj$Parameters["cond_B"] <- name_B
   resobj$Parameters["p_thresh"] <- p_thresh 
   resobj$Parameters["count_thresh"] <- count_thresh
+  resobj$Parameters["dprop_thresh"] <- dprop_thresh
   resobj$Parameters["tests"] <- testmode
   resobj$Parameters["bootstrap"] <- boots
   resobj$Parameters["bootnum"] <- bootnum
@@ -111,7 +114,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
                                                                                                                          # Also, the last column is the target_id, so I leave it out.
       counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
       # Do the work.
-      bout <- do_tests(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, correction)
+      bout <- do_tests(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, dprop_thresh, correction)
       return (list("pp" = bout$Transcripts[, Pt_pval_corr], 
                    "pgab" = bout$Genes[, Gt_pvalAB_corr],
                    "pgba" = bout$Genes[, Gt_pvalBA_corr] ))
@@ -167,9 +170,10 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname="condition",
 #'
 #' @return List with a logical value and a message.
 #'
-parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL,
+parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, 
-                            threads, count_thresh, testmode, boots, bootnum) {
+                            threads, count_thresh, testmode, boots, bootnum, dprop_thresh) 
+{
   if (!is.data.frame(annot))
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
   
@@ -190,7 +194,7 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
   if (! varname %in% names(slo$sample_to_covariates))
     return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
   
-  if (any(! c(ref_name, comp_name) %in% slo$sample_to_covariates[[varname]] ))
+  if (any(! c(name_A, name_B) %in% slo$sample_to_covariates[[varname]] ))
     return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
   
   if (!is.logical(verbose))
@@ -218,6 +222,9 @@ parameters_good <- function(slo, annot, ref_name, comp_name, varname, COUNTS_COL
     if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
       return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs! Please try again, using the same annotation for all your samples!"))
   }
+  
+  if ((!is.numeric(dprop_thresh)) || dprop_thresh < 0 || dprop_thresh > 1)
+    return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
   
   return(list("error"=FALSE, "message"="All good!"))
 }
@@ -310,7 +317,7 @@ alloc_out <- function(annot, full){
   if (full == "full") {
     Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
-                       "p_thresh"=NA_real_, "count_thresh"=NA_real_, 
+                       "p_thresh"=NA_real_, "count_thresh"=NA_real_, "dprop_thresh"=NA_real_,
                        "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_, "threads"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_,
@@ -363,12 +370,13 @@ alloc_out <- function(annot, full){
 #' @param testmode One of "G-test", "prop-test", "both".
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
 #' @param count_thresh Minimum number of counts per replicate.
+#' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
 #' @return list
 #' 
 #' @import data.table
 #' 
-do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, correction) {
+do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, dprop_thresh, correction) {
   
   #---------- PRE-ALLOCATE
   
@@ -392,13 +400,14 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
   #---------- FILTER
   
   # Filter transcripts and genes to reduce number of tests:
-  detected = resobj$Transcripts[, (propA + propB)] > 0
-  resobj$Transcripts[, eligible := (detected &  
-                                    Dprop != 0  &  
-                                    sumA > resobj$Parameters[["num_replic_A"]] * count_thresh  &  
-                                    sumB > resobj$Parameters[["num_replic_B"]] * count_thresh)]
+  detected = resobj$Transcripts[, abs((propA + propB))] > 0
+  resobj$Transcripts[, eligible := (abs(Dprop) >= dprop_thresh  &  
+                                    any(sumA >= resobj$Parameters[["num_replic_A"]] * count_thresh,  
+                                        sumB >= resobj$Parameters[["num_replic_B"]] * count_thresh) )] 
+  resobj$Transcripts[(is.na(eligible)), eligible := FALSE]
   resobj$Genes[, detect_transc :=  resobj$Transcripts[, .(parent_id, ifelse(detected, 1, 0))][, sum(V2), by = parent_id][, V1] ]
   resobj$Genes[(is.na(detect_transc)), detect_transc := 0]
+  resobj$Genes[, eligible := detect_transc >= 2]
   
   #---------- TESTS
   
