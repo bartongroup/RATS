@@ -1,64 +1,67 @@
 #================================================================================
-#' Plot count or proportion DTU results for a specified gene
+#' Plot count or proportion changes for all transcripts of a specified gene.
 #'
-#' @param DTUdata a DTU object with the data in to visualize.
+#' @param dtuo a DTU object.
 #' @param pid a \code{parent_id} to make the plot for.
-#' @param nreps the number of biological replicates per condition (this is used to calculate the error-bars for the 'proportions' plot). The default is 7.
-#' @param ptype a switch for plotting either \code{"counts"} or \code{"proportion"}. The default is "counts".
+#' @param type a switch for plotting either "counts" or "proportion". Default "counts".
+#' @param style style of plot. Either "bars" or "lines". Default "bars".
 #'
+#' @import data.table
+#' @import ggplot2
 #' @export
-plotGeneDTU <- function(DTUdata, pid, nreps=7, ptype="counts") {
+plotGeneDTU <- function(dtuo, pid, type= "counts", style= "bar") {
+  # Slice the data to get just the relevant transcripts.
+  vis_data <- dtuo$Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)]
+  vis_data[, peA := sqrt(propA * (1 - propA) / dtuo$Parameters[["num_replic_A"]]) ]
+  vis_data[, peB := sqrt(propB * (1 - propB) / dtuo$Parameters[["num_replic_B"]]) ]
   
-  # first I'll slice the data to get just the transcripts I need
-  vis_data <- DTUdata$Transcripts[DTUdata$Transcripts$parent_id==pid,]
-  vis_data$group <- seq(1,length(vis_data$parent_id),1)
-  vis_data$peA <-sqrt(vis_data$prop_A*(1-vis_data$prop_A)/nreps)
-  vis_data$peB <- sqrt(vis_data$prop_B*(1-vis_data$prop_B)/nreps)
-  
-  # setup 'aesthetics' (seriously, WTF!)
-  if (ptype=="counts") {
-    a1 = aes(x=target_id, y=mean_A, colour="blue")
-    a1e = aes(x=target_id, ymin=mean_A-sqrt(var_A), ymax=mean_A+sqrt(var_A), colour="blue")
-    a2 = aes(x=target_id, y=mean_B, colour="red")
-    a2e = aes(x=target_id, ymin=mean_B-sqrt(var_B), ymax=mean_B+sqrt(var_B), colour="red")
-  } else if (ptype=="proportion") {
-    a1 = aes(x=target_id, y=prop_A, colour="blue")
-    a1e = aes(x=target_id, ymin=prop_A-peA, ymax=prop_A+peA, colour="blue")
-    a2 = aes(x=target_id, y=prop_B, color="red")
-    a2e = aes(x=target_id, ymin=prop_B-peB, ymax=prop_B+peB, color="red")
+  # Choose values to display.
+  vA = NA_real_; vB = NA_real_; eA = NA_real_; eB = NA_real_
+  if (type == "counts") {
+    vA <- "meanA";  vB <- "meanB";  eA <- "stdevA";  eB <- "stdevB"
+  } else {
+    vA <- "propA";  vB <- "propB";  eA <- "peA";   eB <- "peB"
   }
   
-  width <- 0.05
-  ggplot(vis_data, label=group) + 
-    geom_errorbar(a1e, width=width, size=1.5) +
-    geom_point(a1, size=3) + 
-    geom_line(a1, group=interaction("prop_A", "prop_B"), linetype=2, size=1.5) + 
-    geom_errorbar(a2e, width=width, size=1.5) +
-    geom_point(a2, size=3) + 
-    geom_line(a2, group=interaction("prop_A", "prop_B"), linetype=2, size=1.5) + 
-    theme(axis.title.x=element_blank(), text = element_text(size=20)) + 
-    labs(title=pid, y=ptype) + 
-    scale_color_manual("",labels = c(DTUdata$Parameters["cond_A"][[1]],
-                                     DTUdata$Parameters["cond_B"][[1]]),
-                       values = c("blue", "red"))
+  # Aggregate, to simplify ggplot commands.
+  vis_data[, condA := dtuo$Parameters[["cond_A"]] ]  # Recycle single value.
+  vis_data[, condB := dtuo$Parameters[["cond_B"]] ]
+  vis_data <- data.frame("expression" = c(vis_data[[vA]], vis_data[[vB]]),
+                  "error" = c(vis_data[[eA]], vis_data[[eB]]),
+                  "condition" = c(vis_data[, condA], vis_data[, condB]),
+                  "transcript" = vis_data[, target_id])  # Recycle vector once.
+  
+  if (style == "lines") {
+    # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
+    result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
+      geom_freqpoly(stat= "identity", aes(group= condition, colour= condition)) +
+      geom_errorbar(aes(x= transcript, ymin= expression - error, ymax= expression + error, colour= condition),  width= 0.05, size= 1.5) +
+      labs(title= pid, y= type)
+  } else {
+    # Display as dodged bar chart.
+    result <- ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
+      geom_bar(stat= "identity", position= "dodge", aes(group= condition, colour= condition)) +
+      geom_errorbar(aes(x= transcript, ymin= expression - error, ymax= expression + error),  width= 0.5, size= 0.5) +
+      labs(title= pid, y= type)
+  }
 }
 
 
 #================================================================================
-#' Summary of DTU
+#' Summary of DTU calling.
 #' 
 #' @param dtuo a DTU object.
 #' @return named numerical vector giving a quick overview of the results
 #'
 #'@export
-dtuSummary <- function(dtuo) {
-  g <- table(dtuo$Genes$dtu, useNA="always")
-  p <- table(dtuo$Genes$dtu_prop, useNA="always")
-  result <- c("DTU_g" = g["TRUE"], 
-              "non-DTU_g" = g["FALSE"], 
-              "DT_prop" = p["TRUE"], 
-              "non-DTU_prop" = p["FALSE"], 
-              "na" = p[3])
+dtu_summary <- function(dtuo) {
+  g <- table(dtuo$Genes$Gt_DTU, useNA="always")
+  p <- table(dtuo$Genes$Pt_DTU, useNA="always")
+  result <- c("DTU_gtest" = g["TRUE"], 
+              "non-DTU_gtest" = g["FALSE"], 
+              "DT_proptest" = p["TRUE"], 
+              "non-DTU_proptest" = p["FALSE"], 
+              "NA" = p[3])
   return(result)
 }
 
@@ -70,6 +73,7 @@ dtuSummary <- function(dtuo) {
 #' @param type Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "dprop"
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #' 
+#' @import ggplot2
 #' @export
 plotDTU_prop <- function(dtuo, type="propVmag") {
   if (type == "propVcount") {

@@ -154,7 +154,8 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   #---------- DONE
   
   progress <- update_progress(progress)
-  return(resobj)
+
+    return(resobj)
 }
 
 

@@ -2,20 +2,20 @@
 % Please edit documentation in R/plots.R
 \name{plotGeneDTU}
 \alias{plotGeneDTU}
-\title{Plot count or proportion DTU results for a specified gene}
+\title{Plot count or proportion changes for all transcripts of a specified gene.}
 \usage{
-plotGeneDTU(DTUdata, pid, nreps = 7, ptype = "counts")
+plotGeneDTU(dtuo, pid, type = "counts", style = "bar")
 }
 \arguments{
-\item{DTUdata}{a DTU object with the data in to visualize.}
+\item{dtuo}{a DTU object.}
 
 \item{pid}{a \code{parent_id} to make the plot for.}
 
-\item{nreps}{the number of biological replicates per condition (this is used to calculate the error-bars for the 'proportions' plot). The default is 7.}
+\item{type}{a switch for plotting either "counts" or "proportion". Default "counts".}
 
-\item{ptype}{a switch for plotting either \code{"counts"} or \code{"proportion"}. The default is "counts".}
+\item{style}{style of plot. Either "bars" or "lines". Default "bars".}
 }
 \description{
-Plot count or proportion DTU results for a specified gene
+Plot count or proportion changes for all transcripts of a specified gene.
 }
 
