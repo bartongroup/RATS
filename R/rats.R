@@ -8,13 +8,13 @@
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
 #' @param verbose Display progress updates, default \code{FALSE}.
 #' @param p_thresh The p-value threshold, default 0.05.
-#' @param count_thresh Minimum count of fragments per sample for transcripts to be considered (default 5).
+#' @param count_thresh Minimum count of fragments per sample for transcripts to be considered (default 5). Applies to both canditions.
 #' @param dprop_thresh Minimum change in proportion of a transcript for it to be considered (default 0.1).
 #' @param testmode One of "G-test", "prop-test", "both" (default both).
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
 #' @param boots Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").
 #' @param bootnum Number of bootstraps (default 10000).
-#' @param threads (Not in use currently) Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.
+#' @param threads (Not in use currently) Enable parallel processing. Default uses parallel::detectCores().
 #' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
 #' @param TARGET_COL The name of the transcript identifier column in the annot object, default \code{"target_id"}
 #' @param PARENT_COL The name of the parent identifier column in the annot object, default \code{"parent_id"}.
@@ -24,7 +24,7 @@
 #' @import data.table
 #' @import matrixStats
 #' @export
-calculate_DTU <- function(slo, annot, name_A, name_B, varname= "condition", 
+call_DTU <- function(slo, annot, name_A, name_B, varname= "condition", 
                           p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, testmode= "both", correction= "BH", 
                           verbose= FALSE, boots= "none", bootnum= 100L, threads= parallel::detectCores(),
                           COUNTS_COL= "est_counts", TARGET_COL= "target_id", PARENT_COL= "parent_id", BS_TARGET_COL= "target_id") {
@@ -66,7 +66,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   progress <- update_progress(progress)
   # Do the core work.
-  resobj <- do_tests(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, dprop_thresh, correction)
+  resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, dprop_thresh, correction)
   
   #-------- ADD INFO
   
@@ -114,7 +114,7 @@ calculate_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
                                                                                                                          # Also, the last column is the target_id, so I leave it out.
       counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
       # Do the work.
-      bout <- do_tests(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, dprop_thresh, correction)
+      bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, dprop_thresh, correction)
       return (list("pp" = bout$Transcripts[, Pt_pval_corr], 
                    "pgab" = bout$Genes[, Gt_pvalAB_corr],
                    "pgba" = bout$Genes[, Gt_pvalBA_corr] ))
@@ -376,7 +376,7 @@ alloc_out <- function(annot, full){
 #' 
 #' @import data.table
 #' 
-do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, dprop_thresh, correction) {
+calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, dprop_thresh, correction) {
   
   #---------- PRE-ALLOCATE
   
@@ -401,9 +401,9 @@ do_tests <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh
   
   # Filter transcripts and genes to reduce number of tests:
   detected = resobj$Transcripts[, abs((propA + propB))] > 0
-  resobj$Transcripts[, eligible := (abs(Dprop) >= dprop_thresh  &  
-                                    any(sumA >= resobj$Parameters[["num_replic_A"]] * count_thresh,  
-                                        sumB >= resobj$Parameters[["num_replic_B"]] * count_thresh) )] 
+  ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
+  ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
+  resobj$Transcripts[, eligible := (abs(Dprop) >= dprop_thresh  &  (sumA >= ctA & sumB >= ctB) )] 
   resobj$Transcripts[(is.na(eligible)), eligible := FALSE]
   resobj$Genes[, detect_transc :=  resobj$Transcripts[, .(parent_id, ifelse(detected, 1, 0))][, sum(V2), by = parent_id][, V1] ]
   resobj$Genes[(is.na(detect_transc)), detect_transc := 0]

@@ -2,54 +2,32 @@
 % Please edit documentation in R/rats.R
 \name{calculate_DTU}
 \alias{calculate_DTU}
-\title{Calculate differential transcript usage.}
+\title{Set up and execute the tests.}
 \usage{
-calculate_DTU(slo, annot, name_A, name_B, varname = "condition",
-  p_thresh = 0.05, count_thresh = 5, testmode = "both",
-  correction = "BH", verbose = FALSE, boots = "none", bootnum = 100L,
-  threads = parallel::detectCores(), COUNTS_COL = "est_counts",
-  TARGET_COL = "target_id", PARENT_COL = "parent_id",
-  BS_TARGET_COL = "target_id")
+calculate_DTU(counts_A, counts_B, tx_filter, testmode, full, count_thresh,
+  dprop_thresh, correction)
 }
 \arguments{
-\item{slo}{A sleuth object.}
+\item{counts_A}{A data.table of counts for condition A. x: sample, y: transcript.}
 
-\item{annot}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
+\item{counts_B}{A data.table of counts for condition B. x: sample, y: transcript.}
 
-\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
+\item{tx_filter}{A data.table with target_id and parent_id.}
 
-\item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
+\item{testmode}{One of "G-test", "prop-test", "both".}
 
-\item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.}
+\item{full}{Either "full" (for complete output structure) or "short" (for bootstrapping).}
 
-\item{p_thresh}{The p-value threshold, default 0.05.}
+\item{count_thresh}{Minimum number of counts per replicate.}
 
-\item{count_thresh}{Transcripts with fewer reads per replicate than this will be ignored (default 5).}
+\item{dprop_thresh}{Minimum difference in proportions.}
 
-\item{testmode}{One of "G-test", "prop-test", "both" (default both).}
-
-\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
-
-\item{verbose}{Display progress updates, default \code{FALSE}.}
-
-\item{boots}{Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").}
-
-\item{bootnum}{Number of bootstraps (default 10000).}
-
-\item{threads}{(Not in use currently) Enable parallel processing. Default uses parallel::detectCores(). Try setting to 1 if you are having issues.}
-
-\item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
-
-\item{TARGET_COL}{The name of the transcript identifier column in the annot object, default \code{"target_id"}}
-
-\item{PARENT_COL}{The name of the parent identifier column in the annot object, default \code{"parent_id"}.}
-
-\item{BS_TARGET_COL}{The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.}
+\item{correction}{Multiple testing correction type.}
 }
 \value{
-List of data tables, with gene-level and transcript-level information.
+list
 }
 \description{
-Calculate differential transcript usage.
+Set up and execute the tests.
 }
 
