@@ -1,0 +1,163 @@
+---
+title: "RATs Tutorial"
+author: "Kimon Froussios"
+date: "8 July 2016"
+output: 
+  html_document: 
+    fig_caption: yes
+    keep_md: yes
+    theme: readable
+    toc: yes
+runtime: shiny
+---
+
+
+# Relative Abundance of Transcripts (RATs).
+
+This is an R package that builds on the functionality of [sleuth](http://pachterlab.github.io/sleuth/). It is aimed at people
+analyzing **gene expression** and **transcript abundance**, particularly with **RNA-Seq** type of data in mind.
+
+It uses proportions test (based on chi-square) to find which transcripts of a gene change expression relative to the other transcripts of the same gene. 
+For a more sensitive approach, it also uses G-test to find in which genes the transcripts change in abundance relative to one 
+another, although that test is not able to tell which specific transcripts are responsible for this.
+
+This *R Markdown* vignette constitutes the main documentation for the rats package.
+
+
+## Example 1: Basic usage.
+
+First, load the package (assuming it has been installed, as instructed in the README). 
+
+```{r}
+library(rats)
+```
+
+
+### Preparation of data
+
+In a real usage case, the input data would be the output of [sleuth](http://pachterlab.github.io/sleuth/). For details on what that looks
+like and how to use sleuth you should refer to its proper documentation.
+
+For this example, we'll use the bundled data simulator.
+
+
+```{r}
+simdat <- sim_sleuth_data(cnames = c("foo", "bar"))
+
+# For convenience let's assign the contents of the list to separate variables.
+slo <- simdat$slo       # Simulated minimal sleuth object.
+annot <- simdat$annot  # Annotation for the above data.
+
+```
+
+The above function was created with code testing in mind, however the simulated data is convenient for demonstrating how the package works.
+The data is completely artificial and chosen so as to test/demonstrate specific scenarios. It contains a handful of made-up genes and transcripts, 
+and a handful of samples/replicates with a handful of bootstraps per sample. Real data will likely have many more bootstraps per sample, 
+and *hopefully more replicates* per conditions as well.
+
+The simultion returns a list of 3 objects, only the first two of which are relevant here:
+
+1. `slo` emulates an R object you would obtain from calling **differential transcript expression (DTE)** using [sleuth](http://pachterlab.github.io/sleuth/).
+The real sleuth objects are quite large and complex. The simulated one contains only the bare minimum parts that are relevant to calling 
+**differential transcript usage (DTU)** with `rats`.
+
+```{r}
+# Let's have a look at the simulated data.
+summary(slo)
+# Names of the samples and conditions. Samples are grouped and compared based on these.
+print( slo$sample_to_covariates )
+```
+
+The values under "condition" are the ones we specified when we called the simulator. There's also an additional variable, "batch", which is added by the
+simulator. Ignore it for now. Your data may have more/fewer/different variables.
+
+```{r}
+# Estimated fragment counts in bootstrap 1 of sample 1.
+print( slo$kal[[1]]$bootstrap[[1]] )
+```
+
+2. `annot` is an auxiliary `data.frame` required by rats. It simply matches transcript identification codes to gene 
+identification codes. **When working with your own data, you will need to provide an appropriate such dataframe**.
+
+```{r}
+# And this is what the annotation looks like.
+print(annot)
+```
+
+
+### Calling DTU
+
+With our simulated data at hand, we can now call DTU using rats:
+
+```{r}
+mydtu <- call_DTU(slo, annot, "foo", "bar")
+```
+
+`call_DTU()` takes 4 mandatory arguments: a sleuth object, an annotation dataframe matching transcripts to genes, and the names of two conditions to
+compare. By default, the two names are expected to be values found in the "condition" column of the `slo$sample_to_conditions` table. You can override
+this if the column is named differently in your data, or if you want to compare by a different variable. More on this in the vignette that deals with the 
+input options.
+
+The returned structure is a list with 3 elements:
+
+```{r}
+print(summary(mydtu))
+```
+
+1. `Parameters` contains information about the run, such as threshold values and condition names.
+
+```{r}
+print(mydtu$Parameters)
+```
+
+2. `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains gene-level information. The results of the
+**G tests** are found here. A large number of columns are NA in this example, as they refer to bootstrapping, which is not carried out by 
+default. There are a total of 24 columns:
+
+```{r}
+print(mydtu$Genes)
+```
+
+3. `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains transcript-level information. The results of 
+the **proportion tests** are found here. Several columns are `NA` in this example, as they refer to bootstrapping, which is not carried out by default.
+There are a total of 24 columns:
+
+```{r}
+# Columns target_id (transcript identifier) and Pt_DTU (DTU call).
+print(mydtu$Transcripts)
+```
+
+
+### Results
+
+1. The `Gt_DTU` column in either of the two tables marks which **genes** have DTU. This is based on the G test, which takes into account all the transcripts of the gene.
+This makes it more sensitive to changes, but it also means it cannot attribute the change to specific transcripts in the gene.
+2. The `Pt_DTU` column in the `Transcripts` table marks the **transcripts** that are differentially used. Because it is based on the proportion test for a single
+transcript, it is less sensitive.
+3. `parent_id` lists the gene IDs. `target_id` lists the transcript IDs.
+4. Most other columns offer additional information to help understand the result.
+
+The `Pt_DTU` and `Gt_DTU` can differ from one another, as they are based on different tests and subject to different restrictions. They are complementary to one another.
+
+In our example, genes `CC` and `MIX6` show differential transcript usage. `CC` has only two transcripts, so both change. `MIX6` has 6 transcripts. Of these, `MIX6.d` was
+not detected in either condition, `MIX6.nc` shows no significant change between the conditions, and the remaining 4 show different levels of change. Two are only present in
+one of the two conditions (`MIX6.c3` and `MIX6.c4`), but only one of them is called as DTU, as the other's change falls below the default proportion change threshold of 
+0.1. The other two transcripts of the gene that change are present in both conditions and show significant change. The other genes/transcripts in our example show no 
+(significant) change or are not detected at all. 
+
+#### NA/NaN
+
+There is also a large number of `NA` fields. Many of these represent columns that report bootstrap results which, as mentioned earlier, are not run by default. 
+The remaining `NA` and `NaN` represent transcripts/genes that were not eligible for testing. Specifically, **DTU only makes sense with at least 2 transcripts in a gene**.
+Furthermore, **minimum value thresholds are applied to both the change in proportion** (a.k.a. biological significance) **and the fragment count per sample**. Both thresholds 
+are aimed at reducing noise in the predictions. Very high counts can cause even minute differences in proportion to be called as significant. Conversely, very low counts 
+have a very high uncertainty and would not be called as significant anyway. Fewer tests mean more forgiving p-value corrections against multiple testing and generally faster
+performance, which is handy when bootstrapping.
+
+
+## Example 2: Input options.
+
+`call_DTU()` has a number of options. 
+  
+  
+  

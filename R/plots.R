@@ -48,7 +48,6 @@ plot_gene <- function(dtuo, pid, vals= "counts", style= "bars") {
   if (vals == "proportions")
     vis_data[, errmax := ifelse(errmax>1, 1, errmax)]
   
-  
   if (style == "lines") {
     # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
     result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
