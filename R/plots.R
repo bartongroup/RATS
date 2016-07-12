@@ -1,15 +1,15 @@
 #================================================================================
 #' Plot count or proportion changes for all transcripts of a specified gene.
 #'
-#' @param dtuo a DTU object.
-#' @param pid a \code{parent_id} to make the plot for.
-#' @param type a switch for plotting either "counts" or "proportion". Default "counts".
-#' @param style style of plot. Either "bars" or "lines". Default "bars".
+#' @param dtuo A DTU object.
+#' @param pid A \code{parent_id} to make the plot for.
+#' @param plt_type Values to plot. Either "counts" or "proportion". Default "counts".
+#' @param plt_style Style of plot. Either "bars" or "lines". Default "bars".
 #'
 #' @import data.table
 #' @import ggplot2
 #' @export
-plotGeneDTU <- function(dtuo, pid, type= "counts", style= "bar") {
+plot_gene <- function(dtuo, pid, plt_type= "counts", plt_style= "bar") {
   # Slice the data to get just the relevant transcripts.
   vis_data <- dtuo$Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)]
   vis_data[, peA := sqrt(propA * (1 - propA) / dtuo$Parameters[["num_replic_A"]]) ]
@@ -17,7 +17,7 @@ plotGeneDTU <- function(dtuo, pid, type= "counts", style= "bar") {
   
   # Choose values to display.
   vA = NA_real_; vB = NA_real_; eA = NA_real_; eB = NA_real_
-  if (type == "counts") {
+  if (plt_type == "counts") {
     vA <- "meanA";  vB <- "meanB";  eA <- "stdevA";  eB <- "stdevB"
   } else {
     vA <- "propA";  vB <- "propB";  eA <- "peA";   eB <- "peB"
@@ -31,7 +31,7 @@ plotGeneDTU <- function(dtuo, pid, type= "counts", style= "bar") {
                   "condition" = c(vis_data[, condA], vis_data[, condB]),
                   "transcript" = vis_data[, target_id])  # Recycle vector once.
   
-  if (style == "lines") {
+  if (plt_style == "lines") {
     # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
     result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
       geom_freqpoly(stat= "identity", aes(group= condition, colour= condition)) +

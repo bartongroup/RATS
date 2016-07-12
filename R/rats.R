@@ -8,7 +8,7 @@
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
 #' @param verbose Display progress updates, default \code{FALSE}.
 #' @param p_thresh The p-value threshold, default 0.05.
-#' @param count_thresh Minimum count of fragments per sample for transcripts to be considered (default 5). Applies to both canditions.
+#' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be considered (default 5).
 #' @param dprop_thresh Minimum change in proportion of a transcript for it to be considered (default 0.1).
 #' @param testmode One of "G-test", "prop-test", "both" (default both).
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
@@ -59,14 +59,14 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   # Each dataframe holds the counts from ALL the bootstraps. Target_id is included but NOT used as key so as to ensure the order keeps matching tx_filter.
   data_A <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
   data_B <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
-  bootmeans_A <- as.data.table(lapply(data_A, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))  # Tables don't have access to column ranges by index so I have to fis out the names?
+  bootmeans_A <- as.data.table(lapply(data_A, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))  # Tables don't have access to column ranges by index so I have todevtools fis out the names?
   bootmeans_B <- as.data.table(lapply(data_B, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))
   
   #---------- TEST
   
   progress <- update_progress(progress)
   # Do the core work.
-  resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, dprop_thresh, correction)
+  suppressWarnings(resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, dprop_thresh, correction))
   
   #-------- ADD INFO
   
@@ -84,6 +84,9 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   resobj$Parameters["threads"] <- threads
   # Fill in data info.
   resobj$Genes[, known_transc :=  resobj$Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
+  detected = resobj$Transcripts[, abs((propA + propB))] > 0
+  resobj$Genes[, detect_transc :=  resobj$Transcripts[, .(parent_id, ifelse(abs(propA + propB) > 0, 1, 0))][, sum(V2), by = parent_id][, V1] ]
+  resobj$Genes[(is.na(detect_transc)), detect_transc := 0]
   resobj$Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
   resobj$Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
   resobj$Transcripts[, stdevA :=  rowSds(as.matrix(bootmeans_A)) ]
@@ -114,10 +117,11 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
                                                                                                                          # Also, the last column is the target_id, so I leave it out.
       counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
       # Do the work.
-      bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, dprop_thresh, correction)
-      return (list("pp" = bout$Transcripts[, Pt_pval_corr], 
-                   "pgab" = bout$Genes[, Gt_pvalAB_corr],
-                   "pgba" = bout$Genes[, Gt_pvalBA_corr] ))
+      # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
+      suppressWarnings(bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, dprop_thresh, correction))
+      return(list("pp" = bout$Transcripts[, Pt_pval_corr], 
+                  "pgab" = bout$Genes[, Gt_pvalAB_corr],
+                  "pgba" = bout$Genes[, Gt_pvalBA_corr] ))
     })
     
     #----- Stats
@@ -155,7 +159,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   progress <- update_progress(progress)
 
-    return(resobj)
+  return(resobj)
 }
 
 
@@ -321,7 +325,7 @@ alloc_out <- function(annot, full){
                        "p_thresh"=NA_real_, "count_thresh"=NA_real_, "dprop_thresh"=NA_real_,
                        "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_, "threads"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_,
+                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
                         "eligible"=NA,                              # eligible for testing (reduce number of tests)
                         "Pt_DTU"=NA, "Gt_DTU"=NA, "Gt_dtuAB"=NA, "Gt_dtuBA"=NA,
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_, "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_,
@@ -344,7 +348,7 @@ alloc_out <- function(annot, full){
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "detect_transc"=NA_integer_,
+                        "elig_transc"=NA_integer_,
                         "eligible"=NA,                              # eligible for testing (reduce number of tests)
                         "Gt_pvalAB"=NA_real_, "Gt_pvalBA"=NA_real_,
                         "Gt_pvalAB_corr"=NA_real_, "Gt_pvalBA_corr"=NA_real_)
@@ -401,14 +405,12 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
   #---------- FILTER
   
   # Filter transcripts and genes to reduce number of tests:
-  detected = resobj$Transcripts[, abs((propA + propB))] > 0
   ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
   ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
-  resobj$Transcripts[, eligible := (abs(Dprop) >= dprop_thresh  &  (sumA >= ctA & sumB >= ctB) )] 
+  resobj$Transcripts[, eligible := (abs(Dprop) >= dprop_thresh  &  (sumA >= ctA | sumB >= ctB) )] 
   resobj$Transcripts[(is.na(eligible)), eligible := FALSE]
-  resobj$Genes[, detect_transc :=  resobj$Transcripts[, .(parent_id, ifelse(detected, 1, 0))][, sum(V2), by = parent_id][, V1] ]
-  resobj$Genes[(is.na(detect_transc)), detect_transc := 0]
-  resobj$Genes[, eligible := detect_transc >= 2]
+  resobj$Genes[, elig_transc := resobj$Transcripts[, .(parent_id, ifelse(eligible, 1, 0))][, sum(V2), by = parent_id][, V1] ]
+  resobj$Genes[, eligible := elig_transc >= 2]
   
   #---------- TESTS
   

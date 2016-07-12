@@ -22,9 +22,9 @@ test_that("The reporting structures are not created correctly", {
   
   expect_true(is.data.frame(full$Genes))
   expect_true(is.data.frame(short$Genes))
-  expect_equal(dim(full$Genes)[2], 23)
+  expect_equal(dim(full$Genes)[2], 24)
   expect_equal(dim(short$Genes)[2], 7)
-  expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "eligible", "Pt_DTU", "Gt_DTU", 
+  expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "elig_transc", "eligible", "Pt_DTU", "Gt_DTU", 
                              "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
                              "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
                              "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 
@@ -114,13 +114,14 @@ test_that("The input checks don't work", {
   name_B <- "two"
   wrong_name <- "RUBBISH_COLUMN_NAME"
   
-  # No false alarms.
+  # No false alarms with valid parameters.
   sim <- sim_sleuth_data(varname= "waffles", COUNTS_COL= "counts", TARGET_COL= "target" , PARENT_COL= "parent", 
                          BS_TARGET_COL= "id", cnames= c("AAAA","BBBB"))
   expect_silent(call_DTU(sim$slo, sim$annot, "AAAA", "BBBB", varname= "waffles", p_thresh= 0.01, count_thresh= 10,
                               testmode= "prop-test", correction= "bonferroni", verbose= FALSE, boots= "g-test",
                               bootnum= 2, threads= 1, COUNTS_COL= "counts", TARGET_COL= "target", 
                               PARENT_COL= "parent", BS_TARGET_COL= "id"))
+  # No false alarms with defaults.
   sim <- sim_sleuth_data(cnames=c(name_A, name_B))
   expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B))
   
@@ -211,8 +212,8 @@ test_that("The output structure is not correct", {
                                   "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum", "threads"))
   
   expect_true(is.data.frame(full$Genes))
-  expect_equal(dim(full$Genes)[2], 23)
-  expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "eligible", "Pt_DTU", "Gt_DTU", 
+  expect_equal(dim(full$Genes)[2], 24)
+  expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "elig_transc", "eligible", "Pt_DTU", "Gt_DTU", 
                              "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
                              "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
                              "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 

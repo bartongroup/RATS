@@ -24,7 +24,7 @@ call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
-\item{count_thresh}{Minimum count of fragments per sample for transcripts to be considered (default 5). Applies to both canditions.}
+\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be considered (default 5).}
 
 \item{dprop_thresh}{Minimum change in proportion of a transcript for it to be considered (default 0.1).}
 
