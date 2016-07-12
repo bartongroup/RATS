@@ -3,13 +3,17 @@
 #'
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
-#' @param plt_type Values to plot. Either "counts" or "proportion". Default "counts".
-#' @param plt_style Style of plot. Either "bars" or "lines". Default "bars".
+#' @param vals Values to plot. Either "counts" or "proportions". Default "counts".
+#' @param style Style of plot. Either "bars" or "lines". Default "bars".
+#' @return a ggplot2 object. Simply display it or you can also customize it.
+#'
+#' The error bars represent either the error of proportion or 2 standard deviations
+#' of the mean count, according to the type of plot requested.
 #'
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_gene <- function(dtuo, pid, plt_type= "counts", plt_style= "bar") {
+plot_gene <- function(dtuo, pid, vals= "counts", style= "bars") {
   # Slice the data to get just the relevant transcripts.
   vis_data <- dtuo$Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)]
   vis_data[, peA := sqrt(propA * (1 - propA) / dtuo$Parameters[["num_replic_A"]]) ]
@@ -17,33 +21,51 @@ plot_gene <- function(dtuo, pid, plt_type= "counts", plt_style= "bar") {
   
   # Choose values to display.
   vA = NA_real_; vB = NA_real_; eA = NA_real_; eB = NA_real_
-  if (plt_type == "counts") {
+  if (vals == "counts") {
     vA <- "meanA";  vB <- "meanB";  eA <- "stdevA";  eB <- "stdevB"
-  } else {
+  } else if (vals == "proportions"){
     vA <- "propA";  vB <- "propB";  eA <- "peA";   eB <- "peB"
+  } else {
+    stop("Invalid plot type.")
   }
   
   # Aggregate, to simplify ggplot commands.
   vis_data[, condA := dtuo$Parameters[["cond_A"]] ]  # Recycle single value.
   vis_data[, condB := dtuo$Parameters[["cond_B"]] ]
-  vis_data <- data.frame("expression" = c(vis_data[[vA]], vis_data[[vB]]),
+  vis_data <- data.table("expression" = c(vis_data[[vA]], vis_data[[vB]]),
                   "error" = c(vis_data[[eA]], vis_data[[eB]]),
+                  "errmin" = NA_real_,
+                  "errmax" = NA_real_,
                   "condition" = c(vis_data[, condA], vis_data[, condB]),
                   "transcript" = vis_data[, target_id])  # Recycle vector once.
+  # 2 standard deviations.
+  if (vals == "counts") 
+    vis_data[, error := 2 * error]
+  # Error limits, mind sensible limits.
+  vis_data[, errmin := expression - error]
+  vis_data[, errmin := ifelse(errmin<0, 0, errmin)]
+  vis_data[, errmax := expression + error]
+  if (vals == "proportions")
+    vis_data[, errmax := ifelse(errmax>1, 1, errmax)]
   
-  if (plt_style == "lines") {
+  
+  if (style == "lines") {
     # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
     result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
-      geom_freqpoly(stat= "identity", aes(group= condition, colour= condition)) +
-      geom_errorbar(aes(x= transcript, ymin= expression - error, ymax= expression + error, colour= condition),  width= 0.05, size= 1.5) +
-      labs(title= pid, y= type)
-  } else {
+      geom_freqpoly(aes(group= condition, colour= condition), stat= "identity", size= 1.5) +
+      geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax, colour= condition), width= 0.5, size= 0.5) +
+      labs(title= pid, y= vals)
+  } else if (style == "bars"){
     # Display as dodged bar chart.
     result <- ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
-      geom_bar(stat= "identity", position= "dodge", aes(group= condition, colour= condition)) +
-      geom_errorbar(aes(x= transcript, ymin= expression - error, ymax= expression + error),  width= 0.5, size= 0.5) +
-      labs(title= pid, y= type)
+      geom_bar(aes(group= condition, colour= condition), stat= "identity", position= position_dodge(0.45), width= 0.5) +
+      geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.45), width= 0.5, size= 0.5) +
+      labs(title= pid, y= vals)
+  } else {
+    stop("Invalid plot style.")
   }
+  
+  return(result)
 }
 
 
@@ -55,13 +77,12 @@ plot_gene <- function(dtuo, pid, plt_type= "counts", plt_style= "bar") {
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  g <- table(dtuo$Genes$Gt_DTU, useNA="always")
-  p <- table(dtuo$Genes$Pt_DTU, useNA="always")
-  result <- c("DTU_gtest" = g["TRUE"], 
-              "non-DTU_gtest" = g["FALSE"], 
-              "DT_proptest" = p["TRUE"], 
-              "non-DTU_proptest" = p["FALSE"], 
-              "NA" = p[3])
+  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["Gt_DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
+              "non-DTU genes" = sum(ifelse(dtuo$Genes[["Gt_DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "NA genes" = sum(ifelse(is.na(dtuo$Genes[["Gt_DTU"]]), 1, 0)),
+              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["Pt_DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
+              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["Pt_DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["Pt_DTU"]]), 1, 0)) )
   return(result)
 }
 
@@ -70,51 +91,55 @@ dtu_summary <- function(dtuo) {
 #' Plot DTU results from the proportions test.
 #' 
 #' @param dtuo A DTU object.
-#' @param type Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "dprop"
+#' @param type Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "maxdprop"
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #' 
+#' Generally uses the results of the transcript-level proportion tests.
+#' 
+#' @import data.table
 #' @import ggplot2
 #' @export
-plotDTU_prop <- function(dtuo, type="propVmag") {
+plot_overview <- function(dtuo, type="dpropVsig") {
   if (type == "propVcount") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(propA, genreadsA, color = Pt_DTU)) +
-      ggplot2::ggtitle("Relative abundances of transcripts") +
-      ggplot2::labs(x = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), y = paste("Gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
-      ggplot2::scale_y_continuous(trans = "log10") +
-      ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
-      ggplot2::geom_point(alpha = 0.3)
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(propA, totalA, color = Pt_DTU)) +
+      ggtitle("Relative abundances of transcripts") +
+      labs(x = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), y = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
+      scale_y_continuous(trans = "log10") +
+      scale_colour_manual("DTU", values = c("blue", "red")) + 
+      geom_point(alpha = 0.3)
   } else if (type == "dpropVcount") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(genreadsA, Dprop, color = Pt_DTU)) +
-      ggplot2::ggtitle("Abundance change of transcripts ") +
-      ggplot2::labs(y = paste("prop( ", dtuo$Parameters$cond_B, " ) - prop( ", dtuo$Parameters$cond_A, " )", sep=""), 
-                    x = paste("Gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
-      ggplot2::scale_x_continuous(trans="log10") +
-      ggplot2::scale_y_continuous(breaks = seq(-1, 1, 0.2)) +
-      ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
-      ggplot2::geom_point(alpha = 0.3)
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(totalA, Dprop, color = Pt_DTU)) +
+      ggtitle("Abundance change of transcripts ") +
+      labs(y = paste("prop( ", dtuo$Parameters$cond_B, " ) - prop( ", dtuo$Parameters$cond_A, " )", sep=""), 
+           x = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
+      scale_x_continuous(trans="log10") +
+      scale_y_continuous(breaks = seq(-1, 1, 0.2)) +
+      scale_colour_manual("DTU", values = c("blue", "red")) + 
+      geom_point(alpha = 0.3)
   } else if (type == "propfoldVsig") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(propfold, Pt_pval_corr, color = Pt_DTU)) +
-      ggplot2::ggtitle("Proportion fold-change VS significance") +
-      ggplot2::labs(y = "P-value", x = paste("prop( ", dtuo$Parameters$cond_B, " ) / prop( ", dtuo$Parameters$cond_A, " )", sep="")) +
-      ggplot2::geom_hline(yintercept = dtuo$Parameters$p_thresh, colour = "blue", linetype = "dotted") +
-      ggplot2::scale_colour_manual("DTU", values = c("blue", "red")) + 
-      ggplot2::scale_y_continuous(trans="log10") + 
-      ggplot2::scale_x_continuous(trans="log2") + 
-      ggplot2::geom_point(alpha = 0.3)
+    propfold <- dtuo$Transcripts[["propB"]] / dtuo$Transcripts[["propA"]]
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(propfold, Pt_pval_corr, color = Pt_DTU)) +
+      ggtitle("Proportion fold-change VS significance") +
+      labs(y = "P-value", x = paste("prop( ", dtuo$Parameters$cond_B, " ) / prop( ", dtuo$Parameters$cond_A, " )", sep="")) +
+      geom_hline(yintercept = dtuo$Parameters$p_thresh, colour = "blue", linetype = "dotted") +
+      scale_colour_manual("DTU", values = c("blue", "red")) + 
+      scale_y_continuous(trans="log10") + 
+      scale_x_continuous(trans="log2") + 
+      geom_point(alpha = 0.3)
   } else if (type == "dpropVsig") {
-    result <- ggplot2::ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, Pt_pval_corr, colour = Pr_dtu)) +
-      ggplot2::ggtitle("Proportion change VS significance") +
-      ggplot2::labs(x = paste("Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, sep=""), 
-                    y ="P-value") +
-      ggplot2::geom_point(alpha = 0.3) +
-      ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2))
-  } else if (type == "dprop") {
-    tmp <- copy(dtuo$Transcripts)  # I don't want the intermediate calculattions to modify the dtu object
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, Pt_pval_corr, colour = Pt_DTU)) +
+      ggtitle("Proportion change VS significance") +
+      labs(x = paste("Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, sep=""), 
+           y ="P-value") +
+      geom_point(alpha = 0.3) +
+      scale_x_continuous(breaks = seq(-1, 1, 0.2))
+  } else if (type == "maxdprop") {
+    tmp <- copy(dtuo$Transcripts)  # I don't want the intermediate calculations to modify the dtu object.
     tmp[, abma := abs(Dprop)]
     tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
     # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
     setkey(tmp, Group.1)
-    tmp[, dtu := dtuo$Genes[tmp$Group.1, dtuo$Genes$Pt_dtu]]
+    tmp[, dtu := dtuo$Genes[match(tmp$Group.1, dtuo$Genes[, parent_id]), dtuo$Genes$Pt_DTU | dtuo$Genes$Gt_DTU] ]
     # ok, plotting time
     result <- ggplot2::ggplot(data = na.omit(tmp), ggplot2::aes(x, fill=dtu)) +
       ggplot2::ggtitle("Distribution of largest proportion change per gene") +

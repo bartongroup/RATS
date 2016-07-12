@@ -4,16 +4,22 @@
 \alias{plot_gene}
 \title{Plot count or proportion changes for all transcripts of a specified gene.}
 \usage{
-plot_gene(dtuo, pid, plt_type = "counts", plt_style = "bar")
+plot_gene(dtuo, pid, vals = "counts", style = "bars")
 }
 \arguments{
 \item{dtuo}{A DTU object.}
 
 \item{pid}{A \code{parent_id} to make the plot for.}
 
-\item{plt_type}{Values to plot. Either "counts" or "proportion". Default "counts".}
+\item{vals}{Values to plot. Either "counts" or "proportions". Default "counts".}
 
-\item{plt_style}{Style of plot. Either "bars" or "lines". Default "bars".}
+\item{style}{Style of plot. Either "bars" or "lines". Default "bars".}
+}
+\value{
+a ggplot2 object. Simply display it or you can also customize it.
+
+The error bars represent either the error of proportion or 2 standard deviations
+of the mean count, according to the type of plot requested.
 }
 \description{
 Plot count or proportion changes for all transcripts of a specified gene.
