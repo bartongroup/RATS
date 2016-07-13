@@ -22,11 +22,11 @@ test_that("The reporting structures are not created correctly", {
   
   expect_true(is.data.frame(full$Genes))
   expect_true(is.data.frame(short$Genes))
-  expect_equal(dim(full$Genes)[2], 24)
+  expect_equal(dim(full$Genes)[2], 23)
   expect_equal(dim(short$Genes)[2], 7)
   expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "elig_transc", "eligible", "Pt_DTU", "Gt_DTU", 
                              "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
-                             "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
+                             "Gt_boot_dtu", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
                              "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 
                              "Gt_boot_na"))
   expect_true(all(names(short$Genes) %in% names(full$Genes)))
@@ -212,10 +212,10 @@ test_that("The output structure is not correct", {
                                   "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum", "threads"))
   
   expect_true(is.data.frame(full$Genes))
-  expect_equal(dim(full$Genes)[2], 24)
+  expect_equal(dim(full$Genes)[2], 23)
   expect_named(full$Genes, c("parent_id", "known_transc", "detect_transc", "elig_transc", "eligible", "Pt_DTU", "Gt_DTU", 
                              "Gt_dtuAB", "Gt_dtuBA", "Gt_pvalAB", "Gt_pvalBA", "Gt_pvalAB_corr", "Gt_pvalBA_corr", 
-                             "Gt_boot_dtuAB", "Gt_boot_dtuBA", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
+                             "Gt_boot_dtu", "Gt_boot_meanAB", "Gt_boot_meanBA", "Gt_boot_stdevAB", 
                              "Gt_boot_stdevBA", "Gt_boot_minAB", "Gt_boot_minBA", "Gt_boot_maxAB", "Gt_boot_maxBA", 
                              "Gt_boot_na"))
   expect_true(is.numeric(full$Genes[["known_transc"]]))
@@ -224,8 +224,7 @@ test_that("The output structure is not correct", {
   expect_true(is.numeric(full$Genes[["Gt_pvalBA"]]))
   expect_true(is.numeric(full$Genes[["Gt_pvalAB_corr"]]))
   expect_true(is.numeric(full$Genes[["Gt_pvalBA_corr"]]))
-  expect_true(is.numeric(full$Genes[["Gt_boot_dtuAB"]]))
-  expect_true(is.numeric(full$Genes[["Gt_boot_dtuBA"]]))
+  expect_true(is.numeric(full$Genes[["Gt_boot_dtu"]]))
   expect_true(is.numeric(full$Genes[["Gt_boot_meanAB"]]))
   expect_true(is.numeric(full$Genes[["Gt_boot_meanBA"]]))
   expect_true(is.numeric(full$Genes[["Gt_boot_stdevAB"]]))
