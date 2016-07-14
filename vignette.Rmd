@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "13 July 2016"
+date: "14 July 2016"
 output: 
   html_document: 
     fig_caption: yes
@@ -329,4 +329,62 @@ provided.
 
 ## Example 3: Input options
 
+We'll still use the simulated data, as in the previous examples.
+
+```{r}
+library(rats)
+library(data.table)
+
+sim <- sim_sleuth_data(cnames = c("foo", "bar"))
+```
+
+### Bootstrapping & Confidence in DTU calls
+
+We already saw in the previous example how to activate bootstrapping of the DTU calls. It adds significant processing time, but **we strongly recommend using this option**, as it provides a
+measure of confidence in the p-values.Current transcript quantification algorithms such as [kallisto](https://pachterlab.github.io/kallisto/about), 
+[salmon](https://combine-lab.github.io/salmon/) and [sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) use probabilistic approaches to estimate transcript abundance. Bootstrapping
+the DTU calls controls for the variability in these quantifications.
+
+
+```{r eval=FALSE}
+# Evaluation of this command is disabled in this vignette, to keep it timely.
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 1000)
+```
+
+1. `boots` Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce processing time when doing a large number of bootstraps.
+2. `bootnum` Generally, greater is better but it takes longer. There is also an upper limit that depends on the size of your annotation. This is dues R's limit on the max size of matrices.
+For an annotation of 40000 transcripts, you should be able to do 10000 iterations.
+
+
+### Thresholds
+
+Three thresholds can be set in `rats`. One is the desired significance level, the other two are used to pre-filter the data. The main reason for pre-filtering is to reduce the magnitude of 
+multiple testing error, by reducing the number of tests carried out.
+
+```{r}
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", p_thresh = 0.01, count_thresh = 10, dprop_thresh = 0.25)
+# You can view if/how this changes the result by using the commands shown in the previous two examples. We're omitting that here to save page space.
+```
+
+1. `p_thresh` Significance level. P-values below this will be considered significant. 0.05 is a very permissive value.
+2. `count_thresh` At least one of the two conditions needs to exceed this number of fragments per sample for the transcript to be considered. Low counts have high uncertainty and low significance.
+Removing such entries from the analysis when both conditions are low-count improves the confidence in the predictions of the remaining transcripts.
+3. `dprop_thresh` This is a proxy for biological significance. A transcript's proportion must change by at least this much for it to be considered. The need for this is due to the fact that high 
+counts will make even minute differences show up as statistically significant, however very small changes are likely to be biologically indifferent.
+
+The default values for all three thresholds are rather lenient. You may want to set them higher.
+**PRO TIP:** To increase the thresholds AFTER you've already called DTU, you don't need to rerun everything. Simply use normal table access operations like this:
+
+```{r}
+# P value thresholds can be adjusted upwards or downwards post-run, though it is bad statistical practice to do so. You really should decide beforehand what significance level you want.
+new_thresh = 0.01
+newgenecalls <- mydtu$Genes[, .(parent_id, Gt_pvalAB_corr < new_thresh & Gt_pvalBA_corr < new_thresh)]
+newtransccalls <- mydtu$Transcripts[, .(target_id, parent_id, Pt_pval_corr < new_thresh)]
+print( newgenecalls )
+
+# Pre-filtering criteria can be made ONLY STRICTER. To make them more lenient you must re-rerun the calls.
+new_dpropthresh <- 0.3
+newtransccalls <- mydtu$Transcripts[(abs(Dprop) > new_dpropthresh), .(target_id, parent_id, Pt_DTU)]
+print( newtransccalls )
+```
 
