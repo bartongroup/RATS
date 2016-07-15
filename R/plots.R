@@ -90,7 +90,7 @@ dtu_summary <- function(dtuo) {
 #' Plot DTU results from the proportions test.
 #' 
 #' @param dtuo A DTU object.
-#' @param type Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "maxdprop"
+#' @param type Type of plot: "propVcount", "dpropVcount", "dpropVsig", "maxdprop"
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #' 
 #' Generally uses the results of the transcript-level proportion tests.
@@ -100,30 +100,21 @@ dtu_summary <- function(dtuo) {
 #' @export
 plot_overview <- function(dtuo, type="dpropVsig") {
   if (type == "propVcount") {
-    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(propA, totalA, color = Pt_DTU)) +
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(totalA, propA, color = Pt_DTU)) +
       ggtitle("Relative abundances of transcripts") +
-      labs(x = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), y = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
-      scale_y_continuous(trans = "log10") +
+      labs(y = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), 
+           x = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
+      scale_x_continuous(trans = "log10") +
       scale_colour_manual("DTU", values = c("blue", "red")) + 
       geom_point(alpha = 0.3)
   } else if (type == "dpropVcount") {
     result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(totalA, Dprop, color = Pt_DTU)) +
-      ggtitle("Abundance change of transcripts ") +
+      ggtitle("Abundance change VS gene expression") +
       labs(y = paste("prop( ", dtuo$Parameters$cond_B, " ) - prop( ", dtuo$Parameters$cond_A, " )", sep=""), 
            x = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
       scale_x_continuous(trans="log10") +
       scale_y_continuous(breaks = seq(-1, 1, 0.2)) +
       scale_colour_manual("DTU", values = c("blue", "red")) + 
-      geom_point(alpha = 0.3)
-  } else if (type == "propfoldVsig") {
-    propfold <- dtuo$Transcripts[["propB"]] / dtuo$Transcripts[["propA"]]
-    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(propfold, Pt_pval_corr, color = Pt_DTU)) +
-      ggtitle("Proportion fold-change VS significance") +
-      labs(y = "P-value", x = paste("prop( ", dtuo$Parameters$cond_B, " ) / prop( ", dtuo$Parameters$cond_A, " )", sep="")) +
-      geom_hline(yintercept = dtuo$Parameters$p_thresh, colour = "blue", linetype = "dotted") +
-      scale_colour_manual("DTU", values = c("blue", "red")) + 
-      scale_y_continuous(trans="log10") + 
-      scale_x_continuous(trans="log2") + 
       geom_point(alpha = 0.3)
   } else if (type == "dpropVsig") {
     result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, Pt_pval_corr, colour = Pt_DTU)) +
@@ -146,6 +137,8 @@ plot_overview <- function(dtuo, type="dpropVsig") {
       ggplot2::geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
       ggplot2::scale_x_continuous(breaks = seq(0, 1, 0.1)) +
       ggplot2::scale_y_continuous(trans="sqrt")
+  } else {
+    stop("Unrecognized plot type!")
   }
   return(result)
 }

@@ -7,6 +7,9 @@
 \usage{
 \S4method{update_progress}{TxtProgressUpdate}(theObject)
 }
+\arguments{
+\item{theObject}{The progress object.}
+}
 \description{
 Update progress with next text string and percent complete figure
 }

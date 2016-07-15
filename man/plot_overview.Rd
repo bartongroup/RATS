@@ -9,7 +9,7 @@ plot_overview(dtuo, type = "dpropVsig")
 \arguments{
 \item{dtuo}{A DTU object.}
 
-\item{type}{Type of plot: "propVcount", "dpropVcount", "propfoldVsig", "dpropVsig", "maxdprop"}
+\item{type}{Type of plot: "propVcount", "dpropVcount", "dpropVsig", "maxdprop"}
 }
 \value{
 a ggplot2 object. Simply display it or you can also customize it.

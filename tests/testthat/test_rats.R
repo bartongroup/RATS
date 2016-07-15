@@ -2,8 +2,9 @@ context("DTU internal structures")
 
 #==============================================================================
 test_that("The reporting structures are not created correctly", {
-  full <- alloc_out(mini_anno, "full")
-  short <- alloc_out(mini_anno, "short")
+  sim <- sim_sleuth_data()
+  full <- alloc_out(sim$annot, "full")
+  short <- alloc_out(sim$annot, "short")
   
   expect_type(full, "list")
   expect_type(short, "list")

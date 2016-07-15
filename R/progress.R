@@ -59,7 +59,9 @@ setMethod(f="initialize",
 
 #--------------------------------------------------------------------------------
 #' Update progress with next text string and percent complete figure
-#'
+#' 
+#' @param theObject The progress object.
+#' 
 setMethod(f="update_progress",
           signature="TxtProgressUpdate",
           definition=function(theObject)

@@ -174,7 +174,26 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
 
 #================================================================================
 #' Check input parameters.
-#'
+#' 
+#' @param slo sleuth object 
+#' @param annot annotation dataframe
+#' @param name_A condition name
+#' @param name_B condition name
+#' @param varname name of condition variable
+#' @param COUNTS_COL name of counts column in bootstrap
+#' @param correction p-value correction method
+#' @param p_thresh significance level
+#' @param TARGET_COL name of transcript id column in annotation
+#' @param PARENT_COL name of gene id column in annotation
+#' @param BS_TARGET_COL name of transcript id column in bootstrap
+#' @param verbose print progress report
+#' @param threads Number of threads.
+#' @param count_thresh minimum frgments per transcript per sample
+#' @param testmode which tests to run
+#' @param boots which tests to bootstrap
+#' @param bootnum number of bootstrap iterations
+#' @param dprop_thresh minimum change in proportion
+#' 
 #' @return List with a logical value and a message.
 #'
 parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
@@ -467,6 +486,6 @@ g.test <- function(x, p = rep(1/length(x), length(x)))
   q <- 1
   STATISTIC <- G <- 2*g/q
   PARAMETER <- length(x) - 1
-  PVAL <- pchisq(STATISTIC, PARAMETER, lower = FALSE)
+  PVAL <- pchisq(STATISTIC, PARAMETER, lower.tail = FALSE)
 }
 

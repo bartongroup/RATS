@@ -1,20 +1,26 @@
-Package: rats
 Type: Package
-Title: Relative Abundance of Transcripts
+Package: rats
 Version: 0.1
-Date: 2016-05-11
-Author: Kira Mourao, Kimon Froussios, Nick Schurch
-Maintainer: Nick SChurch <n.schurch@dundee.ac.uk>
-Description: Given a Sleuth output object and a transcript-to-gene index of identifiers, this package identifies genes where differential transcript usage occurs.
-License: Creative Commons Attribution (CC BY)
-LazyData: TRUE
+Date: 2016-07-15
+Title: Relative Abundance of Transcripts
+Authors@R: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
+             person("Kira Mourao", role=c("aut"), email="k.mourao@dundee.ac.uk"),
+             person("Nick Schurch", role=c("cre"), email="n.schurch@dundee.ac.uk"))
+Author: Kimon Froussios [aut], Kira Mourao [aut], Nick Schurch [cre]
+Maintainer: Kimon Froussios <k.froussios@dundee.ac.uk>
+Description: Given a Sleuth output object and a transcript-to-gene index of
+    identifiers, this package identifies genes where differential transcript usage
+    occurs.
+License: MIT + file LICENSE
+VignetteBuilder: knitr
 Suggests:
     testthat,
-    wasabi,
-    biomaRt,
+    knitr,
     sleuth
-RoxygenNote: 5.0.1
 Imports:
     matrixStats,
     data.table,
-    parallel
+    ggplot2
+URL: https://github.com/nickschurch/Rats, http://www.compbio.dundee.ac.uk
+BugReports: https://github.com/nickschurch/Rats
+RoxygenNote: 5.0.1

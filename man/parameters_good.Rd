@@ -8,6 +8,43 @@ parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
   p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, threads,
   count_thresh, testmode, boots, bootnum, dprop_thresh)
 }
+\arguments{
+\item{slo}{sleuth object}
+
+\item{annot}{annotation dataframe}
+
+\item{name_A}{condition name}
+
+\item{name_B}{condition name}
+
+\item{varname}{name of condition variable}
+
+\item{COUNTS_COL}{name of counts column in bootstrap}
+
+\item{correction}{p-value correction method}
+
+\item{p_thresh}{significance level}
+
+\item{TARGET_COL}{name of transcript id column in annotation}
+
+\item{PARENT_COL}{name of gene id column in annotation}
+
+\item{BS_TARGET_COL}{name of transcript id column in bootstrap}
+
+\item{verbose}{print progress report}
+
+\item{threads}{Number of threads.}
+
+\item{count_thresh}{minimum frgments per transcript per sample}
+
+\item{testmode}{which tests to run}
+
+\item{boots}{which tests to bootstrap}
+
+\item{bootnum}{number of bootstrap iterations}
+
+\item{dprop_thresh}{minimum change in proportion}
+}
 \value{
 List with a logical value and a message.
 }
