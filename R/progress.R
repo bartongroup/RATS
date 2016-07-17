@@ -11,7 +11,10 @@ ProgressUpdate <- setClass("ProgressUpdate", slots = c(steps = "data.frame", max
 
 #--------------------------------------------------------------------------------
 #' Initialisation of progress update object
-#'
+#' @param .Object base class
+#' @param ... unnamed arguments
+#' @param steps dataframe of steps to progress through
+#' @param on whether the progress updater is switched on
 setMethod(f="initialize",
           signature="ProgressUpdate",
           definition=function(.Object, ..., steps, on=FALSE)
@@ -25,7 +28,7 @@ setMethod(f="initialize",
 
 #--------------------------------------------------------------------------------
 #' Progress update generic
-#'
+#' @param theObject The progress object
 setGeneric(name="update_progress",
            def=function(theObject)
            {
@@ -44,11 +47,13 @@ TxtProgressUpdate <- setClass("TxtProgressUpdate",
 
 #--------------------------------------------------------------------------------
 #' Initialisation of subclass
-#'
+#' @param .Object base class
+#' @param ... unnamed arguments
 setMethod(f="initialize",
           signature="TxtProgressUpdate",
           definition=function(.Object, ...)
             {
+              pb = NULL #keep R CMD check happy
               # call base class initialisation
               # should really be at end as just callNextMethod without assignment
               # but couldn't get it to work that way
@@ -90,11 +95,13 @@ BarProgressUpdate <- setClass("BarProgressUpdate",
 
 #--------------------------------------------------------------------------------
 #' Initialisation of subclass
-#'
+#' @param .Object base class
+#' @param ... unnamed arguments
 setMethod(f="initialize",
           signature="BarProgressUpdate",
           definition=function(.Object, ...)
           {
+            pb = NULL #keep R CMD check happy
             # call base class initialisation (need max and on defined)
             .Object <- callNextMethod(.Object, ..., pb=pb)
             # init progress bar
@@ -107,7 +114,7 @@ setMethod(f="initialize",
 
 #--------------------------------------------------------------------------------
 #' Update progress by extending progress bar
-#'
+#' @param theObject the progress bar
 setMethod(f="update_progress",
           signature="BarProgressUpdate",
           definition=function(theObject)

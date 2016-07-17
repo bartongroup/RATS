@@ -6,6 +6,9 @@
 \usage{
 update_progress(theObject)
 }
+\arguments{
+\item{theObject}{The progress object}
+}
 \description{
 Progress update generic
 }

@@ -7,6 +7,9 @@
 \usage{
 \S4method{update_progress}{BarProgressUpdate}(theObject)
 }
+\arguments{
+\item{theObject}{the progress bar}
+}
 \description{
 Update progress by extending progress bar
 }

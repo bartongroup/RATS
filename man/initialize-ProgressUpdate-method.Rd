@@ -7,6 +7,15 @@
 \usage{
 \S4method{initialize}{ProgressUpdate}(.Object, ..., steps, on = FALSE)
 }
+\arguments{
+\item{.Object}{base class}
+
+\item{...}{unnamed arguments}
+
+\item{steps}{dataframe of steps to progress through}
+
+\item{on}{whether the progress updater is switched on}
+}
 \description{
 Initialisation of progress update object
 }

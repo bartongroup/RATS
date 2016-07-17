@@ -7,6 +7,11 @@
 \usage{
 \S4method{initialize}{BarProgressUpdate}(.Object, ...)
 }
+\arguments{
+\item{.Object}{base class}
+
+\item{...}{unnamed arguments}
+}
 \description{
 Initialisation of subclass
 }
