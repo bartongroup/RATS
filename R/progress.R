@@ -27,6 +27,35 @@ setMethod(f="initialize",
           })
 
 #--------------------------------------------------------------------------------
+#' Insert steps generic
+#' @param .Object The progress object
+#' @param newsteps New steps to insert to the progress steps
+setGeneric(name="insert_steps",
+           def=function(.Object, newsteps)
+           {
+             standardGeneric("insert_steps")
+           }
+)
+
+#--------------------------------------------------------------------------------
+#' Insert steps into progress update object
+#' @param .Object base class
+#' @param newsteps dataframe of steps to insert into current steps dataframe
+setMethod(f="insert_steps",
+          signature="ProgressUpdate",
+          definition=function(.Object, newsteps)
+            {
+              # insert the additional steps into our current list
+              colnames(.Object@steps) <- c("step","output")
+              colnames(newsteps) <- c("step", "output")
+              .Object@steps <- rbind(.Object@steps, newsteps)
+              .Object@steps <- .Object@steps[order(.Object@steps$step),]
+              # recalc max progress value
+              .Object@max <- .Object@steps[length(.Object@steps[,1]),1]
+              return(.Object)
+          })
+
+#--------------------------------------------------------------------------------
 #' Progress update generic
 #' @param theObject The progress object
 setGeneric(name="update_progress",
