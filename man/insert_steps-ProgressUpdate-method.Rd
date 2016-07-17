@@ -5,10 +5,10 @@
 \alias{insert_steps,ProgressUpdate-method}
 \title{Insert steps into progress update object}
 \usage{
-\S4method{insert_steps}{ProgressUpdate}(theObject, newsteps)
+\S4method{insert_steps}{ProgressUpdate}(.Object, newsteps)
 }
 \arguments{
-\item{theObject}{base class}
+\item{.Object}{base class}
 
 \item{newsteps}{dataframe of steps to insert into current steps dataframe}
 }

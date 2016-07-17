@@ -4,10 +4,10 @@
 \alias{insert_steps}
 \title{Insert steps generic}
 \usage{
-insert_steps(theObject, newsteps)
+insert_steps(.Object, newsteps)
 }
 \arguments{
-\item{theObject}{The progress object}
+\item{.Object}{The progress object}
 
 \item{newsteps}{New steps to insert to the progress steps}
 }
