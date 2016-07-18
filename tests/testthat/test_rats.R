@@ -1,7 +1,7 @@
 context("DTU internal structures")
 
 #==============================================================================
-test_that("The reporting structures are not created correctly", {
+test_that("The reporting structures are created correctly", {
   sim <- sim_sleuth_data()
   full <- alloc_out(sim$annot, "full")
   short <- alloc_out(sim$annot, "short")
@@ -47,7 +47,7 @@ test_that("The reporting structures are not created correctly", {
 context("DTU internal data munging")
 
 #==============================================================================
-test_that("Samples are not grouped correctly", {
+test_that("Samples are grouped correctly", {
   sim <- sim_sleuth_data()
   r <- group_samples(sim$slo$sample_to_covariates)
   
@@ -65,7 +65,7 @@ test_that("Samples are not grouped correctly", {
 
 
 #==============================================================================
-test_that("Bootstrapped counts are not extracted correctly", {
+test_that("Bootstrapped counts are extracted correctly", {
   samples <- c(1,3)
   bst <- "id"
   cnt <- "counts"
@@ -110,7 +110,7 @@ test_that("Bootstrapped counts are not extracted correctly", {
 context("DTU Input checks.")
 
 #==============================================================================
-test_that("The input checks don't work", {
+test_that("The input checks work", {
   name_A <- "one"
   name_B <- "two"
   wrong_name <- "RUBBISH_COLUMN_NAME"
@@ -199,7 +199,7 @@ test_that("The input checks don't work", {
 context("DTU Output")
 
 #==============================================================================
-test_that("The output structure is not correct", {
+test_that("The output structure is correct", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
   full <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="both", bootnum=2)
   
