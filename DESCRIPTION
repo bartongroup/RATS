@@ -16,11 +16,10 @@ VignetteBuilder: knitr
 Suggests:
     testthat,
     knitr,
-    sleuth
+    ggplot2
 Imports:
     matrixStats,
-    data.table,
-    ggplot2
+    data.table
 URL: https://github.com/nickschurch/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/nickschurch/Rats
 RoxygenNote: 5.0.1

@@ -21,12 +21,20 @@ This is an R package that builds on the functionality of [sleuth](http://pachter
 aimed at people analyzing **gene expression** and **transcript abundance**, particularly with **RNA-Seq** type 
 of data in mind.
 
-It uses proportions test (based on chi-square) to find which transcripts of a gene change expression relative 
-to the other transcripts of the same gene. For a more sensitive approach, it also uses G-test to find in which 
+This *R Markdown* vignette constitutes the main documentation for the `rats` package.
+
+`rats` uses the proportions test (based on chi-square) to find which transcripts of a gene change expression relative 
+to the other transcripts of the same gene. For a more sensitive approach, it also uses the G-test to find in which 
 genes the transcripts change in abundance relative to one another, although that test is not able to tell which 
 specific transcripts are responsible for this.
 
-This *R Markdown* vignette constitutes the main documentation for the rats package.
+The input format recognized is the output of [sleuth](http://pachterlab.github.io/sleuth/). See the 
+[introduction to sleuth](https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
+to load the transcript abundance estimate data from [kallisto](https://pachterlab.github.io/kallisto/) into a sleuth 
+object, and see the [wasabi](https://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance 
+estimate data from [Sailfish](https://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
+into a sleuth object. **NOTE**: For the purposes of the tutorial, we will be using the bundled data simulators, 
+so you don't need to worry about all these other tools at this stage.
 
 
 ## Example 1: Basic usage.
