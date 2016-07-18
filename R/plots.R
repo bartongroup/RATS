@@ -76,12 +76,12 @@ plot_gene <- function(dtuo, pid, vals= "counts", style= "bars") {
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["Gt_DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU genes" = sum(ifelse(dtuo$Genes[["Gt_DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
-              "NA genes" = sum(ifelse(is.na(dtuo$Genes[["Gt_DTU"]]), 1, 0)),
-              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["Pt_DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["Pt_DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
-              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["Pt_DTU"]]), 1, 0)) )
+  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
+              "non-DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "NA genes" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
+              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
+              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
   return(result)
 }
 
@@ -100,7 +100,7 @@ dtu_summary <- function(dtuo) {
 #' @export
 plot_overview <- function(dtuo, type="dpropVsig") {
   if (type == "propVcount") {
-    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(totalA, propA, color = Pt_DTU)) +
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(sumA, propA, color = DTU)) +
       ggtitle("Relative abundances of transcripts") +
       labs(y = paste("Proportion in ", dtuo$Parameters$cond_A, sep=""), 
            x = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
@@ -108,7 +108,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
       scale_colour_manual("DTU", values = c("blue", "red")) + 
       geom_point(alpha = 0.3)
   } else if (type == "dpropVcount") {
-    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(totalA, Dprop, color = Pt_DTU)) +
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(sumA, Dprop, color = DTU)) +
       ggtitle("Abundance change VS gene expression") +
       labs(y = paste("prop( ", dtuo$Parameters$cond_B, " ) - prop( ", dtuo$Parameters$cond_A, " )", sep=""), 
            x = paste("Cumulative gene read-count in ", dtuo$Parameters$cond_A, sep="")) +
@@ -117,7 +117,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
       scale_colour_manual("DTU", values = c("blue", "red")) + 
       geom_point(alpha = 0.3)
   } else if (type == "dpropVsig") {
-    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, Pt_pval_corr, colour = Pt_DTU)) +
+    result <- ggplot(data = dtuo$Transcripts, ggplot2::aes(Dprop, pval_corr, colour = DTU)) +
       ggtitle("Proportion change VS significance") +
       labs(x = paste("Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, sep=""), 
            y ="P-value") +
@@ -129,16 +129,19 @@ plot_overview <- function(dtuo, type="dpropVsig") {
     tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
     # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
     setkey(tmp, Group.1)
-    tmp[, dtu := dtuo$Genes[match(tmp$Group.1, dtuo$Genes[, parent_id]), dtuo$Genes$Pt_DTU | dtuo$Genes$Gt_DTU] ]
+    tmp[, dtu := dtuo$Genes[match(tmp$Group.1, dtuo$Genes[, parent_id]), dtuo$Genes$DTU | dtuo$Genes$DTU] ]
     # ok, plotting time
-    result <- ggplot2::ggplot(data = na.omit(tmp), ggplot2::aes(x, fill=dtu)) +
-      ggplot2::ggtitle("Distribution of largest proportion change per gene") +
-      ggplot2::labs(x = paste("abs( Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, " )", sep=""), y ="Number of genes") +
-      ggplot2::geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-      ggplot2::scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-      ggplot2::scale_y_continuous(trans="sqrt")
+    result <- ggplot(data = na.omit(tmp), ggplot2::aes(x, fill=dtu)) +
+      ggtitle("Distribution of largest proportion change per gene") +
+      labs(x = paste("abs( Prop in ", dtuo$Parameters$cond_B, " - Prop in ", dtuo$Parameters$cond_A, " )", sep=""), y ="Number of genes") +
+      geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
+      scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+      scale_y_continuous(trans="sqrt")
   } else {
     stop("Unrecognized plot type!")
   }
+  # Drop the added columns.
+#   dtuo$Transcripts[, c("totalA", "totalB") := NULL]
+
   return(result)
 }

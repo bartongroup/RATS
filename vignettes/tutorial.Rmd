@@ -143,51 +143,51 @@ print( mydtu$Parameters[["p_thresh"]] )
 ```
 
 2. `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains gene-level 
-information. The results of the **G tests** are found here. A large number of columns are NA in this example, 
-as they refer to bootstrapping, which is not carried out by default.
+information. The results of the **G tests** are found here.
 
 ```{r}
 # See the fields in the table.
 print( names(mydtu$Genes) )
 
 # See which genes have DTU.
-print( mydtu$Genes[(Gt_DTU), parent_id] )
+print( mydtu$Genes[(DTU), parent_id] )
 # NA are valid responses for genes that didn't meet some prerequisites:
-print( mydtu$Genes[, .(parent_id, eligible, Gt_DTU)] )
+# (more on this in the next two examples)
+print( mydtu$Genes[, .(parent_id, elig, DTU)] )
 ```
 
 3. `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains 
-transcript-level information. The results of the **proportion tests** are found here. Several columns are `NA` 
-in this example, as they refer to bootstrapping, which is not carried out by default.
+transcript-level information. The results of the **proportion tests** are found here. 
 
 ```{r}
 # See the fields in the table.
 print( names(mydtu$Transcripts) )
 
 # See which Transcripts show relative change.
-print( mydtu$Transcripts[(Pt_DTU), .(target_id, parent_id)] )
+print( mydtu$Transcripts[(DTU), .(target_id, parent_id)] )
 
 # Not all transcripts meet the prerequisites:
-print( mydtu$Transcripts[, .(target_id, eligible, Pt_DTU)] )
+# (more on this in the next two examples)
+print( mydtu$Transcripts[, .(target_id, elig_xp, elig_fx)] )
 ```
 
 
 ### Results
 
-1. The `Gt_DTU` column in the `Genes` table marks which **genes** show significant change in the proportions 
+1. The `DTU` column in the `Genes` table marks which **genes** show significant change in the proportions 
 of their transcripts. It takes into account all the transcripts of the gene, which makes it more sensitive to 
 changes but prevents it from attributing the change to specific transcripts in the gene. An expanded version 
-of the column is copied intp the `Transcripts` table as well.
-2. The `Pt_DTU` column in the `Transcripts` table marks the **transcripts** whose proportion changes 
+of the column is copied intp the `Transcripts` table as `genes_DTU`.
+2. The `DTU` column in the `Transcripts` table marks the **transcripts** whose proportion changes 
 significantly. It inspects each transcript in isolation, which makes it less sensitive. An aggregated version 
-of the column is copied into the `Genes` table as well.
+of the column is copied into the `Genes` table as `transc_DTU`.
 3. `parent_id` lists the gene IDs. `target_id` lists the transcript IDs.
 4. Most other columns offer additional information to help understand the result. Refer to the next example 
 for more details.
 
-The `Pt_DTU` and `Gt_DTU` can differ from one another, as they are based on different tests and subject to 
+The `Transcripts$DTU` and `Genes$DTU` can differ from one another, as they are based on different tests and subject to 
 different restrictions. They are complementary to one another. In our example, genes `CC` and `MIX6` show 
-differential transcript usage. 
+differential transcript usage.
 
 
 ## Example 2: Output in detail.
@@ -211,7 +211,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 10
 
 The two extra arguments in the function call specify that we want to bootstrap both the gene-level and 
 transcript-level tests, and that we want 10 bootstrap iterations. More on bootstrapping when we address the 
-input parameters in a following example.
+input parameters in the next example.
 
 ### Parameters
 
@@ -231,12 +231,13 @@ print( summary(mydtu$Parameters) )
 7. `tests` Which of the two test were carried out.
 8. `bootstrap` Which of hte two tests were bootstrapped.
 9. `bootnum` The number of bootstrap iterations.
-10. `threads` How many threads were assigned. (Multithreading option not currently in use).
 
 ### Genes
 
 `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-information at the gene level.
+results at the gene level. The G-test is used. As the test is designed for comparison of a set of counts
+against a theoretical set of proportions, whereas we have two sets of counts, the test is run using
+in turn each condition as reference for the proportions.
 
 ```{r}
 # Types of table's elements.
@@ -245,37 +246,37 @@ print( lapply(mydtu$Genes, typeof) )
 
 1. `parent_id` The identification name/code of the gene.
 2. `known_transc` The number of annotated transcripts for the gene.
-3. `detect_transc` The number of transcripts with non-zero expression in at least one of the two conditions. 
+3. `DTU` The gene collectively shows DTU, according to the gene-wise test. It is not possible to attribute 
+this to specific transcripts. To be DTU, a gene needs both biological and statistical significance: `DTU = (elig_fx & sig)`.
+4. `transc_DTU` Aggregated from `Transcript$DTU`. Signifies that at least one transcript has changed significantly 
+according to the transcript-wise test. Look up the gene in the `Transcripts` table to see which transcripts are resposible.
+5. `detect_transc` The number of transcripts with non-zero expression in at least one of the two conditions. 
 `known_transc >= detect_transc`.
-4. `elig_transc` Number of transcripts eligible for DTU calling. `detect_transc >= elig_transc`. See the 
+6. `elig_transc` The number of transcripts eligible for DTU calling. `detect_transc >= elig_transc`. See the 
 `Transcripts` table info below for details on how these are determined.
-5. `eligible` Whether the gene meets the pre-requisites: It needs at least 2 eligible transcripts for G test 
+7. `elig` The gene is eligible for testing: It needs at least 2 eligible transcripts for the G test 
 to be applicable and for DTU to make sense.
-6. `Pt_DTU` Aggregated from `Transcript$Pt_DTU`. Signifies that at least one transcript has changed significantly 
-according to the transcript-wise test.
-Look up the gene in the `Transcripts` table to see which transcripts are resposible.
-7. `Gt_DTU` The gene collectively shows DTU, according to the gene-wise test. It is not possible to attribute 
-this to specific transcripts.
-8. `Gt_dtuAB` and `Gt_dtuBA` Partial DTU calls. *The gene-wise test is G-test. This test compares counts to a 
-theoretical set of expected proportions. As we have two sets of counts instead, and no
-theoretical expectations, we do the test both ways, using in turn each condition as a reference. If **both** 
-directions agree, then we call that gene DTU.* `Gt_DTU = Gt_dtuAB & Gt_dtuBA`.
-9. `Gt_pvalAB` and `Gt_pvalBA` The raw P-values from the G tests.
-10. `Gt_pvalAB_corr` and `Gt_pvalBA_corr` The above P-values adjusted for multiple testing (number of genes).
-11. `Gt_boot_dtu` The fraction of bootstrap iterations in which the gene was called DTU. It can be used as a 
+8. `elig_fx` Eligible effect size: At least one of the transcripts shows eligible effect size.
+(see `Transcripts` table explanations)
+9. `pvalAB` and `pvalBA` The raw P-values from the G tests, using in turn each condition as reference.
+10. `pvalAB_corr` and `pvalBA_corr` The above P-values adjusted for multiple testing (number of tested genes).
+11. `sig` Statistically significant: `pvalAB_corr < Parameters$p_thresh & pvalBA_corr < Parameters$p_thresh`.
+12. `boot_freq` The fraction of bootstrap iterations in which the gene was called DTU. It can be used as a 
 measure of confidence in the DTU call. Values closer to `1` indicate strong tendency for DTU, whereas values 
 nearer `0` indicate lack of DTU. Values near `0.5` indicate lack of confidence either way and should be treated 
 carefully.
-12. `Gt_boot_meanAB` and `Gt_boot_meanBA` The partial mean P-value across the bootstraps.
-13. `Gt_boot_stdevAB` and `Gt_boot_stdevBA` The partial standard deviation of the mean P-value across the bootstraps.
-14. `Gt_boot_minAB` and `Gt_boot_minBA` The minimum (most significant) partial P-values that occurred in the bootstraps.
-15. `Gt_boot_maxAB` and `Gt_boot_maxBA` The maximum (least significant) partial P-values that occurred in the bootstraps.
-16. `Gt_boot_na` The fraction of bootstrap iterations in which the gene was not eligible for DTU calling.
+13. `boot_meanAB` and `boot_meanBA` Mean P-values across the bootstraps.
+14. `boot_stdevAB` and `boot_stdevBA` Standard deviations of the mean P-value across the bootstraps.
+15. `boot_minAB` and `boot_minBA` The minimum (most significant) partial P-values that occurred in the bootstraps.
+16. `boot_maxAB` and `boot_maxBA` The maximum (least significant) partial P-values that occurred in the bootstraps.
+17. `boot_na` The fraction of bootstrap iterations in which the gene was not eligible for DTU calling.
+
+**Note** The fields reporting on the bootstraps will not be shown, unless bootstrapping is enabled.
 
 ### Transcripts
 
 `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-information at the transcript level.
+results at the transcript level.
 
 ```{r}
 # Types of table's elements.
@@ -283,31 +284,33 @@ print( lapply(mydtu$Transcripts, typeof) )
 ```
 
 1. `target_id` and `parent_id` The identification name/code of the transcript and gene, repsectively.
-2. `propA` and `propB` The proportional abundance of the transcript in each of the two conditions.
-3. `Dprop` The difference in proportional abundance of the transcript between the two conditions.
-4. `eligible` Whether the transcript meets some pre-requisites: It requires proportion change greater than the 
-threshold `abs(Dprop) > dprop_thresh` (see `Parameters` above) and a fragment count above
-the threshold `meanA > count_thresh | meanB > count_thresh` (see below and `Parameters` above).
-5. `Gt_DTU` Expanded from `Genes$Gt_DTU`. Indicates that the gene as a whole shows significant change in proportions 
-of its transcripts.
-6. `Pt_DTU` Whether the transcript's proportion changed significantly, according to the transcript-wise test. **It 
-is perfectly possible to get `FALSE` or `NA` in this field despite `Gt_DTU` being `TRUE`**.
-7. `Pt_pval` The raw P-value for the transcript.
-8. `Pt_pval_corr` The above P-value adjusted for multiple testing (number of transcripts).
-9. `Pt_boot_dtu` The fraction of bootstrap iterations in which the transcript was called DTU. It can be used as 
+2. `DTU` Whether the transcript's proportion changed significantly, according to the transcript-wise test.
+3. `gene_DTU` Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in proportions.
+4. `meanA` and `meanB` The mean of counts across samples for each condition.
+5. `stdevA` and `stdevB` The standard deviation of the mean counts across samples for each condition.
+6. `sumA` and `sumB` The sum of counts across samples for each condition. This is used for the tests, so that a 
+7. `elig_xp` Eligible expression level: To be eligible, a fragment count above the defined threshold is required
+`elig_xp = (meanA > Parameters$count_thresh | meanB > Parameters$count_thresh)`.
+8. `propA` and `propB` The proportional abundance of the transcript in each of the two conditions.
+9. `Dprop` The difference in proportional abundance of the transcript between the two conditions.
+10. `elig_fx` Eligible effect size: Proxy for biological significance. Meaninglessly small changes in the
+proportion can be statistically significant if either transcript expression or sequencing depth are very high.
+`elig_fx = (Dprop > Parameters$dprop_thresh)`.
+11. `pval` The raw P-value for the transcript.
+12. `pval_corr` The above P-value adjusted for multiple testing (number of transcripts).
+higher number of samples leads to higher significance.
+13. `sig` Statistically significant: `pval < Parameters$p_thresh`.
+14. `boot_freq` The fraction of bootstrap iterations in which the transcript was called DTU. It can be used as 
 a measure of confidence in the DTU call. Values closer to `1` indicate strong tendency for DTU, whereas values 
 nearer `0` indicate lack of DTU. Values near `0.5` indicate lack of confidence either way and should be treated 
 carefully.
-10. `Pt_boot_mean` The mean P-value across the bootstraps.
-11. `Pt_boot_stdev` The the standard deviation of the mean P-value across the bootstraps.
-12. `Pt_boot_min` The minimum (most significant) P-value that occurred in the bootstraps.
-13. `Pt_boot_max` The maximum (most significant) P-value that occurred in the bootstraps.
-14. `Pt_boot_na` The fraction of bootstrap iterations in which the transcripts was not eligible for DTU calling.
-15. `sumA` and `sumB` The sum of counts across samples for each condition. This is used for the tests, so that a 
-higher number of samples leads to higher significance.
-16. `meanA` and `meanB` The mean of counts across samples for each condition.
-17. `stdevA` and `stdevB` The standard deviation of the mean counts across samples for each condition.
-18. `totalA` and `totalB` The total counts for the gene, ie `totalA == sum(sumA)`.
+15. `boot_mean` The mean P-value across the bootstraps.
+16. `boot_stdev` The the standard deviation of the mean P-value across the bootstraps.
+17. `boot_min` The minimum (most significant) P-value that occurred in the bootstraps.
+18. `boot_max` The maximum (most significant) P-value that occurred in the bootstraps.
+19. `boot_na` The fraction of bootstrap iterations in which the transcripts was not eligible for DTU calling.
+
+**Note** The fields reporting on the bootstraps will not be shown, unless bootstrapping is enabled.
 
 ### Results pt.2
 
@@ -376,8 +379,8 @@ be called since `LC1` is not eligible.
 * `MIX.c1`, `MIX.c2` and `MIX.c4` all show significant individual change. `MIX.c3` and `MIX.nc` do not change enough to 
 meet the proportion threshold. `MIX6.d` is not detected at all.
 * `1NN` and `2NN` do not meet the change threshold.
-* `NIB.1` lacks everything. As discussed above, the gene is present in the annotation, but it was not recorded at all 
-in the data, likely to the data coming from a a different version of the annotation.
+* `NIB.1` is not detected. In fact the entire gene is not detected (since this is the only transcript of the gene). Therefore
+it is not possible to calculate anything for this gene/transcript, leading to `NA` in this row.
 
 
 ### Discrepancy handling
@@ -440,9 +443,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "G-test")
 1. `boots` Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce 
 processing time when doing a large number of bootstraps.
 2. `bootnum` Generally, greater is better but it takes longer. There is also an upper limit that depends on the size of 
-your annotation. This is due to R's limit on the max size of matrices. For an annotation of 40000 transcripts, you should 
-be able to do 10000 iterations.
-
+your annotation. This is due to R's limit on the max size of matrices.
 
 
 ### Thresholds
@@ -465,25 +466,22 @@ conditions are low-count improves the confidence in the predictions of the remai
 for it to be considered. The need for this is due to the fact that high counts will make even minute differences show up as 
 statistically significant, however very small changes are likely to be biologically indifferent.
 
-The default values for all three thresholds are rather lenient. You may want to set them higher. To quickly check the results 
-of higher thresholds AFTER you've already called DTU, you don't need to rerun everything. Simply use normal table access 
-operations like this:
+The default values for all three thresholds are rather lenient. You may want to set them higher. 
+
+To quickly check the results of higher thresholds AFTER you can use normal table filtering operations, but bear in mind that 
+aggregated/expanded/derivative fields will not update and that some fields are determined by multiple others:
 
 ```{r}
-# P value thresholds can be adjusted upwards or downwards post-run.
+# Inspect higher statistical significance threshold.
 new_thresh = 0.01
-newgenecalls <- mydtu$Genes[, .(parent_id, Gt_pvalAB_corr < new_thresh & 
-                                           Gt_pvalBA_corr < new_thresh)]
-newtransccalls <- mydtu$Transcripts[, .(target_id, parent_id, Pt_pval_corr < new_thresh)]
+newgenecalls <- mydtu$Genes[, .(parent_id, 
+                                pvalAB_corr < new_thresh & 
+                                  pvalBA_corr < new_thresh & 
+                                  elig_fx)]  # DTU requires both stats and biol sgnificance
+newtransccalls <- mydtu$Transcripts[, .(target_id, 
+                                        parent_id, pval_corr < new_thresh & 
+                                          elig_fx)]  # same
 print( newgenecalls )
-
-# Pre-filtering criteria can be made ONLY STRICTER. To make them more lenient you must 
-# re-rerun the calls. Bear in mind that post-hoc changes to the pre-filter thresholds 
-# will not update the adjusted p-values.
-new_dpropthresh <- 0.3
-newtransccalls <- mydtu$Transcripts[(abs(Dprop) > new_dpropthresh), 
-                                    .(target_id, parent_id, Pt_DTU)]
-print( newtransccalls )
 ```
 
 
@@ -500,7 +498,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="G-test")
 ```
 
 
-### Multiple testing correction
+### Correction for multliple testing
 
 Testing multiple null hypotheses increases the chance of one being falsely rejected. To keep the overall false rate at the 
 desired level, the raw p-values must be adjusted. This is achieved using R's build-in `p.adjust()`. The default adjustment 
@@ -514,7 +512,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", correction = "bonferroni")
 ### Input structure
 
 `rats` Needs to pull information from different fields of the sleuth object and the annotation. For flexibility you can 
-change the default names of these fields.
+change the names of these fields.
 
 ```{r}
 # Lets create some input with custom field names. The data is exactly the same as before.
@@ -525,7 +523,7 @@ print( sim$slo$kal[[1]]$bootstrap[[1]] )
 print( sim$annot )
 ```
 
-With the fields names changed, we need to tell `rats` were to find the data:
+With the fields names changed, we need to tell `rats` where to find the data:
 
 ```{r}
 mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse", 
@@ -586,20 +584,17 @@ This family of plots show the distribution of the calls. Our usual simulated dat
 what these plots typically would look like, but it is adequate to demonstrate the usage. A more illustrative dataset
 will be prepared and used in a future release. We are also planning to make these plots interactive.
 
-If you remmber from earlier examples, one of the genes/transcript had `NaN` proportions due to its counts being 0.
-This is removed by `ggplot2` and is responsible for the warning displayed. Nothing to worry about.
-
 ```{r}
 # Proportion change VS significance. Probably the most common plot.
 plot_overview(mydtu, type="dpropVsig")
 
-# Proportion change VS gene expression.
+# Proportion change VS transcript expression.
 plot_overview(mydtu, type="dpropVcount")
 
-# Proportion VS gene expression.
+# Proportion VS transcript expression.
 plot_overview(mydtu, type="propVcount")
 
-# Proportion VS gene expression count.
+# Distribution of maximum proportion change.
 plot_overview(mydtu, type="maxdprop")
 ```
 

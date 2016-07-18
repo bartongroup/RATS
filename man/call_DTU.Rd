@@ -7,9 +7,8 @@
 call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
   count_thresh = 5, dprop_thresh = 0.1, testmode = "both",
   correction = "BH", verbose = FALSE, boots = "none", bootnum = 100L,
-  threads = parallel::detectCores(), COUNTS_COL = "est_counts",
-  TARGET_COL = "target_id", PARENT_COL = "parent_id",
-  BS_TARGET_COL = "target_id")
+  COUNTS_COL = "est_counts", TARGET_COL = "target_id",
+  PARENT_COL = "parent_id", BS_TARGET_COL = "target_id")
 }
 \arguments{
 \item{slo}{A sleuth object.}
@@ -24,9 +23,9 @@ call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
-\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be considered (default 5).}
+\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing (default 5).}
 
-\item{dprop_thresh}{Minimum change in proportion of a transcript for it to be considered (default 0.1).}
+\item{dprop_thresh}{Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (default 0.1).}
 
 \item{testmode}{One of "G-test", "prop-test", "both" (default both).}
 
@@ -37,8 +36,6 @@ call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
 \item{boots}{Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").}
 
 \item{bootnum}{Number of bootstraps (default 10000).}
-
-\item{threads}{(Not in use currently) Enable parallel processing. Default uses parallel::detectCores().}
 
 \item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
 
