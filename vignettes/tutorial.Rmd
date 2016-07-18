@@ -1,6 +1,3 @@
-%\VignetteEngine{knitr::knitr}
-%\VignetteIndexEntry{rats Tutorial}
-
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
@@ -12,6 +9,9 @@ output:
     theme: readable
     toc: yes
 runtime: shiny
+vignette: >
+  %\VignetteIndexEntry{rats Tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 
