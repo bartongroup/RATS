@@ -26,7 +26,8 @@
 call_DTU <- function(slo, annot, name_A, name_B, varname= "condition", 
                           p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, testmode= "both", correction= "BH", 
                           verbose= FALSE, boots= "none", bootnum= 100L,
-                          COUNTS_COL= "est_counts", TARGET_COL= "target_id", PARENT_COL= "parent_id", BS_TARGET_COL= "target_id") {
+                          COUNTS_COL= "est_counts", TARGET_COL= "target_id", PARENT_COL= "parent_id", BS_TARGET_COL= "target_id")
+{
   #---------- PREP
   
   # Input checks.
@@ -35,6 +36,10 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
                                 boots, bootnum, dprop_thresh)
   if (paramcheck$error) stop(paramcheck$message)
   bootnum <- as.integer(bootnum)
+  
+  boot_transc <- any(boots == c("prop-test", "both"))
+  
+  boot_genes <- any(boots == c("G-test", "g-test", "both"))
   
   # Set up progress bar
   progress <- init_progress(verbose)
@@ -92,45 +97,41 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
     Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
     Transcripts[, stdevA :=  rowSds(as.matrix(bootmeans_A)) ]
     Transcripts[, stdevB :=  rowSds(as.matrix(bootmeans_B)) ]
-    if (any(testmode == c("prop-test", "both"))) {
+    if (any(testmode == c("prop-test", "both")))
       Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
-    }
-    if (any(testmode == c("G-test", "g-test", "both"))) {
+    if (any(testmode == c("G-test", "g-test", "both")))
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
-    }
   })
   
   #---------- BOOTSTRAP
   
   progress <- update_progress(progress)
-  if (boots != "none") {
+  if (any(boot_transc, boot_genes)) {
     
     #----- Iterations
     
     bootres <- lapply(1:bootnum, function(b) {
-      # Grab a bootstrap from each replicate. 
-      counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))  # Have to use list syntax to get a vector back. 
-                                                                                                                         # Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
-                                                                                                                         # Also, the last column is the target_id, so I leave it out.
-      counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
-      # Do the work.
-      # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
-      suppressWarnings(
-        bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, p_thresh, dprop_thresh, correction))
-      
-      with(bout, {
-        return(list("pp" = Transcripts[, pval_corr],
-                    "pdtu" = Transcripts[, DTU],
-                    "gpab" = Genes[, pvalAB_corr],
-                    "gpba" = Genes[, pvalBA_corr],
-                    "gdtu" = Genes[, DTU] ))
-      })
-    })
+                  # Grab a bootstrap from each replicate. 
+                  counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))  # Have to use list syntax to get a vector back. 
+                                                                                                                                     # Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+                                                                                                                                     # Also, the last column is the target_id, so I leave it out.
+                  counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
+                  # Do the work.
+                  # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
+                  suppressWarnings(
+                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, p_thresh, dprop_thresh, correction))
+                  
+                  with(bout, {
+                    return(list("pp" = Transcripts[, pval_corr],
+                                "pdtu" = Transcripts[, DTU],
+                                "gpab" = Genes[, pvalAB_corr],
+                                "gpba" = Genes[, pvalBA_corr],
+                                "gdtu" = Genes[, DTU] )) }) })
     
     #----- Stats
     
     with(resobj, {
-      if (any(boots == c("prop-test", "both"))) {
+      if (boot_transc) {
         # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
         pd <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pdtu"]] })))
         Transcripts[(elig_xp), boot_freq := rowCounts(pd[Transcripts[, elig_xp], ], value = TRUE) / bootnum]
@@ -140,8 +141,11 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
         Transcripts[(elig_xp), boot_min := rowMins(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
         Transcripts[(elig_xp), boot_max := rowMaxs(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
         Transcripts[(elig_xp), boot_na := rowCounts(pp[Transcripts[, elig_xp], ], value = NA) / bootnum]
+      } else {
+        # Drop the columns.
+        Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
       }
-      if (any(boots == c("G-test", "g-test", "both"))) {
+      if (boot_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
         gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpab"]] })))
         gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpba"]] })))
@@ -156,20 +160,18 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
         Genes[(elig), boot_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_na := rowCounts(gabres[Genes[, elig], ], value = NA) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+      } else {
+        Genes[, c("boot_freq", "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB",
+                  "boot_minBA", "boot_maxAB", "boot_maxBA", "boot_na") := NULL]
       }
     })
   }
   
-    #---------- DONE
+  #---------- DONE
  
   with(resobj, {   
     # Drop columns that exist for convenient calculations but are not useful to end users.
     Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
-    if (boots == "none") {
-      Genes[, c("boot_freq", "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB",
-                       "boot_minBA", "boot_maxAB", "boot_maxBA", "boot_na") := NULL]
-      Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
-    }
   })
   
   progress <- update_progress(progress)
@@ -453,9 +455,6 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
   
     # Proportion test.
     if ( any(testmode == c("prop-test", "both"))) {
-      # The test function is not vectorised, nor easily vectorisable. Looping is needed.
-      # Data tables allow values to be changed in place, and the table is pre-allocated. 
-      # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
       Transcripts[(elig_xp), pval := as.vector(apply(Transcripts[(elig_xp), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
                                                      FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
                                                                                      n = row[c("totalA", "totalB")], 
