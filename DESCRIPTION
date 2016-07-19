@@ -15,9 +15,9 @@ License: MIT + file LICENSE
 VignetteBuilder: knitr
 Suggests:
     testthat,
-    knitr
+    knitr,
+    methods
 Imports:
-    methods,
     matrixStats,
     data.table,
     ggplot2

@@ -45,7 +45,8 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   progress <- update_progress(progress)
   # Look-up from target_id to parent_id.
   tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
-  setkey(tx_filter, parent_id, target_id) # Fixates the order of genes and transcripts to be used throughout the rest of this package.
+  with( tx_filter,
+        setkey(tx_filter, parent_id, target_id) )  # Fixates the order of genes and transcripts to be used throughout the rest of this package.
   # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
   
@@ -65,7 +66,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   progress <- update_progress(progress)
   # Do the core work.
   suppressWarnings(
-    resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, dprop_thresh, correction) )
+    resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, p_thresh, dprop_thresh, correction) )
   
   #-------- ADD INFO
   
@@ -82,11 +83,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   resobj$Parameters["bootnum"] <- bootnum
   
   with(resobj, {
-    # Biologically significant.
-    Transcripts[, elig_fx := abs(Dprop) >= dprop_thresh]
-    Genes[, elig_fx := Transcripts[, .(parent_id, any(elig_fx)), by = parent_id][, V2] ]
-    
-    # Fill in descriptive stats.
+    # Fill in results detais.
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
     detected = Transcripts[, abs((propA + propB))] > 0
     Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(abs(propA + propB) > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns doube..
@@ -95,16 +92,10 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
     Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
     Transcripts[, stdevA :=  rowSds(as.matrix(bootmeans_A)) ]
     Transcripts[, stdevB :=  rowSds(as.matrix(bootmeans_B)) ]
-    
-    # Process results.
     if (any(testmode == c("prop-test", "both"))) {
-      Transcripts[(elig_xp), sig := pval_corr < p_thresh]
-      Transcripts[(elig_xp), DTU := sig & elig_fx]
       Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
     }
     if (any(testmode == c("G-test", "g-test", "both"))) {
-      Genes[(elig), sig := pvalAB_corr < p_thresh & pvalBA_corr < p_thresh]
-      Genes[(elig), DTU := sig & elig_fx]
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
     }
   })
@@ -125,55 +116,59 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
       # Do the work.
       # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
       suppressWarnings(
-        bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, dprop_thresh, correction))
+        bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, p_thresh, dprop_thresh, correction))
       
-      return(list("pp" = bout$Transcripts[, pval_corr],
-                  "pdtu" = bout$Transcripts[, pval_corr < p_thresh & abs(Dprop) < dprop_thresh],
-                  "gpab" = bout$Genes[, pvalAB_corr],
-                  "gpba" = bout$Genes[, pvalBA_corr],
-                  "gdtu" = bout$Genes[, pvalAB_corr] < p_thresh  &  bout$Genes[, pvalBA_corr] < p_thresh ))
+      with(bout, {
+        return(list("pp" = Transcripts[, pval_corr],
+                    "pdtu" = Transcripts[, DTU],
+                    "gpab" = Genes[, pvalAB_corr],
+                    "gpba" = Genes[, pvalBA_corr],
+                    "gdtu" = Genes[, DTU] ))
+      })
     })
     
     #----- Stats
     
-    if (any(boots == c("prop-test", "both"))) {
-      # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
-      pd <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pdtu"]] })))
-      resobj$Transcripts[(elig_xp), boot_freq := rowCounts(pd[resobj$Transcripts[, elig_xp], ], value = TRUE) / bootnum]
-      pp <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
-      resobj$Transcripts[(elig_xp), boot_mean := rowMeans(pp[resobj$Transcripts[, elig_xp], ], na.rm = TRUE)]
-      resobj$Transcripts[(elig_xp), boot_stdev := rowSds(pp[resobj$Transcripts[, elig_xp], ], na.rm = TRUE)]
-      resobj$Transcripts[(elig_xp), boot_min := rowMins(pp[resobj$Transcripts[, elig_xp], ], na.rm = TRUE)]
-      resobj$Transcripts[(elig_xp), boot_max := rowMaxs(pp[resobj$Transcripts[, elig_xp], ], na.rm = TRUE)]
-      resobj$Transcripts[(elig_xp), boot_na := rowCounts(pp[resobj$Transcripts[, elig_xp], ], value = NA) / bootnum]
-    }
-    if (any(boots == c("G-test", "g-test", "both"))) {
-      # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
-      gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpab"]] })))
-      gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpba"]] })))
-      gdres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gdtu"]] })))
-      resobj$Genes[(elig), boot_freq := rowCounts(gdres[resobj$Genes[, elig], ], value = TRUE) / bootnum]
-      resobj$Genes[(elig), boot_meanAB := rowMeans(gabres[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_meanBA := rowMeans(gbares[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_stdevAB := rowSds(gabres[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_stdevBA := rowSds(gbares[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_minAB := rowMins(gabres[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_minBA := rowMins(gbares[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_maxAB := rowMaxs(gabres[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_maxBA := rowMaxs(gbares[resobj$Genes[, elig], ], na.rm = TRUE)]
-      resobj$Genes[(elig), boot_na := rowCounts(gabres[resobj$Genes[, elig], ], value = NA) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-    }
+    with(resobj, {
+      if (any(boots == c("prop-test", "both"))) {
+        # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
+        pd <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pdtu"]] })))
+        Transcripts[(elig_xp), boot_freq := rowCounts(pd[Transcripts[, elig_xp], ], value = TRUE) / bootnum]
+        pp <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
+        Transcripts[(elig_xp), boot_mean := rowMeans(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
+        Transcripts[(elig_xp), boot_stdev := rowSds(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
+        Transcripts[(elig_xp), boot_min := rowMins(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
+        Transcripts[(elig_xp), boot_max := rowMaxs(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
+        Transcripts[(elig_xp), boot_na := rowCounts(pp[Transcripts[, elig_xp], ], value = NA) / bootnum]
+      }
+      if (any(boots == c("G-test", "g-test", "both"))) {
+        # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
+        gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpab"]] })))
+        gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpba"]] })))
+        gdres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gdtu"]] })))
+        Genes[(elig), boot_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE) / bootnum]
+        Genes[(elig), boot_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_stdevAB := rowSds(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_stdevBA := rowSds(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_minAB := rowMins(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_minBA := rowMins(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), boot_na := rowCounts(gabres[Genes[, elig], ], value = NA) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+      }
+    })
   }
   
     #---------- DONE
  
   with(resobj, {   
     # Drop columns that exist for convenient calculations but are not useful to end users.
-    resobj$Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
+    Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
     if (boots == "none") {
-      resobj$Genes[, c("boot_freq", "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB",
+      Genes[, c("boot_freq", "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB",
                        "boot_minBA", "boot_maxAB", "boot_maxBA", "boot_na") := NULL]
-      resobj$Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
+      Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
     }
   })
   
@@ -379,14 +374,14 @@ alloc_out <- function(annot, full){
                               "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
-    Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "elig_transc"=NA_integer_, "elig"=NA,
+    Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)), "DTU"=NA, 
+                        "elig_transc"=NA_integer_, "elig"=NA, "elig_fx"=NA,
                         "pvalAB"=NA_real_, "pvalBA"=NA_real_,
-                        "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_)
-    Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
+                        "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, "sig"=NA)
+    Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA, 
                               "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA,      # sum across replicates of means across bootstraps
-                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
-                              "pval"=NA_real_,  "pval_corr"=NA_real_,
+                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
+                              "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA,
                               "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
   }
   with(Genes,       setkey(Genes, parent_id))
@@ -405,13 +400,14 @@ alloc_out <- function(annot, full){
 #' @param testmode One of "G-test", "prop-test", "both".
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
 #' @param count_thresh Minimum number of counts per replicate.
+#' @param p_thresh The p-value threshold.
 #' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
 #' @return list
 #' 
 #' @import data.table
 #' 
-calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, dprop_thresh, correction) {
+calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, p_thresh, dprop_thresh, correction) {
   
   #---------- PRE-ALLOCATE
   
@@ -420,63 +416,70 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
   resobj$Parameters["num_replic_A"] <- dim(counts_A)[2]
   resobj$Parameters["num_replic_B"] <- dim(counts_B)[2]
   
-  #---------- STATS
-  
-  # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-  with(resobj$Transcripts, {
-    resobj$Transcripts[, sumA :=  rowSums(counts_A) ]
-    resobj$Transcripts[, sumB :=  rowSums(counts_B) ]
-    # Sums and proportions, for filtered targets only.
-    resobj$Transcripts[, totalA := sum(sumA), by=parent_id]
-    resobj$Transcripts[, totalB := sum(sumB), by=parent_id]
-    resobj$Transcripts[, propA := sumA/totalA]
-    resobj$Transcripts[, propB := sumB/totalB]
-    resobj$Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
-    resobj$Transcripts[(is.nan(propB)), propB := NA_real_]
-    resobj$Transcripts[, Dprop := propB - propA] })
-  
-  #---------- FILTER
-  
-  # Filter transcripts and genes to reduce number of tests:
-  ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
-  ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
   with(resobj, {
-    resobj$Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
-    resobj$Transcripts[(is.na(elig_xp)), elig_xp := FALSE]
-    resobj$Genes[, elig_transc := resobj$Transcripts[, .(parent_id, ifelse(elig_xp, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum of 1's is integer. Otherwise sum() changes the column to double, defeating the pre-allocation.
-    resobj$Genes[, elig := elig_transc >= 2] })
+    # Set key to gene ids.
+    setkey(Transcripts, parent_id)
+    setkey(Genes, parent_id)
+    
+    #---------- STATS
+    
+    # Statistics per transcript across all bootstraps per condition, for filtered targets only.
+    Transcripts[, sumA :=  rowSums(counts_A) ]
+    Transcripts[, sumB :=  rowSums(counts_B) ]
+    # Sums and proportions, for filtered targets only.
+    Transcripts[, totalA := sum(sumA), by=parent_id]
+    Transcripts[, totalB := sum(sumB), by=parent_id]
+    Transcripts[, propA := sumA/totalA]
+    Transcripts[, propB := sumB/totalB]
+    Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
+    Transcripts[(is.nan(propB)), propB := NA_real_]
+    Transcripts[, Dprop := propB - propA]
   
-  #---------- TESTS
+    #---------- FILTER
+    
+    # Filter transcripts and genes to reduce number of tests:
+    ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
+    ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
+    Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
+    Transcripts[(is.na(elig_xp)), elig_xp := FALSE]
+    Genes[, elig_transc := Transcripts[, .(parent_id, ifelse(elig_xp, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum of 1's is integer. Otherwise sum() changes the column to double, defeating the pre-allocation.
+    Genes[, elig := elig_transc >= 2]
+    
+    # Biologically significant.
+    Transcripts[, elig_fx := abs(Dprop) >= dprop_thresh]
+    Genes[, elig_fx := Transcripts[, .(parent_id, any(elig_fx)), by = parent_id][, V2] ]
+
+    #---------- TESTS
   
-  # Proportion test.
-  if ( any(testmode == c("prop-test", "both"))) {
-    # The test function is not vectorised, nor easily vectorisable. Looping is needed.
-    # Data tables allow values to be changed in place, and the table is pre-allocated. 
-    # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
-    with(resobj$Transcripts, {
-      resobj$Transcripts[(elig_xp), pval := as.vector(apply(resobj$Transcripts[(elig_xp), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
-                                                                 FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
-                                                                                                 n = row[c("totalA", "totalB")], 
-                                                                                                 correct = TRUE)[["p.value"]] } )) ]
-      resobj$Transcripts[(elig_xp), pval_corr := p.adjust(pval, method=correction)] })
-  }
-  
-  # G test.
-  if ( any(testmode == c("G-test", "g-test", "both"))) {
-    # Set key to parents only. Was previously set to (parent, target) to ensure consistent order of targets for un-keyed manipulations.
-    setkey(resobj$Transcripts, parent_id)
-    with(resobj$Genes, {
-      resobj$Genes[(elig), c("pvalAB", "pvalBA") := 
-                     as.data.frame( t( as.data.frame( lapply(resobj$Genes[(elig), parent_id], function(parent) {
+    # Proportion test.
+    if ( any(testmode == c("prop-test", "both"))) {
+      # The test function is not vectorised, nor easily vectorisable. Looping is needed.
+      # Data tables allow values to be changed in place, and the table is pre-allocated. 
+      # So access by row should be faster than looking up keys, and there should be no data-copying penalty.
+      Transcripts[(elig_xp), pval := as.vector(apply(Transcripts[(elig_xp), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
+                                                     FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
+                                                                                     n = row[c("totalA", "totalB")], 
+                                                                                     correct = TRUE)[["p.value"]] } )) ]
+      Transcripts[(elig_xp), pval_corr := p.adjust(pval, method=correction)]
+      Transcripts[(elig_xp), sig := pval_corr < p_thresh]
+      Transcripts[(elig_xp), DTU := sig & elig_fx]
+    }
+    
+    # G test.
+    if ( any(testmode == c("G-test", "g-test", "both"))) {
+      Genes[(elig), c("pvalAB", "pvalBA") := 
+                     as.data.frame( t( as.data.frame( lapply(Genes[(elig), parent_id], function(parent) {
                        # Extract all relevant data to avoid repeated look ups in the large table.
-                       subdt <- resobj$Transcripts[parent, .(sumA, sumB, propA, propB)]
+                       subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]
                        pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
                        pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
                        return(c(pAB, pBA)) }) ))) ]
-      resobj$Genes[(elig), pvalAB_corr := p.adjust(pvalAB, method=correction)]
-      resobj$Genes[(elig), pvalBA_corr := p.adjust(pvalBA, method=correction)] })
-  }
-  
+      Genes[(elig), pvalAB_corr := p.adjust(pvalAB, method=correction)]
+      Genes[(elig), pvalBA_corr := p.adjust(pvalBA, method=correction)]
+      Genes[(elig), sig := pvalAB_corr < p_thresh & pvalBA_corr < p_thresh]
+      Genes[(elig), DTU := sig & elig_fx]
+    }
+  })
   return(resobj)
 }
 

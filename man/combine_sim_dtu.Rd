@@ -4,12 +4,12 @@
 \alias{combine_sim_dtu}
 \title{Combine simulatation details with DTU calls, in preparation for plotting.}
 \usage{
-combine_sim_dtu(sim, dtu)
+combine_sim_dtu(sim, dtuo)
 }
 \arguments{
 \item{sim}{An object generated with countrange_sim(), containing the simulated data details with which the \code{dtu} object was calculated.}
 
-\item{dtu}{The object with the DTU results corresponding to the \code{sim} object's data.}
+\item{dtuo}{The object with the DTU results corresponding to the \code{sim} object's data.}
 }
 \value{
 dataframe

@@ -143,17 +143,20 @@ countrange_sim <- function(proportions= seq(0, 1, 0.01),
 #' Combine simulatation details with DTU calls, in preparation for plotting.
 #' 
 #' @param sim An object generated with countrange_sim(), containing the simulated data details with which the \code{dtu} object was calculated.
-#' @param dtu The object with the DTU results corresponding to the \code{sim} object's data.
+#' @param dtuo The object with the DTU results corresponding to the \code{sim} object's data.
 #' @return dataframe
 #'
+#' @import data.table
 #' @export
-combine_sim_dtu <- function(sim, dtu) {
-  results <- data.table::data.table(dtu$Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu, pval_prop_min, dtu_prop)])
-  setkey(results, parent_id)
-  tmp <- data.table::data.table(sim$sim[sim$sim["sibl"]=="t2", c("parent_id", "propA", "mag", "propB")])
-  setkey(tmp, parent_id)
-  results <- merge(results, tmp, by="parent_id")
-  return(results)
+combine_sim_dtu <- function(sim, dtuo) {
+  with(dtuo, {
+    results <- data.table(Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu, pval_prop_min, dtu_prop)])
+    setkey(results, parent_id)
+    tmp <- data.table(sim$sim[sim$sim["sibl"]=="t2", c("parent_id", "propA", "mag", "propB")])
+    setkey(tmp, parent_id)
+    results <- merge(results, tmp, by="parent_id")
+    return(results)
+  })
 }
 
 
@@ -163,30 +166,41 @@ combine_sim_dtu <- function(sim, dtu) {
 #' @param data the output from combine_sim_dtu()
 #' @param type (str) "AvBvM", "B/AvM", "AvBvMprop", "B/AvMprop", "B-AvM"
 #' 
+#' @import ggplot2
+#' @import data.table
 #' @export
 plot_sim <- function(data, type = "AvBvM") {
-  
-  if(type =="AvBvM"){
-    ggplot2::ggplot(data[order(dtu, propA, propB), ], ggplot2::aes(x=propA, y=propB, color=dtu)) +
-      ggplot2::labs(x="Prop t1 in A", y = "Prop t1 in B") +
-      ggplot2::scale_color_manual(values=c("lightblue","red")) +
-      ggplot2::geom_point() + 
-      ggplot2::facet_grid(. ~ mag)
-  } else if(type == "B/AvM") {
-    ggplot2::ggplot(data[order(dtu, mag), ], ggplot2::aes(x=propB/propA, y=mag, color=dtu)) +
-      ggplot2::labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
-      ggplot2::scale_color_manual(values=c("lightblue","red")) +
-      ggplot2::geom_point()
-  } else if(type =="AvBvMprop"){
-    ggplot2::ggplot(data[order(dtu_prop, propA, propB), ], ggplot2::aes(x=propA, y=propB, color=dtu_prop)) +
-      ggplot2::labs(x="Prop t1 in A", y = "Prop t1 in B") +
-      ggplot2::scale_color_manual(values=c("lightblue","red")) +
-      ggplot2::geom_point() + 
-      ggplot2::facet_grid(. ~ mag)
-  } else if(type == "B/AvMprop") {
-    ggplot2::ggplot(data[order(dtu_prop, mag), ], ggplot2::aes(x=propB/propA, y=mag, color=dtu_prop)) +
-      ggplot2::labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
-      ggplot2::scale_color_manual(values=c("lightblue","red")) +
-      ggplot2::geom_point()
-  }
+  with(data, {
+    if(type =="AvBvM"){
+      return(
+        ggplot(data[order(dtu, propA, propB), ], aes(x=propA, y=propB, color=dtu)) +
+          labs(x="Prop t1 in A", y = "Prop t1 in B") +
+          scale_color_manual(values=c("lightblue","red")) +
+          geom_point() + 
+          facet_grid(. ~ mag)
+      )
+    } else if(type == "B/AvM") {
+      return(
+        ggplot(data[order(dtu, mag), ], aes(x=propB/propA, y=mag, color=dtu)) +
+          labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
+          scale_color_manual(values=c("lightblue","red")) +
+          geom_point()
+        )
+    } else if(type =="AvBvMprop"){
+      return(
+        ggplot(data[order(dtu_prop, propA, propB), ], aes(x=propA, y=propB, color=dtu_prop)) +
+          labs(x="Prop t1 in A", y = "Prop t1 in B") +
+          scale_color_manual(values=c("lightblue","red")) +
+          geom_point() + 
+          facet_grid(. ~ mag)
+      )
+    } else if(type == "B/AvMprop") {
+      return(
+        ggplot(data[order(dtu_prop, mag), ], aes(x=propB/propA, y=mag, color=dtu_prop)) +
+          labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
+          scale_color_manual(values=c("lightblue","red")) +
+          geom_point()
+      )
+    }
+  })
 }

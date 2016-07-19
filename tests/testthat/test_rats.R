@@ -24,7 +24,7 @@ test_that("The reporting structures are created correctly", {
   expect_true(is.data.frame(full$Genes))
   expect_true(is.data.frame(short$Genes))
   expect_equal(dim(full$Genes)[2], 23)
-  expect_equal(dim(short$Genes)[2], 7)
+  expect_equal(dim(short$Genes)[2], 10)
   expect_named(full$Genes, c("parent_id", "DTU", "transc_DTU", "known_transc", "detect_transc", "elig_transc",  
                              "elig", "elig_fx", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig", "boot_freq", 
                              "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB", "boot_minBA", 
@@ -34,7 +34,7 @@ test_that("The reporting structures are created correctly", {
   expect_true(is.data.frame(full$Transcripts))
   expect_true(is.data.frame(short$Transcripts))
   expect_equal(dim(full$Transcripts)[2], 26)
-  expect_equal(dim(short$Transcripts)[2], 12)
+  expect_equal(dim(short$Transcripts)[2], 15)
   expect_named(full$Transcripts, c("target_id", "parent_id", "DTU", "gene_DTU", "meanA", "meanB", "stdevA", "stdevB",
                                    "sumA", "sumB", "elig_xp", "propA", "propB", "Dprop", "elig_fx", "pval", "pval_corr",
                                    "sig", "boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na",

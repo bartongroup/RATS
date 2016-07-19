@@ -5,7 +5,7 @@
 \title{Set up and execute the tests.}
 \usage{
 calculate_DTU(counts_A, counts_B, tx_filter, testmode, full, count_thresh,
-  dprop_thresh, correction)
+  p_thresh, dprop_thresh, correction)
 }
 \arguments{
 \item{counts_A}{A data.table of counts for condition A. x: sample, y: transcript.}
@@ -19,6 +19,8 @@ calculate_DTU(counts_A, counts_B, tx_filter, testmode, full, count_thresh,
 \item{full}{Either "full" (for complete output structure) or "short" (for bootstrapping).}
 
 \item{count_thresh}{Minimum number of counts per replicate.}
+
+\item{p_thresh}{The p-value threshold.}
 
 \item{dprop_thresh}{Minimum difference in proportions.}
 
