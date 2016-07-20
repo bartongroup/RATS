@@ -134,16 +134,13 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
       if (boot_transc) {
         # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
         pd <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pdtu"]] })))
-        Transcripts[(elig_xp), boot_freq := rowCounts(pd[Transcripts[, elig_xp], ], value = TRUE) / bootnum]
+        Transcripts[(elig), boot_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE) / bootnum]
         pp <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
-        Transcripts[(elig_xp), boot_mean := rowMeans(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
-        Transcripts[(elig_xp), boot_stdev := rowSds(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
-        Transcripts[(elig_xp), boot_min := rowMins(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
-        Transcripts[(elig_xp), boot_max := rowMaxs(pp[Transcripts[, elig_xp], ], na.rm = TRUE)]
-        Transcripts[(elig_xp), boot_na := rowCounts(pp[Transcripts[, elig_xp], ], value = NA) / bootnum]
-      } else {
-        # Drop the columns.
-        Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
+        Transcripts[(elig), boot_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), boot_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), boot_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), boot_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), boot_na := rowCounts(pp[Transcripts[, elig], ], value = NA) / bootnum]
       }
       if (boot_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
@@ -160,9 +157,6 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
         Genes[(elig), boot_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_na := rowCounts(gabres[Genes[, elig], ], value = NA) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-      } else {
-        Genes[, c("boot_freq", "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB",
-                  "boot_minBA", "boot_maxAB", "boot_maxBA", "boot_na") := NULL]
       }
     })
   }
@@ -172,6 +166,12 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   with(resobj, {   
     # Drop columns that exist for convenient calculations but are not useful to end users.
     Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
+    # Drop the columns.
+    if (!boot_transc)
+      Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
+    if(!boot_genes)
+      Genes[, c("boot_freq", "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB",
+              "boot_minBA", "boot_maxAB", "boot_maxBA", "boot_na") := NULL]
   })
   
   progress <- update_progress(progress)
@@ -368,7 +368,7 @@ alloc_out <- function(annot, full){
                               "DTU"=NA, "gene_DTU"=NA,
                               "meanA"=NA_real_, "meanB"=NA_real_,    # mean across replicates of means across bootstraps
                               "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
-                              "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA,     # sum across replicates of means across bootstraps
+                              "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA, "elig"=NA,    # sum across replicates of means across bootstraps
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA, 
                               "boot_freq"=NA_real_, "boot_mean"=NA_real_, "boot_stdev"=NA_real_, 
@@ -381,7 +381,7 @@ alloc_out <- function(annot, full){
                         "pvalAB"=NA_real_, "pvalBA"=NA_real_,
                         "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, "sig"=NA)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA, 
-                              "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA,      # sum across replicates of means across bootstraps
+                              "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA, "elig"=NA,      # sum across replicates of means across bootstraps
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA,
                               "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
@@ -442,9 +442,13 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
     # Filter transcripts and genes to reduce number of tests:
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
+    
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
     Transcripts[(is.na(elig_xp)), elig_xp := FALSE]
-    Genes[, elig_transc := Transcripts[, .(parent_id, ifelse(elig_xp, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum of 1's is integer. Otherwise sum() changes the column to double, defeating the pre-allocation.
+    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off, changes in proportion cannot be defined.
+                                                                                                      # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
+    
+    Genes[, elig_transc := Transcripts[, .(parent_id, ifelse(elig, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum of 1's is integer. Otherwise sum() changes the column to double, defeating the pre-allocation.
     Genes[, elig := elig_transc >= 2]
     
     # Biologically significant.
@@ -455,13 +459,13 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
   
     # Proportion test.
     if ( any(testmode == c("prop-test", "both"))) {
-      Transcripts[(elig_xp), pval := as.vector(apply(Transcripts[(elig_xp), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
+      Transcripts[(elig), pval := as.vector(apply(Transcripts[(elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
                                                      FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
                                                                                      n = row[c("totalA", "totalB")], 
                                                                                      correct = TRUE)[["p.value"]] } )) ]
-      Transcripts[(elig_xp), pval_corr := p.adjust(pval, method=correction)]
-      Transcripts[(elig_xp), sig := pval_corr < p_thresh]
-      Transcripts[(elig_xp), DTU := sig & elig_fx]
+      Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
+      Transcripts[(elig), sig := pval_corr < p_thresh]
+      Transcripts[(elig), DTU := sig & elig_fx]
     }
     
     # G test.
