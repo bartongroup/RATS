@@ -4,7 +4,7 @@
 \alias{plot_gene}
 \title{Plot count or proportion changes for all transcripts of a specified gene.}
 \usage{
-plot_gene(dtuo, pid, vals = "counts", style = "bars")
+plot_gene(dtuo, pid, vals = "proportions", style = "bars")
 }
 \arguments{
 \item{dtuo}{A DTU object.}

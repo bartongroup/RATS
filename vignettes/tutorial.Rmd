@@ -153,11 +153,11 @@ print( names(mydtu$Genes) )
 print( mydtu$Genes[(DTU), parent_id] )
 # NA are valid responses for genes that didn't meet some prerequisites:
 # (more on this in the next two examples)
-print( mydtu$Genes[, .(parent_id, elig, DTU)] )
+print( mydtu$Genes[, .(parent_id, elig, elig_fx, DTU)] )
 ```
 
 3. `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains 
-transcript-level information. The results of the **proportion tests** are found here. 
+transcript-level information. The results of the **proportion tests** are found here.
 
 ```{r}
 # See the fields in the table.
@@ -168,8 +168,19 @@ print( mydtu$Transcripts[(DTU), .(target_id, parent_id)] )
 
 # Not all transcripts meet the prerequisites:
 # (more on this in the next two examples)
-print( mydtu$Transcripts[, .(target_id, elig_xp, elig_fx)] )
+print( mydtu$Transcripts[, .(target_id, elig_xp, elig, elig_fx)] )
 ```
+
+Both tables are by default keyed to the gene codes:
+
+```{r}
+print( mydtu$Genes["MIX6", ] )
+print( mydtu$Transcripts["MIX6", ] )
+
+# To search by other criteria (like transcript code):
+print( mydtu$Transcripts[target_id == "MIX6.c4"] )
+```
+
 
 
 ### Results
@@ -186,8 +197,7 @@ of the column is copied into the `Genes` table as `transc_DTU`.
 for more details.
 
 The `Transcripts$DTU` and `Genes$DTU` can differ from one another, as they are based on different tests and subject to 
-different restrictions. They are complementary to one another. In our example, genes `CC` and `MIX6` show 
-differential transcript usage.
+different restrictions. They are complementary to one another.
 
 
 ## Example 2: Output in detail.
@@ -235,9 +245,13 @@ print( summary(mydtu$Parameters) )
 ### Genes
 
 `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the gene level. The G-test is used. As the test is designed for comparison of a set of counts
+results at the gene level. For your convenience, the transcript-level DTU calls are also summarized here.
+
+The G-test is used for gene-level calls. As the test is designed for comparison of a set of counts
 against a theoretical set of proportions, whereas we have two sets of counts, the test is run using
-in turn each condition as reference for the proportions.
+in turn each condition as reference for the proportions. It is not possible to attribute the change
+to specific transcripts within the gene, but in return the test should be more sensitive to small changes
+than the transcript-level one.
 
 ```{r}
 # Types of table's elements.
@@ -254,8 +268,8 @@ according to the transcript-wise test. Look up the gene in the `Transcripts` tab
 `known_transc >= detect_transc`.
 6. `elig_transc` The number of transcripts eligible for DTU calling. `detect_transc >= elig_transc`. See the 
 `Transcripts` table info below for details on how these are determined.
-7. `elig` The gene is eligible for testing: It needs at least 2 eligible transcripts for the G test 
-to be applicable and for DTU to make sense.
+7. `elig` Eligible for testing: A gene needs at least 2 eligible transcripts for the G test 
+to be applicable and for DTU to even be possible.
 8. `elig_fx` Eligible effect size: At least one of the transcripts shows eligible effect size.
 (see `Transcripts` table explanations)
 9. `pvalAB` and `pvalBA` The raw P-values from the G tests, using in turn each condition as reference.
@@ -276,7 +290,10 @@ carefully.
 ### Transcripts
 
 `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the transcript level.
+results at the transcript level. For your convenience, the gene-leveel DTU calls are also included here.
+
+The proportions test is used for the transcript-level calls. Changes can be attributed to specific transcripts,
+but in return the test is less sensitive as it uses less information that the gene-level one.
 
 ```{r}
 # Types of table's elements.
@@ -289,26 +306,30 @@ print( lapply(mydtu$Transcripts, typeof) )
 4. `meanA` and `meanB` The mean of counts across samples for each condition.
 5. `stdevA` and `stdevB` The standard deviation of the mean counts across samples for each condition.
 6. `sumA` and `sumB` The sum of counts across samples for each condition. This is used for the tests, so that a 
-7. `elig_xp` Eligible expression level: To be eligible, a fragment count above the defined threshold is required
-`elig_xp = (meanA > Parameters$count_thresh | meanB > Parameters$count_thresh)`.
-8. `propA` and `propB` The proportional abundance of the transcript in each of the two conditions.
-9. `Dprop` The difference in proportional abundance of the transcript between the two conditions.
-10. `elig_fx` Eligible effect size: Proxy for biological significance. Meaninglessly small changes in the
+higher number of samples leads to higher significance.
+7. `totalA` and `totalB` The total counts for the gene. `totalA = sum(sumA)  # by gene`.
+8. `elig_xp` Eligible expression level: A fragment count above the defined threshold in at least one of the two 
+conditions is required. `elig_xp = (meanA > Parameters$count_thresh | meanB > Parameters$count_thresh)`.
+9. `elig` Eligible for testing: A transcript needs to meet the eligible expression level and its gene needs to have 
+more than one eligible expression transcripts (by DTU definition), and finally the gene needs to have detectable 
+expression in **both** conditions (otherwise the proportion cannot be defined). `elig = (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB)`
+10. `propA` and `propB` The proportional abundance of the transcript in each of the two conditions.
+11. `Dprop` The difference in proportional abundance of the transcript between the two conditions.
+12. `elig_fx` Eligible effect size: Proxy for biological significance. Meaninglessly small changes in the
 proportion can be statistically significant if either transcript expression or sequencing depth are very high.
 `elig_fx = (Dprop > Parameters$dprop_thresh)`.
-11. `pval` The raw P-value for the transcript.
-12. `pval_corr` The above P-value adjusted for multiple testing (number of transcripts).
-higher number of samples leads to higher significance.
-13. `sig` Statistically significant: `pval < Parameters$p_thresh`.
-14. `boot_freq` The fraction of bootstrap iterations in which the transcript was called DTU. It can be used as 
+13. `pval` The raw P-value for the transcript.
+14. `pval_corr` The above P-value adjusted for multiple testing (number of transcripts).
+15. `sig` Statistically significant: `pval < Parameters$p_thresh`.
+16. `boot_freq` The fraction of bootstrap iterations in which the transcript was called DTU. It can be used as 
 a measure of confidence in the DTU call. Values closer to `1` indicate strong tendency for DTU, whereas values 
 nearer `0` indicate lack of DTU. Values near `0.5` indicate lack of confidence either way and should be treated 
 carefully.
-15. `boot_mean` The mean P-value across the bootstraps.
-16. `boot_stdev` The the standard deviation of the mean P-value across the bootstraps.
-17. `boot_min` The minimum (most significant) P-value that occurred in the bootstraps.
-18. `boot_max` The maximum (most significant) P-value that occurred in the bootstraps.
-19. `boot_na` The fraction of bootstrap iterations in which the transcripts was not eligible for DTU calling.
+17. `boot_mean` The mean P-value across the bootstraps.
+18. `boot_stdev` The the standard deviation of the mean P-value across the bootstraps.
+19. `boot_min` The minimum (most significant) P-value that occurred in the bootstraps.
+20. `boot_max` The maximum (most significant) P-value that occurred in the bootstraps.
+21. `boot_na` The fraction of bootstrap iterations in which the transcripts was not eligible for DTU calling.
 
 **Note** The fields reporting on the bootstraps will not be shown, unless bootstrapping is enabled.
 
@@ -360,6 +381,8 @@ extremely high significance.
 the entire gene is not recorded in the data. As with `1B1C`, this can happen when different annotation versions are 
 used between `sleuth` and `rats`.
 * `NN` has two transcripts, both of which are detected, but neither of which is eligible, so the gene also is not eligible.
+* `ALLA` has one transcript and it is detected but one transcript is not enough to be eligible.
+* `ALLB` has two transcript, both detected, yet is still not eligible as both transcripts are not eligible.
 
 ```{r}
 # Transcript-level calls.
@@ -381,6 +404,8 @@ meet the proportion threshold. `MIX6.d` is not detected at all.
 * `1NN` and `2NN` do not meet the change threshold.
 * `NIB.1` is not detected. In fact the entire gene is not detected (since this is the only transcript of the gene). Therefore
 it is not possible to calculate anything for this gene/transcript, leading to `NA` in this row.
+* `ALLA` and `ALLB` are similar in that they are detected in one condition only, with none of their transcripts detected in
+the other. Proportions cannot be defined for that condition (division by 0), so they are not eligible.
 
 
 ### Discrepancy handling
@@ -394,8 +419,8 @@ will not show up in the output.
 zero counts throughout and will be included in the output.
 * If the samples appear to use different annotations from one another, `rats` will abort.
 
-**You should avoid mixing annotations**, as there is no guarantee (at least for some annotations) that the transcript 
-identification codes will remain consistent between annotation versions.
+**You should avoid mixing annotations** throughout your analysis pipeline, as there is no guarantee (at least for 
+some annotations) that the transcript identification codes will remain consistent between annotation versions.
 
 
 ## Example 3: Input options
@@ -569,12 +594,12 @@ going on in any particular gene.
 plot_gene(mydtu, "MIX6")
 ```
 
-A variation of the above is to plot the proportions instead of the mean counts. You might also find it clearer
-if a frequency polygon is used instead of the bars.
+A variation of the above is to plot the mean counts instead of the proportions. Either can also be displayed as
+a frequency polygon instead.
 
 ```{r}
 # The error bars for proportions represent the standard error of the estimated proportions.
-plot_gene(mydtu, "MIX6", vals="proportions", style="lines")
+plot_gene(mydtu, "MIX6", vals="counts", style="lines")
 ```
 
 

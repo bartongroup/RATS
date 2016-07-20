@@ -1,5 +1,5 @@
 #==============================================================================
-#' Generate an artificial minimal sleuth-like structure, for code-testing and for examples.
+#' Generate an artificial minimal sleuth-like structure, for code-testing or examples.
 #' 
 #' The default values here should match the default values expected by calculate_DTU().
 #' 
@@ -23,6 +23,9 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
                             PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("A","B"), 
                             errannot_inconsistent=FALSE)
 {
+  # !!! Some of the tests of the package are tightly connected to the specifics of the object returned by this function.
+  # !!! Entry additions are likely to be tolerated. Changes or removals of entries or structure will certainly cause failures.
+  
   tx <- data.frame("target_id"= c("NIB.1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.1", "1B1C.2", "CC_a", "CC_b", "1NN", "2NN", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "LC1", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
                    "parent_id"= c("NIB", "1A1N", "1D1C", "1D1C", "1B1C", "1B1C", "CC", "CC", "NN", "NN", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6", "LC", "LC", "ALLA", "ALLB", "ALLB"))
   names(tx) <- c(TARGET_COL, PARENT_COL)

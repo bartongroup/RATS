@@ -13,9 +13,10 @@
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_gene <- function(dtuo, pid, vals= "counts", style= "bars") {
+plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
   # Slice the data to get just the relevant transcripts.
-  vis_data <- with(dtuo, Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)] )
+  vis_data <- with(dtuo, 
+    Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)] )
   with(vis_data, {
     vis_data[, peA := sqrt(propA * (1 - propA) / dtuo$Parameters[["num_replic_A"]]) ]
     vis_data[, peB := sqrt(propB * (1 - propB) / dtuo$Parameters[["num_replic_B"]]) ]
@@ -150,9 +151,6 @@ plot_overview <- function(dtuo, type="dpropVsig") {
       stop("Unrecognized plot type!")
     }
     
-    # Drop the added columns.
-    #   dtuo$Transcripts[, c("totalA", "totalB") := NULL]
-  
-    return(result)
+   return(result)
   })
 }

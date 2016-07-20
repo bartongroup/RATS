@@ -90,8 +90,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   with(resobj, {
     # Fill in results detais.
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
-    detected = Transcripts[, abs((propA + propB))] > 0
-    Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(abs(propA + propB) > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns doube..
+    Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns double..
     Genes[(is.na(detect_transc)), detect_transc := 0]
     Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
     Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
@@ -164,8 +163,8 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   #---------- DONE
  
   with(resobj, {   
-    # Drop columns that exist for convenient calculations but are not useful to end users.
-    Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
+#     # Drop columns that exist for convenient calculations but are not useful to end users.
+#     Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
     # Drop the columns.
     if (!boot_transc)
       Transcripts[, c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") := NULL]
@@ -368,14 +367,15 @@ alloc_out <- function(annot, full){
                         "boot_maxAB"=NA_real_, "boot_maxBA"=NA_real_, "boot_na"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "DTU"=NA, "gene_DTU"=NA,
-                              "meanA"=NA_real_, "meanB"=NA_real_,    # mean across replicates of means across bootstraps
+                              "meanA"=NA_real_, "meanB"=NA_real_,  # mean across replicates of means across bootstraps
                               "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
-                              "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA, "elig"=NA,    # sum across replicates of means across bootstraps
+                              "sumA"=NA_real_, "sumB"=NA_real_,  # sum across replicates of means across bootstraps
+                              "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
+                              "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA, 
                               "boot_freq"=NA_real_, "boot_mean"=NA_real_, "boot_stdev"=NA_real_, 
-                              "boot_min"=NA_real_,"boot_max"=NA_real_, "boot_na"=NA_real_,
-                              "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
+                              "boot_min"=NA_real_,"boot_max"=NA_real_, "boot_na"=NA_real_)
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)), "DTU"=NA, 
@@ -383,13 +383,16 @@ alloc_out <- function(annot, full){
                         "pvalAB"=NA_real_, "pvalBA"=NA_real_,
                         "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, "sig"=NA)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA, 
-                              "sumA"=NA_real_, "sumB"=NA_real_, "elig_xp"=NA, "elig"=NA,      # sum across replicates of means across bootstraps
+                              "sumA"=NA_real_, "sumB"=NA_real_,  # sum across replicates of means across bootstraps
+                              "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
+                              "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
-                              "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA,
-                              "totalA"=NA_real_, "totalB"=NA_real_)  # sum of all transcripts for that gene
+                              "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
   }
-  with(Genes,       setkey(Genes, parent_id))
-  with(Transcripts, setkey(Transcripts, parent_id, target_id))
+  with(Genes,
+       setkey(Genes, parent_id) )
+  with(Transcripts, 
+       setkey(Transcripts, parent_id, target_id) )
   
   return(list("Parameters"=Parameters, "Genes"=Genes, "Transcripts"=Transcripts))
 }
@@ -444,12 +447,10 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
     # Filter transcripts and genes to reduce number of tests:
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
-    
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
     Transcripts[(is.na(elig_xp)), elig_xp := FALSE]
     Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off, changes in proportion cannot be defined.
                                                                                                       # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
-    
     Genes[, elig_transc := Transcripts[, .(parent_id, ifelse(elig, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum of 1's is integer. Otherwise sum() changes the column to double, defeating the pre-allocation.
     Genes[, elig := elig_transc >= 2]
     
