@@ -176,6 +176,8 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   progress <- update_progress(progress)
 
+  if(verbose)
+    print(dtu_summary(resobj))
   return(resobj)
 }
 
