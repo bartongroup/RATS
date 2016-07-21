@@ -31,7 +31,7 @@ get_dtu_ids <- function(dtuo) {
                 "dtu-transc" = as.vector(Transcripts[DTU==TRUE, target_id]),
                 "ndtu-genes" = as.vector(Genes[DTU==FALSE, parent_id]),
                 "ndtu-transc" = as.vector(Transcripts[DTU==FALSE, target_id]),
-                "na-gens" = as.vector(Genes[is.na(DTU), parent_id]),
+                "na-genes" = as.vector(Genes[is.na(DTU), parent_id]),
                 "na-transc" = as.vector(Transcripts[is.na(DTU), target_id])
     )) )
 }

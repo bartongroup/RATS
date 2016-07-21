@@ -429,3 +429,22 @@ test_that("The output content is complete", {
   expect_false(all(is.na(mydtu$Transcripts[["boot_max"]])))
   expect_false(all(is.na(mydtu$Transcripts[["boot_na"]])))
 })
+
+
+#==============================================================================
+test_that("The summaries work", {
+  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="both", bootnum=2)
+  
+  expect_silent(tally <- dtu_summary(mydtu))
+  expect_true(is.numeric(tally))
+  expect_named(tally, c("DTU genes", "non-DTU genes", "NA genes", "DTU transcripts", "non-DTU transcripts", "NA transcripts"))
+  expect_false(any(is.na(tally)))
+  
+  ids <- get_dtu_ids(mydtu)
+  expect_type(ids, "list")
+  expect_named(ids, c("dtu-genes", "dtu-transc", "ndtu-genes", "ndtu-transc", "na-genes", "na-transc"))
+  for (v in ids) {
+    expect_false(any(is.na(v)))
+  }
+})

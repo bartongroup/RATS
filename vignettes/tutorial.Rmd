@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "15 July 2016"
+date: "21 July 2016"
 output: 
   html_document: 
     fig_caption: yes
@@ -162,7 +162,7 @@ print( mydtu$Parameters[["p_thresh"]] )
 ```
 
 2. `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains gene-level 
-information. The results of the *G tests* are found here.
+test information.
 
 ```{r}
 # See the fields in the table.
@@ -180,7 +180,7 @@ print( mydtu$Genes[, .(parent_id, elig, elig_fx, DTU)] )
 ```
 
 3. `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains 
-transcript-level information. The results of the *proportion tests* are found here.
+transcript-level test information.
 
 ```{r}
 # See the fields in the table.
