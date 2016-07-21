@@ -17,8 +17,8 @@ of Differential Transcript Expression (DTE) by tools such as [sleuth](http://pac
 
 #### What it needs
 
-As input it requires an R object similar to the output of [sleuth](http://pachterlab.github.io/sleuth/). It also requires an index t
-able matching transcript identifiers to respective gene identifiers.  
+As input it requires an R object similar to the output of [sleuth](http://pachterlab.github.io/sleuth/). It also requires an index 
+table matching transcript identifiers to respective gene identifiers.  
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
 [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, both available through CRAN.
@@ -44,7 +44,7 @@ install.packages("ggplot2")
 
 #### from Github
 
-Rats is hosted in GitHub [here](https://github.com/nickschurch/Rats.git), and you can dowload the zip file from that page or 
+Rats is hosted on GitHub [here](https://github.com/nickschurch/Rats.git), and you can dowload the zip file from that page or 
 by [clicking here](https://github.com/nickschurch/Rats/archive/master.zip).
 Then you can install the zipped file like so:
 
@@ -52,19 +52,14 @@ Then you can install the zipped file like so:
 install.packages("/path/to/downloded.zip", repos=NULL)
 ```
 
-#### from CRAN (not yet available)
+#### from CRAN 
 
-#### from Bioconductor (not yet available)
+(not yet available)
 
+#### from Bioconductor 
 
-### Loading rats
+(not yet available)
 
-Once you have obtained rats through one of the above standard ways, you must then load it into R with the following command, 
-before being able to use it:
-
-```{r eval=FALSE}
-library("rats")
-```
 
 ### Calling Differential Transcript Usage with rats
 
