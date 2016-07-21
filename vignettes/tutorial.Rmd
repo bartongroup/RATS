@@ -126,6 +126,25 @@ in the "condition" column of the `slo$sample_to_conditions` table. You can overr
 named differently in your data, or if you want to compare by a different variable. More on this in the 
 example that deals with the input options.
 
+
+### Black-box results
+
+For your convenience, we provide a couple of functions to give you a quick summary of your results, without your
+having to inspect and subset the full results tables. However, we do recommend you become familiar with the
+results structure and content.
+
+```{r}
+# A really simple tally of the outcome, to help get a sense of the bigger picture.
+print( dtu_summary(mydtu) )
+
+# Gene and transcript IDs corresponding to the tally above.
+ids <- get_dtu_ids(mydtu)
+print( ids[["dtu-genes"]] )  # Also "dtu-transc", "ndtu-genes", "ndtu-transc", "na-genes", "na-transc"
+```
+
+
+### Basics of results structure
+
 The returned structure is a list with 3 elements:
 
 ```{r}
@@ -149,8 +168,12 @@ information. The results of the **G tests** are found here.
 # See the fields in the table.
 print( names(mydtu$Genes) )
 
-# See which genes have DTU.
+# See details of genes that show DTU.
+print( mydtu$Genes[(DTU), ] )
+
+# Or if you only want their codes:
 print( mydtu$Genes[(DTU), parent_id] )
+
 # NA are valid responses for genes that didn't meet some prerequisites:
 # (more on this in the next two examples)
 print( mydtu$Genes[, .(parent_id, elig, elig_fx, DTU)] )
@@ -163,7 +186,10 @@ transcript-level information. The results of the **proportion tests** are found 
 # See the fields in the table.
 print( names(mydtu$Transcripts) )
 
-# See which Transcripts show relative change.
+# See the details of Transcripts that show relative change.
+print( mydtu$Transcripts[(DTU), ] )
+
+# Or if you only want their codes, without details:
 print( mydtu$Transcripts[(DTU), .(target_id, parent_id)] )
 
 # Not all transcripts meet the prerequisites:
@@ -177,13 +203,10 @@ Both tables are by default keyed to the gene codes:
 print( mydtu$Genes["MIX6", ] )
 print( mydtu$Transcripts["MIX6", ] )
 
-# To search by other criteria (like transcript code):
-print( mydtu$Transcripts[target_id == "MIX6.c4"] )
+# To search by any other criteria (like transcript code), you do it like this:
+print( mydtu$Transcripts[target_id == "MIX6.c4", ] )
 ```
 
-
-
-### Results
 
 1. The `DTU` column in the `Genes` table marks which **genes** show significant change in the proportions 
 of their transcripts. It takes into account all the transcripts of the gene, which makes it more sensitive to 
@@ -575,15 +598,6 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar")
 ```
 
 
-### Summary
-
-A really simple tally of the outcome, to help get a sense of the bigger picture.
-
-```{r}
-dtu_summary(mydtu)
-```
-
-
 ### Plot of abundance changes
 
 A table full of numbers may be heaven to some and hell to others. This function allows you to visualise what's
@@ -623,9 +637,26 @@ plot_overview(mydtu, type="propVcount")
 plot_overview(mydtu, type="maxdprop")
 ```
 
+### Plot customisation
 
+You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggplot2.org) manipulations on it, such as changing the axes scales.
+Other `ggplot2` customisations include the axis tickmarks, axis values, labels, titles, colours... Consult the `ggplot2` documentation for more
+help on these.
 
+```{r}
+library(ggplot2)
 
+myplot <- plot_overview(mydtu, type="dpropVsig")
+myplot  # display
+
+# Change scale of y axis.
+myplot2 <- myplot + coord_trans(y="log10")  # Or "log2", "sqrt", etc...
+myplot2
+
+# Revert to linear scale.
+myplot2 <- myplot + coord_trans(y="identity")
+myplot2
+```
 
 
 

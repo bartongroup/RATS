@@ -7,10 +7,10 @@
 dtu_summary(dtuo)
 }
 \arguments{
-\item{dtuo}{a DTU object.}
+\item{dtuo}{A DTU object.}
 }
 \value{
-named numerical vector giving a quick overview of the results
+A named numerical vector giving a tally of the results
 }
 \description{
 Summary of DTU calling.

@@ -1,4 +1,43 @@
 #================================================================================
+#' Summary of DTU calling.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results
+#'
+#'@export
+dtu_summary <- function(dtuo) {
+  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
+              "non-DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "NA genes" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
+              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
+              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
+  return(result)
+}
+
+
+#================================================================================
+#' List of DTU ids.
+#' 
+#' Get the IDs for DTU/nonDTU/NA genes and transcripts.
+#' 
+#' @param dtuo A DTU object.
+#' @return A list of vectors.
+#'
+#'@export
+get_dtu_ids <- function(dtuo) {
+  with(dtuo,
+    return(list("dtu-genes" = as.vector(Genes[DTU==TRUE, parent_id]),
+                "dtu-transc" = as.vector(Transcripts[DTU==TRUE, target_id]),
+                "ndtu-genes" = as.vector(Genes[DTU==FALSE, parent_id]),
+                "ndtu-transc" = as.vector(Transcripts[DTU==FALSE, target_id]),
+                "na-gens" = as.vector(Genes[is.na(DTU), parent_id]),
+                "na-transc" = as.vector(Transcripts[is.na(DTU), target_id])
+    )) )
+}
+
+
+#================================================================================
 #' Plot count or proportion changes for all transcripts of a specified gene.
 #'
 #' @param dtuo A DTU object.
@@ -78,24 +117,6 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 
 
 #================================================================================
-#' Summary of DTU calling.
-#' 
-#' @param dtuo a DTU object.
-#' @return named numerical vector giving a quick overview of the results
-#'
-#'@export
-dtu_summary <- function(dtuo) {
-  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
-              "NA genes" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
-              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
-  return(result)
-}
-
-
-#================================================================================
 #' Plot DTU results from the proportions test.
 #' 
 #' @param dtuo A DTU object.
@@ -110,7 +131,7 @@ dtu_summary <- function(dtuo) {
 plot_overview <- function(dtuo, type="dpropVsig") {
   with(dtuo, {
        if (type == "propVcount") {
-      result <- ggplot(data = Transcripts, aes(sumA, propA, color = DTU)) +
+      result <- ggplot(data = na.omit(Transcripts), aes(sumA, propA, color = DTU)) +
         ggtitle("Relative abundances of transcripts") +
         labs(y = paste("Proportion in ", Parameters$cond_A, sep=""), 
              x = paste("Cumulative gene read-count in ", Parameters$cond_A, sep="")) +
@@ -118,7 +139,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
         scale_colour_manual("DTU", values = c("blue", "red")) + 
         geom_point(alpha = 0.3)
     } else if (type == "dpropVcount") {
-      result <- ggplot(data = Transcripts, aes(sumA, Dprop, color = DTU)) +
+      result <- ggplot(data = na.omit(Transcripts), aes(sumA, Dprop, color = DTU)) +
         ggtitle("Abundance change VS gene expression") +
         labs(y = paste("prop( ", Parameters$cond_B, " ) - prop( ", Parameters$cond_A, " )", sep=""), 
              x = paste("Cumulative gene read-count in ", Parameters$cond_A, sep="")) +
@@ -127,7 +148,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
         scale_colour_manual("DTU", values = c("blue", "red")) + 
         geom_point(alpha = 0.3)
     } else if (type == "dpropVsig") {
-      result <- ggplot(data = Transcripts, aes(Dprop, pval_corr, colour = DTU)) +
+      result <- ggplot(data = na.omit(Transcripts), aes(Dprop, pval_corr, colour = DTU)) +
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " - Prop in ", Parameters$cond_A, sep=""), 
              y ="P-value") +
