@@ -23,8 +23,8 @@ of data in mind.
 
 This *R Markdown* vignette constitutes the main documentation for the `rats` package.
 
-`rats` uses the proportions test (based on chi-square) to find which transcripts of a gene change expression relative 
-to the other transcripts of the same gene. For a more sensitive approach, it also uses the G-test to find in which 
+`rats` uses the *proportions test* to find which transcripts of a gene change expression relative 
+to the other transcripts of the same gene. For a more sensitive approach, it also uses the *G test* to find in which 
 genes the transcripts change in abundance relative to one another, although that test is not able to tell which 
 specific transcripts are responsible for this.
 
@@ -162,7 +162,7 @@ print( mydtu$Parameters[["p_thresh"]] )
 ```
 
 2. `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains gene-level 
-information. The results of the **G tests** are found here.
+information. The results of the *G tests* are found here.
 
 ```{r}
 # See the fields in the table.
@@ -180,7 +180,7 @@ print( mydtu$Genes[, .(parent_id, elig, elig_fx, DTU)] )
 ```
 
 3. `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) that contains 
-transcript-level information. The results of the **proportion tests** are found here.
+transcript-level information. The results of the *proportion tests* are found here.
 
 ```{r}
 # See the fields in the table.
@@ -650,7 +650,7 @@ myplot <- plot_overview(mydtu, type="dpropVsig")
 myplot  # display
 
 # Change scale of y axis.
-myplot2 <- myplot + coord_trans(y="log10")  # Or "log2", "sqrt", etc...
+myplot2 <- myplot + coord_trans(y="sqrt")  # Or "log10", "log10", etc...
 myplot2
 
 # Revert to linear scale.
