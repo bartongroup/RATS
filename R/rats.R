@@ -31,24 +31,22 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   #---------- PREP
   
   # Input checks.
+  if (verbose)
+    message("Checking parameters...")
   paramcheck <- parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
-                                correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, count_thresh, testmode, 
+                                correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
                                 boots, bootnum, dprop_thresh)
   if (paramcheck$error) stop(paramcheck$message)
   bootnum <- as.integer(bootnum)
   
   boot_transc <- any(boots == c("prop-test", "both"))
-  
   boot_genes <- any(boots == c("G-test", "g-test", "both"))
-  
-  # Set up progress bar
-  progress <- init_progress(verbose)
-  progress <- update_progress(progress)
   
   #----------- LOOK-UP
   
-  progress <- update_progress(progress)
   # Look-up from target_id to parent_id.
+  if (verbose)
+    message("Creating look-up structures...")
   tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
   with( tx_filter,
         setkey(tx_filter, parent_id, target_id) )  # Fixates the order of genes and transcripts to be used throughout the rest of this package.
@@ -57,8 +55,9 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   #---------- EXTRACT DATA
   
-  progress <- update_progress(progress)
   # De-nest, average and index the counts from the bootstraps. 
+  if (verbose)
+    message("Extracting estimated counts from bootstraps...")
   # For each condition, a list holds a dataframe for each replicate. 
   # Each dataframe holds the counts from ALL the bootstraps. Target_id is included but NOT used as key so as to ensure the order keeps matching tx_filter.
   data_A <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
@@ -68,15 +67,18 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   #---------- TEST
   
-  progress <- update_progress(progress)
   # Do the core work.
+  if (verbose)
+    message("Calculating significances... (this may take a few minutes depending on your system and data)")
   suppressWarnings(
     resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, p_thresh, dprop_thresh, correction) )
   
   #-------- ADD INFO
   
-  progress <- update_progress(progress)
-    # Fill in run info. (if done withing the with() block, changes don't take effect)
+  if (verbose)
+    message("Filling in info and descriptive statistics...")
+  
+  # Fill in run info. (if done withing the with() block, changes don't take effect)
   resobj$Parameters["var_name"] <- varname
   resobj$Parameters["cond_A"] <- name_A
   resobj$Parameters["cond_B"] <- name_B
@@ -104,17 +106,27 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   #---------- BOOTSTRAP
   
-  progress <- update_progress(progress)
   if (any(boot_transc, boot_genes)) {
+    if (verbose)
+      message("Bootstrapping...")
+    
+    # Bootstrapping can take long, so showing progress is nice.
+    if (verbose)
+      myprogress <- txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     
     #----- Iterations
     
     bootres <- lapply(1:bootnum, function(b) {
+                  # Update progress.
+                  if (verbose)
+                    setTxtProgressBar(myprogress, b)
+      
                   # Grab a bootstrap from each replicate. 
-                  counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))  # Have to use list syntax to get a vector back. 
-                                                                                                                                     # Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
-                                                                                                                                     # Also, the last column is the target_id, so I leave it out.
+                  counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
                   counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
+                  # Have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+                  # Also, the last column is the target_id, so I leave it out.
+                  
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
@@ -128,6 +140,9 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
                                 "gdtu" = Genes[, DTU] )) }) })
     
     #----- Stats
+    
+    if (verbose)
+      message("Summarising bootstraps...")
     
     with(resobj, {
       if (boot_transc) {
@@ -173,10 +188,10 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
               "boot_minBA", "boot_maxAB", "boot_maxBA", "boot_na") := NULL]
   })
   
-  progress <- update_progress(progress)
-
-  if(verbose)
+  if(verbose) {
+    message("All done!")
     print(dtu_summary(resobj))
+  }
   return(resobj)
 }
 
@@ -204,7 +219,6 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
 #' @param TARGET_COL name of transcript id column in annotation
 #' @param PARENT_COL name of gene id column in annotation
 #' @param BS_TARGET_COL name of transcript id column in bootstrap
-#' @param verbose print progress report
 #' @param count_thresh minimum frgments per transcript per sample
 #' @param testmode which tests to run
 #' @param boots which tests to bootstrap
@@ -214,7 +228,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
 #' @return List with a logical value and a message.
 #'
 parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
-                            correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, 
+                            correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
                             count_thresh, testmode, boots, bootnum, dprop_thresh) 
 {
   if (!is.data.frame(annot))
@@ -239,9 +253,6 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   
   if (any(! c(name_A, name_B) %in% slo$sample_to_covariates[[varname]] ))
     return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
-  
-  if (!is.logical(verbose))
-    return(list("error"=TRUE, "message"="verbose must be a logical value!"))
   
   if (! testmode %in% c("G-test", "g-test", "prop-test", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))

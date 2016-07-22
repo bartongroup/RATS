@@ -236,7 +236,7 @@ test_that("The input checks work", {
   
   # Verbose is bool.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, verbose="yes"),
-               "verbose must be a logical", fixed= TRUE)
+               "not interpretable as logical", fixed= TRUE)
   
   # Probability threshold.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, p_thresh = 666),
