@@ -6,11 +6,11 @@
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+  result <- c("DTU genes" = sum(dtuo$Genes[["DTU"]], na.rm=TRUE), 
+              "non-DTU genes" = sum(!dtuo$Genes[["DTU"]], na.rm=TRUE), 
               "NA genes" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "DTU transcripts" = sum(dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
+              "non-DTU transcripts" = sum(!dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
               "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
   return(result)
 }
