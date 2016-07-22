@@ -448,15 +448,14 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
-    Transcripts[(is.na(elig_xp)), elig_xp := FALSE]
     Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off, changes in proportion cannot be defined.
                                                                                                       # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
-    Genes[, elig_transc := Transcripts[, .(parent_id, ifelse(elig, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum of 1's is integer. Otherwise sum() changes the column to double, defeating the pre-allocation.
+    Genes[, elig_transc := Transcripts[, as.integer(sum(elig)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]
     
     # Biologically significant.
     Transcripts[, elig_fx := abs(Dprop) >= dprop_thresh]
-    Genes[, elig_fx := Transcripts[, .(parent_id, any(elig_fx)), by = parent_id][, V2] ]
+    Genes[, elig_fx := Transcripts[, any(elig_fx), by = parent_id][, V1] ]
 
     #---------- TESTS
   
