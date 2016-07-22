@@ -196,7 +196,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
              y="Number of genes")
     } else if (type == "trconfVdtu") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), "count"= sapply(seq(0, 1, 0.01), function(x) {
-        sum(Transcripts[, boot_freq] > x, na.rm=TRUE) }))
+        sum(Transcripts[(boot_freq >= x), DTU], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
@@ -205,7 +205,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
              y="Number of transcripts")
     } else if (type == "gconfVdtu") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), "count"= sapply(seq(0, 1, 0.01), function(x) {
-        sum(Genes[, boot_freq] > x, na.rm=TRUE) }))
+        sum(Genes[(boot_freq >= x), DTU], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
