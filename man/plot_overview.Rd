@@ -9,7 +9,16 @@ plot_overview(dtuo, type = "dpropVsig")
 \arguments{
 \item{dtuo}{A DTU object.}
 
-\item{type}{Type of plot: "propVcount", "dpropVcount", "dpropVsig", "maxdprop"}
+\item{type}{Type of plot. \itemize{
+  \item{"propVcount"}{Proportion in condition A VS. fragment count in condition A.}
+  \item{"dpropVcount"}{Change in proportion VS. fragment count in condition A.}
+  \item{"dpropVsig"}{Change in proportion VS. statistical significance.}
+  \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.}
+  \item{"transc-conf"}{Distribution of bootstrapped confidence of transcript-level DTU.}
+  \item{"gene-conf"}{Distribution of bootstrapped confidence of gene-level DTU.}
+  \item{"trconfVdtu"}{Transcript-level confidence threshold VS. number of DTU positive calls.}
+  \item{"gconfVdtu"}{Gene-level confidence threshold VS. number of DTU positive calls.}
+}}
 }
 \value{
 a ggplot2 object. Simply display it or you can also customize it.
