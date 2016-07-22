@@ -5,8 +5,8 @@
 \title{Check input parameters.}
 \usage{
 parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
-  p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, verbose, count_thresh,
-  testmode, boots, bootnum, dprop_thresh)
+  p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode,
+  boots, bootnum, dprop_thresh)
 }
 \arguments{
 \item{slo}{sleuth object}
@@ -30,8 +30,6 @@ parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 \item{PARENT_COL}{name of gene id column in annotation}
 
 \item{BS_TARGET_COL}{name of transcript id column in bootstrap}
-
-\item{verbose}{print progress report}
 
 \item{count_thresh}{minimum frgments per transcript per sample}
 

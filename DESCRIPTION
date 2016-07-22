@@ -15,12 +15,12 @@ License: MIT + file LICENSE
 VignetteBuilder: knitr
 Suggests:
     testthat,
-    knitr,
-    methods
+    knitr
 Imports:
     matrixStats,
     data.table,
-    ggplot2
+    ggplot2,
+    utils
 URL: https://github.com/nickschurch/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/nickschurch/Rats
 RoxygenNote: 5.0.1

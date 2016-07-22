@@ -20,6 +20,7 @@
 #' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
+#' @import utils
 #' @import data.table
 #' @import matrixStats
 #' @export
@@ -112,7 +113,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
     
     # Bootstrapping can take long, so showing progress is nice.
     if (verbose)
-      myprogress <- txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
+      myprogress <- utils::txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     
     #----- Iterations
     
@@ -276,30 +277,6 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be between 0 and 1."))
   
   return(list("error"=FALSE, "message"="All good!"))
-}
-
-
-#================================================================================
-#' Initialise progress updates
-#'
-#' @param on Flag indicating whether updates are on (TRUE) or not (FALSE)
-#' @return The progress update object
-#'
-init_progress <- function(on)
-{
-  progress_steps <- data.frame(c(1, 2, 3, 10, 11, 15, 30, 31, 100),
-                               c("Checked parameters...",
-                                 "Creating look-up structures...",
-                                 "Extracting counts from bootstraps...",
-                                 "Allocating output structure...",
-                                 "Calculating counts statistics...",
-                                 "Calculating p-values...",
-                                 "Filling in more info...",
-                                 "Bootstrapping p-values (if applicable)...",
-                                 "All done!"),
-                               stringsAsFactors = FALSE)
-  progress <- TxtProgressUpdate(steps=progress_steps, on=on)
-  return(progress)
 }
 
 
