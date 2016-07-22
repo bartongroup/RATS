@@ -6,11 +6,11 @@
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  result <- c("DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU genes" = sum(ifelse(dtuo$Genes[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+  result <- c("DTU genes" = sum(dtuo$Genes[["DTU"]], na.rm=TRUE), 
+              "non-DTU genes" = sum(!dtuo$Genes[["DTU"]], na.rm=TRUE), 
               "NA genes" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==TRUE, 1, 0), na.rm=TRUE), 
-              "non-DTU transcripts" = sum(ifelse(dtuo$Transcripts[["DTU"]]==FALSE, 1, 0), na.rm=TRUE), 
+              "DTU transcripts" = sum(dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
+              "non-DTU transcripts" = sum(!dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
               "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
   return(result)
 }
@@ -27,13 +27,13 @@ dtu_summary <- function(dtuo) {
 #'@export
 get_dtu_ids <- function(dtuo) {
   with(dtuo,
-    return(list("dtu-genes" = as.vector(Genes[DTU==TRUE, parent_id]),
-                "dtu-transc" = as.vector(Transcripts[DTU==TRUE, target_id]),
-                "ndtu-genes" = as.vector(Genes[DTU==FALSE, parent_id]),
-                "ndtu-transc" = as.vector(Transcripts[DTU==FALSE, target_id]),
-                "na-genes" = as.vector(Genes[is.na(DTU), parent_id]),
-                "na-transc" = as.vector(Transcripts[is.na(DTU), target_id])
-    )) )
+       return(list("dtu-genes" = as.vector(Genes[DTU==TRUE, parent_id]),  # Necessary to use equality syntax, otherwise NA interfere.
+                   "dtu-transc" = as.vector(Transcripts[DTU==TRUE, target_id]),
+                   "ndtu-genes" = as.vector(Genes[DTU==FALSE, parent_id]),
+                   "ndtu-transc" = as.vector(Transcripts[DTU==FALSE, target_id]),
+                   "na-genes" = as.vector(Genes[is.na(DTU), parent_id]),
+                   "na-transc" = as.vector(Transcripts[is.na(DTU), target_id])
+       )) )
 }
 
 
@@ -55,7 +55,7 @@ get_dtu_ids <- function(dtuo) {
 plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
   # Slice the data to get just the relevant transcripts.
   vis_data <- with(dtuo, 
-    Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)] )
+                   Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)] )
   with(vis_data, {
     vis_data[, peA := sqrt(propA * (1 - propA) / dtuo$Parameters[["num_replic_A"]]) ]
     vis_data[, peB := sqrt(propB * (1 - propB) / dtuo$Parameters[["num_replic_B"]]) ]
@@ -77,13 +77,13 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
     vis_data[, condB := dtuo$Parameters[["cond_B"]] ]
     
     data.table("expression" = c(vis_data[[vA]], vis_data[[vB]]),
-                "error" = c(vis_data[[eA]], vis_data[[eB]]),
-                "errmin" = NA_real_,
-                "errmax" = NA_real_,
-                "condition" = c(vis_data[, condA], vis_data[, condB]),
-                "transcript" = vis_data[, target_id])  # Recycle vector once.
+               "error" = c(vis_data[[eA]], vis_data[[eB]]),
+               "errmin" = NA_real_,
+               "errmax" = NA_real_,
+               "condition" = c(vis_data[, condA], vis_data[, condB]),
+               "transcript" = vis_data[, target_id])  # Recycle vector once.
   })
-
+  
   with(vis_data, {
     # 2 standard deviations.
     if (vals == "counts") 
@@ -94,7 +94,7 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
     vis_data[, errmax := expression + error]
     if (vals == "proportions")
       vis_data[, errmax := ifelse(errmax>1, 1, errmax)]
-  
+    
     if (style == "lines") {
       # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
       return(
@@ -130,7 +130,7 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 #' @export
 plot_overview <- function(dtuo, type="dpropVsig") {
   with(dtuo, {
-       if (type == "propVcount") {
+    if (type == "propVcount") {
       result <- ggplot(data = na.omit(Transcripts), aes(sumA, propA, color = DTU)) +
         ggtitle("Relative abundances of transcripts") +
         labs(y = paste("Proportion in ", Parameters$cond_A, sep=""), 
@@ -172,6 +172,6 @@ plot_overview <- function(dtuo, type="dpropVsig") {
       stop("Unrecognized plot type!")
     }
     
-   return(result)
+    return(result)
   })
 }
