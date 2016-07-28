@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "21 July 2016"
+date: "28 July 2016"
 output: 
   html_document: 
     fig_caption: yes
@@ -497,7 +497,7 @@ these quantifications.
 
 ```{r}
 # Bootstrap everything.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 1000)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 100)
 
 # Only bootstrap transcript calls.
 mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "prop-test")
@@ -614,26 +614,27 @@ Let's start by setting up our usual simulated data.
 library(rats)
 
 sim <- sim_sleuth_data(cnames = c("foo", "bar"))
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots="both", bootnum=1000)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots="both", bootnum=100)
 ```
 
 
 ### Plot of abundance changes
 
 A table full of numbers may be heaven to some and hell to others. This function allows you to visualise what's
-going on in any particular gene.
+going on in any particular gene. 
 
 ```{r}
-# The error bars for counts represent 2 standard deviations from the mean.
+# Proportion changes for all the transcripts of the "MIX6" gene.
+# !!! The ERROR BARS represent the standard error for the estimated proportions.
 plot_gene(mydtu, "MIX6")
 ```
 
-A variation of the above is to plot the mean counts instead of the proportions. Either can also be displayed as
-a frequency polygon instead.
+A variation of the above is to plot the mean fragment counts instead of the proportions:
 
 ```{r}
-# The error bars for proportions represent the standard error of the estimated proportions.
-plot_gene(mydtu, "MIX6", vals="counts", style="lines")
+# Absolute expression changes for all the transcripts of the "MIX6" gene.
+# !!! The ERROR BARS represent 2 standard deviations from the mean count across replicates.
+plot_gene(mydtu, "MIX6", vals="counts")
 ```
 
 
@@ -642,6 +643,9 @@ plot_gene(mydtu, "MIX6", vals="counts", style="lines")
 This family of plots show the distribution of the calls. Our usual simulated dataset is too small to demonstrate
 what these plots typically would look like, but it is adequate to demonstrate the usage. A more illustrative dataset
 will be prepared and used in a future release. We are also planning to make these plots interactive.
+
+Several of these plots are likely to display warnings about missing or non-finite values. These are due to the 
+presence of `NA` in the tables, for reasons already discussed in the previous examples, and can be ignored.
 
 ```{r}
 # Proportion change VS significance. Probably the most common plot. Similar to volcano plot.
