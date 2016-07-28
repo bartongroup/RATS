@@ -21,7 +21,7 @@ This is an R package that builds on the functionality of [sleuth](http://pachter
 aimed at people analyzing **gene expression** and **transcript abundance**, particularly with **RNA-Seq** type 
 of data in mind. This R Markdown vignette constitutes the main documentation for the `rats` package.
 
-`rats` aims to identify situations where genes with mulitple transcript isoforms show differences in which of 
+`rats` aims to identify situations where genes with multiple transcript isoforms show differences in which of 
 these isoforms are in use (Differential Transcript Usage -- **DTU**) between two conditions. This is supplementary
 to identifying which transcripts show Differential Expression (**DTE**). It is possible to have DTE without DTU,
 meaning that the expression of all the isoforms changes similarly and is equivalent to plain differential gene
@@ -29,14 +29,14 @@ expression (**DGE**). It is also possible to have DTU without DGE, when the rela
 the overall output of the gene remains the same. However, it is not possible to have DTU without DTE in at least
 one of the transcript isoforms.
 
-To inder which genes show change in relative abundance of their transcripts, the *G test* is used. This method is 
+To find which genes show change in relative abundance of their transcripts, the *G test* is used. This method is 
 sensitive to small changes, thanks to looking at all the transcripts of the gene simultaneously. As a result,
 it cannot attribute the change to specific transcripts, but it may be possible to identify manually by inspection
 of the relevant transcript expression levels.
 As a complementary method, `rats` also uses the *test of proportion* to look for change in each transcript
 individually. This test is less sensitive, but can highlight which transcripts change in relative abundance. The
-two tests are carried out independently from each other, meaning that a positive result in one is not a pre-requisite 
-for running the other and, indeed, they two tests lead to conflicting verdicts for some genes.
+two tests are carried out independently of each other, meaning that a positive result in one is not a pre-requisite 
+for running the other and, indeed, the two tests lead to conflicting verdicts for some genes.
 
 The **input format** recognized by `rats` is the output of [sleuth](http://pachterlab.github.io/sleuth/). See the 
 [introduction to sleuth](https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
@@ -100,8 +100,7 @@ print( slo$kal[[1]]$bootstrap[[1]] )
 
 The values under `condition` are the ones we specified when we called the simulator. They are internally assigned
 to specific samples. There's also an additional variable, `batch`, which is added by the simulator and can be ignored for now. 
-*Your data may have more/fewer/different variables* in the `sample_to_covariates` table. `rats` uses this table as
-guide to group samples together for comparison.
+*Your data may have more/fewer/different variables* in the `sample_to_covariates` table. `rats` uses this table as a guide to group samples together for comparison.
 
 `kal` is a list of samples (in this case there are 4). Each sample is a list that normally contains various 
 tables and information. `rats` only uses the bootstrapped counts, so the simulated data only contains
@@ -163,7 +162,7 @@ print( summary(mydtu) )
 # See the elements.
 print( names(mydtu$Parameters) )
 
-# See the value of one of the elements (ie. the P-value threshold).
+# See the value of one of the elements (i.e. the P-value threshold).
 print( mydtu$Parameters[["p_thresh"]] )
 ```
 
@@ -226,7 +225,7 @@ the `Genes` table as `transc_DTU` where it indicates that at least one transcrip
 for more details.
 
 The `Transcripts$DTU` and `Genes$DTU` calls can differ from one another, as they are based on different tests
-and subject to different restrictions. They are complementary information to one another.
+and subject to different restrictions. They contain complementary information.
 
 
 ## Example 2: Output in detail.
@@ -267,8 +266,8 @@ print( summary(mydtu$Parameters) )
 4. `p_thresh` The significance level at which DTU is called, applicable to both tests.
 5. `count_thresh` The minimum required fragment count per sample for each transcript.
 6. `dprop_thresh` The minimum difference in proportion that is considered biologically significant.
-7. `tests` Which of the two tests were carried out.
-8. `bootstrap` Which of the two tests were bootstrapped.
+7. `tests` Which of the two tests was carried out.
+8. `bootstrap` Which of the two tests was bootstrapped.
 9. `bootnum` The number of bootstrap iterations.
 
 ### Genes
@@ -291,7 +290,7 @@ print( lapply(mydtu$Genes, typeof) )
 2. `DTU` The gene collectively shows DTU, according to the gene-wise test. It is not possible to attribute 
 this to specific transcripts. To be DTU, a gene needs both biological and statistical significance: `DTU = (sig & elig_fx)`.
 3. `transc_DTU` Aggregated from `Transcript$DTU`. Signifies that at least one transcript has changed significantly 
-according to the transcript-wise test. Look up the gene in the `Transcripts` table to see which transcripts are resposible.
+according to the transcript-wise test. Look up the gene in the `Transcripts` table to see which transcripts are responsible.
 4. `known_transc` The number of annotated transcripts for the gene.
 5. `detect_transc` The number of transcripts with non-zero expression in at least one of the two conditions. 
 `known_transc >= detect_transc`.
@@ -330,7 +329,7 @@ but in return the test is less sensitive as it uses less information that the ge
 print( lapply(mydtu$Transcripts, typeof) )
 ```
 
-1. `target_id` and `parent_id` The identification name/code of the transcript and gene, repsectively.
+1. `target_id` and `parent_id` The identification name/code of the transcript and gene, respectively.
 2. `DTU` Whether the transcript's proportion changed significantly, according to the transcript-wise test.
 3. `gene_DTU` Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in proportions.
 4. `meanA` and `meanB` The mean of counts across samples, for each condition.
@@ -356,10 +355,10 @@ a measure of confidence in the DTU call. Values closer to `1` indicate strong te
 nearer `0` indicate lack of DTU. Values near `0.5` indicate lack of confidence either way and should be treated 
 carefully.
 17. `boot_mean` The mean P-value across the bootstraps.
-18. `boot_stdev` The the standard deviation of the mean P-value across the bootstraps.
+18. `boot_stdev` The standard deviation of the mean P-value across the bootstraps.
 19. `boot_min` The minimum (most significant) P-value that occurred in the bootstraps.
 20. `boot_max` The maximum (most significant) P-value that occurred in the bootstraps.
-21. `boot_na` The fraction of bootstrap iterations in which the transcripts was not eligible for DTU calling.
+21. `boot_na` The fraction of bootstrap iterations in which the transcripts were not eligible for DTU calling.
 
 **Note** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
 
@@ -393,8 +392,8 @@ print( mydtu$Genes )
 There are `r dim(mydtu$Genes)[1]` genes in the annotation used. Here are some possible scenarios:
 
 * `1A1N` has only one known transcript and is thus not eligible. If you look in `slo$kal[[1]]$bootstrap[[1]]`, there 
-are actually two recorded transcripts for this gene, but only one of them is recorded in the annotation. `rats` Uses 
-the annotation as the basis for managing information. Any transcripts/genes present in the sleuth data but missing from 
+are actually two recorded transcripts for this gene, but only one of them is recorded in the annotation. `rats` uses 
+the annotation as the basis for managing information. Any transcripts/genes present in the sleuth data, but missing from 
 the annotation, will be ignored completely.
 * `1B1C` has two annotated transcripts. If you look in `slo$kal[[1]]$bootstrap[[1]]`, only one of them is recorded in 
 our data whereas the other is missing completely, so the gene does not have enough transcripts to be eligible.
@@ -414,7 +413,7 @@ the entire gene is not recorded at all in the data.
 * `NN` has two transcripts, both of which are detected and eligible, but no significant change is detected, a result
 backed up by all the bootstrap iterations.
 * `ALLA` has one transcript and it is detected in only one of the conditions, but one transcript is not enough to be eligible.
-* `ALLB` has two transcript, both detected, yet is still not eligible as both transcripts are not eligible. Inspection of
+* `ALLB` has two transcripts, both detected, yet is still not eligible as both transcripts are not eligible. Inspection of
 `Transcripts` shows that neither transcript is  detected in one of the conditions. Although the gene would likely be called as
 DTE and DGE by the appropriate tools, it is not possible to define proportions in that condition, so it is not possible 
 to call DTU for it.
@@ -427,13 +426,13 @@ due to random sampling.
 print( mydtu$Transcripts )
 ```
 
-Several mentions to this table were made during analysis of the `Genes` table. Here are some possible scenarios:
+Several mentions of this table were made during analysis of the `Genes` table. Here are some possible scenarios:
 
-* `CC_a` and `CC_b` both show counts (`sumA` and `sumB` above the threshold (`Parameters$counts_thresh`) so they are eligible. 
-They are positive for DTU at both the gene and transcript level. The frequency of positive call in the bootstraps, however,
-is not quite good. Additionally, the change in proportion is only marginally above the already quite permissive threshold.
+* `CC_a` and `CC_b` both show counts (`sumA` and `sumB`) above the threshold (`Parameters$counts_thresh`) so they are eligible. 
+They are positive for DTU at both the gene and transcript level. The frequency of positive calls in the bootstraps, however,
+is not quite so good. Additionally, the change in proportion is only marginally above the already quite permissive threshold.
 So these transcripts are marginal and should be treated carefully.
-* `LC1` and `LC2` both change in proportion above the threshold, but `LC1` does not meet the counts threshold with an 
+* `LC1` and `LC2` both change in proportion above the threshold, but `LC1` does not meet the counts threshold on 
 average. `LC2` is eligible for transcript-wise testing and comes out as non-DTU, with good support by the bootstraps.
 Gene-level DTU cannot be called since `LC1` did not meet all the criteria.
 * `MIX.c1`, `MIX.c2` and `MIX.c4` all show significant individual change. `MIX.c3`, despite statistical significance,
@@ -448,8 +447,8 @@ the other condition (division by 0), so they are not eligible for testing.
 
 ### Annotation discrepancies
 
-Examples 1 and 2 have mentioned the possibility that some transcripts/genes may be missing altogether from either the
-annotation or the sleuth object. This is likely to be cause by use of different annotation versions during different
+Examples 1 and 2 mentioned the possibility that some transcripts/genes may be missing altogether from either the
+annotation or the sleuth object. This is likely to be caused by use of different annotation versions during different
 stages of the analysis. This is generally a **bad idea**, as there is no guarantee (at least for some annotations)
 that the transcript identification codes will remain consistent between annotation versions. `rats` will not provide 
 any warning about this, and will carry out the DTU calls in the most sensible way possible, assuming that the
@@ -509,7 +508,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "G-test")
 1. `boots` Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce
 computation time, so the option is provided to allow flexibility for special use cases.
 2. `bootnum` Generally, greater is better but it takes longer. There is also an upper limit that depends on the size of 
-your annotation. This is due to R's limit on the max size of matrices.
+your annotation. This is due to R's limit on the maximum size of matrices.
 
 
 ### Thresholds
@@ -526,7 +525,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", p_thresh = 0.01,
 1. `p_thresh` Significance level. P-values below this will be considered significant. 0.05 is a very permissive value.
 2. `count_thresh` At least one of the two conditions needs to exceed this number of fragments per sample for the transcript 
 to be considered. Low counts have high uncertainty and low significance. Removing such entries from the analysis when both 
-conditions are low-count improves the confidence in the predictions of the remaining transcripts, as well as reduces 
+conditions are low-count improves the confidence in the predictions of the remaining transcripts, and reduces 
 computation time.
 3. `dprop_thresh` This is a proxy for biological significance. A transcript's proportion must change by at least this much 
 for it to be considered. The need for this is due to the fact that high counts will make even minute differences show up as 
@@ -543,7 +542,7 @@ new_thresh = 0.01
 newgenecalls <- mydtu$Genes[, .(parent_id, 
                                 pvalAB_corr < new_thresh  & 
                                   pvalBA_corr < new_thresh  & 
-                                  elig_fx)]  # DTU requires both stats and biol sgnificance
+                                  elig_fx)]  # DTU requires both stats and biol significance
 newtransccalls <- mydtu$Transcripts[, .(target_id, parent_id, 
                                         pval_corr < new_thresh  &  elig_fx)]  # same
 print( newgenecalls )
@@ -553,7 +552,7 @@ print( newgenecalls )
 ### Test selection
 
 `rats` runs gene-level calls (slower, more sensitive, less fine-grained) and transcript-level calls 
-(faster, less sensitive, more explicit report). They are complementary, and **we recomend using them
+(faster, less sensitive, more explicit report). They are complementary, and **we recommend using them
 together**, but the option to skip either is provided for special use cases. 
 The fields of the skipped test will be filled with `NA`.
 
@@ -565,7 +564,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="G-test")
 ```
 
 
-### Correction for multliple testing
+### Correction for multiple testing
 
 Testing multiple null hypotheses increases the chance of one being falsely rejected. To keep the overall false rate at the 
 desired level, the raw p-values must be adjusted. This is achieved using R's build-in `p.adjust()`. The default adjustment 
@@ -591,7 +590,7 @@ print( sim$slo$kal[[1]]$bootstrap[[1]] )
 print( sim$annot )
 ```
 
-With the fields names changed, we need to tell `rats` where to find the data:
+With the field names changed, we need to tell `rats` where to find the data:
 
 ```{r}
 mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse", 
@@ -677,7 +676,7 @@ plot_overview(mydtu, type="gconfVdtu")
 
 ### Plot customisation
 
-You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggplot2.org) manipulations on it, such as changing the axes scales.
+You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggplot2.org) manipulations on it, such as changing the axis scales.
 Other `ggplot2` customisations include the axis tickmarks, axis values, labels, titles, colours... Consult the `ggplot2` documentation for more
 help on these.
 
@@ -695,6 +694,9 @@ myplot2
 myplot2 <- myplot + coord_trans(y="identity")
 myplot2
 ```
+
+
+
 
 
 
