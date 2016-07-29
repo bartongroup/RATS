@@ -72,7 +72,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   
   # Do the core work.
   if (verbose)
-    message("Calculating significances... (this may take a few minutes depending on your system and data)")
+    message("Calculating significances...")
   suppressWarnings(
     resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction) )
   
