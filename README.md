@@ -11,13 +11,13 @@ Anyone working in transcriptomics, analyzing gene expression and transcript abun
 It provides a method to detect changes in the relative abundance of the alternative transcripts (isoforms) of genes. 
 This is called **Differential Transcript Usage (DTU)**.  
 
-Detecting DTU is supplementary to the quantification of transcripts by tools like [salmon](http://combine-lab.github.io/salmon/), 
-[sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) and [kallisto](http://pachterlab.github.io/kallisto/) and the detection 
-of Differential Transcript Expression (DTE) by tools such as [sleuth](http://pachterlab.github.io/sleuth/).
+Detecting DTU is supplementary to the quantification of transcripts by tools like [Salmon](http://combine-lab.github.io/salmon/), 
+[Sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) and [Kallisto](http://pachterlab.github.io/kallisto/) and the detection 
+of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pachterlab.github.io/sleuth/).
 
 #### What it needs
 
-As input it requires an R object similar to the output of [sleuth](http://pachterlab.github.io/sleuth/). It also requires an index 
+As input it requires an R object similar to the output of [Sleuth](http://pachterlab.github.io/sleuth/). It also requires an index 
 table matching transcript identifiers to respective gene identifiers.  
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
@@ -35,27 +35,30 @@ if they are not present already or if they are not installed automatically while
 
 `install.packages(c("data.table", "matrixStats", "ggplot2"))`
 
+
 #### Obtaining rats
 
-**from Github:** `rats` is hosted on GitHub [here](https://github.com/bartongroup/Rats), and you can 
-download the zip file from that page or by [clicking here](https://github.com/bartongroup/Rats/archive/master.zip). 
-Then you can install from the zipped file like so:
+**from Github:** `rats` is hosted on GitHub [here](https://github.com/bartongroup/Rats) and can be
+installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
-`install.packages("/full/path/to/downloaded/rats.zip", repos=NULL)`
+`devtools::install_github("bartongroup/rats")`
 
 
 #### Calling Differential Transcript Usage with rats
 
 A full tutorial vignette is included in the package, explaining the input, output, commands and options. It can be accessed with the
-command below. Alternatively, it can be found by browsing to the `vignettes` directory in the GitHub repository or the downloaded 
-.zip archive.
+command below. 
 
 `browseVignettes("rats")`
 
+Alternatively, it can be downloaded from the `vignettes` [directory in the GitHub repository](https://github.com/bartongroup/Rats/tree/master/vignettes)
+or the downloaded dev.zip archive.
+
+
 ## Contact information
 
-The rats R package was developed by members of [The Barton Group] (http://www.compbio.dundee.ac.uk) at [The University of Dundee] (http://www.dundee.ac.uk).
-It was conceived by Dr. Nick Schurch, and refined and implemented by Dr. Kimon Froussios and Dr. Kira Mourao.
+The rats R package was developed by members of [The Barton Group] (http://www.compbio.dundee.ac.uk) at [The University of Dundee] (http://www.dundee.ac.uk)
+by Dr. Kimon Froussios, Dr. Kira Mourao and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
