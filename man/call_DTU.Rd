@@ -6,7 +6,7 @@
 \usage{
 call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
   count_thresh = 5, dprop_thresh = 0.1, testmode = "both",
-  correction = "BH", verbose = FALSE, boots = "none", bootnum = 100L,
+  correction = "BH", verbose = TRUE, boots = "none", bootnum = 100L,
   COUNTS_COL = "est_counts", TARGET_COL = "target_id",
   PARENT_COL = "parent_id", BS_TARGET_COL = "target_id")
 }

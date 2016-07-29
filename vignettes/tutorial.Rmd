@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "28 July 2016"
+date: "29 July 2016"
 output: 
   html_document: 
     fig_caption: yes
@@ -132,6 +132,12 @@ in the "condition" column of the `slo$sample_to_conditions` table. You can overr
 named differently in your data, or if you want to compare by a different variable. More on this in the 
 example that deals with the input options.
 
+By default, `rats` will print its progress through the task and give you a summary at the end, but you can
+also choose to suppress these reports:
+
+```{r}
+mydtu <- call_DTU(slo, annot, "foo", "bar", verbose = FALSE)
+```
 
 ### Black-box results
 
@@ -481,7 +487,7 @@ variables as well. As we saw in a previous example, our simulated data contains 
 
 ```{r}
 # Compare by a different variable. In this case "batch".
-mydtu <- call_DTU(sim$slo, sim$annot, "ba", "bb", varname= "batch")
+mydtu <- call_DTU(sim$slo, sim$annot, "ba", "bb", varname= "batch", verbose = FALSE)
 ```
 
 
@@ -496,13 +502,13 @@ these quantifications.
 
 ```{r}
 # Bootstrap everything.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 100)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 100, verbose = FALSE)
 
 # Only bootstrap transcript calls.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "prop-test")
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "prop-test", verbose = FALSE)
 
 # Only bootstrap gene calls.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "G-test")
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "G-test", verbose = FALSE)
 ```
 
 1. `boots` Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce
@@ -517,7 +523,7 @@ Three thresholds can be set in `rats`.
 
 ```{r}
 mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", p_thresh = 0.01, 
-                  count_thresh = 10, dprop_thresh = 0.25)
+                  count_thresh = 10, dprop_thresh = 0.25, verbose = FALSE)
 # You can view if/how this changes the result by using the commands shown in the 
 # previous two examples.
 ```
@@ -558,9 +564,9 @@ The fields of the skipped test will be filled with `NA`.
 
 ```{r}
 # Transcripts only.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="prop-test")
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="prop-test", verbose = FALSE)
 # Genes only.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="G-test")
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="G-test", verbose = FALSE)
 ```
 
 
@@ -572,7 +578,7 @@ method is `BH` (Benjamini-Hoffmann). A full list of options is listed in R's `p.
 
 ```{r}
 # Bonferroni correction.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", correction = "bonferroni")
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", correction = "bonferroni", verbose = FALSE)
 ```
 
 
@@ -595,7 +601,7 @@ With the field names changed, we need to tell `rats` where to find the data:
 ```{r}
 mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse", 
                   TARGET_COL="transcript", PARENT_COL="gene", 
-                  COUNTS_COL="the-counts", BS_TARGET_COL="trscr")
+                  COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
 
 # The output structure will always use the same field names, regardless of 
 # what the input names are.
@@ -613,7 +619,7 @@ Let's start by setting up our usual simulated data.
 library(rats)
 
 sim <- sim_sleuth_data(cnames = c("foo", "bar"))
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots="both", bootnum=100)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots="both", bootnum=100, verbose = FALSE)
 ```
 
 
