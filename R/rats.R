@@ -10,9 +10,9 @@
 #' @param p_thresh The p-value threshold, default 0.05.
 #' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing (default 5).
 #' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (default 0.1).
-#' @param testmode One of "G-test", "prop-test", "both" (default both).
+#' @param testmode One of "genes", "transc", "both" (default "both").
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
-#' @param boots Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").
+#' @param boots Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (default "none").
 #' @param bootnum Number of bootstraps (default 10000).
 #' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
 #' @param TARGET_COL The name of the transcript identifier column in the annot object, default \code{"target_id"}
@@ -40,8 +40,10 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   if (paramcheck$error) stop(paramcheck$message)
   bootnum <- as.integer(bootnum)
   
-  boot_transc <- any(boots == c("prop-test", "both"))
-  boot_genes <- any(boots == c("G-test", "g-test", "both"))
+  test_transc <- any(testmode == c("transc", "both"))
+  test_genes <- any(testmode == c("genes", "both"))
+  boot_transc <- any(boots == c("transc", "both"))
+  boot_genes <- any(boots == c("genes", "both"))
   
   #----------- LOOK-UP
   
@@ -72,7 +74,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
   if (verbose)
     message("Calculating significances... (this may take a few minutes depending on your system and data)")
   suppressWarnings(
-    resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, testmode, "full", count_thresh, p_thresh, dprop_thresh, correction) )
+    resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction) )
   
   #-------- ADD INFO
   
@@ -99,9 +101,9 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
     Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
     Transcripts[, stdevA :=  rowSds(as.matrix(bootmeans_A)) ]
     Transcripts[, stdevB :=  rowSds(as.matrix(bootmeans_B)) ]
-    if (any(testmode == c("prop-test", "both")))
+    if (test_transc)
       Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
-    if (any(testmode == c("G-test", "g-test", "both")))
+    if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
   })
   
@@ -131,7 +133,7 @@ call_DTU <- function(slo, annot, name_A, name_B, varname= "condition",
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, testmode, "short", count_thresh, p_thresh, dprop_thresh, correction))
+                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction))
                   
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],
@@ -255,10 +257,10 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   if (any(! c(name_A, name_B) %in% slo$sample_to_covariates[[varname]] ))
     return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
   
-  if (! testmode %in% c("G-test", "g-test", "prop-test", "both"))
+  if (! testmode %in% c("genes", "transc", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   
-  if (! boots %in% c("G-test", "g-test","prop-test", "both", "none"))
+  if (! boots %in% c("genes", "transc", "both", "none"))
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
   
   if ((!is.numeric(bootnum)) || bootnum < 1)
@@ -392,7 +394,8 @@ alloc_out <- function(annot, full){
 #' @param counts_A A data.table of counts for condition A. x: sample, y: transcript.
 #' @param counts_B A data.table of counts for condition B. x: sample, y: transcript.
 #' @param tx_filter A data.table with target_id and parent_id.
-#' @param testmode One of "G-test", "prop-test", "both".
+#' @param test_transc Whether to do transcript-level test.
+#' @param test_genes Whether to do gene-level test.
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
 #' @param count_thresh Minimum number of counts per replicate.
 #' @param p_thresh The p-value threshold.
@@ -402,7 +405,7 @@ alloc_out <- function(annot, full){
 #' 
 #' @import data.table
 #' 
-calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_thresh, p_thresh, dprop_thresh, correction) {
+calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction) {
   
   #---------- PRE-ALLOCATE
   
@@ -448,7 +451,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
     #---------- TESTS
   
     # Proportion test.
-    if ( any(testmode == c("prop-test", "both"))) {
+    if (test_transc) {
       Transcripts[(elig), pval := as.vector(apply(Transcripts[(elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
                                                      FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
                                                                                      n = row[c("totalA", "totalB")], 
@@ -459,7 +462,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, testmode, full, count_t
     }
     
     # G test.
-    if ( any(testmode == c("G-test", "g-test", "both"))) {
+    if (test_genes) {
       Genes[(elig), c("pvalAB", "pvalBA") := 
                      as.data.frame( t( as.data.frame( lapply(Genes[(elig), parent_id], function(parent) {
                        # Extract all relevant data to avoid repeated look ups in the large table.

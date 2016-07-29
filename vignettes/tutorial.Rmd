@@ -505,10 +505,10 @@ these quantifications.
 mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 100, verbose = FALSE)
 
 # Only bootstrap transcript calls.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "prop-test", verbose = FALSE)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "transc", verbose = FALSE)
 
 # Only bootstrap gene calls.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "G-test", verbose = FALSE)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "genes", verbose = FALSE)
 ```
 
 1. `boots` Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce
@@ -564,9 +564,9 @@ The fields of the skipped test will be filled with `NA`.
 
 ```{r}
 # Transcripts only.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="prop-test", verbose = FALSE)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="transc", verbose = FALSE)
 # Genes only.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="G-test", verbose = FALSE)
+mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="genes", verbose = FALSE)
 ```
 
 

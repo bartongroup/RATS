@@ -4,8 +4,8 @@
 \alias{calculate_DTU}
 \title{Set up and execute the tests.}
 \usage{
-calculate_DTU(counts_A, counts_B, tx_filter, testmode, full, count_thresh,
-  p_thresh, dprop_thresh, correction)
+calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, full,
+  count_thresh, p_thresh, dprop_thresh, correction)
 }
 \arguments{
 \item{counts_A}{A data.table of counts for condition A. x: sample, y: transcript.}
@@ -14,7 +14,9 @@ calculate_DTU(counts_A, counts_B, tx_filter, testmode, full, count_thresh,
 
 \item{tx_filter}{A data.table with target_id and parent_id.}
 
-\item{testmode}{One of "G-test", "prop-test", "both".}
+\item{test_transc}{Whether to do transcript-level test.}
+
+\item{test_genes}{Whether to do gene-level test.}
 
 \item{full}{Either "full" (for complete output structure) or "short" (for bootstrapping).}
 

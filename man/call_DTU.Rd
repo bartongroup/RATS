@@ -27,13 +27,13 @@ call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
 
 \item{dprop_thresh}{Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (default 0.1).}
 
-\item{testmode}{One of "G-test", "prop-test", "both" (default both).}
+\item{testmode}{One of "genes", "transc", "both" (default "both").}
 
 \item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
 
 \item{verbose}{Display progress updates, default \code{FALSE}.}
 
-\item{boots}{Bootstrap the p-values of either test. One of "G-test", "prop-test", "both", "none". (default "none").}
+\item{boots}{Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (default "none").}
 
 \item{bootnum}{Number of bootstraps (default 10000).}
 

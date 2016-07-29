@@ -199,7 +199,7 @@ test_that("The input checks work", {
   sim <- sim_sleuth_data(varname= "waffles", COUNTS_COL= "counts", TARGET_COL= "target" , PARENT_COL= "parent", 
                          BS_TARGET_COL= "id", cnames= c("AAAA","BBBB"))
   expect_silent(call_DTU(sim$slo, sim$annot, "AAAA", "BBBB", varname= "waffles", p_thresh= 0.01, count_thresh= 10,
-                              testmode= "prop-test", correction= "bonferroni", verbose= FALSE, boots= "g-test",
+                              testmode= "transc", correction= "bonferroni", verbose= FALSE, boots= "genes",
                               bootnum= 2, COUNTS_COL= "counts", TARGET_COL= "target", 
                               PARENT_COL= "parent", BS_TARGET_COL= "id"))
   # No false alarms with defaults.
@@ -251,13 +251,13 @@ test_that("The input checks work", {
   # Tests.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="GCSE", verbose = FALSE),
                "Unrecognized value for testmode", fixed= TRUE)
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="g-test", verbose = FALSE))
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="prop-test", verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="genes", verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="transc", verbose = FALSE))
   
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="GCSE", verbose = FALSE),
                "Unrecognized value for boots", fixed= TRUE)
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="g-test", bootnum = 2, verbose = FALSE))
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="prop-test", bootnum = 2, verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="genes", bootnum = 2, verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="transc", bootnum = 2, verbose = FALSE))
   
   # Number of bootstraps.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, bootnum = -5, verbose = FALSE),
@@ -356,10 +356,10 @@ test_that("The output structure is correct", {
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Genes)))
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Transcripts)))
   
-  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="prop-test", bootnum=2, verbose = FALSE)  
+  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="transc", bootnum=2, verbose = FALSE)  
   expect_false( any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Genes)))
   
-  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="g-test", bootnum=2, verbose = FALSE)  
+  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="genes", bootnum=2, verbose = FALSE)  
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Transcripts)))
 })
 
