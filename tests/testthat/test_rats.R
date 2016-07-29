@@ -116,7 +116,7 @@ test_that("Filters work correctly", {
   # !!! ensure correct response to specific scenarios.
   
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", verbose = FALSE)
+  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", verbose = FALSE, boots = "none")
   
   expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(1, 1, 0, FALSE, FALSE))
@@ -206,7 +206,7 @@ test_that("The input checks work", {
   sim <- sim_sleuth_data(cnames=c(name_A, name_B))
   expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, verbose = FALSE))
   
-  # Annottaion is not a dataframe.
+  # Annotation is not a dataframe.
   expect_error(call_DTU(sim$slo, c("not", "a", "dataframe"), name_A, name_B, verbose = FALSE), "annot is not a data.frame.")
   # Annotation field names.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, TARGET_COL= wrong_name, verbose = FALSE),
@@ -251,13 +251,13 @@ test_that("The input checks work", {
   # Tests.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="GCSE", verbose = FALSE),
                "Unrecognized value for testmode", fixed= TRUE)
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="genes", verbose = FALSE))
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="transc", verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="genes", verbose = FALSE, boots = "none"))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, testmode="transc", verbose = FALSE, boots = "none"))
   
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="GCSE", verbose = FALSE),
                "Unrecognized value for boots", fixed= TRUE)
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="genes", bootnum = 2, verbose = FALSE))
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="transc", bootnum = 2, verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="genes", bootnum = 2, verbose = FALSE, boots = "none"))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="transc", bootnum = 2, verbose = FALSE, boots = "none"))
   
   # Number of bootstraps.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, bootnum = -5, verbose = FALSE),
@@ -283,7 +283,7 @@ context("DTU Output")
 #==============================================================================
 test_that("The output structure is correct", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", boots="both", bootnum=2, verbose = FALSE)
+  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", bootnum=2, verbose = FALSE)
   
   expect_type(mydtu, "list")
   expect_equal(length(mydtu), 3)
@@ -352,7 +352,7 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["boot_max"]]))
   expect_true(is.numeric(mydtu$Transcripts[["boot_na"]]))
 
-  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", verbose = FALSE)  
+  mydtu <- call_DTU(sim$slo, sim$annot, "ONE", "TWO", verbose = FALSE, boots = "none")  
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Genes)))
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Transcripts)))
   
