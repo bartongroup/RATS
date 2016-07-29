@@ -18,7 +18,7 @@ vignette: >
 # Relative Abundance of Transcripts (RATs).
 
 This is an R package that builds on the functionality of [sleuth](http://pachterlab.github.io/sleuth/). It is 
-aimed at people analyzing **gene expression** and **transcript abundance**, particularly with **RNA-Seq** type 
+aimed at people analysing **gene expression** and **transcript abundance**, particularly with **RNA-Seq** type 
 of data in mind. This R Markdown vignette constitutes the main documentation for the `rats` package.
 
 `rats` aims to identify situations where genes with multiple transcript isoforms show differences in which of 
@@ -38,7 +38,7 @@ individually. This test is less sensitive, but can highlight which transcripts c
 two tests are carried out independently of each other, meaning that a positive result in one is not a pre-requisite 
 for running the other and, indeed, the two tests lead to conflicting verdicts for some genes.
 
-The **input format** recognized by `rats` is the output of [sleuth](http://pachterlab.github.io/sleuth/). See the 
+The **input format** recognised by `rats` is the output of [sleuth](http://pachterlab.github.io/sleuth/). See the 
 [introduction to sleuth](https://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
 to load the transcript abundance estimate data from [kallisto](https://pachterlab.github.io/kallisto/) into a sleuth 
 object, and see the [wasabi](https://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance 
@@ -279,7 +279,7 @@ print( summary(mydtu$Parameters) )
 ### Genes
 
 `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the gene level. For your convenience, the transcript-level DTU calls are also summarized here.
+results at the gene level. For your convenience, the transcript-level DTU calls are also summarised here.
 
 The G-test is used for gene-level calls. As the test is designed for comparison of a set of counts
 against a theoretical set of proportions and, instead, we have two sets of counts, the test is run using
@@ -424,7 +424,7 @@ backed up by all the bootstrap iterations.
 DTE and DGE by the appropriate tools, it is not possible to define proportions in that condition, so it is not possible 
 to call DTU for it.
 
-**Note:** The values shown in the bootstrap columns will differ in each run of the ame command, especially for few iterations,
+**Note:** The values shown in the bootstrap columns will differ in each run of the same command, especially for few iterations,
 due to random sampling.
 
 ```{r}
@@ -584,7 +584,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", correction = "bonferroni", v
 
 ### Input structure flexibility
 
-`rats` Needs to pull information from different fields of the sleuth object and the annotation. For flexibility you can 
+`rats` needs to pull information from different fields of the sleuth object and the annotation. For flexibility you can 
 change the names of these fields.
 
 ```{r}
@@ -700,6 +700,7 @@ myplot2
 myplot2 <- myplot + coord_trans(y="identity")
 myplot2
 ```
+
 
 
 
