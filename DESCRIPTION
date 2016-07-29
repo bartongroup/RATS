@@ -11,11 +11,13 @@ Maintainer: Kimon Froussios <k.froussios@dundee.ac.uk>
 Description: Given a Sleuth output object and a transcript-to-gene index of
     identifiers, this package identifies genes where differential transcript usage
     occurs.
-License: MIT + file LICENSE
+License: MIT + file LICENSE.txt
 VignetteBuilder: knitr
 Suggests:
     testthat,
-    knitr
+    knitr,
+    BiocStyle,
+    rmarkdown
 Imports:
     matrixStats,
     data.table,
