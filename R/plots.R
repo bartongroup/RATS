@@ -162,7 +162,8 @@ plot_overview <- function(dtuo, type="dpropVsig") {
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " - Prop in ", Parameters$cond_A, sep=""), 
              y ="P-value") +
-        scale_x_continuous(breaks = seq(-1, 1, 0.2))
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        scale_y_log10()
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts)  # I don't want the intermediate calculations to modify the dtu object.
       tmp[, abma := abs(Dprop)]
