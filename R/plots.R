@@ -123,14 +123,10 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 #' 
 #' @param dtuo A DTU object.
 #' @param type Type of plot. \itemize{
-#'   \item{"propVcount"}{Proportion in condition A VS. fragment count in condition A.}
-#'   \item{"dpropVcount"}{Change in proportion VS. fragment count in condition A.}
-#'   \item{"dpropVsig"}{Change in proportion VS. statistical significance.}
+#'   \item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
 #'   \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.}
-#'   \item{"transc-conf"}{Distribution of bootstrapped confidence of transcript-level DTU.}
-#'   \item{"gene-conf"}{Distribution of bootstrapped confidence of gene-level DTU.}
-#'   \item{"trconfVdtu"}{Transcript-level confidence threshold VS. number of DTU positive calls.}
-#'   \item{"gconfVdtu"}{Gene-level confidence threshold VS. number of DTU positive calls.}
+#'   \item{"transc_conf"}{Transcript-level confidence threshold VS. number of DTU positive calls.}
+#'   \item{"gene_conf"}{Gene-level confidence threshold VS. number of DTU positive calls.}
 #' }
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #' 
@@ -139,30 +135,13 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_overview <- function(dtuo, type="dpropVsig") {
+plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
-    if (type == "propVcount") {
-      result <- ggplot(data = Transcripts, aes(sumA, propA, color = DTU)) +
-        geom_point(alpha = 0.3) +
-        scale_x_continuous(trans = "log10") +
-        scale_colour_manual("DTU", values = c("blue", "red")) +
-        ggtitle("Relative abundances of transcripts") +
-        labs(y = paste("Proportion in ", Parameters$cond_A, sep=""), 
-             x = paste("Cumulative gene read-count in ", Parameters$cond_A, sep=""))
-    } else if (type == "dpropVcount") {
-      result <- ggplot(data = Transcripts, aes(sumA, Dprop, color = DTU)) +
-        geom_point(alpha = 0.3) +
-        scale_x_continuous(trans="log10") +
-        scale_y_continuous(breaks = seq(-1, 1, 0.2)) +
-        scale_colour_manual("DTU", values = c("blue", "red")) +
-        ggtitle("Abundance change VS gene expression")
-        labs(y = paste("prop( ", Parameters$cond_B, " ) - prop( ", Parameters$cond_A, " )", sep=""), 
-             x = paste("Cumulative gene read-count in ", Parameters$cond_A, sep=""))
-    } else if (type == "dpropVsig") {
+    if (any(type == c("volcano"))) {
       result <- ggplot(data = Transcripts, aes(Dprop, pval_corr, colour = DTU)) +
         geom_point(alpha = 0.3) +
         ggtitle("Proportion change VS significance") +
-        labs(x = paste("Prop in ", Parameters$cond_B, " - Prop in ", Parameters$cond_A, sep=""), 
+        labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
              y ="P-value") +
         scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
         scale_y_log10()
@@ -172,7 +151,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
       tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
       # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
       setkey(tmp, Group.1)
-      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU | Genes$DTU] ]
+      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
       # ok, plotting time
       result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
         geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
@@ -181,34 +160,20 @@ plot_overview <- function(dtuo, type="dpropVsig") {
         ggtitle("Distribution of largest proportion change per gene") +
         labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
              y ="Number of genes")
-    } else if (type == "transc-conf") {
-      result <- ggplot(data = Transcripts, aes(x=boot_freq, fill=DTU)) +
-        geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-        scale_y_continuous(trans="sqrt") +
-        ggtitle("Distribution of bootstrapped transcript-level DTU") +
-        labs(x="DTU call frequency in bootstraps", 
-             y="Number of transcripts")
-    } else if (type == "gene-conf") {
-      result <- ggplot(data = Genes, aes(x=boot_freq, fill=DTU)) +
-        geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-        scale_y_continuous(trans="sqrt") +
-        ggtitle("Distribution of bootstrapped gene-level DTU") +
-        labs(x="DTU call frequency in bootstraps", 
-             y="Number of genes")
-    } else if (type == "trconfVdtu") {
-      mydata <- data.frame("thresh"=seq(0, 1, 0.01), "count"= sapply(seq(0, 1, 0.01), function(x) {
-        sum(Transcripts[(boot_freq >= x), DTU], na.rm=TRUE) }))
+    } else if (type == "transc_conf") {
+      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
+                           "count"= sapply(seq(0, 1, 0.01), function(x) {
+                                           sum(Transcripts[(boot_freq >= x), DTU], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
         ggtitle("Confidence VS DTU transcripts") +
         labs(x="DTU call frequency threshold",
              y="Number of transcripts")
-    } else if (type == "gconfVdtu") {
-      mydata <- data.frame("thresh"=seq(0, 1, 0.01), "count"= sapply(seq(0, 1, 0.01), function(x) {
-        sum(Genes[(boot_freq >= x), DTU], na.rm=TRUE) }))
+    } else if (type == "gene_conf") {
+      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
+                           "count"= sapply(seq(0, 1, 0.01), function(x) {
+                                           sum(Genes[(boot_freq >= x), DTU], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
