@@ -256,8 +256,8 @@ test_that("The input checks work", {
   
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="GCSE", verbose = FALSE),
                "Unrecognized value for boots", fixed= TRUE)
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="genes", bootnum = 2, verbose = FALSE, boots = "none"))
-  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="transc", bootnum = 2, verbose = FALSE, boots = "none"))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="genes", bootnum = 2, verbose = FALSE))
+  expect_silent(call_DTU(sim$slo, sim$annot, name_A, name_B, boots="transc", bootnum = 2, verbose = FALSE))
   
   # Number of bootstraps.
   expect_error(call_DTU(sim$slo, sim$annot, name_A, name_B, bootnum = -5, verbose = FALSE),
