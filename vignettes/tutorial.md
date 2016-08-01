@@ -1,21 +1,6 @@
----
-title: "RATs Tutorial"
-author: "Kimon Froussios"
-date: "`r date()`"
-output: 
-  html_document: 
-    fig_caption: no
-    keep_md: yes
-    theme: readable
-    toc: yes
-abstract: >
-  The [rats](http://github.com/bartongroup/Rats) package is aimed at people analysing **gene expression** and **transcript abundance**, 
-  particularly with **RNA-Seq** type of data in mind. This R Markdown vignette constitutes the main 
-  documentation for the package.
-vignette: >
-  %\VignetteIndexEntry{RATs Tutorial}
-  %\VignetteEngine{knitr::rmarkdown}
----
+# RATs Tutorial
+Kimon Froussios  
+`r date()`  
 
 
 # Relative Abundance of Transcripts (RATs).
@@ -34,7 +19,8 @@ subset of those that show DTE. The figure below shows the relationship between D
 # Quick start.
 
 
-```{r eval=FALSE}
+
+```r
 # 1. Build from Github:
 install_github("bartongroup/rats")
 
@@ -91,7 +77,8 @@ Not available yet.
 
 Once installed, rats is imported into your r session as normal:
 
-```{r}
+
+```r
 library(rats)
 ```
 
@@ -110,7 +97,8 @@ To bypass the complexity of running these third-party tools in this tutorial, we
 with data simulators, intended to be used for testing the code. However, they are also convenient to use for showcasing
 how `rats` works.
 
-```{r}
+
+```r
 # Simulate some data.
 simdat <- sim_sleuth_data(cnames = c("foo", "bar")) # foo and bar are arbitrary names 
                                                     # to use as conditions.
@@ -125,16 +113,37 @@ this object. The real sleuth objects are quite large and very complex nested lis
 the essential parts relevant to calling DTU with `rats`. It has a couple of bootstraps of transcript 
 abundance estimates, for a handful of made-up genes, in two conditions.
 
-```{r}
+
+```r
 # This table is important. It assigns samples to variables. We can only compare data based on the 
 # variables and values listed in this table.
 # This one has two variables: "condition" and "batch". Yours may have more/fewer/different ones.
 # Notice that "foo" and "bar" (the names we gave to our simulated data) are under "condition".
 print( slo$sample_to_covariates )
+```
 
+```
+##   condition batch
+## 1       foo    ba
+## 2       bar    ba
+## 3       foo    bb
+## 4       bar    bb
+```
+
+```r
 # This is what the estimated counts tables look like. One such table per bootstrap, per sample.
 # head() shows the first few rows only.
 print( head(slo$kal[[1]]$bootstrap[[1]]) )
+```
+
+```
+##   target_id est_counts
+## 1       LC1          3
+## 2      NIA1        333
+## 3      NIA2        666
+## 4    1A1N-1         10
+## 5    1A1N-2         20
+## 6  1D1C:one          0
 ```
 
 * The other piece of data required by `rats` is a dataframe that matches transcript identifiers to gene identifiers.
@@ -142,10 +151,21 @@ For the simulated data we created, the generator also provided us with the respe
 When working with your own data, you will have to create and provide your own such table that is appropriate for
 the data contained in the sleuth object.
 
-```{r}
+
+```r
 # This is what the annotation table should look like.
 # head() shows the first few rows only.
 print( head(annot) )
+```
+
+```
+##   target_id parent_id
+## 1     NIB.1       NIB
+## 2    1A1N-2      1A1N
+## 3  1D1C:one      1D1C
+## 4  1D1C:two      1D1C
+## 5    1B1C.1      1B1C
+## 6    1B1C.2      1B1C
 ```
 
 
@@ -156,10 +176,256 @@ With our simulated sleuth object and annotation at hand (or your real data, if y
 we can now call DTU using `rats`. We will use default parameter values for everything. For details on
 what parameters are available and how to use them, refer to the "Advanced input options" section.
 
-```{r}
+
+```r
 # Find DTU between conditions "foo" and "bar" in the simulated data.
 # Be warned that the vignette format does not display progress bars properly!
 mydtu <- call_DTU(slo, annot, "foo", "bar")
+```
+
+```
+## Checking parameters...
+```
+
+```
+## Creating look-up structures...
+```
+
+```
+## Extracting estimated counts from bootstraps...
+```
+
+```
+## Calculating significances...
+```
+
+```
+## Filling in info and descriptive statistics...
+```
+
+```
+## Bootstrapping...
+```
+
+```
+## 
+  |                                                                       
+  |                                                                 |   0%
+  |                                                                       
+  |=                                                                |   1%
+  |                                                                       
+  |=                                                                |   2%
+  |                                                                       
+  |==                                                               |   3%
+  |                                                                       
+  |===                                                              |   4%
+  |                                                                       
+  |===                                                              |   5%
+  |                                                                       
+  |====                                                             |   6%
+  |                                                                       
+  |=====                                                            |   7%
+  |                                                                       
+  |=====                                                            |   8%
+  |                                                                       
+  |======                                                           |   9%
+  |                                                                       
+  |======                                                           |  10%
+  |                                                                       
+  |=======                                                          |  11%
+  |                                                                       
+  |========                                                         |  12%
+  |                                                                       
+  |========                                                         |  13%
+  |                                                                       
+  |=========                                                        |  14%
+  |                                                                       
+  |==========                                                       |  15%
+  |                                                                       
+  |==========                                                       |  16%
+  |                                                                       
+  |===========                                                      |  17%
+  |                                                                       
+  |============                                                     |  18%
+  |                                                                       
+  |============                                                     |  19%
+  |                                                                       
+  |=============                                                    |  20%
+  |                                                                       
+  |==============                                                   |  21%
+  |                                                                       
+  |==============                                                   |  22%
+  |                                                                       
+  |===============                                                  |  23%
+  |                                                                       
+  |================                                                 |  24%
+  |                                                                       
+  |================                                                 |  25%
+  |                                                                       
+  |=================                                                |  26%
+  |                                                                       
+  |==================                                               |  27%
+  |                                                                       
+  |==================                                               |  28%
+  |                                                                       
+  |===================                                              |  29%
+  |                                                                       
+  |====================                                             |  30%
+  |                                                                       
+  |====================                                             |  31%
+  |                                                                       
+  |=====================                                            |  32%
+  |                                                                       
+  |=====================                                            |  33%
+  |                                                                       
+  |======================                                           |  34%
+  |                                                                       
+  |=======================                                          |  35%
+  |                                                                       
+  |=======================                                          |  36%
+  |                                                                       
+  |========================                                         |  37%
+  |                                                                       
+  |=========================                                        |  38%
+  |                                                                       
+  |=========================                                        |  39%
+  |                                                                       
+  |==========================                                       |  40%
+  |                                                                       
+  |===========================                                      |  41%
+  |                                                                       
+  |===========================                                      |  42%
+  |                                                                       
+  |============================                                     |  43%
+  |                                                                       
+  |=============================                                    |  44%
+  |                                                                       
+  |=============================                                    |  45%
+  |                                                                       
+  |==============================                                   |  46%
+  |                                                                       
+  |===============================                                  |  47%
+  |                                                                       
+  |===============================                                  |  48%
+  |                                                                       
+  |================================                                 |  49%
+  |                                                                       
+  |================================                                 |  50%
+  |                                                                       
+  |=================================                                |  51%
+  |                                                                       
+  |==================================                               |  52%
+  |                                                                       
+  |==================================                               |  53%
+  |                                                                       
+  |===================================                              |  54%
+  |                                                                       
+  |====================================                             |  55%
+  |                                                                       
+  |====================================                             |  56%
+  |                                                                       
+  |=====================================                            |  57%
+  |                                                                       
+  |======================================                           |  58%
+  |                                                                       
+  |======================================                           |  59%
+  |                                                                       
+  |=======================================                          |  60%
+  |                                                                       
+  |========================================                         |  61%
+  |                                                                       
+  |========================================                         |  62%
+  |                                                                       
+  |=========================================                        |  63%
+  |                                                                       
+  |==========================================                       |  64%
+  |                                                                       
+  |==========================================                       |  65%
+  |                                                                       
+  |===========================================                      |  66%
+  |                                                                       
+  |============================================                     |  67%
+  |                                                                       
+  |============================================                     |  68%
+  |                                                                       
+  |=============================================                    |  69%
+  |                                                                       
+  |==============================================                   |  70%
+  |                                                                       
+  |==============================================                   |  71%
+  |                                                                       
+  |===============================================                  |  72%
+  |                                                                       
+  |===============================================                  |  73%
+  |                                                                       
+  |================================================                 |  74%
+  |                                                                       
+  |=================================================                |  75%
+  |                                                                       
+  |=================================================                |  76%
+  |                                                                       
+  |==================================================               |  77%
+  |                                                                       
+  |===================================================              |  78%
+  |                                                                       
+  |===================================================              |  79%
+  |                                                                       
+  |====================================================             |  80%
+  |                                                                       
+  |=====================================================            |  81%
+  |                                                                       
+  |=====================================================            |  82%
+  |                                                                       
+  |======================================================           |  83%
+  |                                                                       
+  |=======================================================          |  84%
+  |                                                                       
+  |=======================================================          |  85%
+  |                                                                       
+  |========================================================         |  86%
+  |                                                                       
+  |=========================================================        |  87%
+  |                                                                       
+  |=========================================================        |  88%
+  |                                                                       
+  |==========================================================       |  89%
+  |                                                                       
+  |==========================================================       |  90%
+  |                                                                       
+  |===========================================================      |  91%
+  |                                                                       
+  |============================================================     |  92%
+  |                                                                       
+  |============================================================     |  93%
+  |                                                                       
+  |=============================================================    |  94%
+  |                                                                       
+  |==============================================================   |  95%
+  |                                                                       
+  |==============================================================   |  96%
+  |                                                                       
+  |===============================================================  |  97%
+  |                                                                       
+  |================================================================ |  98%
+  |                                                                       
+  |================================================================ |  99%
+  |                                                                       
+  |=================================================================| 100%
+```
+
+```
+## Summarising bootstraps...
+```
+
+```
+## All done!
+```
+
+```
+##           DTU genes       non-DTU genes            NA genes 
+##                   2                   1                   7 
+##     DTU transcripts non-DTU transcripts      NA transcripts 
+##                   5                   5                  11
 ```
 
 `call_DTU()` takes 4 mandatory arguments: 
@@ -179,7 +445,8 @@ in the "condition" column of the `slo$sample_to_conditions` table. You can overr
 to compare by a different variable. For example, our simulated data has a variable called "batch", 
 with values "ba" and "bb":
 
-```{r eval=FALSE}
+
+```r
 # Comparing samples by a different variable.
 mydtu <- call_DTU(slo, annot, "ba", "bb", varname="batch")
 ```
@@ -187,7 +454,8 @@ mydtu <- call_DTU(slo, annot, "ba", "bb", varname="batch")
 By default, `rats` reports its progress and gives you the summary at the end. You can
 also choose to suppress all these reports:
 
-```{r}
+
+```r
 # This prints out nothing at all.
 mydtu <- call_DTU(slo, annot, "foo", "bar", verbose = FALSE)
 ```
@@ -208,23 +476,43 @@ The `dtu_summary()` function lists the number of genes and transcripts for each 
 * non-DTU:  No significant change.
 * NA:  Not applicable. Genes/transcripts with no/low fragment counts, or where the gene has only one transcript.
 
-```{r}
+
+```r
 # A really simple tally of the outcome.
 print( dtu_summary(mydtu) )
+```
+
+```
+##           DTU genes       non-DTU genes            NA genes 
+##                   2                   1                   7 
+##     DTU transcripts non-DTU transcripts      NA transcripts 
+##                   5                   5                  11
 ```
 
 The `get_dtu_ids()` function lists the actual identifiers per category, instead of the numbers in each category.
 The categories are the same as those in `dtu_summary()` above.
 
-```{r}
+
+```r
 # Gene and transcript IDs corresponding to the tally above.
 ids <- get_dtu_ids(mydtu)
 
 # Contents
 print( names(ids) )
+```
 
+```
+## [1] "dtu-genes"   "dtu-transc"  "ndtu-genes"  "ndtu-transc" "na-genes"   
+## [6] "na-transc"
+```
+
+```r
 # DTU positive genes.
 print( ids[["dtu-genes"]] )
+```
+
+```
+## [1] "CC"   "MIX6"
 ```
 
 
@@ -234,9 +522,16 @@ print( ids[["dtu-genes"]] )
 
 `Parameters` is a list that contains information about the data and the settings.
 
-```{r}
+
+```r
 # Parameter list's elements.
 print( names(mydtu$Parameters) )
+```
+
+```
+##  [1] "var_name"     "cond_A"       "cond_B"       "num_replic_A"
+##  [5] "num_replic_B" "p_thresh"     "count_thresh" "dprop_thresh"
+##  [9] "tests"        "bootstrap"    "bootnum"
 ```
 
 1. `var_name` - The name of the variable by which the samples were grouped. This is a column name in the `slo$sample_to_covariates` table.
@@ -261,9 +556,19 @@ marked with the "AB" and "BA" suffixes. Due to the nature of the test, it is not
 the change to specific transcripts within the gene, but in return the test has a lower detection threshold and 
 will pick up smaller changes.
 
-```{r}
+
+```r
 # Genes table's fields.
 print( names(mydtu$Genes) )
+```
+
+```
+##  [1] "parent_id"     "DTU"           "transc_DTU"    "known_transc" 
+##  [5] "detect_transc" "elig_transc"   "elig"          "elig_fx"      
+##  [9] "pvalAB"        "pvalBA"        "pvalAB_corr"   "pvalBA_corr"  
+## [13] "sig"           "boot_freq"     "boot_meanAB"   "boot_meanBA"  
+## [17] "boot_stdevAB"  "boot_stdevBA"  "boot_minAB"    "boot_minBA"   
+## [21] "boot_maxAB"    "boot_maxBA"    "boot_na"
 ```
 
 1. `parent_id` - The identification name/code of the gene.
@@ -303,9 +608,19 @@ results at the transcript level. For your convenience, the gene-level DTU calls 
 The proportions test is used for the transcript-level calls. Changes can be attributed to specific transcripts,
 but, as it uses less information, the test has a higher detection threshold and requires larger changes than the gene-level test.
 
-```{r}
+
+```r
 # Transcripts table's fields.
 print( names(mydtu$Transcripts) )
+```
+
+```
+##  [1] "target_id"  "parent_id"  "DTU"        "gene_DTU"   "meanA"     
+##  [6] "meanB"      "stdevA"     "stdevB"     "sumA"       "sumB"      
+## [11] "totalA"     "totalB"     "elig_xp"    "elig"       "propA"     
+## [16] "propB"      "Dprop"      "elig_fx"    "pval"       "pval_corr" 
+## [21] "sig"        "boot_freq"  "boot_mean"  "boot_stdev" "boot_min"  
+## [26] "boot_max"   "boot_na"
 ```
 
 1. `target_id` and `parent_id` - The identification name/code of the transcript and gene, respectively.
@@ -347,28 +662,112 @@ carefully.
 
 Now that you know what all the fields are, let's see how they apply to our simulated data.
 
-```{r}
+
+```r
 # Let's check the info and settings.
 print( mydtu$Parameters )
 ```
 
-* We're comparing samples by "`r mydtu$Parameters[["var_name"]]`", and the two values of that are "`r mydtu$Parameters[["cond_A"]]`" 
-(with `r mydtu$Parameters[["num_replic_A"]]` samples) and "`r mydtu$Parameters[["cond_B"]]`" (with `r mydtu$Parameters[["num_replic_B"]]` 
+```
+## $var_name
+## [1] "condition"
+## 
+## $cond_A
+## [1] "foo"
+## 
+## $cond_B
+## [1] "bar"
+## 
+## $num_replic_A
+## [1] 2
+## 
+## $num_replic_B
+## [1] 2
+## 
+## $p_thresh
+## [1] 0.05
+## 
+## $count_thresh
+## [1] 5
+## 
+## $dprop_thresh
+## [1] 0.1
+## 
+## $tests
+## [1] "both"
+## 
+## $bootstrap
+## [1] "both"
+## 
+## $bootnum
+## [1] 100
+```
+
+* We're comparing samples by "condition", and the two values of that are "foo" 
+(with 2 samples) and "bar" (with 2 
 samples). 
-* The significance threshold is set to `r mydtu$Parameters[["p_thresh"]]`, the minimum count per sample is set to 
-`r mydtu$Parameters[["count_thresh"]]` fragments and the proportion has to change by at least `r mydtu$Parameters[["dprop_thresh"]]` 
+* The significance threshold is set to 0.05, the minimum count per sample is set to 
+5 fragments and the proportion has to change by at least 0.1 
 to be considered biologically significant.
-* Are we doing gene-level or transcript-level tests? `r mydtu$Parameters[["tests"]]`
-* Are we bootstrapping the gene-level or transcript-level tests? `r mydtu$Parameters[["bootstrap"]]`. And we're 
-doing `r mydtu$Parameters[["bootnum"]]` iterations.
+* Are we doing gene-level or transcript-level tests? both
+* Are we bootstrapping the gene-level or transcript-level tests? both. And we're 
+doing 100 iterations.
 
 
-```{r}
+
+```r
 # Gene-level calls.
 print( mydtu$Genes )
 ```
 
-There are `r dim(mydtu$Genes)[1]` genes in the annotation used. Here are some possible scenarios:
+```
+##     parent_id   DTU transc_DTU known_transc detect_transc elig_transc
+##  1:      1A1N    NA         NA            1             1           0
+##  2:      1B1C    NA         NA            2             1           0
+##  3:      1D1C    NA         NA            2             1           0
+##  4:      ALLA    NA         NA            1             1           0
+##  5:      ALLB    NA         NA            2             2           0
+##  6:        CC  TRUE       TRUE            2             2           2
+##  7:        LC    NA         NA            2             2           1
+##  8:      MIX6  TRUE       TRUE            6             5           5
+##  9:       NIB    NA         NA            1             0           0
+## 10:        NN FALSE      FALSE            2             2           2
+##      elig elig_fx      pvalAB       pvalBA pvalAB_corr  pvalBA_corr   sig
+##  1: FALSE   FALSE          NA           NA          NA           NA    NA
+##  2: FALSE   FALSE          NA           NA          NA           NA    NA
+##  3: FALSE   FALSE          NA           NA          NA           NA    NA
+##  4: FALSE      NA          NA           NA          NA           NA    NA
+##  5: FALSE      NA          NA           NA          NA           NA    NA
+##  6:  TRUE    TRUE 0.000789622 0.0001903606 0.001184433 0.0002855408  TRUE
+##  7: FALSE    TRUE          NA           NA          NA           NA    NA
+##  8:  TRUE    TRUE 0.000000000 0.0000000000 0.000000000 0.0000000000  TRUE
+##  9: FALSE      NA          NA           NA          NA           NA    NA
+## 10:  TRUE   FALSE 0.823492782 0.7570669089 0.823492782 0.7570669089 FALSE
+##     boot_freq boot_meanAB  boot_meanBA boot_stdevAB boot_stdevBA
+##  1:        NA          NA           NA           NA           NA
+##  2:        NA          NA           NA           NA           NA
+##  3:        NA          NA           NA           NA           NA
+##  4:        NA          NA           NA           NA           NA
+##  5:        NA          NA           NA           NA           NA
+##  6:      0.76 0.003177808 0.0009991266  0.004127217  0.001406113
+##  7:        NA          NA           NA           NA           NA
+##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
+##  9:        NA          NA           NA           NA           NA
+## 10:      0.00 0.782849259 0.7023857735  0.145105997  0.202025221
+##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
+##  1:           NA           NA         NA         NA      NA
+##  2:           NA           NA         NA         NA      NA
+##  3:           NA           NA         NA         NA      NA
+##  4:           NA           NA         NA         NA      NA
+##  5:           NA           NA         NA         NA      NA
+##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
+##  7:           NA           NA         NA         NA      NA
+##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
+##  9:           NA           NA         NA         NA      NA
+## 10: 5.143483e-01 3.311102e-01  0.9915083 0.98871978       0
+```
+
+There are 10 genes in the annotation used. Here are some possible scenarios:
 
 * `1A1N` has only one known transcript and is thus not eligible. If you look in `slo$kal[[1]]$bootstrap[[1]]`, there 
 are actually two recorded transcripts for this gene, but only one of them is recorded in the annotation. `rats` uses 
@@ -400,9 +799,128 @@ to call DTU for it.
 **Note:** The values shown in the bootstrap columns will differ in each run of the same command, especially for few iterations,
 due to random sampling.
 
-```{r}
+
+```r
 # Transcript-level calls.
 print( mydtu$Transcripts )
+```
+
+```
+##     target_id parent_id   DTU gene_DTU      meanA      meanB    stdevA
+##  1:    1A1N-2      1A1N    NA       NA  20.083333  22.250000 0.5892557
+##  2:    1B1C.1      1B1C    NA       NA   0.000000   0.000000 0.0000000
+##  3:    1B1C.2      1B1C    NA       NA  52.916667 153.333333 0.8249579
+##  4:  1D1C:one      1D1C    NA       NA   0.000000   0.000000 0.0000000
+##  5:  1D1C:two      1D1C    NA       NA  77.000000  23.333333 1.4142136
+##  6:     ALLA1      ALLA    NA       NA  47.500000   0.000000 3.5355339
+##  7:     ALLB1      ALLB    NA       NA   0.000000 120.000000 0.0000000
+##  8:     ALLB2      ALLB    NA       NA   0.000000 217.500000 0.0000000
+##  9:      CC_a        CC  TRUE     TRUE  22.500000  19.250000 2.1213203
+## 10:      CC_b        CC  TRUE     TRUE  53.916667  86.166667 5.0675986
+## 11:       LC1        LC    NA       NA   2.583333   2.583333 1.2963624
+## 12:       LC2        LC FALSE       NA   4.416667   8.333333 0.1178511
+## 13:   MIX6.c1      MIX6  TRUE     TRUE 123.333333 322.583333 0.9428090
+## 14:   MIX6.c2      MIX6  TRUE     TRUE 321.250000 126.333333 1.0606602
+## 15:   MIX6.c3      MIX6 FALSE     TRUE   0.000000  43.500000 0.0000000
+## 16:   MIX6.c4      MIX6  TRUE     TRUE 101.500000   0.000000 0.7071068
+## 17:    MIX6.d      MIX6    NA     TRUE   0.000000   0.000000 0.0000000
+## 18:   MIX6.nc      MIX6 FALSE     TRUE  31.583333  32.250000 0.1178511
+## 19:     NIB.1       NIB    NA       NA   0.000000   0.000000 0.0000000
+## 20:       1NN        NN FALSE    FALSE   9.250000  18.416667 1.0606602
+## 21:       2NN        NN FALSE    FALSE  29.000000  54.416667 0.0000000
+##     target_id parent_id   DTU gene_DTU      meanA      meanB    stdevA
+##         stdevB       sumA       sumB     totalA     totalB elig_xp  elig
+##  1:  0.3535534  40.166667  44.500000   40.16667   44.50000    TRUE FALSE
+##  2:  0.0000000   0.000000   0.000000  105.83333  306.66667   FALSE FALSE
+##  3:  2.3570226 105.833333 306.666667  105.83333  306.66667    TRUE FALSE
+##  4:  0.0000000   0.000000   0.000000  154.00000   46.66667   FALSE FALSE
+##  5:  0.9428090 154.000000  46.666667  154.00000   46.66667    TRUE FALSE
+##  6:  0.0000000  95.000000   0.000000   95.00000    0.00000    TRUE FALSE
+##  7: 14.1421356   0.000000 240.000000    0.00000  675.00000    TRUE FALSE
+##  8: 10.6066017   0.000000 435.000000    0.00000  675.00000    TRUE FALSE
+##  9:  2.4748737  45.000000  38.500000  152.83333  210.83333    TRUE  TRUE
+## 10:  1.6499158 107.833333 172.333333  152.83333  210.83333    TRUE  TRUE
+## 11:  1.2963624   5.166667   5.166667   14.00000   21.83333   FALSE FALSE
+## 12:  0.4714045   8.833333  16.666667   14.00000   21.83333    TRUE  TRUE
+## 13:  0.1178511 246.666667 645.166667 1155.33333 1049.33333    TRUE  TRUE
+## 14:  5.1854497 642.500000 252.666667 1155.33333 1049.33333    TRUE  TRUE
+## 15:  2.1213203   0.000000  87.000000 1155.33333 1049.33333    TRUE  TRUE
+## 16:  0.0000000 203.000000   0.000000 1155.33333 1049.33333    TRUE  TRUE
+## 17:  0.0000000   0.000000   0.000000 1155.33333 1049.33333   FALSE FALSE
+## 18:  1.0606602  63.166667  64.500000 1155.33333 1049.33333    TRUE  TRUE
+## 19:  0.0000000   0.000000   0.000000    0.00000    0.00000   FALSE FALSE
+## 20:  1.2963624  18.500000  36.833333   76.50000  145.66667    TRUE  TRUE
+## 21:  2.7105760  58.000000 108.833333   76.50000  145.66667    TRUE  TRUE
+##         stdevB       sumA       sumB     totalA     totalB elig_xp  elig
+##          propA      propB        Dprop elig_fx         pval    pval_corr
+##  1: 1.00000000 1.00000000  0.000000000   FALSE           NA           NA
+##  2: 0.00000000 0.00000000  0.000000000   FALSE           NA           NA
+##  3: 1.00000000 1.00000000  0.000000000   FALSE           NA           NA
+##  4: 0.00000000 0.00000000  0.000000000   FALSE           NA           NA
+##  5: 1.00000000 1.00000000  0.000000000   FALSE           NA           NA
+##  6: 1.00000000         NA           NA      NA           NA           NA
+##  7:         NA 0.35555556           NA      NA           NA           NA
+##  8:         NA 0.64444444           NA      NA           NA           NA
+##  9: 0.29443839 0.18260870 -0.111829690    TRUE 1.747494e-02 2.912489e-02
+## 10: 0.70556161 0.81739130  0.111829690    TRUE 1.747494e-02 2.912489e-02
+## 11: 0.36904762 0.23664122 -0.132406398    TRUE           NA           NA
+## 12: 0.63095238 0.76335878  0.132406398    TRUE 6.342494e-01 7.928117e-01
+## 13: 0.21350260 0.61483482  0.401332219    TRUE 1.374454e-81 1.374454e-80
+## 14: 0.55611656 0.24078780 -0.315328759    TRUE 5.975622e-51 2.987811e-50
+## 15: 0.00000000 0.08290978  0.082909784   FALSE 5.255658e-23 1.313915e-22
+## 16: 0.17570687 0.00000000 -0.175706867    TRUE 1.278154e-45 4.260512e-45
+## 17: 0.00000000 0.00000000  0.000000000   FALSE           NA           NA
+## 18: 0.05467398 0.06146760  0.006793623   FALSE 5.546698e-01 7.923854e-01
+## 19:         NA         NA           NA      NA           NA           NA
+## 20: 0.24183007 0.25286041  0.011030347   FALSE 9.861254e-01 9.861254e-01
+## 21: 0.75816993 0.74713959 -0.011030347   FALSE 9.861254e-01 9.861254e-01
+##          propA      propB        Dprop elig_fx         pval    pval_corr
+##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
+##  1:    NA        NA           NA           NA           NA           NA
+##  2:    NA        NA           NA           NA           NA           NA
+##  3:    NA        NA           NA           NA           NA           NA
+##  4:    NA        NA           NA           NA           NA           NA
+##  5:    NA        NA           NA           NA           NA           NA
+##  6:    NA        NA           NA           NA           NA           NA
+##  7:    NA        NA           NA           NA           NA           NA
+##  8:    NA        NA           NA           NA           NA           NA
+##  9:  TRUE      0.64 3.997935e-02 3.126118e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.64 3.997935e-02 3.126118e-02 6.605471e-03 1.095659e-01
+## 11:    NA        NA           NA           NA           NA           NA
+## 12: FALSE      0.06 6.240763e-01 3.370807e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 1.732935e-78 3.835365e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 5.307645e-49 1.378978e-48 6.413781e-53 6.559376e-48
+## 15:  TRUE      0.00 2.048780e-21 2.908048e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.242421e-44 1.753574e-44 1.516132e-46 7.296158e-44
+## 17:    NA        NA           NA           NA           NA           NA
+## 18: FALSE      0.00 7.066969e-01 1.718905e-01 3.567434e-01 9.643718e-01
+## 19:    NA        NA           NA           NA           NA           NA
+## 20: FALSE      0.00 9.475336e-01 7.373840e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.475336e-01 7.373840e-02 7.948790e-01 1.000000e+00
+##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
+##     boot_na
+##  1:      NA
+##  2:      NA
+##  3:      NA
+##  4:      NA
+##  5:      NA
+##  6:      NA
+##  7:      NA
+##  8:      NA
+##  9:       0
+## 10:       0
+## 11:      NA
+## 12:       0
+## 13:       0
+## 14:       0
+## 15:       0
+## 16:       0
+## 17:      NA
+## 18:       0
+## 19:      NA
+## 20:       0
+## 21:       0
+##     boot_na
 ```
 
 Several mentions of this table were made during analysis of the `Genes` table. Here are some possible scenarios:
@@ -435,18 +953,24 @@ The dtu object's tables provide a host of information. The `rats` package also i
 A table full of numbers may be heaven to some and hell to others. This function allows you to visualise what's
 going on in any particular gene. 
 
-```{r}
+
+```r
 # Proportion changes for all the transcripts of the "MIX6" gene.
 plot_gene(mydtu, "MIX6", vals="proportions")
 ```
 
+![](tutorial_files/figure-html/unnamed-chunk-17-1.png)
+
 A variation of the above is to plot the mean fragment counts instead of the proportions:
 
-```{r}
+
+```r
 # Absolute expression changes for all the transcripts of the "MIX6" gene.
 # The ERROR BARS represent 2 standard deviations from the mean count across replicates.
 plot_gene(mydtu, "MIX6", vals="counts")
 ```
+
+![](tutorial_files/figure-html/unnamed-chunk-18-1.png)
 
 The two versions of the plot are best interpreted together, as no expression normalisation is carried out by `rats`.
 
@@ -463,10 +987,17 @@ Possibly the most common plot in differential expression is the volcano plot, wh
 the statistical significance. As it is difficult to define a single p-value and a single effect size at the gene level,
 the volcano can only be plotted at the transcript level.
 
-```{r}
+
+```r
 # Proportion change VS significance.
 plot_overview(mydtu, type="volcano")
 ```
+
+```
+## Warning: Removed 11 rows containing missing values (geom_point).
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-19-1.png)
 
 ![Dprop VS sig](./fig/volcano.jpg)
 
@@ -474,10 +1005,13 @@ The next command plots the largest change in proportion seen within each gene, a
 such change. This is a way to inspect what effect sizes are present in the data. As an additional layer of information,
 they are colour-coded by their DTU call.
 
-```{r}
+
+```r
 # Distribution of maximum proportion change.
 plot_overview(mydtu, type="maxdprop")
 ```
+
+![](tutorial_files/figure-html/unnamed-chunk-20-1.png)
 
 ![Max Dprop](./fig/maxdprop.jpg)
 
@@ -485,17 +1019,23 @@ As mentioned before, bootstrapping provides a measure of confidence. This confid
 for the DTU calls. It is therefore useful to plot its potential influence. The following two plots show how
 different confidence thresholds would affect the number of DTU positive calls.
 
-```{r}
+
+```r
 # Transcript-level confidence threshold VS. number of DTU positive calls.
 plot_overview(mydtu, type="transc_conf")
 ```
 
+![](tutorial_files/figure-html/unnamed-chunk-21-1.png)
+
 ![Transc Conf VS DTU](./fig/transc_conf.jpg)
 
-```{r}
+
+```r
 # Gene-level confidence threshold VS. number of DTU positive calls.
 plot_overview(mydtu, type="gene_conf")
 ```
+
+![](tutorial_files/figure-html/unnamed-chunk-22-1.png)
 
 ![Gene Conf VS DTU](./fig/gene_conf.jpg)
 
@@ -506,16 +1046,39 @@ You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggp
 Other `ggplot2` customisations include the axis tickmarks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
 documentation for more help on these.
 
-```{r}
+
+```r
 library(ggplot2)
 
 myplot <- plot_overview(mydtu, "volcano")
 myplot  # display
+```
 
+```
+## Warning: Removed 11 rows containing missing values (geom_point).
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-23-1.png)
+
+```r
 # Change scale of y axis to linear. 
 myplot2 <- myplot + scale_y_continuous(trans = "identity")
+```
+
+```
+## Scale for 'y' is already present. Adding another scale for 'y', which
+## will replace the existing scale.
+```
+
+```r
 myplot2
 ```
+
+```
+## Warning: Removed 11 rows containing missing values (geom_point).
+```
+
+![](tutorial_files/figure-html/unnamed-chunk-23-2.png)
 
 
 
@@ -526,7 +1089,8 @@ myplot2
 
 Three thresholds can be set in `rats`.
 
-```{r eval=FALSE}
+
+```r
 # Calling DTU with custom thresholds.
 mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", p_thresh = 0.01, 
                   count_thresh = 10, dprop_thresh = 0.25)
@@ -551,7 +1115,8 @@ So far, we've mostly compared conditions (`slo$sample_to_covariates[["condition"
 variables as well. As we saw in a previous example, our simulated data contains a variable called `batch`, with values
 "ba" and "bb", according to the `slo$sample_to_covariates` table.
 
-```{r}
+
+```r
 # Compare by a different variable. In this case "batch".
 mydtu <- call_DTU(slo, annot, "ba", "bb", varname= "batch", verbose = FALSE)
 ```
@@ -576,7 +1141,8 @@ computation time, so the option is provided to allow flexibility for special use
 2. `bootnum` - Generally, greater is better but it takes longer. There is also an upper limit that depends on the size of 
 your annotation. This is due to R's limit on the maximum size of matrices.
 
-```{r eval=FALSE}
+
+```r
 # Bootstrap everything. (default)
 mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 100)
 
@@ -598,7 +1164,8 @@ mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "none")
 together, but the option to skip either is provided for special use cases. 
 The fields of the skipped test will be filled with `NA`.
 
-```{r eval=FALSE}
+
+```r
 # Transcripts only.
 mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="transc")
 # Genes only.
@@ -612,7 +1179,8 @@ Testing multiple null hypotheses increases the chance of one being falsely rejec
 desired level, the raw p-values must be adjusted. The default adjustment 
 method is `BH` (Benjamini-Hochberg). A full list of options is listed in R's `p.adjust.methods`.
 
-```{r eval=FALSE}
+
+```r
 # Bonferroni correction.
 mydtu <- call_DTU(slo, annot, "foo", "bar", correction = "bonferroni")
 ```
@@ -623,18 +1191,54 @@ mydtu <- call_DTU(slo, annot, "foo", "bar", correction = "bonferroni")
 `rats` needs to pull information from different fields of the sleuth object and the annotation. For flexibility you can 
 change the names of these fields.
 
-```{r}
+
+```r
 # Lets create some input with custom field names. The data is exactly the same as before.
 sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), COUNTS_COL="the-counts", 
                        TARGET_COL="transcript", PARENT_COL="gene", BS_TARGET_COL = "trscr")
 print( sim$slo$sample_to_covariates )
+```
+
+```
+##      mouse batch
+## 1 Splinter    ba
+## 2   Mickey    ba
+## 3 Splinter    bb
+## 4   Mickey    bb
+```
+
+```r
 print( head(sim$slo$kal[[1]]$bootstrap[[1]]) )
+```
+
+```
+##      trscr the-counts
+## 1      LC1          3
+## 2     NIA1        333
+## 3     NIA2        666
+## 4   1A1N-1         10
+## 5   1A1N-2         20
+## 6 1D1C:one          0
+```
+
+```r
 print( head(sim$annot) )
+```
+
+```
+##   transcript gene
+## 1      NIB.1  NIB
+## 2     1A1N-2 1A1N
+## 3   1D1C:one 1D1C
+## 4   1D1C:two 1D1C
+## 5     1B1C.1 1B1C
+## 6     1B1C.2 1B1C
 ```
 
 With the field names changed, we need to tell `rats` where to find the data:
 
-```{r}
+
+```r
 # Call DTU on data with custom field names.
 mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse", 
                   TARGET_COL="transcript", PARENT_COL="gene", 
@@ -643,6 +1247,15 @@ mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse",
 # The output structure will always use the same field names, regardless of 
 # what the input field names are.
 print( names(mydtu$Transcripts) )
+```
+
+```
+##  [1] "target_id"  "parent_id"  "DTU"        "gene_DTU"   "meanA"     
+##  [6] "meanB"      "stdevA"     "stdevB"     "sumA"       "sumB"      
+## [11] "totalA"     "totalB"     "elig_xp"    "elig"       "propA"     
+## [16] "propB"      "Dprop"      "elig_fx"    "pval"       "pval_corr" 
+## [21] "sig"        "boot_freq"  "boot_mean"  "boot_stdev" "boot_min"  
+## [26] "boot_max"   "boot_na"
 ```
 
 * `varname` - The field name in `slo$sample_to_covariates` where the desired condition names are listed.

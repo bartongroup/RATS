@@ -4,7 +4,7 @@
 \alias{plot_overview}
 \title{Plot DTU results from the proportions test.}
 \usage{
-plot_overview(dtuo, type = "gene_volcano")
+plot_overview(dtuo, type = "volcano")
 }
 \arguments{
 \item{dtuo}{A DTU object.}
