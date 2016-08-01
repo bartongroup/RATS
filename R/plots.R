@@ -97,21 +97,23 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
     
     if (style == "lines") {
       # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
-      return(
-        ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
+      result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
           geom_freqpoly(aes(group= condition, colour= condition), stat= "identity", size= 1.5) +
-          geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax, colour= condition), width= 0.5, size= 0.5) +
-          labs(title= pid, y= vals) )
+          labs(title= pid, y= vals)
+      if (vals == "counts")
+          result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax, colour= condition), width= 0.5, size= 0.5)
     } else if (style == "bars"){
       # Display as dodged bar chart.
-      return(
-        ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
+      result <- ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
           geom_bar(aes(group= condition, colour= condition), stat= "identity", position= position_dodge(0.45), width= 0.5) +
-          geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.45), width= 0.5, size= 0.5) +
-          labs(title= pid, y= vals) )
+          labs(title= pid, y= vals)
+      if (vals == "counts")
+        result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.45), width= 0.3, size= 0.5)
     } else {
       stop("Invalid plot style.")
     }
+    
+    return(result)
   })
 }
 
@@ -177,7 +179,7 @@ plot_overview <- function(dtuo, type="dpropVsig") {
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
         scale_y_continuous(trans="sqrt") +
         ggtitle("Distribution of largest proportion change per gene") +
-        labs(x = paste("abs( Prop in ", Parameters$cond_B, " - Prop in ", Parameters$cond_A, " )", sep=""), 
+        labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
              y ="Number of genes")
     } else if (type == "transc-conf") {
       result <- ggplot(data = Transcripts, aes(x=boot_freq, fill=DTU)) +
