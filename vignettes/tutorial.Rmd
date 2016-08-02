@@ -468,6 +468,7 @@ the volcano can only be plotted at the transcript level.
 plot_overview(mydtu, type="volcano")
 ```
 
+And this is what it looks like on a larger dataset:
 ![Dprop VS sig](./fig/volcano.jpg)
 
 The next command plots the largest change in proportion seen within each gene, against the number of genes showing 
@@ -479,6 +480,7 @@ they are colour-coded by their DTU call.
 plot_overview(mydtu, type="maxdprop")
 ```
 
+And this is what it looks like on a larger dataset:
 ![Max Dprop](./fig/maxdprop.jpg)
 
 As mentioned before, bootstrapping provides a measure of confidence. This confidence in not taken into account
@@ -490,6 +492,7 @@ different confidence thresholds would affect the number of DTU positive calls.
 plot_overview(mydtu, type="transc_conf")
 ```
 
+And this is what it looks like on a larger dataset:
 ![Transc Conf VS DTU](./fig/transc_conf.jpg)
 
 ```{r}
@@ -497,6 +500,7 @@ plot_overview(mydtu, type="transc_conf")
 plot_overview(mydtu, type="gene_conf")
 ```
 
+And this is what it looks like on a larger dataset:
 ![Gene Conf VS DTU](./fig/gene_conf.jpg)
 
 

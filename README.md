@@ -28,7 +28,17 @@ available from CRAN.
 
 ## How to use rats
 
-#### Dependencies
+
+A full **tutorial vignette** is included in the package, explaining the input, output, commands and options. 
+If you install the package from one of the binaries or through Bioconductor, the vignette should then also be 
+available locally by calling:
+
+`browseVignettes("rats")`
+
+If all else fails, you can view a static version of the tutorial [in the wiki](https://github.com/bartongroup/Rats/wiki).
+
+
+### Dependencies
 
 The package depends on a few additional CRAN packages, which you may need to install first, 
 if they are not present already or if they are not installed automatically while installing `rats`.
@@ -36,30 +46,43 @@ if they are not present already or if they are not installed automatically while
 `install.packages(c("data.table", "matrixStats", "ggplot2"))`
 
 
-#### Obtaining rats
+### Installation
 
-**from Github:** `rats` is hosted on GitHub [here](https://github.com/bartongroup/Rats) and can be
-installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+Some **precompiled binary releases** are available from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Download the appropriate binary for your system and then install it using:
+
+`install.packages(<pathtopackage>, repos = NULL)` or
+`install.packages(<pathtopackage>, repos = NULL, type="source")`
+
+You can also install the **latest developmental version** directly from Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
 `devtools::install_github("bartongroup/rats")`
 
+Eventually, we aim to make `rats` available through **Bioconductor** as well.
 
-#### Calling Differential Transcript Usage with rats
 
-A full tutorial vignette is included in the package, explaining the input, output, commands and options. It can be accessed with the
-command below. 
+### Differential Transcript Usage
 
-`browseVignettes("rats")`
+A typical command to call DTU looks like this:
 
-Alternatively, it can be downloaded from the `vignettes` [directory in the GitHub repository](https://github.com/bartongroup/Rats/tree/master/vignettes)
-or the downloaded dev.zip archive.
+`results <- call_DTU(my_sleuth_object, my_identifiers_table, "Condition-1", "Condition-2")`
+
+Mandatory parameters:
+
+* a sleuth object
+* a dataframe matching unique transcript identifiers to gene identifiers
+* the names of two conditions recorded in the sleuth object
+
+For more details on the parameters, please refer to the tutorial vignette.
 
 
 ## Contact information
 
-The rats R package was developed by members of [The Barton Group] (http://www.compbio.dundee.ac.uk) at [The University of Dundee] (http://www.dundee.ac.uk)
+The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
 by Dr. Kimon Froussios, Dr. Kira Mourao and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
 the support forum before posting a new issue, in case your question is already answered there.
+
+Enjoy!
