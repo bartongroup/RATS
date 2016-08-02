@@ -56,21 +56,32 @@ The input and output structures and the command options are discussed in more de
 
 # Installation and loading
 
-### Build latest (developmental) version from Github
+### Install latest release
 
-`rats` is hosted on GitHub [here](https://github.com/bartongroup/Rats) and can be
-installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+#### from Github
+
+Available in source form from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Download the latest release and then install it using:
+
+`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
+
+You can also install a release directly from the repository like so (just edit the release details):
+
+`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1-alpha.1/rats_0.1.tar.gz", repos = NULL, type="source")`
+
+
+#### through Bioconductor
+
+Not available yet.
+
+
+### Install latest developmental version from Github
+
+The most current `rats` can be installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
 `devtools::install_github("bartongroup/rats")`
 
-### Install latest release from binaries on Github.
-
-To be confirmed.
-
-
-### Install through Bioconductor
-
-Not available yet.
+This way might not install the vignettes and the version may also contain more bugs.
 
 
 ### Loading
@@ -743,17 +754,17 @@ print( mydtu$Genes )
 ##  8:  TRUE    TRUE 0.000000000 0.0000000000 0.000000000 0.0000000000  TRUE
 ##  9: FALSE      NA          NA           NA          NA           NA    NA
 ## 10:  TRUE   FALSE 0.823492782 0.7570669089 0.823492782 0.7570669089 FALSE
-##     boot_freq boot_meanAB boot_meanBA boot_stdevAB boot_stdevBA
-##  1:        NA          NA          NA           NA           NA
-##  2:        NA          NA          NA           NA           NA
-##  3:        NA          NA          NA           NA           NA
-##  4:        NA          NA          NA           NA           NA
-##  5:        NA          NA          NA           NA           NA
-##  6:      0.75 0.003252895 0.001059114  0.004159613   0.00140082
-##  7:        NA          NA          NA           NA           NA
-##  8:      1.00 0.000000000 0.000000000  0.000000000   0.00000000
-##  9:        NA          NA          NA           NA           NA
-## 10:      0.00 0.786452429 0.710301268  0.135633051   0.18494121
+##     boot_freq boot_meanAB  boot_meanBA boot_stdevAB boot_stdevBA
+##  1:        NA          NA           NA           NA           NA
+##  2:        NA          NA           NA           NA           NA
+##  3:        NA          NA           NA           NA           NA
+##  4:        NA          NA           NA           NA           NA
+##  5:        NA          NA           NA           NA           NA
+##  6:      0.78 0.002832138 0.0008932865  0.003955343  0.001352966
+##  7:        NA          NA           NA           NA           NA
+##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
+##  9:        NA          NA           NA           NA           NA
+## 10:      0.00 0.787081394 0.7065362102  0.143215212  0.200313461
 ##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
 ##  1:           NA           NA         NA         NA      NA
 ##  2:           NA           NA         NA         NA      NA
@@ -764,7 +775,7 @@ print( mydtu$Genes )
 ##  7:           NA           NA         NA         NA      NA
 ##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
 ##  9:           NA           NA         NA         NA      NA
-## 10: 5.143483e-01 3.311102e-01  0.9790171 0.97269796       0
+## 10: 5.143483e-01 3.311102e-01  0.9915083 0.98871978       0
 ```
 
 There are 10 genes in the annotation used. Here are some possible scenarios:
@@ -884,19 +895,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.60 4.086759e-02 3.007369e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.60 4.086759e-02 3.007369e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.68 3.688694e-02 2.984748e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.68 3.688694e-02 2.984748e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.06 6.499244e-01 3.460847e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 1.315025e-78 3.364335e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 4.672343e-49 1.212690e-48 6.413781e-53 6.559376e-48
-## 15:  TRUE      0.00 2.439283e-21 3.054367e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.296414e-44 1.777540e-44 1.516132e-46 7.296158e-44
+## 12: FALSE      0.04 6.492351e-01 3.211016e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 1.293246e-78 3.453760e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 3.173128e-49 8.613008e-49 6.413781e-53 6.559376e-48
+## 15:  TRUE      0.00 2.132445e-21 2.986093e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.095755e-44 1.380978e-44 1.516132e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.028313e-01 1.519165e-01 3.567434e-01 9.493136e-01
+## 18: FALSE      0.00 7.141666e-01 1.743886e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.516036e-01 6.801069e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.516036e-01 6.801069e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.500180e-01 6.790680e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.500180e-01 6.790680e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA

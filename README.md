@@ -48,15 +48,14 @@ if they are not present already or if they are not installed automatically while
 
 ### Installation
 
-Some **precompiled binary releases** are available from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
-Download the appropriate binary for your system and then install it using:
+**Package releases** are available from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Download the latest release and then install it using:
 
-`install.packages(<pathtopackage>, repos = NULL)` or
-`install.packages(<pathtopackage>, repos = NULL, type="source")`
+`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
 
-You can also install the **latest developmental version** directly from Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+You can also install a release directly from the repository like so (just edit the release number):
 
-`devtools::install_github("bartongroup/rats")`
+`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1-alpha.1/rats_0.1.tar.gz", repos = NULL, type="source")`
 
 Eventually, we aim to make `rats` available through **Bioconductor** as well.
 

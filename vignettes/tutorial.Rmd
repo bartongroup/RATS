@@ -70,21 +70,32 @@ The input and output structures and the command options are discussed in more de
 
 # Installation and loading
 
-### Build latest (developmental) version from Github
+### Install latest release
 
-`rats` is hosted on GitHub [here](https://github.com/bartongroup/Rats) and can be
-installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+#### from Github
+
+Available in source form from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Download the latest release and then install it using:
+
+`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
+
+You can also install a release directly from the repository like so (just edit the release details):
+
+`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1-alpha.1/rats_0.1.tar.gz", repos = NULL, type="source")`
+
+
+#### through Bioconductor
+
+Not available yet.
+
+
+### Install latest developmental version from Github
+
+The most current `rats` can be installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
 `devtools::install_github("bartongroup/rats")`
 
-### Install latest release from binaries on Github.
-
-To be confirmed.
-
-
-### Install through Bioconductor
-
-Not available yet.
+This way might not install the vignettes and the version may also contain more bugs.
 
 
 ### Loading
