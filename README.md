@@ -78,7 +78,7 @@ For more details on the parameters, please refer to the tutorial vignette.
 ## Contact information
 
 The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
-by Dr. Kimon Froussios, Dr. Kira Mourao and Dr. Nick Schurch.
+by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
