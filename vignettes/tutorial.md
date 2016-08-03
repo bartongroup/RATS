@@ -754,17 +754,17 @@ print( mydtu$Genes )
 ##  8:  TRUE    TRUE 0.000000000 0.0000000000 0.000000000 0.0000000000  TRUE
 ##  9: FALSE      NA          NA           NA          NA           NA    NA
 ## 10:  TRUE   FALSE 0.823492782 0.7570669089 0.823492782 0.7570669089 FALSE
-##     boot_freq boot_meanAB  boot_meanBA boot_stdevAB boot_stdevBA
-##  1:        NA          NA           NA           NA           NA
-##  2:        NA          NA           NA           NA           NA
-##  3:        NA          NA           NA           NA           NA
-##  4:        NA          NA           NA           NA           NA
-##  5:        NA          NA           NA           NA           NA
-##  6:      0.78 0.002832138 0.0008932865  0.003955343  0.001352966
-##  7:        NA          NA           NA           NA           NA
-##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
-##  9:        NA          NA           NA           NA           NA
-## 10:      0.00 0.787081394 0.7065362102  0.143215212  0.200313461
+##     boot_freq boot_meanAB boot_meanBA boot_stdevAB boot_stdevBA
+##  1:        NA          NA          NA           NA           NA
+##  2:        NA          NA          NA           NA           NA
+##  3:        NA          NA          NA           NA           NA
+##  4:        NA          NA          NA           NA           NA
+##  5:        NA          NA          NA           NA           NA
+##  6:      0.74 0.002939611 0.000980289  0.003626181  0.001273239
+##  7:        NA          NA          NA           NA           NA
+##  8:      1.00 0.000000000 0.000000000  0.000000000  0.000000000
+##  9:        NA          NA          NA           NA           NA
+## 10:      0.00 0.788203085 0.710838381  0.140247963  0.193749648
 ##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
 ##  1:           NA           NA         NA         NA      NA
 ##  2:           NA           NA         NA         NA      NA
@@ -895,19 +895,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.68 3.688694e-02 2.984748e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.68 3.688694e-02 2.984748e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.62 3.956330e-02 2.886119e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.62 3.956330e-02 2.886119e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.04 6.492351e-01 3.211016e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 1.293246e-78 3.453760e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 3.173128e-49 8.613008e-49 6.413781e-53 6.559376e-48
-## 15:  TRUE      0.00 2.132445e-21 2.986093e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.095755e-44 1.380978e-44 1.516132e-46 7.296158e-44
+## 12: FALSE      0.05 6.408509e-01 3.443526e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 9.936995e-79 2.582070e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 5.000080e-49 1.347655e-48 6.413781e-53 6.559376e-48
+## 15:  TRUE      0.00 1.980067e-21 2.709807e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.302660e-44 1.768632e-44 1.516132e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.141666e-01 1.743886e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.023102e-01 1.602831e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.500180e-01 6.790680e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.500180e-01 6.790680e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.498436e-01 6.586283e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.498436e-01 6.586283e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA
@@ -1300,7 +1300,7 @@ zero counts throughout and will be included in the output.
 # Contact information
 
 The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
-by Dr. Kimon Froussios, Dr. Kira Mourao and Dr. Nick Schurch.
+by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
