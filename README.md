@@ -30,13 +30,15 @@ available from CRAN.
 
 
 A full **tutorial vignette** is included in the package, explaining the input, output, commands and options. 
-If you install the package from one of the binaries or through Bioconductor, the vignette should then also be 
+If you install the package either from a compiled source release or through Bioconductor, the vignette should be 
 available locally by calling:
 
 `browseVignettes("rats")`
 
-If all else fails, you can view a static version of the tutorial [in the wiki](https://github.com/bartongroup/Rats/wiki).
+If this fails, you can view the vignette online directly [from its Github file](https://github.com/bartongroup/Rats/blob/master/vignettes/tutorial.md). 
+A static version of the tutorial is also included [in the project wiki](https://github.com/bartongroup/Rats/wiki).
 
+We recommend studying the vignette before using `rats`.
 
 ### Dependencies
 
@@ -72,7 +74,8 @@ Mandatory parameters:
 * a dataframe matching unique transcript identifiers to gene identifiers
 * the names of two conditions recorded in the sleuth object
 
-For more details on the parameters, please refer to the tutorial vignette.
+The output is a list containing two tables that list the final results as well as the intermediate calculations and decisions.
+For details on the parameters, input and output, please refer to the tutorial vignette.
 
 
 ## Contact information
