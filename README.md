@@ -4,7 +4,7 @@
 
 #### Who it is for
 
-Anyone working in transcriptomics, analyzing gene expression and transcript abundancies.
+Anyone working in transcriptomics, analysing gene expression and transcript abundances.
 
 #### What it does
 
@@ -35,7 +35,7 @@ available locally by calling:
 
 `browseVignettes("rats")`
 
-If this fails, you can view the vignette online directly [from its Github file](https://github.com/bartongroup/Rats/blob/master/vignettes/tutorial.md). 
+If this fails, you can view the vignette on-line directly [from its Github file](https://github.com/bartongroup/Rats/blob/master/vignettes/tutorial.md). 
 A static version of the tutorial is also included [in the project wiki](https://github.com/bartongroup/Rats/wiki).
 
 We recommend studying the vignette before using `rats`.
@@ -71,7 +71,7 @@ A typical command to call DTU looks like this:
 Mandatory parameters:
 
 * a sleuth object
-* a dataframe matching unique transcript identifiers to gene identifiers
+* a data frame matching unique transcript identifiers to gene identifiers
 * the names of two conditions recorded in the sleuth object
 
 The output is a list containing two tables that list the final results as well as the intermediate calculations and decisions.
