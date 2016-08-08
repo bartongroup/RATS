@@ -157,7 +157,7 @@ print( head(slo$kal[[1]]$bootstrap[[1]]) )
 ## 6  1D1C:one          0
 ```
 
-* The other piece of data required by `rats` is a dataframe that matches transcript identifiers to gene identifiers.
+* The other piece of data required by `rats` is a data frame that matches transcript identifiers to gene identifiers.
 For the simulated data we created, the generator also provided us with the respective annotation table, `annot`.
 When working with your own data, you will have to create and provide your own such table that is appropriate for
 the data contained in the sleuth object.
@@ -220,7 +220,6 @@ mydtu <- call_DTU(slo, annot, "foo", "bar")
 
 ```
 ## 
-  |                                                                       
   |=================================================================| 100%
 ```
 
@@ -242,7 +241,7 @@ mydtu <- call_DTU(slo, annot, "foo", "bar")
 `call_DTU()` takes 4 mandatory arguments: 
 
 1. a sleuth object
-2. an annotation dataframe matching transcripts to genes
+2. an annotation data frame matching transcripts to genes
 3. the names of two conditions to compare. 
 
 The summary report has 3 categories for each of genes and transcripts:
@@ -270,6 +269,9 @@ also choose to suppress all these reports:
 # This prints out nothing at all.
 mydtu <- call_DTU(slo, annot, "foo", "bar", verbose = FALSE)
 ```
+
+In reality, the progress bar is displayed much more sensibly, in a single row. The clutter
+seen in the example above is an artefact of how vignettes capture output.
 
 
 ## Quick results
@@ -359,7 +361,7 @@ results at the gene level. For your convenience, the transcript-level DTU calls 
 
 The G-test is used for gene-level calls. *As the test is designed for comparison of a set of counts
 against a **theoretical** set of proportions and, instead, we have two sets of counts, the test is run using
-in turn each condition as reference for the proportions.* Thus, the table conatains two sets of results,
+in turn each condition as reference for the proportions.* Thus, the table contains two sets of results,
 marked with the "AB" and "BA" suffixes. Due to the nature of the test, it is not possible to attribute 
 the change to specific transcripts within the gene, but in return the test has a lower detection threshold and 
 will pick up smaller changes.
@@ -551,24 +553,24 @@ print( mydtu$Genes )
 ##  8:  TRUE    TRUE 0.000000000 0.0000000000 0.000000000 0.0000000000  TRUE
 ##  9: FALSE      NA          NA           NA          NA           NA    NA
 ## 10:  TRUE   FALSE 0.823492782 0.7570669089 0.823492782 0.7570669089 FALSE
-##     boot_freq boot_meanAB boot_meanBA boot_stdevAB boot_stdevBA
-##  1:        NA          NA          NA           NA           NA
-##  2:        NA          NA          NA           NA           NA
-##  3:        NA          NA          NA           NA           NA
-##  4:        NA          NA          NA           NA           NA
-##  5:        NA          NA          NA           NA           NA
-##  6:      0.74 0.002939611 0.000980289  0.003626181  0.001273239
-##  7:        NA          NA          NA           NA           NA
-##  8:      1.00 0.000000000 0.000000000  0.000000000  0.000000000
-##  9:        NA          NA          NA           NA           NA
-## 10:      0.00 0.788203085 0.710838381  0.140247963  0.193749648
+##     boot_freq boot_meanAB  boot_meanBA boot_stdevAB boot_stdevBA
+##  1:        NA          NA           NA           NA           NA
+##  2:        NA          NA           NA           NA           NA
+##  3:        NA          NA           NA           NA           NA
+##  4:        NA          NA           NA           NA           NA
+##  5:        NA          NA           NA           NA           NA
+##  6:      0.75 0.003011033 0.0009562081  0.003662673  0.001255111
+##  7:        NA          NA           NA           NA           NA
+##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
+##  9:        NA          NA           NA           NA           NA
+## 10:      0.00 0.761056102 0.6740646160  0.128541504  0.179720403
 ##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
 ##  1:           NA           NA         NA         NA      NA
 ##  2:           NA           NA         NA         NA      NA
 ##  3:           NA           NA         NA         NA      NA
 ##  4:           NA           NA         NA         NA      NA
 ##  5:           NA           NA         NA         NA      NA
-##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
+##  6: 5.030128e-05 1.664273e-05  0.0154553 0.00480727       0
 ##  7:           NA           NA         NA         NA      NA
 ##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
 ##  9:           NA           NA         NA         NA      NA
@@ -692,19 +694,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.62 3.956330e-02 2.886119e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.62 3.956330e-02 2.886119e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.63 3.990977e-02 2.954859e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.63 3.990977e-02 2.954859e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.05 6.408509e-01 3.443526e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 9.936995e-79 2.582070e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 5.000080e-49 1.347655e-48 6.413781e-53 6.559376e-48
-## 15:  TRUE      0.00 1.980067e-21 2.709807e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.302660e-44 1.768632e-44 1.516132e-46 7.296158e-44
+## 12: FALSE      0.04 6.354245e-01 3.389021e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 1.436195e-78 4.424671e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 2.752563e-49 6.180300e-49 6.413781e-53 2.546057e-48
+## 15:  TRUE      0.00 2.353565e-21 3.021367e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.368495e-44 1.830266e-44 1.830584e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.023102e-01 1.602831e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.063948e-01 1.621410e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.498436e-01 6.586283e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.498436e-01 6.586283e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.441332e-01 6.837699e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.441332e-01 6.837699e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA
@@ -754,7 +756,7 @@ the other condition (division by 0), so they are not eligible for testing.
 ## Visualisation of results
 
 
-The dtu object's tables provide a host of information. The `rats` package also includes some basic visualisation aids.
+The output object's tables provide a host of information. The `rats` package also includes some basic visualisation aids.
 
 ### Plot individual abundance changes
 
@@ -855,7 +857,7 @@ And this is what it looks like on a larger dataset:
 ### Plot customisation
 
 You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggplot2.org) manipulations on it, such as changing the axis scales.
-Other `ggplot2` customisations include the axis tickmarks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
+Other `ggplot2` customisations include the axis tick marks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
 documentation for more help on these.
 
 
@@ -937,7 +939,7 @@ mydtu <- call_DTU(slo, annot, "ba", "bb", varname= "batch", verbose = FALSE)
 ### Bootstrapping & Confidence in DTU calls
 
 Bootstrapping of the DTU calls is enabled by default and their results were already discussed in the section
-about output structure and the example results. Bootstrapping prolongues processing time considerably, 
+about output structure and the example results. Bootstrapping prolongs processing time considerably, 
 but it provides a **measure of confidence in the p-values**, so we think it is important. 
 
 Current transcript quantification algorithms such as [kallisto](https://pachterlab.github.io/kallisto/about), 
@@ -946,7 +948,7 @@ probabilistic approaches to estimate transcript abundance. They all have the opt
 as required by Sleuth. We use these bootstrapped abundance estimations to control for the effect that
 the variability in these quantifications has on the DTU calls.
 
-Two parameters control bootrapping of DTU calls on the abundance estimates:
+Two parameters control bootstrapping of DTU calls on the abundance estimates:
 
 1. `boots` - Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce
 computation time, so the option is provided to allow flexibility for special use cases.
@@ -1071,8 +1073,8 @@ print( names(mydtu$Transcripts) )
 ```
 
 * `varname` - The field name in `slo$sample_to_covariates` where the desired condition names are listed.
-* `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation dataframe.
-* `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation dataframe.
+* `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame.
+* `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame.
 * `COUNTS_COL` - The name of the field holding the estimated counts in the sleuth object's bootstrap tables.
 * `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the sleuth object's bootstrap tables.
 
@@ -1084,8 +1086,8 @@ annotation or the sleuth object. This is likely to be caused by use of different
 stages of the analysis. This is generally a **bad idea**, as there is no guarantee (at least for some annotations)
 that the transcript identification codes will remain consistent between annotation versions. `rats` will not provide 
 any warning about this, and will carry out the DTU calls in the most sensible way possible, assuming that the
-intersection of transcript identifications between the sleuth data and annotation dataframe are consistent. All
-internal operations and the output will be based on the annotation dataframe provided:
+intersection of transcript identifications between the sleuth data and annotation data frame are consistent. All
+internal operations and the output will be based on the annotation data frame provided:
 
 * Any transcripts/genes present in the counts data but missing from the annotation will be ignored completely and 
 will not show up in the output.

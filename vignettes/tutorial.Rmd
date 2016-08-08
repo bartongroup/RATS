@@ -15,6 +15,7 @@ abstract: >
 vignette: >
   %\VignetteIndexEntry{RATs Tutorial}
   %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 ---
 
 
@@ -148,7 +149,7 @@ print( slo$sample_to_covariates )
 print( head(slo$kal[[1]]$bootstrap[[1]]) )
 ```
 
-* The other piece of data required by `rats` is a dataframe that matches transcript identifiers to gene identifiers.
+* The other piece of data required by `rats` is a data frame that matches transcript identifiers to gene identifiers.
 For the simulated data we created, the generator also provided us with the respective annotation table, `annot`.
 When working with your own data, you will have to create and provide your own such table that is appropriate for
 the data contained in the sleuth object.
@@ -176,7 +177,7 @@ mydtu <- call_DTU(slo, annot, "foo", "bar")
 `call_DTU()` takes 4 mandatory arguments: 
 
 1. a sleuth object
-2. an annotation dataframe matching transcripts to genes
+2. an annotation data frame matching transcripts to genes
 3. the names of two conditions to compare. 
 
 The summary report has 3 categories for each of genes and transcripts:
@@ -267,7 +268,7 @@ results at the gene level. For your convenience, the transcript-level DTU calls 
 
 The G-test is used for gene-level calls. *As the test is designed for comparison of a set of counts
 against a **theoretical** set of proportions and, instead, we have two sets of counts, the test is run using
-in turn each condition as reference for the proportions.* Thus, the table conatains two sets of results,
+in turn each condition as reference for the proportions.* Thus, the table contains two sets of results,
 marked with the "AB" and "BA" suffixes. Due to the nature of the test, it is not possible to attribute 
 the change to specific transcripts within the gene, but in return the test has a lower detection threshold and 
 will pick up smaller changes.
@@ -439,7 +440,7 @@ the other condition (division by 0), so they are not eligible for testing.
 ## Visualisation of results
 
 
-The dtu object's tables provide a host of information. The `rats` package also includes some basic visualisation aids.
+The output object's tables provide a host of information. The `rats` package also includes some basic visualisation aids.
 
 ### Plot individual abundance changes
 
@@ -518,7 +519,7 @@ And this is what it looks like on a larger dataset:
 ### Plot customisation
 
 You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggplot2.org) manipulations on it, such as changing the axis scales.
-Other `ggplot2` customisations include the axis tickmarks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
+Other `ggplot2` customisations include the axis tick marks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
 documentation for more help on these.
 
 ```{r}
@@ -575,7 +576,7 @@ mydtu <- call_DTU(slo, annot, "ba", "bb", varname= "batch", verbose = FALSE)
 ### Bootstrapping & Confidence in DTU calls
 
 Bootstrapping of the DTU calls is enabled by default and their results were already discussed in the section
-about output structure and the example results. Bootstrapping prolongues processing time considerably, 
+about output structure and the example results. Bootstrapping prolongs processing time considerably, 
 but it provides a **measure of confidence in the p-values**, so we think it is important. 
 
 Current transcript quantification algorithms such as [kallisto](https://pachterlab.github.io/kallisto/about), 
@@ -584,7 +585,7 @@ probabilistic approaches to estimate transcript abundance. They all have the opt
 as required by Sleuth. We use these bootstrapped abundance estimations to control for the effect that
 the variability in these quantifications has on the DTU calls.
 
-Two parameters control bootrapping of DTU calls on the abundance estimates:
+Two parameters control bootstrapping of DTU calls on the abundance estimates:
 
 1. `boots` - Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce
 computation time, so the option is provided to allow flexibility for special use cases.
@@ -661,8 +662,8 @@ print( names(mydtu$Transcripts) )
 ```
 
 * `varname` - The field name in `slo$sample_to_covariates` where the desired condition names are listed.
-* `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation dataframe.
-* `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation dataframe.
+* `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame.
+* `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame.
 * `COUNTS_COL` - The name of the field holding the estimated counts in the sleuth object's bootstrap tables.
 * `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the sleuth object's bootstrap tables.
 
@@ -674,8 +675,8 @@ annotation or the sleuth object. This is likely to be caused by use of different
 stages of the analysis. This is generally a **bad idea**, as there is no guarantee (at least for some annotations)
 that the transcript identification codes will remain consistent between annotation versions. `rats` will not provide 
 any warning about this, and will carry out the DTU calls in the most sensible way possible, assuming that the
-intersection of transcript identifications between the sleuth data and annotation dataframe are consistent. All
-internal operations and the output will be based on the annotation dataframe provided:
+intersection of transcript identifications between the sleuth data and annotation data frame are consistent. All
+internal operations and the output will be based on the annotation data frame provided:
 
 * Any transcripts/genes present in the counts data but missing from the annotation will be ignored completely and 
 will not show up in the output.
