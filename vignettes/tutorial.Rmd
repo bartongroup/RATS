@@ -36,7 +36,7 @@ subset of those that show DTE. The figure below shows the relationship between D
 
 
 ```{r eval=FALSE}
-# 1. Build from Github:
+# 1. Build latest development version from Github:
 install_github("bartongroup/rats")
 
 # 2. Load into R session.
@@ -71,6 +71,10 @@ The input and output structures and the command options are discussed in more de
 
 # Installation and loading
 
+### Install dependencies first
+
+`install.packages(c("data.table", "matrixStats", "ggplot2"), dependencies=TRUE)`
+
 ### Install latest release
 
 #### from Github
@@ -82,7 +86,7 @@ Download the latest release and then install it using:
 
 You can also install a release directly from the repository like so (just edit the release details):
 
-`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1-alpha.1/rats_0.1.tar.gz", repos = NULL, type="source")`
+`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1.0/rats_0.1.0.tar.gz", repos = NULL, type="source")`
 
 
 #### through Bioconductor

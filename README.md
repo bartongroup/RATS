@@ -43,9 +43,9 @@ We recommend studying the vignette before using `rats`.
 ### Dependencies
 
 The package depends on a few additional CRAN packages, which you may need to install first, 
-if they are not present already or if they are not installed automatically while installing `rats`.
+if they are not present already:
 
-`install.packages(c("data.table", "matrixStats", "ggplot2"))`
+`install.packages(c("data.table", "matrixStats", "ggplot2"), dependencies=TRUE)`
 
 
 ### Installation
