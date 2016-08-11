@@ -47,6 +47,8 @@ if they are not present already:
 
 `install.packages(c("data.table", "matrixStats", "ggplot2"), dependencies=TRUE)`
 
+If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual for help.
+
 
 ### Installation
 
