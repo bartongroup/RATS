@@ -1,11 +1,11 @@
 ## ----eval=FALSE----------------------------------------------------------
-#  # 1. Build latest development version from Github:
-#  install_github("bartongroup/rats")
+#  # 1. Build latest developmental version from Github:
+#  devtools::install_github("bartongroup/rats")
 #  
 #  # 2. Load into R session.
 #  library{rats}
 #  
-#  # 3. Call DTU on a sleuth object, using default thresholds.
+#  # 3. Call DTU on a sleuth object, using default settings.
 #  mydtu <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object, name_A = "My_condition", name_B = "My_other_condition")
 #  
 #  # 4. Tally of results.

@@ -21,13 +21,13 @@ subset of those that show DTE. The figure below shows the relationship between D
 
 
 ```r
-# 1. Build latest development version from Github:
-install_github("bartongroup/rats")
+# 1. Build latest developmental version from Github:
+devtools::install_github("bartongroup/rats")
 
 # 2. Load into R session.
 library{rats}
 
-# 3. Call DTU on a sleuth object, using default thresholds.
+# 3. Call DTU on a sleuth object, using default settings.
 mydtu <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object, name_A = "My_condition", name_B = "My_other_condition")
 
 # 4. Tally of results.
@@ -223,9 +223,9 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar")
 ```
 
 ```
-##
+## 
   |                                                                 |   0%
-  ...
+...
   |=================================================================| 100%
 ```
 
@@ -565,22 +565,22 @@ print( mydtu$Genes )
 ##  3:        NA          NA           NA           NA           NA
 ##  4:        NA          NA           NA           NA           NA
 ##  5:        NA          NA           NA           NA           NA
-##  6:      0.79 0.002803306 0.0008297256  0.003785805  0.001202039
+##  6:      0.81  0.00247885 0.0007301523  0.003165238  0.001042459
 ##  7:        NA          NA           NA           NA           NA
-##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
+##  8:      1.00  0.00000000 0.0000000000  0.000000000  0.000000000
 ##  9:        NA          NA           NA           NA           NA
-## 10:      0.00 0.799166905 0.7239735015  0.138887521  0.192387635
-##       boot_minAB   boot_minBA boot_maxAB  boot_maxBA boot_na
-##  1:           NA           NA         NA          NA      NA
-##  2:           NA           NA         NA          NA      NA
-##  3:           NA           NA         NA          NA      NA
-##  4:           NA           NA         NA          NA      NA
-##  5:           NA           NA         NA          NA      NA
-##  6: 5.030128e-05 1.550451e-05  0.0154553 0.004703197       0
-##  7:           NA           NA         NA          NA      NA
-##  8: 0.000000e+00 0.000000e+00  0.0000000 0.000000000       0
-##  9:           NA           NA         NA          NA      NA
-## 10: 5.143483e-01 3.311102e-01  0.9915083 0.988719778       0
+## 10:      0.00  0.76318016 0.6736253283  0.139135147  0.192200882
+##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
+##  1:           NA           NA         NA         NA      NA
+##  2:           NA           NA         NA         NA      NA
+##  3:           NA           NA         NA         NA      NA
+##  4:           NA           NA         NA         NA      NA
+##  5:           NA           NA         NA         NA      NA
+##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
+##  7:           NA           NA         NA         NA      NA
+##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
+##  9:           NA           NA         NA         NA      NA
+## 10: 5.143483e-01 3.311102e-01  0.9915083 0.98871978       0
 ```
 
 There are 10 genes in the annotation used. Here are some possible scenarios:
@@ -700,19 +700,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.69 3.659926e-02 2.801125e-02 6.724743e-03 9.837799e-02
-## 10:  TRUE      0.69 3.659926e-02 2.801125e-02 6.724743e-03 9.837799e-02
+##  9:  TRUE      0.72 3.525901e-02 2.623512e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.72 3.525901e-02 2.623512e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.05 5.916507e-01 3.692105e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 2.475308e-78 5.101268e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 6.070776e-49 1.288924e-48 2.078335e-52 6.559376e-48
-## 15:  TRUE      0.00 1.778476e-21 2.876551e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 9.542642e-45 1.364376e-44 1.516132e-46 5.081518e-44
+## 12: FALSE      0.05 6.297412e-01 3.427100e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 1.279516e-78 3.059314e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 3.602734e-49 7.214080e-49 6.413781e-53 2.546057e-48
+## 15:  TRUE      0.00 2.028372e-21 3.011675e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.319361e-44 1.698838e-44 1.830584e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.126832e-01 1.724162e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.436661e-01 1.594177e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.574030e-01 6.162846e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.574030e-01 6.162846e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.416543e-01 6.888200e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.416543e-01 6.888200e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA
