@@ -35,8 +35,7 @@ available locally by calling:
 
 `browseVignettes("rats")`
 
-If this fails, you can view the vignette on-line directly [from its Github file](https://github.com/bartongroup/Rats/blob/master/vignettes/tutorial.md). 
-A static version of the tutorial is also included [in the project wiki](https://github.com/bartongroup/Rats/wiki).
+If this fails, you can view the vignette on-line directly [from its Github file, here](https://github.com/bartongroup/Rats/blob/master/vignettes/tutorial.md). 
 
 We recommend studying the vignette before using `rats`.
 
