@@ -1,33 +1,33 @@
 #================================================================================
 #' Calculate differential transcript usage.
 #'
-#' @param slo A sleuth object.
 #' @param annot A dataframe matching the transcript identifiers to their corresponding gene identifiers.
-#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param TARGET_COL The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the parent identifier column in the \code{annot} object. (Default \code{"parent_id"})
+#' @param slo A Sleuth object.
+#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
-#' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.
-#' @param verbose Display progress updates, default \code{FALSE}.
+#' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
+#' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
+#' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})
 #' @param p_thresh The p-value threshold, default 0.05.
-#' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing (default 5).
-#' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (default 0.1).
-#' @param testmode One of "genes", "transc", "both" (default "both").
-#' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.
-#' @param boots Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (default "none").
-#' @param bootnum Number of bootstraps (default 10000).
-#' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.
-#' @param TARGET_COL The name of the transcript identifier column in the annot object, default \code{"target_id"}
-#' @param PARENT_COL The name of the parent identifier column in the annot object, default \code{"parent_id"}.
-#' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.
+#' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 5)
+#' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
+#' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
+#' @param testmode One of "genes", "transc", "both". (Default "both")
+#' @param boots Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (Default "both")
+#' @param bootnum Number of bootstraps. (Default 100)
+#' @param verbose Display progress updates. (Default \code{TRUE})
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
 #' @import data.table
 #' @import matrixStats
 #' @export
-call_DTU <- function(slo, annot, name_A, name_B, varname= "condition", 
-                          p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, testmode= "both", correction= "BH", 
-                          verbose= TRUE, boots= "both", bootnum= 100L,
-                          COUNTS_COL= "est_counts", TARGET_COL= "target_id", PARENT_COL= "parent_id", BS_TARGET_COL= "target_id")
+call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
+                     slo= NULL, name_A= NULL, name_B= NULL, varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
+                     p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, correction= "BH", 
+                     testmode= "both", boots= "both", bootnum= 100L, verbose= TRUE)
 {
   #---------- PREP
   
@@ -234,6 +234,9 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
                             count_thresh, testmode, boots, bootnum, dprop_thresh) 
 {
+  if(any(NULL == c(slo, annot, name_A, name_B)))
+    return(list("error"=TRUE, "message"="Insufficient parameters!"))
+  
   if (!is.data.frame(annot))
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
   

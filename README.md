@@ -68,12 +68,12 @@ Eventually, we aim to make `rats` available through **Bioconductor** as well.
 
 A typical command to call DTU looks like this:
 
-`results <- call_DTU(my_sleuth_object, my_identifiers_table, "Condition-1", "Condition-2")`
+`results <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object,  name_A = "Condition-1", name_B = "Condition-2")`
 
 Mandatory parameters:
 
-* a sleuth object
 * a data frame matching unique transcript identifiers to gene identifiers
+* a sleuth object
 * the names of two conditions recorded in the sleuth object
 
 The output is a list containing two tables that list the final results as well as the intermediate calculations and decisions.

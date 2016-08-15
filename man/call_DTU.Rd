@@ -4,46 +4,46 @@
 \alias{call_DTU}
 \title{Calculate differential transcript usage.}
 \usage{
-call_DTU(slo, annot, name_A, name_B, varname = "condition", p_thresh = 0.05,
-  count_thresh = 5, dprop_thresh = 0.1, testmode = "both",
-  correction = "BH", verbose = TRUE, boots = "both", bootnum = 100L,
-  COUNTS_COL = "est_counts", TARGET_COL = "target_id",
-  PARENT_COL = "parent_id", BS_TARGET_COL = "target_id")
+call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
+  slo = NULL, name_A = NULL, name_B = NULL, varname = "condition",
+  COUNTS_COL = "est_counts", BS_TARGET_COL = "target_id", p_thresh = 0.05,
+  count_thresh = 5, dprop_thresh = 0.1, correction = "BH",
+  testmode = "both", boots = "both", bootnum = 100L, verbose = TRUE)
 }
 \arguments{
-\item{slo}{A sleuth object.}
-
 \item{annot}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
 
-\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
+\item{TARGET_COL}{The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})}
+
+\item{PARENT_COL}{The name of the parent identifier column in the \code{annot} object. (Default \code{"parent_id"})}
+
+\item{slo}{A Sleuth object.}
+
+\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.}
 
 \item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
 
-\item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. Default \code{"condition"}.}
+\item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).}
+
+\item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})}
+
+\item{BS_TARGET_COL}{The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})}
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
-\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing (default 5).}
+\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 5)}
 
-\item{dprop_thresh}{Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (default 0.1).}
+\item{dprop_thresh}{Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)}
 
-\item{testmode}{One of "genes", "transc", "both" (default "both").}
+\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})}
 
-\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}, default \code{"BH"}.}
+\item{testmode}{One of "genes", "transc", "both". (Default "both")}
 
-\item{verbose}{Display progress updates, default \code{FALSE}.}
+\item{boots}{Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (Default "both")}
 
-\item{boots}{Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (default "none").}
+\item{bootnum}{Number of bootstraps. (Default 100)}
 
-\item{bootnum}{Number of bootstraps (default 10000).}
-
-\item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm), default \code{"est_counts"}.}
-
-\item{TARGET_COL}{The name of the transcript identifier column in the annot object, default \code{"target_id"}}
-
-\item{PARENT_COL}{The name of the parent identifier column in the annot object, default \code{"parent_id"}.}
-
-\item{BS_TARGET_COL}{The name of the transcript identifier column in the sleuth bootstrap tables, default \code{"target_id"}.}
+\item{verbose}{Display progress updates. (Default \code{TRUE})}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.

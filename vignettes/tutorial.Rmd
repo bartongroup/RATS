@@ -43,7 +43,7 @@ install_github("bartongroup/rats")
 library{rats}
 
 # 3. Call DTU on a sleuth object, using default thresholds.
-mydtu <- call_DTU(my_sleuth_object, my_identifiers_table, "My_condition", "My_other_condition")
+mydtu <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object, name_A = "My_condition", name_B = "My_other_condition")
 
 # 4. Tally of results.
 dtu_summary(mydtu)
@@ -135,11 +135,11 @@ simdat <- sim_sleuth_data(cnames = c("foo", "bar")) # foo and bar are arbitrary 
                                                     # to use as conditions.
 
 # For convenience let's assign the contents of the list to separate variables.
-slo <- simdat$slo       # Simulated minimal sleuth object.
-annot <- simdat$annot   # Transcript and gene Identifiers for the above data.
+myslo <- simdat$slo       # Simulated minimal sleuth object.
+myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 ```
 
-* The main piece of data that `rats` requires is a [Sleuth](http://pachterlab.github.io/sleuth/) object. `slo` emulates 
+* The main piece of data that `rats` requires is a [Sleuth](http://pachterlab.github.io/sleuth/) object. `sim$slo` emulates 
 this object. The real sleuth objects are quite large and very complex nested lists. The simulated one contains only 
 the essential parts relevant to calling DTU with `rats`. It has a couple of bootstraps of transcript 
 abundance estimates, for a handful of made-up genes, in two conditions.
@@ -149,22 +149,22 @@ abundance estimates, for a handful of made-up genes, in two conditions.
 # variables and values listed in this table.
 # This one has two variables: "condition" and "batch". Yours may have more/fewer/different ones.
 # Notice that "foo" and "bar" (the names we gave to our simulated data) are under "condition".
-print( slo$sample_to_covariates )
+print( myslo$sample_to_covariates )
 
 # This is what the estimated counts tables look like. One such table per bootstrap, per sample.
 # head() shows the first few rows only.
-print( head(slo$kal[[1]]$bootstrap[[1]]) )
+print( head(myslo$kal[[1]]$bootstrap[[1]]) )
 ```
 
 * The other piece of data required by `rats` is a data frame that matches transcript identifiers to gene identifiers.
-For the simulated data we created, the generator also provided us with the respective annotation table, `annot`.
+For the simulated data we created, the generator also provided us with the respective annotation table, `sim$annot`.
 When working with your own data, you will have to create and provide your own such table that is appropriate for
 the data contained in the sleuth object.
 
 ```{r}
 # This is what the annotation table should look like.
 # head() shows the first few rows only.
-print( head(annot) )
+print( head(myannot) )
 ```
 
 
@@ -178,14 +178,14 @@ what parameters are available and how to use them, refer to the "Advanced input 
 ```{r}
 # Find DTU between conditions "foo" and "bar" in the simulated data.
 # Be warned that the vignette format does not display progress bars properly!
-mydtu <- call_DTU(slo, annot, "foo", "bar")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar")
 ```
 
 `call_DTU()` takes 4 mandatory arguments: 
 
-1. a sleuth object
-2. an annotation data frame matching transcripts to genes
-3. the names of two conditions to compare. 
+1. an annotation data frame matching transcripts to genes.
+2. a sleuth object.
+3. the names of two conditions (as found in the sleuth object) to compare. 
 
 The summary report has 3 categories for each of genes and transcripts:
 
@@ -194,13 +194,13 @@ The summary report has 3 categories for each of genes and transcripts:
 * NA - The tests were not applicable (due to low/no fragment counts or lack of alternative transcripts).
 
 By default, the two condition names (in our example, "foo" and "bar") are expected to be values found 
-in the "condition" column of the `slo$sample_to_conditions` table. You can override this if you want 
+in the "condition" column of the `myslo$sample_to_conditions` table. You can override this if you want 
 to compare by a different variable. For example, our simulated data has a variable called "batch", 
 with values "ba" and "bb":
 
 ```{r eval=FALSE}
 # Comparing samples by a different variable.
-mydtu <- call_DTU(slo, annot, "ba", "bb", varname="batch")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", varname="batch")
 ```
 
 By default, `rats` reports its progress and gives you the summary at the end. You can
@@ -208,7 +208,7 @@ also choose to suppress all these reports:
 
 ```{r}
 # This prints out nothing at all.
-mydtu <- call_DTU(slo, annot, "foo", "bar", verbose = FALSE)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", verbose = FALSE)
 ```
 
 In reality, the progress bar is displayed much more sensibly, in a single row. The clutter
@@ -258,7 +258,7 @@ print( ids[["dtu-genes"]] )
 print( names(mydtu$Parameters) )
 ```
 
-1. `var_name` - The name of the variable by which the samples were grouped. This is a column name in the `slo$sample_to_covariates` table.
+1. `var_name` - The name of the variable by which the samples were grouped. This is a column name in the `myslo$sample_to_covariates` table.
 2. `cond_A` and `cond_B` - The names of the two groups of samples to compare. These are values of the column specified above.
 3. `num_replic_A` and `num_replic_B` - The number of samples in each group.
 4. `p_thresh` - The significance level at which DTU is called, applicable to both tests.
@@ -389,11 +389,11 @@ print( mydtu$Genes )
 
 There are `r dim(mydtu$Genes)[1]` genes in the annotation used. Here are some possible scenarios:
 
-* `1A1N` has only one known transcript and is thus not eligible. If you look in `slo$kal[[1]]$bootstrap[[1]]`, there 
+* `1A1N` has only one known transcript and is thus not eligible. If you look in `myslo$kal[[1]]$bootstrap[[1]]`, there 
 are actually two recorded transcripts for this gene, but only one of them is recorded in the annotation. `rats` uses 
 the annotation as the basis for managing information. Any transcripts/genes present in the sleuth data, but missing from 
 the annotation, will be ignored completely.
-* `1B1C` has two annotated transcripts. If you look in `slo$kal[[1]]$bootstrap[[1]]`, only one of them is recorded in 
+* `1B1C` has two annotated transcripts. If you look in `myslo$kal[[1]]$bootstrap[[1]]`, only one of them is recorded in 
 our data whereas the other is missing completely, so the gene does not have enough transcripts to be eligible.
 * `1D1C` has two transcripts, but only one was detected in our data, so it too is not eligible. Both transcript are 
 present in the sleuth data, but one of them has zero counts in both conditions. Thus this gene is also not eligible. 
@@ -406,7 +406,7 @@ transcripts does not meet the minimum fragment count requirement.
 * `MIX6` has six transcripts, 5 of which are detected and eligible. The gene is called as DTU with extremely high 
 significance and all the bootstrap iterations were positive. Inspection of the `Transcripts` table shows that the 
 missing transcript is not detected in either condition.
-* `NIB`  has a single transcript that is not detected. Looking into `slo$kal[[1]]$bootstrap[[1]]` it is evident that 
+* `NIB`  has a single transcript that is not detected. Looking into `myslo$kal[[1]]$bootstrap[[1]]` it is evident that 
 the entire gene is not recorded at all in the data.
 * `NN` has two transcripts, both of which are detected and eligible, but no significant change is detected, a result
 backed up by all the bootstrap iterations.
@@ -551,7 +551,7 @@ Three thresholds can be set in `rats`.
 
 ```{r eval=FALSE}
 # Calling DTU with custom thresholds.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", p_thresh = 0.01, 
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", p_thresh = 0.01, 
                   count_thresh = 10, dprop_thresh = 0.25)
 ```
 
@@ -570,13 +570,13 @@ The default values for all three thresholds are rather lenient. You may want to 
 
 ### Comparing by different variables
 
-So far, we've mostly compared conditions (`slo$sample_to_covariates[["condition"]]`). Your data could contain other 
+So far, we've mostly compared conditions (`myslo$sample_to_covariates[["condition"]]`). Your data could contain other 
 variables as well. As we saw in a previous example, our simulated data contains a variable called `batch`, with values
-"ba" and "bb", according to the `slo$sample_to_covariates` table.
+"ba" and "bb", according to the `myslo$sample_to_covariates` table.
 
 ```{r}
 # Compare by a different variable. In this case "batch".
-mydtu <- call_DTU(slo, annot, "ba", "bb", varname= "batch", verbose = FALSE)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", varname= "batch", verbose = FALSE)
 ```
 
 
@@ -601,16 +601,16 @@ your annotation. This is due to R's limit on the maximum size of matrices.
 
 ```{r eval=FALSE}
 # Bootstrap everything. (default)
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "both", bootnum = 100)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "both", bootnum = 100)
 
 # Only bootstrap transcript calls.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "transc")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "transc")
 
 # Only bootstrap gene calls.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "genes")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "genes")
 
 # Skip bootstraps.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", boots = "none")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "none")
 ```
 
 
@@ -623,9 +623,9 @@ The fields of the skipped test will be filled with `NA`.
 
 ```{r eval=FALSE}
 # Transcripts only.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="transc")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", testmode="transc")
 # Genes only.
-mydtu <- call_DTU(sim$slo, sim$annot, "foo", "bar", testmode="genes")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", testmode="genes")
 ```
 
 
@@ -637,7 +637,7 @@ method is `BH` (Benjamini-Hochberg). A full list of options is listed in R's `p.
 
 ```{r eval=FALSE}
 # Bonferroni correction.
-mydtu <- call_DTU(slo, annot, "foo", "bar", correction = "bonferroni")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", correction = "bonferroni")
 ```
 
 
@@ -650,6 +650,9 @@ change the names of these fields.
 # Lets create some input with custom field names. The data is exactly the same as before.
 sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), COUNTS_COL="the-counts", 
                        TARGET_COL="transcript", PARENT_COL="gene", BS_TARGET_COL = "trscr")
+myslo <- sim$slo
+myannot <- sim$annot
+
 print( sim$slo$sample_to_covariates )
 print( head(sim$slo$kal[[1]]$bootstrap[[1]]) )
 print( head(sim$annot) )
@@ -659,7 +662,7 @@ With the field names changed, we need to tell `rats` where to find the data:
 
 ```{r}
 # Call DTU on data with custom field names.
-mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse", 
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", varname="mouse", 
                   TARGET_COL="transcript", PARENT_COL="gene", 
                   COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
 
@@ -668,7 +671,7 @@ mydtu <- call_DTU(sim$slo, sim$annot, "Splinter", "Mickey", varname="mouse",
 print( names(mydtu$Transcripts) )
 ```
 
-* `varname` - The field name in `slo$sample_to_covariates` where the desired condition names are listed.
+* `varname` - The field name in `myslo$sample_to_covariates` where the desired condition names are listed.
 * `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame.
 * `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame.
 * `COUNTS_COL` - The name of the field holding the estimated counts in the sleuth object's bootstrap tables.
