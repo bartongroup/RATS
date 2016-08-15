@@ -56,10 +56,6 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
 
-You can also install a release directly from the repository like so (just edit the release number):
-
-`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1-alpha.1/rats_0.1.tar.gz", repos = NULL, type="source")`
-
 Eventually, we aim to make `rats` available through **Bioconductor** as well.
 
 
