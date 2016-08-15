@@ -72,9 +72,6 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
 
-You can also install a release directly from the repository like so (just edit the release details):
-
-`install.packages("http://github.com/bartongroup/Rats/releases/download/v0.1.0/rats_0.1.0.tar.gz", repos = NULL, type="source")`
 
 
 #### through Bioconductor
@@ -767,22 +764,22 @@ print( mydtu$Genes )
 ##  3:        NA          NA           NA           NA           NA
 ##  4:        NA          NA           NA           NA           NA
 ##  5:        NA          NA           NA           NA           NA
-##  6:      0.78 0.003102572 0.0009827724  0.004267459  0.001429114
+##  6:      0.79 0.002803306 0.0008297256  0.003785805  0.001202039
 ##  7:        NA          NA           NA           NA           NA
 ##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
 ##  9:        NA          NA           NA           NA           NA
-## 10:      0.00 0.792362982 0.7172068048  0.140419377  0.192820555
-##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
-##  1:           NA           NA         NA         NA      NA
-##  2:           NA           NA         NA         NA      NA
-##  3:           NA           NA         NA         NA      NA
-##  4:           NA           NA         NA         NA      NA
-##  5:           NA           NA         NA         NA      NA
-##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
-##  7:           NA           NA         NA         NA      NA
-##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
-##  9:           NA           NA         NA         NA      NA
-## 10: 5.143483e-01 3.311102e-01  0.9915083 0.98871978       0
+## 10:      0.00 0.799166905 0.7239735015  0.138887521  0.192387635
+##       boot_minAB   boot_minBA boot_maxAB  boot_maxBA boot_na
+##  1:           NA           NA         NA          NA      NA
+##  2:           NA           NA         NA          NA      NA
+##  3:           NA           NA         NA          NA      NA
+##  4:           NA           NA         NA          NA      NA
+##  5:           NA           NA         NA          NA      NA
+##  6: 5.030128e-05 1.550451e-05  0.0154553 0.004703197       0
+##  7:           NA           NA         NA          NA      NA
+##  8: 0.000000e+00 0.000000e+00  0.0000000 0.000000000       0
+##  9:           NA           NA         NA          NA      NA
+## 10: 5.143483e-01 3.311102e-01  0.9915083 0.988719778       0
 ```
 
 There are 10 genes in the annotation used. Here are some possible scenarios:
@@ -902,19 +899,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.64 3.887415e-02 3.022221e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.64 3.887415e-02 3.022221e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.69 3.659926e-02 2.801125e-02 6.724743e-03 9.837799e-02
+## 10:  TRUE      0.69 3.659926e-02 2.801125e-02 6.724743e-03 9.837799e-02
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.04 6.123778e-01 3.447014e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 1.935018e-78 4.488908e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 3.861424e-49 1.027293e-48 6.413781e-53 6.559376e-48
-## 15:  TRUE      0.00 2.211235e-21 2.973456e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.152248e-44 1.581886e-44 1.516132e-46 7.296158e-44
+## 12: FALSE      0.05 5.916507e-01 3.692105e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 2.475308e-78 5.101268e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 6.070776e-49 1.288924e-48 2.078335e-52 6.559376e-48
+## 15:  TRUE      0.00 1.778476e-21 2.876551e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 9.542642e-45 1.364376e-44 1.516132e-46 5.081518e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.095315e-01 1.547060e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.126832e-01 1.724162e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.496351e-01 7.165681e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.496351e-01 7.165681e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.574030e-01 6.162846e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.574030e-01 6.162846e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA
