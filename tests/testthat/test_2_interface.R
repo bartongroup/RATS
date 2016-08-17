@@ -1,192 +1,5 @@
 #==============================================================================
 #==============================================================================
-context("DTU internal structures")
-
-#==============================================================================
-test_that("The reporting structures are created correctly", {
-  sim <- sim_sleuth_data()
-  full <- alloc_out(sim$annot, "full")
-  short <- alloc_out(sim$annot, "short")
-  
-  expect_type(full, "list")
-  expect_type(short, "list")
-  expect_equal(length(full), 3)
-  expect_equal(length(full), length(short))
-  expect_named(full, c("Parameters", "Genes", "Transcripts"))
-  expect_true(all(names(full) == names(short)))
-  
-  expect_type(full$Parameters, "list")
-  expect_true(typeof(full$Parameters) == typeof(short$Parameters))
-  expect_length(full$Parameters, 11)
-  expect_length(short$Parameters, 2)
-  expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                  "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum"))
-  expect_true(all(names(short$Parameters) %in% names(full$Parameters)))
-  
-  expect_true(is.data.frame(full$Genes))
-  expect_true(is.data.frame(short$Genes))
-  expect_equal(dim(full$Genes)[2], 23)
-  expect_equal(dim(short$Genes)[2], 10)
-  expect_named(full$Genes, c("parent_id", "DTU", "transc_DTU", "known_transc", "detect_transc", "elig_transc",  
-                             "elig", "elig_fx", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig", "boot_freq", 
-                             "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB", "boot_minBA", 
-                             "boot_maxAB", "boot_maxBA", "boot_na"))
-  expect_true(all(names(short$Genes) %in% names(full$Genes)))
-  
-  expect_true(is.data.frame(full$Transcripts))
-  expect_true(is.data.frame(short$Transcripts))
-  expect_equal(dim(full$Transcripts)[2], 27)
-  expect_equal(dim(short$Transcripts)[2], 16)
-  expect_named(full$Transcripts, c("target_id", "parent_id", "DTU", "gene_DTU", "meanA", "meanB", "stdevA", "stdevB",
-                                   "sumA", "sumB", "totalA", "totalB", "elig_xp", "elig", "propA", "propB", "Dprop", 
-                                   "elig_fx", "pval", "pval_corr", "sig", "boot_freq", "boot_mean", "boot_stdev", 
-                                   "boot_min", "boot_max", "boot_na"))
-  expect_true(all(names(short$Transcripts) %in% names(full$Transcripts)))
-})
-
-
-#==============================================================================
-#==============================================================================
-context("DTU internal data munging")
-
-#==============================================================================
-test_that("Samples are grouped correctly", {
-  sim <- sim_sleuth_data()
-  r <- group_samples(sim$slo$sample_to_covariates)
-  
-  # number of covariates
-  expect_equal(length(r), length(sim$slo$sample_to_covariates))
-  # names of covariates
-  expect_named(r, names(sim$slo$sample_to_covariates))
-  # number of values of each covariate
-  expect_equal(length(r[[1]]), length(levels(as.factor(sim$slo$sample_to_covariates[[1]]))))
-  expect_equal(length(r[[2]]), length(levels(as.factor(sim$slo$sample_to_covariates[[2]]))))
-  # total number of samples
-  expect_equal(sum(sapply(r[[1]],length)), length(sim$slo$sample_to_covariates[[1]]))
-  expect_equal(sum(sapply(r[[2]],length)), length(sim$slo$sample_to_covariates[[2]]))
-})
-
-
-#==============================================================================
-test_that("Bootstrapped counts are extracted correctly", {
-  samples <- c(1,3)
-  bst <- "id"
-  cnt <- "counts"
-  sim <- sim_sleuth_data(COUNTS_COL = cnt, BS_TARGET_COL = bst)
-  lr <- denest_boots(sim$slo, sim$annot[[1]], samples, cnt, bst)
-  
-  for (i in 1:length(lr)) {
-    # The transcripts supposed to be there are there.
-    expect_true(all(sim$isx %in% as.character(lr[[i]]$target_id)))
-    # No NA.
-    expect_false(any(is.na(lr[[i]])))
-    
-    # Number of bootstraps per sample.
-    expect_equal(length(lr[[i]]) - 1, length(sim$slo$kal[[samples[i]]]$bootstrap))  # the last column in lr[] is ID
-    
-    # All target counts pulled from the correct bootstraps and the correct transcripts.
-    counts_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
-      fltr1 <- match(sim$isx, sim$slo$kal[[samples[i]]]$bootstrap[[j]][[bst]])  # Where in the boot are the expected IDs.
-      fltr2 <- match(sim$isx, lr[[i]][["target_id"]])                           # Where in the extracted counts are the expected IDs.
-      all(sim$slo$kal[[samples[i]]]$bootstrap[[j]][[cnt]][fltr1] == lr[[i]][[j]][fltr2])  # Both vectors' elements are ordered by the same IDs.
-    })
-    expect_true(all(counts_ok))
-    
-    # IDs in annotation, but not in bootstraps, should be 0.
-    missing_from_boots_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
-      nib <- setdiff(sim$annot$target_id, sim$isx)
-      nib <- match(nib, lr[[i]][["target_id"]])
-      all(lr[[i]][[j]][nib] == 0)
-    })
-    expect_true(all(missing_from_boots_ok))
-      
-    # IDs in bootstrap, but not in annotation, should be absent.
-    missing_from_annot_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
-      nia <- setdiff(sim$slo$kal[[i]]$bootstrap[[j]], sim$isx)
-      any(nia %in% lr[[i]][["target_id"]])
-    })
-    expect_false(any(missing_from_annot_ok))
-  }
-})
-
-#==============================================================================
-test_that("Filters work correctly", {
-  
-  # !!! This test is tightly dependent on the data used for the test, in order to
-  # !!! ensure correct response to specific scenarios.
-  
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")
-  
-  expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["1B1C", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["1D1C", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["ALLA", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 1, 0, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Genes["ALLB", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 0, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Genes["CC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 2, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["LC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 1, FALSE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["MIX6", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(6, 5, 5, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["NIB", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 0, 0, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Genes["NN", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 2, TRUE, FALSE))
-  
-  setkey(mydtu$Transcripts, target_id)
-  expect_equivalent(as.list(mydtu$Transcripts["1A1N-2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1B1C.1", list(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1B1C.2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1D1C:one", list(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1D1C:two", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["ALLA1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Transcripts["ALLB1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Transcripts["ALLB2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Transcripts["CC_a", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["CC_b", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["LC1", list(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["LC2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c3", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c4", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.d", .(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.nc", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["NIB.1", .(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, NA))
-  expect_equivalent(as.list(mydtu$Transcripts["1NN", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["2NN", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-})
-
-
-#==============================================================================
-#==============================================================================
 context("DTU Input checks.")
 
 #==============================================================================
@@ -199,9 +12,9 @@ test_that("The input checks work", {
   sim <- sim_sleuth_data(varname= "waffles", COUNTS_COL= "counts", TARGET_COL= "target" , PARENT_COL= "parent", 
                          BS_TARGET_COL= "id", cnames= c("AAAA","BBBB"))
   expect_silent(call_DTU(annot= sim$annot, slo= sim$slo, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, count_thresh= 10,
-                              testmode= "transc", correction= "bonferroni", verbose= FALSE, boots= "genes",
-                              bootnum= 2, COUNTS_COL= "counts", TARGET_COL= "target", 
-                              PARENT_COL= "parent", BS_TARGET_COL= "id"))
+                         testmode= "transc", correction= "bonferroni", verbose= FALSE, boots= "genes",
+                         bootnum= 2, COUNTS_COL= "counts", TARGET_COL= "target", 
+                         PARENT_COL= "parent", BS_TARGET_COL= "id"))
   # No false alarms with defaults.
   sim <- sim_sleuth_data(cnames=c(name_A, name_B))
   expect_silent(call_DTU(annot= sim$annot, slo= sim$slo, name_A= name_A, name_B= name_B, verbose = FALSE))
@@ -210,15 +23,15 @@ test_that("The input checks work", {
   expect_error(call_DTU(c("not", "a", "dataframe"), slo= sim$slo, name_A= name_A, name_B= name_B, verbose = FALSE), "annot is not a data.frame.")
   # Annotation field names.
   expect_error(call_DTU(annot= sim$annot, slo= sim$slo, name_A= name_A, name_B= name_B, TARGET_COL= wrong_name, verbose = FALSE),
-               "target and/or parent IDs field-names do not exist in annot", fixed= TRUE)
+               "target and/or parent IDs field names do not exist in annot", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, slo= sim$slo, name_A= name_A, name_B= name_B, PARENT_COL= wrong_name, verbose = FALSE),
-               "target and/or parent IDs field-names do not exist in annot", fixed= TRUE)
+               "target and/or parent IDs field names do not exist in annot", fixed= TRUE)
   
   # Bootstrap field names.
   expect_error(call_DTU(annot= sim$annot, slo= sim$slo, name_A= name_A, name_B= name_B, BS_TARGET_COL= wrong_name, verbose = FALSE),
-               "target IDs field-name does not exist in the bootstraps", fixed= TRUE)
+               "target IDs field name does not exist in the bootstraps", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, slo= sim$slo, name_A= name_A, name_B= name_B, COUNTS_COL= wrong_name, verbose = FALSE),
-               "counts field-name does not exist", fixed= TRUE)
+               "counts field name does not exist", fixed= TRUE)
   
   # Correction method.
   expect_error(call_DTU(annot= sim$annot, slo= sim$slo, name_A= name_A, name_B= name_B, correction= wrong_name, verbose = FALSE),
@@ -292,14 +105,14 @@ test_that("The output structure is correct", {
   expect_type(mydtu$Parameters, "list")
   expect_length(mydtu$Parameters, 11)
   expect_named(mydtu$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                  "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum"))
+                                   "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum"))
   
   expect_true(is.data.frame(mydtu$Genes))
   expect_equal(dim(mydtu$Genes)[2], 23)
   expect_named(mydtu$Genes, c("parent_id", "DTU", "transc_DTU", "known_transc", "detect_transc", "elig_transc",  
-                             "elig", "elig_fx", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig", "boot_freq", 
-                             "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB", "boot_minBA", 
-                             "boot_maxAB", "boot_maxBA", "boot_na"))
+                              "elig", "elig_fx", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig", "boot_freq", 
+                              "boot_meanAB", "boot_meanBA", "boot_stdevAB", "boot_stdevBA", "boot_minAB", "boot_minBA", 
+                              "boot_maxAB", "boot_maxBA", "boot_na"))
   expect_true(is.numeric(mydtu$Genes[["known_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["detect_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["pvalAB"]]))
@@ -325,9 +138,9 @@ test_that("The output structure is correct", {
   expect_true(is.data.frame(mydtu$Transcripts))
   expect_equal(dim(mydtu$Transcripts)[2], 27)
   expect_named(mydtu$Transcripts, c("target_id", "parent_id", "DTU", "gene_DTU", "meanA", "meanB", "stdevA", "stdevB",
-                                   "sumA", "sumB", "totalA", "totalB", "elig_xp", "elig", "propA", "propB", "Dprop", 
-                                   "elig_fx", "pval", "pval_corr", "sig", "boot_freq", "boot_mean", "boot_stdev", 
-                                   "boot_min", "boot_max", "boot_na"))
+                                    "sumA", "sumB", "totalA", "totalB", "elig_xp", "elig", "propA", "propB", "Dprop", 
+                                    "elig_fx", "pval", "pval_corr", "sig", "boot_freq", "boot_mean", "boot_stdev", 
+                                    "boot_min", "boot_max", "boot_na"))
   expect_true(is.logical(mydtu$Transcripts[["elig_xp"]]))
   expect_true(is.logical(mydtu$Transcripts[["elig"]]))
   expect_true(is.logical(mydtu$Transcripts[["elig_fx"]]))
@@ -351,7 +164,7 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["boot_min"]]))
   expect_true(is.numeric(mydtu$Transcripts[["boot_max"]]))
   expect_true(is.numeric(mydtu$Transcripts[["boot_na"]]))
-
+  
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")  
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Genes)))
   expect_false(any(c("boot_freq", "boot_mean", "boot_stdev", "boot_min", "boot_max", "boot_na") %in% names(mydtu$Transcripts)))
@@ -379,7 +192,7 @@ test_that("The output content is complete", {
   expect_false(is.na(mydtu$Parameters$"tests"))
   expect_false(is.na(mydtu$Parameters$"bootstrap"))
   expect_false(is.na(mydtu$Parameters$"bootnum"))
-
+  
   expect_false(all(is.na(mydtu$Genes[["parent_id"]])))
   expect_false(all(is.na(mydtu$Genes[["known_transc"]])))
   expect_false(all(is.na(mydtu$Genes[["detect_transc"]])))

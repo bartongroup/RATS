@@ -1,6 +1,13 @@
 #================================================================================
 #' Calculate differential transcript usage.
 #'
+#' There are three options for input:
+#' \itemize{
+#'  \item{A sleuth object. This requires the following parameters: \code{slo}, \code{name_A}, \code{name_B} and optionally \code{varname}, \code{COUNT_COL}, \code{BS_TARGET_COL}}
+#'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}}
+#'  \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}}
+#' }
+#' 
 #' @param annot A dataframe matching the transcript identifiers to their corresponding gene identifiers.
 #' @param TARGET_COL The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the parent identifier column in the \code{annot} object. (Default \code{"parent_id"})
@@ -10,6 +17,10 @@
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
 #' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
 #' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})
+#' @param count_data_A A dataframe of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
+#' @param count_data_B A dataframe of estimated counts for condition B. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
+#' @param boot_data_A A list of dataframes, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
+#' @param boot_data_B A list of dataframes, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param p_thresh The p-value threshold, default 0.05.
 #' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
@@ -25,7 +36,8 @@
 #' @import matrixStats
 #' @export
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
-                     slo= NULL, name_A= NULL, name_B= NULL, varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
+                     slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
+                     count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, correction= "BH", 
                      testmode= "both", boots= "both", bootnum= 100L, verbose= TRUE)
 {
@@ -36,7 +48,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     message("Checking parameters...")
   paramcheck <- parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
-                                boots, bootnum, dprop_thresh)
+                                boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B)
   if (paramcheck$error) stop(paramcheck$message)
   bootnum <- as.integer(bootnum)
   
@@ -227,59 +239,100 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 #' @param boots which tests to bootstrap
 #' @param bootnum number of bootstrap iterations
 #' @param dprop_thresh minimum change in proportion
+#' @param count_data_A A dataframe of estimated counts.
+#' @param count_data_B A dataframe of estimated counts.
+#' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
+#' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' 
 #' @return List with a logical value and a message.
 #'
 parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
-                            count_thresh, testmode, boots, bootnum, dprop_thresh) 
-{
-  if(any(NULL == c(slo, annot, name_A, name_B)))
+                            count_thresh, testmode, boots, bootnum, dprop_thresh,
+                            count_data_A, count_data_B, boot_data_A, boot_data_B) {
+  # Input format.
+  if(any(is.null(annot), 
+         all( any(is.null(slo), is.null(name_A), is.null(name_B), is.null(varname), is.null(BS_TARGET_COL), is.null(COUNTS_COL)),
+              any(is.null(count_data_A), is.null(count_data_B)),
+              any(is.null(boot_data_A), is.null(boot_data_B)) ) ))
     return(list("error"=TRUE, "message"="Insufficient parameters!"))
   
+  # Annotation.
   if (!is.data.frame(annot))
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
+  if (any(!c(TARGET_COL, PARENT_COL) %in% names(annot)))
+    return(list("error"=TRUE, "message"="The specified target and/or parent IDs field names do not exist in annot!"))
   
-  if (any(! c(TARGET_COL, PARENT_COL) %in% names(annot)))
-    return(list("error"=TRUE, "message"="The specified target and/or parent IDs field-names do not exist in annot!"))
-  if (! BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
-    return(list("error"=TRUE, "message"="The specified target IDs field-name does not exist in the bootstraps!"))
-  
-  if (! COUNTS_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
-    return(list("error"=TRUE, "message"="The specified counts field-name does not exist!"))
-  
-  if (! correction %in% p.adjust.methods)
-    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods!"))
-  
+  # Parameters.
+  if (!correction %in% p.adjust.methods)
+    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods ."))
+  if (!testmode %in% c("genes", "transc", "both"))
+    return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   if ((!is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
     return(list("error"=TRUE, "message"="Invalid p-value threshold!"))
-  
-  if (! varname %in% names(slo$sample_to_covariates))
-    return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
-  
-  if (any(! c(name_A, name_B) %in% slo$sample_to_covariates[[varname]] ))
-    return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
-  
-  if (! testmode %in% c("genes", "transc", "both"))
-    return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
-  
-  if (! boots %in% c("genes", "transc", "both", "none"))
-    return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
-  
-  if ((!is.numeric(bootnum)) || bootnum < 1)
-    return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive number."))
-  
-  tx <- slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]]) ]
-  for (k in 2:length(slo$kal)) {
-    if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
-      return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs! Please try again, using the same annotation for all your samples!"))
-  }
-  
   if ((!is.numeric(dprop_thresh)) || dprop_thresh < 0 || dprop_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
-  
   if ((!is.numeric(count_thresh)) || count_thresh < 0)
     return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be between 0 and 1."))
+  if ((!is.numeric(bootnum)) || bootnum < 1)
+    return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive number."))
+  if (!boots %in% c("genes", "transc", "both", "none"))
+    return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
+  
+  # Sleuth
+  if (!is.null(slo)) {
+    if (any(! c("kal","sample_to_covariates") %in% names(slo), ! "bootstrap" %in% names(slo$kal[[1]]) ))
+      return(list("error"=TRUE, "message"="The specified sleuth object is not valid!"))
+    if (!COUNTS_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
+      return(list("error"=TRUE, "message"="The specified counts field name does not exist!"))
+    if (!varname %in% names(slo$sample_to_covariates))
+      return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
+    if (any(!c(name_A, name_B) %in% slo$sample_to_covariates[[varname]] ))
+      return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
+    if (!BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
+      return(list("error"=TRUE, "message"="The specified target IDs field name does not exist in the bootstraps!"))
+  } 
+  
+  # Booted counts.
+  if (!is.null(boot_data_A))
+    if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.frame(boot_data_A[[1]]), !is.data.frame(boot_data_B[[1]]) ))
+        return(list("error"=TRUE, "message"="The bootstrap data are not lists of dataframes!"))
+  
+  # Counts.
+  if (!is.null(count_data_A)){
+    if (any(!is.data.frame(count_data_A), !is.data.frame(count_data_B)))
+      return(list("error"=TRUE, "message"="The counts data are not dataframes!"))
+    if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
+      return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs between conditions!"))
+  }
+  
+  # Bootstrap.
+  if (boots != "none") {
+    if(all(is.null(slo), any(is.null(boot_data_A), is.null(boot_data_B))) )
+      return(list("error"=TRUE, "message"="No bootstrapped estimates were provided!"))
+    
+    if (!is.null(boot_data_A)) {
+      tx <- boot_data_A[[1]][[1]][order(boot_data_A[[1]][[1]])]
+      for (k in 2:length(boot_data_A)){
+        if (!all( tx == boot_data_A[[k]][[1]][order(boot_data_A[[k]][[1]])] ))
+          return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
+      }
+      for (k in 2:length(boot_data_B)){
+        if (!all( tx == boot_data_B[[k]][[1]][order(boot_data_B[[k]][[1]])] ))
+          return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
+      }
+    # Sleuth.  
+    } else if (!is.null(slo)) {
+      tx <- slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]]) ]
+      for (k in 2:length(slo$kal)) {
+        if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
+          return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
+      }
+    }
+  } 
+  
+  # Unique trascript IDs.
+  
   
   return(list("error"=FALSE, "message"="All good!"))
 }
