@@ -4,11 +4,11 @@
 #' There are three options for input:
 #' \itemize{
 #'  \item{A sleuth object. This requires the following parameters: \code{slo}, \code{name_A}, \code{name_B} and optionally \code{varname}, \code{COUNT_COL}, \code{BS_TARGET_COL}}
-#'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}}
 #'  \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}}
+#'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}}
 #' }
 #' 
-#' @param annot A dataframe matching the transcript identifiers to their corresponding gene identifiers.
+#' @param annot A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.
 #' @param TARGET_COL The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the parent identifier column in the \code{annot} object. (Default \code{"parent_id"})
 #' @param slo A Sleuth object.
@@ -17,10 +17,10 @@
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
 #' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
 #' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})
-#' @param count_data_A A dataframe of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
-#' @param count_data_B A dataframe of estimated counts for condition B. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
-#' @param boot_data_A A list of dataframes, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
-#' @param boot_data_B A list of dataframes, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
+#' @param count_data_A A data.table of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
+#' @param count_data_B A data.table of estimated counts for condition B. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
+#' @param boot_data_A A list of data.tables, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
+#' @param boot_data_B A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param p_thresh The p-value threshold, default 0.05.
 #' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
@@ -49,13 +49,22 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   paramcheck <- parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
                                 boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B)
-  if (paramcheck$error) stop(paramcheck$message)
-  bootnum <- as.integer(bootnum)
+  if (paramcheck$error) 
+    stop(paramcheck$message)
   
+  bootnum <- as.integer(bootnum)
   test_transc <- any(testmode == c("transc", "both"))
   test_genes <- any(testmode == c("genes", "both"))
   boot_transc <- any(boots == c("transc", "both"))
   boot_genes <- any(boots == c("genes", "both"))
+  
+  # Determine data extraction steps.
+  steps <- 1  # Assume estimated counts. Simplest case. Bypasses both extraction and averaging.
+  if (!is.null(boot_data_A)) {
+    steps <- 2  # Bootstrapped estimates. Bypasses extraction, only needs averaging.
+  } else if (!is.null(slo)) {
+    steps <- 3  # Sleuth object. Most steps. Requires both extraction and averaging.
+  }
   
   #----------- LOOK-UP
   
@@ -70,15 +79,33 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   
   #---------- EXTRACT DATA
   
-  # De-nest, average and index the counts from the bootstraps. 
-  if (verbose)
-    message("Extracting estimated counts from bootstraps...")
-  # For each condition, a list holds a dataframe for each replicate. 
-  # Each dataframe holds the counts from ALL the bootstraps. Target_id is included but NOT used as key so as to ensure the order keeps matching tx_filter.
-  data_A <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
-  data_B <- denest_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
-  bootmeans_A <- as.data.table(lapply(data_A, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))  # Tables don't have access to column ranges by index so I have to fish our the names.
-  bootmeans_B <- as.data.table(lapply(data_B, function(b) { n <- names(b); rowMeans(b[, n[1:length(n)-1], with=FALSE]) }))
+  if (steps == 3) {
+    if (verbose)
+      message("Restructuring and aggregating bootstraps...")
+    # Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
+    # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.  
+    boot_data_A <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
+    boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
+  } else if (steps == 2) {
+    # Just re-order rows.
+    boot_data_A <- lapply(boot_data_A, function(x) { x[match(x[[1]], tx_filter$target_id), ] })
+    boot_data_B <- lapply(boot_data_B, function(x) { x[match(x[[1]], tx_filter$target_id), ] })
+  }
+  
+  if (steps > 1) {
+    # Calculate mean count across bootstraps.
+    count_data_A <- as.data.table(lapply(boot_data_A, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
+    count_data_B <- as.data.table(lapply(boot_data_B, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
+    # (data.tables don't have access to column ranges by index, so I have to go roundabout via their names).
+    # (Also, the first column is the target_id, so I leave it out).
+  } else {
+    # Just re-order rows and crop out the transcript IDs.
+    nn <- names(counts_data_A)
+    count_data_A <- count_data_A[match(count_data_A[[1]], tx_filter$target_id),  nn[seq.int(2, length(nn))],  with=FALSE]
+    count_data_B <- count_data_B[match(count_data_B[[1]], tx_filter$target_id),  nn[seq.int(2, length(nn))],  with=FALSE]
+  }
+  
+  
   
   #---------- TEST
   
@@ -86,7 +113,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Calculating significances...")
   suppressWarnings(
-    resobj <- calculate_DTU(bootmeans_A, bootmeans_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction) )
+    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction) )
   
   #-------- ADD INFO
   
@@ -109,10 +136,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
     Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns double..
     Genes[(is.na(detect_transc)), detect_transc := 0]
-    Transcripts[, meanA :=  rowMeans(bootmeans_A) ]
-    Transcripts[, meanB :=  rowMeans(bootmeans_B) ]
-    Transcripts[, stdevA :=  rowSds(as.matrix(bootmeans_A)) ]
-    Transcripts[, stdevB :=  rowSds(as.matrix(bootmeans_B)) ]
+    Transcripts[, meanA :=  rowMeans(count_data_A) ]
+    Transcripts[, meanB :=  rowMeans(count_data_B) ]
+    Transcripts[, stdevA :=  rowSds(as.matrix(count_data_A)) ]
+    Transcripts[, stdevB :=  rowSds(as.matrix(count_data_B)) ]
     if (test_transc)
       Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
     if (test_genes)
@@ -137,10 +164,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                     setTxtProgressBar(myprogress, b)
       
                   # Grab a bootstrap from each replicate. 
-                  counts_A <- as.data.table(lapply(data_A, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
-                  counts_B <- as.data.table(lapply(data_B, function(smpl) { smpl[[sample( names(smpl)[1:(dim(smpl)[2]-1)], 1)]] }))
-                  # Have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
-                  # Also, the last column is the target_id, so I leave it out.
+                  counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
+                  counts_B <- as.data.table(lapply(boot_data_B, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
+                  # I have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+                  # Also, the first column is the target_id, so I leave it out.
                   
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
@@ -295,13 +322,13 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   
   # Booted counts.
   if (!is.null(boot_data_A))
-    if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.frame(boot_data_A[[1]]), !is.data.frame(boot_data_B[[1]]) ))
-        return(list("error"=TRUE, "message"="The bootstrap data are not lists of dataframes!"))
+    if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
+        return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
   
   # Counts.
   if (!is.null(count_data_A)){
-    if (any(!is.data.frame(count_data_A), !is.data.frame(count_data_B)))
-      return(list("error"=TRUE, "message"="The counts data are not dataframes!"))
+    if (any(!is.data.table(count_data_A), !is.data.table(count_data_B)))
+      return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
     if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
       return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs between conditions!"))
   }
@@ -330,9 +357,6 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
       }
     }
   } 
-  
-  # Unique trascript IDs.
-  
   
   return(list("error"=FALSE, "message"="All good!"))
 }
@@ -370,23 +394,27 @@ group_samples <- function(covariates) {
 #' @param samples A numeric vector of samples to extract counts for.
 #' @param COUNTS_COL The name of the column with the counts.
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
-#' @return a list of data.tables, one per sample, containing all the bootstrap counts.
+#' @return a list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
 #' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 #' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
-denest_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
+denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
   lapply(samples, function(smpl) {
-    # Extract counts in the order of provided transcript vector, for safety and consistency.
-    dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
-      roworder <- match(tx, boot[[BS_TARGET_COL]])
-      boot[roworder, COUNTS_COL]
-    }))
-    # Replace any NAs with 0. Happens when annotation different from that used for DTE.
-    dt[is.na(dt)] <- 0
-    # Add transcript ID.
-    dt[, "target_id" := tx]
-  })
+                    # Extract counts in the order of provided transcript vector, for safety and consistency.
+                    dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
+                      roworder <- match(tx, boot[[BS_TARGET_COL]])
+                      boot[roworder, COUNTS_COL]
+                    }))
+                    # Replace any NAs with 0. Happens when annotation different from that used for DTE.
+                    dt[is.na(dt)] <- 0
+                    # Add transcript ID.
+                    dt[, "target_id" := tx]
+                    nn <- names(dt)
+                    ll <- length(nn)
+                    # Return reordered so that IDs are in first column.
+                    return(dt[, c(nn[ll], nn[seq.int(1, ll-1)]), with=FALSE])
+                  })
 }
 
 
