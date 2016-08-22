@@ -25,7 +25,7 @@ sim_sleuth_data(varname = "condition", COUNTS_COL = "est_counts",
 \item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks.}
 }
 \value{
-a list with \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 
+A list with \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 
         \code{isx} a vector of trancripts common between generated annotation and bootstraps (useful for code testing).
 
 The simulated data will have non-uniform number of bootstraps per sample and non-uniform order of

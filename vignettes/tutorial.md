@@ -27,8 +27,12 @@ devtools::install_github("bartongroup/rats")
 # 2. Load into R session.
 library{rats}
 
-# 3. Call DTU on a sleuth object, using default settings.
-mydtu <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object, name_A = "My_condition", name_B = "My_other_condition")
+# 3a. Call DTU on a sleuth object, using default settings.
+mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, name_A= "My_condition", name_B= "My_other_condition")
+# 3b. Call DTU on generic bootstrapped abundance estimates.
+mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, boot_data_B= my_list_data_tables_A)
+# 3c. Call DTU on generic abundance estimates.
+mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, count_data_B= my_data_table_B, boots= "none")
 
 # 4. Tally of results.
 dtu_summary(mydtu)
@@ -41,17 +45,7 @@ myids <- get_dtu_ids(mydtu)
 plot_overview(mydtu)
 ```
 
-`my_identifiers_table`: An annotation `data.frame` with two columns, matching the transcript identifiers to 
-the respective gene identifiers.
-
-Tally categories:
-
-* DTU - significant change in proportions.
-* non-DTU - no significant changes.
-* NA - The tests were not applicable (due to low/no fragment counts or lack of alternative transcripts).
-
 The input and output structures and the command options are discussed in more detail in the rest of this tutorial.
-
 
 
 # Installation and loading
@@ -71,8 +65,6 @@ Available in source form from the [releases section](https://github.com/bartongr
 Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
-
-
 
 #### through Bioconductor
 
@@ -99,78 +91,65 @@ library(rats)
 
 # The package in detail
 
-## Input
+## Input formats
 
-The input format recognised by `rats` is the output of [Sleuth](http://pachterlab.github.io/sleuth/). See the 
+`rats` can work with any of three input types:
+
+1. A [Sleuth](http://pachterlab.github.io/sleuth/) object.
+2. Generic bootstrapped abundance estimates.
+3. Generic abundance estimates.
+
+1. From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. See the 
 [introduction to Sleuth](http://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
-to load the transcript abundance estimate data from [Kallisto](http://pachterlab.github.io/kallisto/) into a sleuth 
+to load the transcript abundance estimate data from [Kallisto](http://pachterlab.github.io/kallisto/) into a Sleuth 
 object, and see the [wasabi](http://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance 
 estimate data from [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
 into a sleuth object.
 
-To bypass the complexity of running these third-party tools in this tutorial, we will instead use simulated data. `rats` comes
-with data simulators, intended to be used for testing the code. However, they are also convenient to use for showcasing
-how `rats` works.
+2. Bootstrapped abundance estimates obtained by other means can be input as `list`s of `data.table`s. Two lists are needed, one per condition.
+Each data table should contain the transcript identifiers in the first column, followed by columns containing the estimates from the bootstrap iterations:
 
 
 ```r
-# Simulate some data.
-simdat <- sim_sleuth_data(cnames = c("foo", "bar")) # foo and bar are arbitrary names 
-                                                    # to use as conditions.
-
-# For convenience let's assign the contents of the list to separate variables.
-myslo <- simdat$slo       # Simulated minimal sleuth object.
-myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
+# Show the first rows of the table corresponding to one sample, from simulated data.
+head(sim_boot_data()[[2]][[1]])
 ```
 
-* The main piece of data that `rats` requires is a [Sleuth](http://pachterlab.github.io/sleuth/) object. `sim$slo` emulates 
-this object. The real sleuth objects are quite large and very complex nested lists. The simulated one contains only 
-the essential parts relevant to calling DTU with `rats`. It has a couple of bootstraps of transcript 
-abundance estimates, for a handful of made-up genes, in two conditions.
+```
+##    target_id V1 V2 V3
+## 1:     NIB.1  0  0  0
+## 2:    1A1N-2 20 21 18
+## 3:  1D1C:one  0  0  0
+## 4:  1D1C:two 76 80 72
+## 5:    1B1C.1  0  0  0
+## 6:    1B1C.2 52 55 50
+```
+
+3. Generic abundance estimates, without bootstrapping information, can be input simply as two `data.table`s, one per condition. The first column should
+contain the transcript identifiers, followed by columns listing the abundance per sample:
 
 
 ```r
-# This table is important. It assigns samples to variables. We can only compare data based on the 
-# variables and values listed in this table.
-# This one has two variables: "condition" and "batch". Yours may have more/fewer/different ones.
-# Notice that "foo" and "bar" (the names we gave to our simulated data) are under "condition".
-print( myslo$sample_to_covariates )
+# Show the first rows of the table corresponding to one condition, from simulated data.
+head(sim_count_data()[[2]])
 ```
 
 ```
-##   condition batch
-## 1       foo    ba
-## 2       bar    ba
-## 3       foo    bb
-## 4       bar    bb
+##    target_id V1 V2 V3
+## 1:     NIB.1  0  0  0
+## 2:    1A1N-2 20 21 18
+## 3:  1D1C:one  0  0  0
+## 4:  1D1C:two 76 80 72
+## 5:    1B1C.1  0  0  0
+## 6:    1B1C.2 52 55 50
 ```
 
-```r
-# This is what the estimated counts tables look like. One such table per bootstrap, per sample.
-# head() shows the first few rows only.
-print( head(myslo$kal[[1]]$bootstrap[[1]]) )
-```
-
-```
-##   target_id est_counts
-## 1       LC1          3
-## 2      NIA1        333
-## 3      NIA2        666
-## 4    1A1N-1         10
-## 5    1A1N-2         20
-## 6  1D1C:one          0
-```
-
-* The other piece of data required by `rats` is a data frame that matches transcript identifiers to gene identifiers.
-For the simulated data we created, the generator also provided us with the respective annotation table, `sim$annot`.
-When working with your own data, you will have to create and provide your own such table that is appropriate for
-the data contained in the sleuth object.
+**Regardless of data format**, `rats` also needs an annotation `data.frame` that matches transcript identifiers to gene identifiers. This looks like this:
 
 
 ```r
-# This is what the annotation table should look like.
-# head() shows the first few rows only.
-print( head(myannot) )
+# Show the first rows of the table corresponding to the annotation, from simulated data.
+head(sim_count_data()[[1]])
 ```
 
 ```
@@ -184,100 +163,134 @@ print( head(myannot) )
 ```
 
 
+## Calling DTU 
 
-## Calling DTU
+To bypass the complexity of running third-party tools in this tutorial, we will instead use **emulated data**. `rats` comes
+with data emulators, intended to be used for testing the code. However, they are also convenient to use for showcasing
+how `rats` works. If you happen to have real data available, go ahead and use that instead if you wish.
 
-With our simulated sleuth object and annotation at hand (or your real data, if you have any readily available), 
-we can now call DTU using `rats`. We will use default parameter values for everything. For details on
-what parameters are available and how to use them, refer to the "Advanced input options" section.
-
-
-```r
-# Find DTU between conditions "foo" and "bar" in the simulated data.
-# Be warned that the vignette format does not display progress bars properly!
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar")
-```
-
-```
-## Checking parameters...
-```
-
-```
-## Creating look-up structures...
-```
-
-```
-## Extracting estimated counts from bootstraps...
-```
-
-```
-## Calculating significances...
-```
-
-```
-## Filling in info and descriptive statistics...
-```
-
-```
-## Bootstrapping...
-```
-
-```
-## 
-  |                                                                 |   0%
-...
-  |=================================================================| 100%
-```
-
-```
-## Summarising bootstraps...
-```
-
-```
-## All done!
-```
-
-```
-##           DTU genes       non-DTU genes            NA genes 
-##                   2                   1                   7 
-##     DTU transcripts non-DTU transcripts      NA transcripts 
-##                   5                   5                  11
-```
-
-`call_DTU()` takes 4 mandatory arguments: 
-
-1. an annotation data frame matching transcripts to genes.
-2. a sleuth object.
-3. the names of two conditions (as found in the sleuth object) to compare. 
-
-The summary report has 3 categories for each of genes and transcripts:
+By default, `rats` reports on its progress and produces a summary report that has 3 categories for each of genes and transcripts (more on this, later):
 
 * DTU - significant change in proportions.
 * non-DTU - no significant changes.
 * NA - The tests were not applicable (due to low/no fragment counts or lack of alternative transcripts).
 
-By default, the two condition names (in our example, "foo" and "bar") are expected to be values found 
+The progress messages and summary can be suppressed by adding the `verbose = FALSE` parameter to the call. 
+To prevent cluttering this tutorial, we will use this option in all the examples, but feel free to omit it.
+
+
+### with generic abundance estimates, without bootstraps
+
+This is the simplest usage case, provided only for completeness. We recommend using bootstrapped data whenever possible,
+for reasons that will be discussed in the relevant section below.
+
+First, let's emulate some data, as described in the Input section.
+
+
+```r
+# Simulate some data.
+simdat <- sim_count_data()
+
+# For convenience let's assign the contents of the list to separate variables.
+mycond_A <- simdat[[2]]          # Simulated abundances for one condition.
+mycond_B <- simdat[[3]]          # Simulated abundances for other condition.
+myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
+```
+
+Now we can call DTU:
+
+
+```r
+# Find DTU between conditions "controls" and "patients" in the simulated data.
+mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
+                  boots= "none", name_A= "healthy", name_B= "patients", verbose= FALSE)
+```
+
+`call_DTU()` takes 4 mandatory arguments for this input format. 
+
+1. An annotation data frame, as described in the Input section.
+2. `boots` must only take the value `"none"` in this case. It prevents `rats` from bootstrapping the DTU calls.
+3. `count_data_A` and `count_data_B` are each a `data.table` as described in the Input section.
+
+`name_A` and `name_B` are optional. They specify names for the conditions. This is only kept as meta-data and does not influence the DTU calls.
+
+
+### with generic bootstrapped abundance estimates
+
+First, we need data, as described in the Input section, so let's emulate some, as we did before.
+
+
+```r
+# Simulate some data.
+simdat <- sim_boot_data()
+
+# For convenience let's assign the contents of the list to separate variables.
+mycond_A <- simdat[[2]]          # Simulated bootstrapped data for one condition.
+mycond_B <- simdat[[3]]          # Simulated bootstrapped data for other condition.
+myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
+```
+
+Now we can call DTU:
+
+
+```r
+# Find DTU between conditions "controls" and "patients" in the simulated data.
+mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B, 
+                  name_A= "wildtype", name_B= "some mutant", verbose= FALSE)
+```
+
+`call_DTU()` takes 3 mandatory arguments for this input format. 
+
+1. An annotation data frame, as described in the Input section.
+2. `boot_data_A` and `boot_data_B` are each a list of `data.table` objects, as described in the Input section.
+
+`name_A` and `name_B` are optional. They specify names for the conditions. This is only kept as meta-data and does not influence the DTU calls.
+
+
+### with a sleuth object
+
+First, let's emulate a Sleuth object, using the bundled tools. The real Sleuth objects are quite large and very complex nested lists. 
+The emulated one contains only the essential parts relevant to calling DTU with `rats`. It has a couple 
+of bootstraps of transcript abundance estimates, for a handful of made-up genes, in two conditions.
+
+
+```r
+# Simulate some data.
+simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
+# controls and patients are arbitrary names to use as conditions.
+
+# For convenience let's assign the contents of the list to separate variables.
+myslo <- simdat$slo       # Simulated minimal sleuth object.
+myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
+```
+
+With our emulated Sleuth object and annotation at hand (or your real data, if you have any readily available), 
+we can now call DTU using `rats`. We will use default parameter values for everything. For details on
+what parameters are available and how to use them, refer to the "Advanced input options" section.
+
+
+```r
+# Find DTU between conditions "controls" and "patients" in the simulated data.
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
+                  verbose= FALSE)
+```
+
+`call_DTU()` takes 4 mandatory arguments for this input format: 
+
+1. an annotation data frame, as described in the Input section.
+2. a sleuth object.
+3. unlike the previous usage cases, `name_A` and `name_B` are mandatory and their values are restricted to those available in `myslo$sample_to_conditions`. 
+
+By default, the two condition names (in our example, "controls" and "patients") are expected to be values found 
 in the "condition" column of the `myslo$sample_to_conditions` table. You can override this if you want 
-to compare by a different variable. For example, our simulated data has a variable called "batch", 
+to compare by a different variable. For example, our simulated data also has a variable called "batch", 
 with values "ba" and "bb":
 
 
 ```r
 # Comparing samples by a different variable.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", varname="batch")
+mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "ba", name_B= "bb", varname= "batch")
 ```
-
-By default, `rats` reports its progress and gives you the summary at the end. You can
-also choose to suppress all these reports:
-
-
-```r
-# This prints out nothing at all.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", verbose = FALSE)
-```
-
-In reality, the progress bar is displayed much more sensibly, in a single row. The clutter
-seen in the example above is an artefact of how vignettes capture output.
 
 
 ## Quick results
@@ -489,10 +502,10 @@ print( mydtu$Parameters )
 ## [1] "condition"
 ## 
 ## $cond_A
-## [1] "foo"
+## [1] "controls"
 ## 
 ## $cond_B
-## [1] "bar"
+## [1] "patients"
 ## 
 ## $num_replic_A
 ## [1] 2
@@ -519,8 +532,8 @@ print( mydtu$Parameters )
 ## [1] 100
 ```
 
-* We're comparing samples by "condition", and the two values of that are "foo" 
-(with 2 samples) and "bar" (with 2 
+* We're comparing samples by "condition", and the two values of that are "controls" 
+(with 2 samples) and "patients" (with 2 
 samples). 
 * The significance threshold is set to 0.05, the minimum count per sample is set to 
 5 fragments and the proportion has to change by at least 0.1 
@@ -565,22 +578,22 @@ print( mydtu$Genes )
 ##  3:        NA          NA           NA           NA           NA
 ##  4:        NA          NA           NA           NA           NA
 ##  5:        NA          NA           NA           NA           NA
-##  6:      0.81  0.00247885 0.0007301523  0.003165238  0.001042459
+##  6:      0.83 0.002297371 0.0006862716  0.002867174 0.0009853328
 ##  7:        NA          NA           NA           NA           NA
-##  8:      1.00  0.00000000 0.0000000000  0.000000000  0.000000000
+##  8:      1.00 0.000000000 0.0000000000  0.000000000 0.0000000000
 ##  9:        NA          NA           NA           NA           NA
-## 10:      0.00  0.76318016 0.6736253283  0.139135147  0.192200882
+## 10:      0.00 0.784661756 0.7036691880  0.139088825 0.1925920036
 ##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
 ##  1:           NA           NA         NA         NA      NA
 ##  2:           NA           NA         NA         NA      NA
 ##  3:           NA           NA         NA         NA      NA
 ##  4:           NA           NA         NA         NA      NA
 ##  5:           NA           NA         NA         NA      NA
-##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
+##  6: 5.030128e-05 1.550451e-05 0.01321885 0.00480727       0
 ##  7:           NA           NA         NA         NA      NA
-##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
+##  8: 0.000000e+00 0.000000e+00 0.00000000 0.00000000       0
 ##  9:           NA           NA         NA         NA      NA
-## 10: 5.143483e-01 3.311102e-01  0.9915083 0.98871978       0
+## 10: 5.143483e-01 3.311102e-01 0.99150834 0.98871978       0
 ```
 
 There are 10 genes in the annotation used. Here are some possible scenarios:
@@ -700,19 +713,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.72 3.525901e-02 2.623512e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.72 3.525901e-02 2.623512e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.73 3.420637e-02 2.555941e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.73 3.420637e-02 2.555941e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.05 6.297412e-01 3.427100e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 1.279516e-78 3.059314e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 3.602734e-49 7.214080e-49 6.413781e-53 2.546057e-48
-## 15:  TRUE      0.00 2.028372e-21 3.011675e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.319361e-44 1.698838e-44 1.830584e-46 7.296158e-44
+## 12: FALSE      0.09 5.871506e-01 3.743486e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 2.253061e-78 4.627819e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 7.211996e-49 1.620455e-48 6.413781e-53 6.559376e-48
+## 15:  TRUE      0.00 1.658158e-21 2.826097e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.147936e-44 1.666157e-44 1.516132e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.436661e-01 1.594177e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.338926e-01 1.546231e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.416543e-01 6.888200e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.416543e-01 6.888200e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.501605e-01 6.529350e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.501605e-01 6.529350e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA
@@ -775,7 +788,7 @@ going on in any particular gene.
 plot_gene(mydtu, "MIX6", vals="proportions")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-17-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-21-1.png)
 
 A variation of the above is to plot the mean fragment counts instead of the proportions:
 
@@ -786,7 +799,7 @@ A variation of the above is to plot the mean fragment counts instead of the prop
 plot_gene(mydtu, "MIX6", vals="counts")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-18-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-22-1.png)
 
 The two versions of the plot are best interpreted together, as no expression normalisation is carried out by `rats`.
 
@@ -813,7 +826,7 @@ plot_overview(mydtu, type="volcano")
 ## Warning: Removed 11 rows containing missing values (geom_point).
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-19-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-23-1.png)
 
 And this is what it looks like on a larger dataset:
 ![Dprop VS sig](./fig/volcano.jpg)
@@ -828,7 +841,7 @@ they are colour-coded by their DTU call.
 plot_overview(mydtu, type="maxdprop")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-20-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-24-1.png)
 
 And this is what it looks like on a larger dataset:
 ![Max Dprop](./fig/maxdprop.jpg)
@@ -843,7 +856,7 @@ different confidence thresholds would affect the number of DTU positive calls.
 plot_overview(mydtu, type="transc_conf")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-21-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-25-1.png)
 
 And this is what it looks like on a larger dataset:
 ![Transc Conf VS DTU](./fig/transc_conf.jpg)
@@ -854,7 +867,7 @@ And this is what it looks like on a larger dataset:
 plot_overview(mydtu, type="gene_conf")
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-22-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-26-1.png)
 
 And this is what it looks like on a larger dataset:
 ![Gene Conf VS DTU](./fig/gene_conf.jpg)
@@ -878,7 +891,7 @@ myplot  # display
 ## Warning: Removed 11 rows containing missing values (geom_point).
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-23-1.png)
+![](tutorial_files/figure-html/unnamed-chunk-27-1.png)
 
 ```r
 # Change scale of y axis to linear. 
@@ -898,7 +911,7 @@ myplot2
 ## Warning: Removed 11 rows containing missing values (geom_point).
 ```
 
-![](tutorial_files/figure-html/unnamed-chunk-23-2.png)
+![](tutorial_files/figure-html/unnamed-chunk-27-2.png)
 
 
 
@@ -912,7 +925,7 @@ Three thresholds can be set in `rats`.
 
 ```r
 # Calling DTU with custom thresholds.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", p_thresh = 0.01, 
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", p_thresh = 0.01, 
                   count_thresh = 10, dprop_thresh = 0.25)
 ```
 
@@ -964,16 +977,16 @@ your annotation. This is due to R's limit on the maximum size of matrices.
 
 ```r
 # Bootstrap everything. (default)
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "both", bootnum = 100)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "both", bootnum = 100)
 
 # Only bootstrap transcript calls.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "transc")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "transc")
 
 # Only bootstrap gene calls.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "genes")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "genes")
 
 # Skip bootstraps.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "none")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "none")
 ```
 
 
@@ -987,9 +1000,9 @@ The fields of the skipped test will be filled with `NA`.
 
 ```r
 # Transcripts only.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", testmode="transc")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="transc")
 # Genes only.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", testmode="genes")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="genes")
 ```
 
 
@@ -1002,7 +1015,7 @@ method is `BH` (Benjamini-Hochberg). A full list of options is listed in R's `p.
 
 ```r
 # Bonferroni correction.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", correction = "bonferroni")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", correction = "bonferroni")
 ```
 
 

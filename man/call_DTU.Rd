@@ -5,13 +5,15 @@
 \title{Calculate differential transcript usage.}
 \usage{
 call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
-  slo = NULL, name_A = NULL, name_B = NULL, varname = "condition",
-  COUNTS_COL = "est_counts", BS_TARGET_COL = "target_id", p_thresh = 0.05,
+  slo = NULL, name_A = "Condition-A", name_B = "Condition-B",
+  varname = "condition", COUNTS_COL = "est_counts",
+  BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
+  boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   count_thresh = 5, dprop_thresh = 0.1, correction = "BH",
   testmode = "both", boots = "both", bootnum = 100L, verbose = TRUE)
 }
 \arguments{
-\item{annot}{A dataframe matching the transcript identifiers to their corresponding gene identifiers.}
+\item{annot}{A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.}
 
 \item{TARGET_COL}{The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})}
 
@@ -28,6 +30,14 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 \item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})}
 
 \item{BS_TARGET_COL}{The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})}
+
+\item{count_data_A}{A data.table of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.}
+
+\item{count_data_B}{A data.table of estimated counts for condition B. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.}
+
+\item{boot_data_A}{A list of data.tables, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.}
+
+\item{boot_data_B}{A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.}
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
@@ -49,6 +59,11 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 List of data tables, with gene-level and transcript-level information.
 }
 \description{
-Calculate differential transcript usage.
+There are three options for input:
+\itemize{
+ \item{A sleuth object. This requires the following parameters: \code{slo}, \code{name_A}, \code{name_B} and optionally \code{varname}, \code{COUNT_COL}, \code{BS_TARGET_COL}.}
+ \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
+ \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
+}
 }
 

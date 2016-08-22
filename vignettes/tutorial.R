@@ -5,8 +5,12 @@
 #  # 2. Load into R session.
 #  library{rats}
 #  
-#  # 3. Call DTU on a sleuth object, using default settings.
-#  mydtu <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object, name_A = "My_condition", name_B = "My_other_condition")
+#  # 3a. Call DTU on a sleuth object, using default settings.
+#  mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, name_A= "My_condition", name_B= "My_other_condition")
+#  # 3b. Call DTU on generic bootstrapped abundance estimates.
+#  mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, boot_data_B= my_list_data_tables_A)
+#  # 3c. Call DTU on generic abundance estimates.
+#  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, count_data_B= my_data_table_B, boots= "none")
 #  
 #  # 4. Tally of results.
 #  dtu_summary(mydtu)
@@ -22,42 +26,62 @@
 library(rats)
 
 ## ------------------------------------------------------------------------
+# Show the first rows of the table corresponding to one sample, from simulated data.
+head(sim_boot_data()[[2]][[1]])
+
+## ------------------------------------------------------------------------
+# Show the first rows of the table corresponding to one condition, from simulated data.
+head(sim_count_data()[[2]])
+
+## ------------------------------------------------------------------------
+# Show the first rows of the table corresponding to the annotation, from simulated data.
+head(sim_count_data()[[1]])
+
+## ------------------------------------------------------------------------
 # Simulate some data.
-simdat <- sim_sleuth_data(cnames = c("foo", "bar")) # foo and bar are arbitrary names 
-                                                    # to use as conditions.
+simdat <- sim_count_data()
+
+# For convenience let's assign the contents of the list to separate variables.
+mycond_A <- simdat[[2]]          # Simulated abundances for one condition.
+mycond_B <- simdat[[3]]          # Simulated abundances for other condition.
+myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
+
+## ------------------------------------------------------------------------
+# Find DTU between conditions "controls" and "patients" in the simulated data.
+mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
+                  boots= "none", name_A= "healthy", name_B= "patients", verbose= FALSE)
+
+## ------------------------------------------------------------------------
+# Simulate some data.
+simdat <- sim_boot_data()
+
+# For convenience let's assign the contents of the list to separate variables.
+mycond_A <- simdat[[2]]          # Simulated bootstrapped data for one condition.
+mycond_B <- simdat[[3]]          # Simulated bootstrapped data for other condition.
+myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
+
+## ------------------------------------------------------------------------
+# Find DTU between conditions "controls" and "patients" in the simulated data.
+mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B, 
+                  name_A= "wildtype", name_B= "some mutant", verbose= FALSE)
+
+## ------------------------------------------------------------------------
+# Simulate some data.
+simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
+# controls and patients are arbitrary names to use as conditions.
 
 # For convenience let's assign the contents of the list to separate variables.
 myslo <- simdat$slo       # Simulated minimal sleuth object.
 myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 
 ## ------------------------------------------------------------------------
-# This table is important. It assigns samples to variables. We can only compare data based on the 
-# variables and values listed in this table.
-# This one has two variables: "condition" and "batch". Yours may have more/fewer/different ones.
-# Notice that "foo" and "bar" (the names we gave to our simulated data) are under "condition".
-print( myslo$sample_to_covariates )
-
-# This is what the estimated counts tables look like. One such table per bootstrap, per sample.
-# head() shows the first few rows only.
-print( head(myslo$kal[[1]]$bootstrap[[1]]) )
-
-## ------------------------------------------------------------------------
-# This is what the annotation table should look like.
-# head() shows the first few rows only.
-print( head(myannot) )
-
-## ------------------------------------------------------------------------
-# Find DTU between conditions "foo" and "bar" in the simulated data.
-# Be warned that the vignette format does not display progress bars properly!
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar")
+# Find DTU between conditions "controls" and "patients" in the simulated data.
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
+                  verbose= FALSE)
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Comparing samples by a different variable.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", varname="batch")
-
-## ------------------------------------------------------------------------
-# This prints out nothing at all.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", verbose = FALSE)
+#  mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "ba", name_B= "bb", varname= "batch")
 
 ## ------------------------------------------------------------------------
 # A really simple tally of the outcome.
@@ -134,7 +158,7 @@ myplot2
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Calling DTU with custom thresholds.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", p_thresh = 0.01,
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", p_thresh = 0.01,
 #                    count_thresh = 10, dprop_thresh = 0.25)
 
 ## ------------------------------------------------------------------------
@@ -143,26 +167,26 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", va
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Bootstrap everything. (default)
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "both", bootnum = 100)
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "both", bootnum = 100)
 #  
 #  # Only bootstrap transcript calls.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "transc")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "transc")
 #  
 #  # Only bootstrap gene calls.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "genes")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "genes")
 #  
 #  # Skip bootstraps.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", boots = "none")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "none")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Transcripts only.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", testmode="transc")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="transc")
 #  # Genes only.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", testmode="genes")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="genes")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Bonferroni correction.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "foo", name_B = "bar", correction = "bonferroni")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", correction = "bonferroni")
 
 ## ------------------------------------------------------------------------
 # Lets create some input with custom field names. The data is exactly the same as before.

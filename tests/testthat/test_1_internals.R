@@ -82,18 +82,18 @@ test_that("Bootstrapped counts are extracted correctly", {
     expect_false(any(is.na(lr[[i]])))
     
     # Number of bootstraps per sample.
-    expect_equal(length(lr[[i]]) - 1, length(sim$slo$kal[[samples[i]]]$bootstrap))  # the last column in lr[] is ID
+    expect_equal(length(lr[[i]]) - 1, length(sim$slo$kal[[samples[i]]]$bootstrap))  #  one column in lr[[i]] is IDs.
     
     # All target counts pulled from the correct bootstraps and the correct transcripts.
-    counts_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
-      fltr1 <- match(sim$isx, sim$slo$kal[[samples[i]]]$bootstrap[[j]][[bst]])  # Where in the boot are the expected IDs.
-      fltr2 <- match(sim$isx, lr[[i]][["target_id"]])                           # Where in the extracted counts are the expected IDs.
-      all(sim$slo$kal[[samples[i]]]$bootstrap[[j]][[cnt]][fltr1] == lr[[i]][[j]][fltr2])  # Both vectors' elements are ordered by the same IDs.
+    fltr2 <- match(sim$isx, lr[[i]][["target_id"]])                           # Where in the extracted counts are the expected IDs.
+    counts_ok <- sapply(2:(length(lr[[i]])), function(j) {
+      fltr1 <- match(sim$isx, sim$slo$kal[[samples[i]]]$bootstrap[[j-1]][[bst]])  # Where in the boot are the expected IDs.
+      all(sim$slo$kal[[samples[i]]]$bootstrap[[j-1]][[cnt]][fltr1] == lr[[i]][[j]][fltr2])  # Both vectors' elements are ordered by the same IDs.
     })
     expect_true(all(counts_ok))
     
     # IDs in annotation, but not in bootstraps, should be 0.
-    missing_from_boots_ok <- sapply(1:(length(lr[[i]]) - 1), function(j) {
+    missing_from_boots_ok <- sapply(2:(length(lr[[i]])), function(j) {
       nib <- setdiff(sim$annot$target_id, sim$isx)
       nib <- match(nib, lr[[i]][["target_id"]])
       all(lr[[i]][[j]][nib] == 0)

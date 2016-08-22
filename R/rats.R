@@ -3,9 +3,9 @@
 #'
 #' There are three options for input:
 #' \itemize{
-#'  \item{A sleuth object. This requires the following parameters: \code{slo}, \code{name_A}, \code{name_B} and optionally \code{varname}, \code{COUNT_COL}, \code{BS_TARGET_COL}}
-#'  \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}}
-#'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}}
+#'  \item{A sleuth object. This requires the following parameters: \code{slo}, \code{name_A}, \code{name_B} and optionally \code{varname}, \code{COUNT_COL}, \code{BS_TARGET_COL}.}
+#'  \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
+#'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
 #' }
 #' 
 #' @param annot A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.
@@ -88,8 +88,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
   } else if (steps == 2) {
     # Just re-order rows.
-    boot_data_A <- lapply(boot_data_A, function(x) { x[match(x[[1]], tx_filter$target_id), ] })
-    boot_data_B <- lapply(boot_data_B, function(x) { x[match(x[[1]], tx_filter$target_id), ] })
+    boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
+    boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
   }
   
   if (steps > 1) {
@@ -100,9 +100,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     # (Also, the first column is the target_id, so I leave it out).
   } else {
     # Just re-order rows and crop out the transcript IDs.
-    nn <- names(counts_data_A)
-    count_data_A <- count_data_A[match(count_data_A[[1]], tx_filter$target_id),  nn[seq.int(2, length(nn))],  with=FALSE]
-    count_data_B <- count_data_B[match(count_data_B[[1]], tx_filter$target_id),  nn[seq.int(2, length(nn))],  with=FALSE]
+    nn <- names(count_data_A)
+    count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
+    nn <- names(count_data_B)  # The number of columns may be different from A.
+    count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
   }
   
   
@@ -321,12 +322,12 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   } 
   
   # Booted counts.
-  if (!is.null(boot_data_A))
+  if (!is.null(boot_data_A)  && is.null(slo))  # If slo available ignore boot_data.
     if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
         return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
   
   # Counts.
-  if (!is.null(count_data_A)){
+  if (!is.null(count_data_A)  && is.null(slo) && any(is.null(boot_data_A), is.null(boot_data_B))){  # If slo or boot_data available, ignore count_data.
     if (any(!is.data.table(count_data_A), !is.data.table(count_data_B)))
       return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
     if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
@@ -335,10 +336,8 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   
   # Bootstrap.
   if (boots != "none") {
-    if(all(is.null(slo), any(is.null(boot_data_A), is.null(boot_data_B))) )
-      return(list("error"=TRUE, "message"="No bootstrapped estimates were provided!"))
-    
-    if (!is.null(boot_data_A)) {
+    # Direct data.
+    if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
       tx <- boot_data_A[[1]][[1]][order(boot_data_A[[1]][[1]])]
       for (k in 2:length(boot_data_A)){
         if (!all( tx == boot_data_A[[k]][[1]][order(boot_data_A[[k]][[1]])] ))
@@ -355,6 +354,8 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
         if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
           return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
       }
+    } else {
+      return(list("error"=TRUE, "message"="No bootstrapped estimates were provided!"))
     }
   } 
   
