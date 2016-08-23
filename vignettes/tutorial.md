@@ -1,6 +1,6 @@
 # RATs Tutorial
 Kimon Froussios  
-`r date()`  
+23 AUG 2016  
 
 
 # Relative Abundance of Transcripts (RATs).
@@ -99,14 +99,14 @@ library(rats)
 2. Generic bootstrapped abundance estimates.
 3. Generic abundance estimates.
 
-1. From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. See the 
+From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. See the 
 [introduction to Sleuth](http://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
 to load the transcript abundance estimate data from [Kallisto](http://pachterlab.github.io/kallisto/) into a Sleuth 
 object, and see the [wasabi](http://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance 
 estimate data from [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
 into a sleuth object.
 
-2. Bootstrapped abundance estimates obtained by other means can be input as `list`s of `data.table`s. Two lists are needed, one per condition.
+Bootstrapped abundance estimates obtained by other means can be input as `list`s of `data.table`s. Two lists are needed, one per condition.
 Each data table should contain the transcript identifiers in the first column, followed by columns containing the estimates from the bootstrap iterations:
 
 
@@ -125,24 +125,9 @@ head(sim_boot_data()[[2]][[1]])
 ## 6:    1B1C.2 52 55 50
 ```
 
-3. Generic abundance estimates, without bootstrapping information, can be input simply as two `data.table`s, one per condition. The first column should
-contain the transcript identifiers, followed by columns listing the abundance per sample:
-
-
-```r
-# Show the first rows of the table corresponding to one condition, from simulated data.
-head(sim_count_data()[[2]])
-```
-
-```
-##    target_id V1 V2 V3
-## 1:     NIB.1  0  0  0
-## 2:    1A1N-2 20 21 18
-## 3:  1D1C:one  0  0  0
-## 4:  1D1C:two 76 80 72
-## 5:    1B1C.1  0  0  0
-## 6:    1B1C.2 52 55 50
-```
+Generic abundance estimates, without bootstrapping information, can be input simply as two `data.table`s, one per condition. The first column should
+contain the transcript identifiers, followed by columns listing the abundance per sample. The format of each table is identical to the one shown above,
+only the meaning of the numbers changes.
 
 **Regardless of data format**, `rats` also needs an annotation `data.frame` that matches transcript identifiers to gene identifiers. This looks like this:
 
@@ -346,6 +331,18 @@ print( ids[["dtu-genes"]] )
 
 
 ## Output structure
+
+The output of `rats` is a list containing 3 elements:
+
+
+```r
+print( names(mydtu) )
+```
+
+```
+## [1] "Parameters"  "Genes"       "Transcripts"
+```
+
 
 ### Parameters
 
@@ -578,22 +575,22 @@ print( mydtu$Genes )
 ##  3:        NA          NA           NA           NA           NA
 ##  4:        NA          NA           NA           NA           NA
 ##  5:        NA          NA           NA           NA           NA
-##  6:      0.83 0.002297371 0.0006862716  0.002867174 0.0009853328
+##  6:      0.82 0.002913862 0.0009343038  0.004617752  0.001553497
 ##  7:        NA          NA           NA           NA           NA
-##  8:      1.00 0.000000000 0.0000000000  0.000000000 0.0000000000
+##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
 ##  9:        NA          NA           NA           NA           NA
-## 10:      0.00 0.784661756 0.7036691880  0.139088825 0.1925920036
+## 10:      0.00 0.776276584 0.6948216461  0.142400556  0.196181482
 ##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
 ##  1:           NA           NA         NA         NA      NA
 ##  2:           NA           NA         NA         NA      NA
 ##  3:           NA           NA         NA         NA      NA
 ##  4:           NA           NA         NA         NA      NA
 ##  5:           NA           NA         NA         NA      NA
-##  6: 5.030128e-05 1.550451e-05 0.01321885 0.00480727       0
+##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
 ##  7:           NA           NA         NA         NA      NA
-##  8: 0.000000e+00 0.000000e+00 0.00000000 0.00000000       0
+##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
 ##  9:           NA           NA         NA         NA      NA
-## 10: 5.143483e-01 3.311102e-01 0.99150834 0.98871978       0
+## 10: 5.143483e-01 3.311102e-01  0.9915083 0.98871978       0
 ```
 
 There are 10 genes in the annotation used. Here are some possible scenarios:
@@ -713,19 +710,19 @@ print( mydtu$Transcripts )
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.73 3.420637e-02 2.555941e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.73 3.420637e-02 2.555941e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.71 3.517732e-02 3.203049e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.71 3.517732e-02 3.203049e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.09 5.871506e-01 3.743486e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 2.253061e-78 4.627819e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 7.211996e-49 1.620455e-48 6.413781e-53 6.559376e-48
-## 15:  TRUE      0.00 1.658158e-21 2.826097e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.147936e-44 1.666157e-44 1.516132e-46 7.296158e-44
+## 12: FALSE      0.02 6.565423e-01 3.300701e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 1.754386e-78 4.381734e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 3.094905e-49 7.881022e-49 6.413781e-53 6.559376e-48
+## 15:  TRUE      0.00 1.950232e-21 3.008824e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.372119e-44 1.970160e-44 1.516132e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.338926e-01 1.546231e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.186030e-01 1.667606e-01 3.567434e-01 9.643718e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.501605e-01 6.529350e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.501605e-01 6.529350e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.408455e-01 7.414637e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.408455e-01 7.414637e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA

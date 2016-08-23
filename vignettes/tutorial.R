@@ -30,10 +30,6 @@ library(rats)
 head(sim_boot_data()[[2]][[1]])
 
 ## ------------------------------------------------------------------------
-# Show the first rows of the table corresponding to one condition, from simulated data.
-head(sim_count_data()[[2]])
-
-## ------------------------------------------------------------------------
 # Show the first rows of the table corresponding to the annotation, from simulated data.
 head(sim_count_data()[[1]])
 
@@ -96,6 +92,9 @@ print( names(ids) )
 
 # DTU positive genes.
 print( ids[["dtu-genes"]] )
+
+## ------------------------------------------------------------------------
+print( names(mydtu) )
 
 ## ------------------------------------------------------------------------
 # Parameter list's elements.

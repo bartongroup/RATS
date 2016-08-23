@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "`r date()`"
+date: "23 AUG 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -113,14 +113,14 @@ library(rats)
 2. Generic bootstrapped abundance estimates.
 3. Generic abundance estimates.
 
-1. From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. See the 
+From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. See the 
 [introduction to Sleuth](http://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
 to load the transcript abundance estimate data from [Kallisto](http://pachterlab.github.io/kallisto/) into a Sleuth 
 object, and see the [wasabi](http://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance 
 estimate data from [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
 into a sleuth object.
 
-2. Bootstrapped abundance estimates obtained by other means can be input as `list`s of `data.table`s. Two lists are needed, one per condition.
+Bootstrapped abundance estimates obtained by other means can be input as `list`s of `data.table`s. Two lists are needed, one per condition.
 Each data table should contain the transcript identifiers in the first column, followed by columns containing the estimates from the bootstrap iterations:
 
 ```{r}
@@ -128,13 +128,9 @@ Each data table should contain the transcript identifiers in the first column, f
 head(sim_boot_data()[[2]][[1]])
 ```
 
-3. Generic abundance estimates, without bootstrapping information, can be input simply as two `data.table`s, one per condition. The first column should
-contain the transcript identifiers, followed by columns listing the abundance per sample:
-
-```{r}
-# Show the first rows of the table corresponding to one condition, from simulated data.
-head(sim_count_data()[[2]])
-```
+Generic abundance estimates, without bootstrapping information, can be input simply as two `data.table`s, one per condition. The first column should
+contain the transcript identifiers, followed by columns listing the abundance per sample. The format of each table is identical to the one shown above,
+only the meaning of the numbers changes.
 
 **Regardless of data format**, `rats` also needs an annotation `data.frame` that matches transcript identifiers to gene identifiers. This looks like this:
 
@@ -300,6 +296,13 @@ print( ids[["dtu-genes"]] )
 
 
 ## Output structure
+
+The output of `rats` is a list containing 3 elements:
+
+```{r}
+print( names(mydtu) )
+```
+
 
 ### Parameters
 
