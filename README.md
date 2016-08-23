@@ -71,6 +71,8 @@ Mandatory parameters:
 * a sleuth object
 * the names of two conditions recorded in the sleuth object
 
+`rats` also accepts data input in generic format that does not depend on Sleuth. Please consult the vignette for syntax and specifications.
+
 The output is a list containing two tables that list the final results as well as the intermediate calculations and decisions.
 For details on the parameters, input and output, please refer to the tutorial vignette.
 
