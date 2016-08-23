@@ -54,7 +54,7 @@ If you have trouble installing these dependencies, your system could be missing 
 
 ### Installation
 
-Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
 Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
