@@ -10,7 +10,7 @@
 #' @param BS_TARGET_COL Name for bootstraps column containing transcript identification.
 #' @param cnames A vector of (two) name values for the comparison variable.
 #' @param errannot_inconsistent Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks.
-#' @return a list with \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 
+#' @return A list with \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 
 #'         \code{isx} a vector of trancripts common between generated annotation and bootstraps (useful for code testing).
 #' 
 #' The simulated data will have non-uniform number of bootstraps per sample and non-uniform order of
@@ -85,6 +85,46 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
   }
   
   return(list("annot" = tx, "slo" = sl, "isx" = intersect(tx[[TARGET_COL]], sl$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]]) ))
+}
+
+#==============================================================================
+#' Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.
+#' 
+#' Based on sim_sleuth_data().
+#' 
+#' @param cnames A vector of (two) name values for the comparison variable.
+#' @return  A list with 3 elements. First a data.frame with the corresponding annotation. Then, 2 lists of data.tables. One list per condition. Each data table represents a sample and contains the estimates from the bootstrap iterations.
+#' 
+#' @export
+#'
+sim_boot_data <- function(cnames=c("A", "B")) {
+  sim <- sim_sleuth_data(cnames=cnames)
+  # Emulate non-sleuth bootstrap data.
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  return(list(sim$annot, data_A, data_B))
+}
+
+#==============================================================================
+#' Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.
+#' 
+#' Based on sim_sleuth_data().
+#' 
+#' @param cnames A vector of (two) name values for the comparison variable.
+#' @return A list with 3 elements. First, a data.frame with the corresponding annotation table. 
+#' Then, 2 data.tables, one per condition. Each data table contains the abundance estimates for all the samples for the respective condition.
+#' 
+#' @export
+#'
+sim_count_data <- function(cnames=c("A","B")) {
+  sim <- sim_sleuth_data(cnames=cnames)
+  # Emulate non-sleuth bootstrap data.
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  # Emulate non-bootstrap data.
+  counts_A <- data_A[[1]]
+  counts_B <- data_B[[1]]
+  return(list(sim$annot, counts_A, counts_B))
 }
 
 
