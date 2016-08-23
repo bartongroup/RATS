@@ -17,8 +17,9 @@ of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pac
 
 #### What it needs
 
-As input it requires an R object similar to the output of [Sleuth](http://pachterlab.github.io/sleuth/). It also requires an index 
-table matching transcript identifiers to respective gene identifiers.  
+As input `rats` requires transcript abundance estimates with or without bootstrapping. For convenience, these can be also be extracted directly
+from the output of [Sleuth](http://pachterlab.github.io/sleuth/). It also requires a look-up table matching transcript identifiers to 
+respective gene identifiers.  
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
 [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, as well as 
@@ -79,7 +80,7 @@ For details on the parameters, input and output, please refer to the tutorial vi
 
 ## Contact information
 
-The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
+The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
