@@ -17,7 +17,7 @@ of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pac
 
 #### What it needs
 
-As input `rats` requires transcript abundance estimates with or without bootstrapping. For convenience, these can be also be extracted directly
+As input `rats` requires transcript abundance estimates with or without bootstrapping. For convenience, these can also be extracted directly
 from the output of [Sleuth](http://pachterlab.github.io/sleuth/). It also requires a look-up table matching transcript identifiers to 
 respective gene identifiers.  
 
