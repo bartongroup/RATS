@@ -7,12 +7,12 @@
 alloc_out(annot, full)
 }
 \arguments{
-\item{annot}{a dataframe with at least 2 columns: target_id and parent_id.}
+\item{annot}{A dataframe with at least 2 columns: target_id and parent_id.}
 
 \item{full}{Full-sized structure or core fields only. One of "full", "short".}
 }
 \value{
-a list-based structure of class dtu.
+A list.
 }
 \description{
 Create output structure.

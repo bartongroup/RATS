@@ -31,7 +31,7 @@ test_that("The input checks work", {
                          boot_data_A= data_A, boot_data_B= data_B, count_data_A= counts_A, count_data_B= counts_B))
   
   # Annotation is not a dataframe.
-  expect_error(call_DTU(annot= list("not", "a", "dataframe"), slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE), "annot is not a data.frame.")
+  expect_error(call_DTU(annot= list("not", "a", "dataframe"), slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE), "annot is not a data.frame")
   # Annotation field names.
   expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, TARGET_COL= wrong_name, verbose = FALSE),
                "target and/or parent IDs field names do not exist in annot", fixed= TRUE)
@@ -41,6 +41,10 @@ test_that("The input checks work", {
   sim3 <- sim_sleuth_data(errannot_inconsistent= TRUE, cnames= c(name_A, name_B))
   expect_error(call_DTU(annot= sim3$annot, slo= sim3$slo, name_A= name_A, name_B= name_B, verbose = FALSE),
                "Inconsistent set of transcript IDs", fixed= TRUE)
+  # Non unique IDs.
+  a <- copy(sim1$annot)
+  a[1, "target_id"] <- a[2, "target_id"]
+  expect_error(call_DTU(annot= a, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE), "transcript identifiers are not unique")
   
   # Boot data is not a list of datatables.
   expect_error(call_DTU(annot= sim1$annot, boot_data_A= c("not", "a", "list"), boot_data_B= data_B, verbose = FALSE), "bootstrap data are not lists")
@@ -130,9 +134,11 @@ test_that("The output structure is correct", {
   expect_named(mydtu, c("Parameters", "Genes", "Transcripts"))
   
   expect_type(mydtu$Parameters, "list")
-  expect_length(mydtu$Parameters, 11)
+  expect_length(mydtu$Parameters, 17)
   expect_named(mydtu$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                   "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum"))
+                                   "count_thresh", "dprop_thresh", "tests", "bootstrap", "bootnum",
+                                   "data_type", "num_genes", "num_transc", "description", 
+                                   "rats_version", "R_version"))
   
   expect_true(is.data.frame(mydtu$Genes))
   expect_equal(dim(mydtu$Genes)[2], 23)
@@ -230,6 +236,11 @@ test_that("The output content is complete", {
     expect_false(is.na(mydtu[[x]]$Parameters$"tests"))
     expect_false(is.na(mydtu[[x]]$Parameters$"bootstrap"))
     expect_false(is.na(mydtu[[x]]$Parameters$"bootnum"))
+    expect_false(is.na(mydtu[[x]]$Parameters$"data_type"))
+    expect_false(is.na(mydtu[[x]]$Parameters$"num_genes"))
+    expect_false(is.na(mydtu[[x]]$Parameters$"num_transc"))
+    expect_false(is.na(mydtu[[x]]$Parameters$"rats_version"))
+    expect_false(any(is.na(mydtu[[x]]$Parameters$"R_version")))
     # Genes.
     expect_false(all(is.na(mydtu[[x]]$Genes[["parent_id"]])))
     expect_false(all(is.na(mydtu[[x]]$Genes[["known_transc"]])))
@@ -283,6 +294,9 @@ test_that("The output content is complete", {
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["boot_max"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["boot_na"]])))
     }
+    # Paranoid check that all the annotation entries are present in the output.
+    expect_equal(dim(mydtu[[x]]$Genes)[1], length(levels(sim$annot$parent_id)))
+    expect_equal(dim(mydtu[[x]]$Transcripts)[1], length(levels(sim$annot$target_id)))
   }
 })
 

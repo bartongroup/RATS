@@ -18,7 +18,7 @@ denest_sleuth_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL)
 \item{BS_TARGET_COL}{The name of the column with the transcript IDs.}
 }
 \value{
-a list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
+A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 
 Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.

@@ -43,9 +43,13 @@ mycond_B <- simdat[[3]]          # Simulated abundances for other condition.
 myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
 
 ## ------------------------------------------------------------------------
-# Find DTU between conditions "controls" and "patients" in the simulated data.
+# Find DTU between the simulated datasets.
 mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
-                  boots= "none", name_A= "healthy", name_B= "patients", verbose= FALSE)
+                  boots= "none", verbose= FALSE,
+                  name_A= "healthy", name_B= "patients", varname= "My phenotype",
+                  description="Comparison of two simulated counts datasets for the
+                               tutorial. Simulated using built-in functionality of 
+                               `rats`.")
 
 ## ------------------------------------------------------------------------
 # Simulate some data.
@@ -59,7 +63,10 @@ myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
 ## ------------------------------------------------------------------------
 # Find DTU between conditions "controls" and "patients" in the simulated data.
 mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B, 
-                  name_A= "wildtype", name_B= "some mutant", verbose= FALSE)
+                  name_A= "wildtype", name_B= "some mutant", varname = "My phenotype",
+                  verbose= FALSE, description="Comparison of two simulated datasets 
+                    of bootstrapped counts for the tutorial. Simulated using built-in 
+                    functionality of `rats`.")
 
 ## ------------------------------------------------------------------------
 # Simulate some data.
@@ -73,10 +80,16 @@ myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 ## ------------------------------------------------------------------------
 # Find DTU between conditions "controls" and "patients" in the simulated data.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  verbose= FALSE)
+                  varname= "condition", verbose= FALSE,
+                  description="Using a simulated sleuth object for the purposes of the tutorial.
+                               Simulated using built-in functionality of `rats`.")
+
+## ------------------------------------------------------------------------
+# See available variables and values.
+print( myslo$sample_to_covariates )
 
 ## ----eval=FALSE----------------------------------------------------------
-#  # Comparing samples by a different variable.
+#  # Compare samples by a non-default variable.
 #  mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "ba", name_B= "bb", varname= "batch")
 
 ## ------------------------------------------------------------------------

@@ -10,7 +10,8 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   count_thresh = 5, dprop_thresh = 0.1, correction = "BH",
-  testmode = "both", boots = "both", bootnum = 100L, verbose = TRUE)
+  testmode = "both", boots = "both", bootnum = 100L,
+  description = NA_character_, verbose = TRUE)
 }
 \arguments{
 \item{annot}{A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.}
@@ -52,6 +53,8 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 \item{boots}{Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (Default "both")}
 
 \item{bootnum}{Number of bootstraps. (Default 100)}
+
+\item{description}{Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.}
 
 \item{verbose}{Display progress updates. (Default \code{TRUE})}
 }

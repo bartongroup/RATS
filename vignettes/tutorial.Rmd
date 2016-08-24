@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "23 AUG 2016"
+date: "24 AUG 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -21,7 +21,7 @@ vignette: >
 
 # Relative Abundance of Transcripts (RATs).
 
-The `rats` package aims to identify genes that show a shift in the relative abundance of their transcript isoforms 
+The `rats` R package aims to identify genes that show a shift in the relative abundance of their transcript isoforms 
 between two conditions (*Differential Transcript Usage* -- **DTU**). This is supplementary
 to identifying *Differential Transcript Expression* (**DTE**), which simply measures whether transcripts change in
 abundance, but does not compare them to their sibling isoforms within each gene. Situations that show DTU are a 
@@ -76,7 +76,7 @@ If you have trouble installing these dependencies, your system could be missing 
 
 #### from Github
 
-Available in source form from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Available as R source package form from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
 Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
@@ -176,9 +176,13 @@ myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
 Now we can call DTU:
 
 ```{r}
-# Find DTU between conditions "controls" and "patients" in the simulated data.
+# Find DTU between the simulated datasets.
 mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
-                  boots= "none", name_A= "healthy", name_B= "patients", verbose= FALSE)
+                  boots= "none", verbose= FALSE,
+                  name_A= "healthy", name_B= "patients", varname= "My phenotype",
+                  description="Comparison of two simulated counts datasets for the
+                               tutorial. Simulated using built-in functionality of 
+                               `rats`.")
 ```
 
 `call_DTU()` takes 4 mandatory arguments for this input format. 
@@ -187,7 +191,8 @@ mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B
 2. `boots` must only take the value `"none"` in this case. It prevents `rats` from bootstrapping the DTU calls.
 3. `count_data_A` and `count_data_B` are each a `data.table` as described in the Input section.
 
-`name_A` and `name_B` are optional. They specify names for the conditions. This is only kept as meta-data and does not influence the DTU calls.
+`name_A`, `name_B`, `varname` and `description` are optional meta-data that will be recorded in the results object.
+Their values can also be added after the run, by editing the relevant fields of the returned object's `Parameters` element.
 
 
 ### with generic bootstrapped abundance estimates
@@ -209,7 +214,10 @@ Now we can call DTU:
 ```{r}
 # Find DTU between conditions "controls" and "patients" in the simulated data.
 mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B, 
-                  name_A= "wildtype", name_B= "some mutant", verbose= FALSE)
+                  name_A= "wildtype", name_B= "some mutant", varname = "My phenotype",
+                  verbose= FALSE, description="Comparison of two simulated datasets 
+                    of bootstrapped counts for the tutorial. Simulated using built-in 
+                    functionality of `rats`.")
 ```
 
 `call_DTU()` takes 3 mandatory arguments for this input format. 
@@ -217,7 +225,8 @@ mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B,
 1. An annotation data frame, as described in the Input section.
 2. `boot_data_A` and `boot_data_B` are each a list of `data.table` objects, as described in the Input section.
 
-`name_A` and `name_B` are optional. They specify names for the conditions. This is only kept as meta-data and does not influence the DTU calls.
+`name_A`, `name_B`, `varname` and `description` are optional meta-data that will be recorded in the results object.
+Their values can also be added after the run, by editing the relevant fields of the returned object's `Parameters` element.
 
 
 ### with a sleuth object
@@ -243,24 +252,38 @@ what parameters are available and how to use them, refer to the "Advanced input 
 ```{r}
 # Find DTU between conditions "controls" and "patients" in the simulated data.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  verbose= FALSE)
+                  varname= "condition", verbose= FALSE,
+                  description="Using a simulated sleuth object for the purposes of the tutorial.
+                               Simulated using built-in functionality of `rats`.")
 ```
 
-`call_DTU()` takes 4 mandatory arguments for this input format: 
+`call_DTU()` takes 5 mandatory arguments for this input format: 
 
 1. an annotation data frame, as described in the Input section.
 2. a sleuth object.
-3. unlike the previous usage cases, `name_A` and `name_B` are mandatory and their values are restricted to those available in `myslo$sample_to_conditions`. 
+3. `name_A` and `name_B` are restricted to values available in `myslo$sample_to_covariates`. The values must both exist in the column specified by `varname`.
+4. `varname` must be an existing column header in `myslo$sample_to_covariates`.
 
-By default, the two condition names (in our example, "controls" and "patients") are expected to be values found 
-in the "condition" column of the `myslo$sample_to_conditions` table. You can override this if you want 
-to compare by a different variable. For example, our simulated data also has a variable called "batch", 
-with values "ba" and "bb":
+`description` is optional meta-data that will be recorded in the results object.
+Its value can also be added after the run, by editing the relevant field of the returned object's `Parameters` element.
+
+Please note that, unlike the other two usage cases, `name_A`, `name_B` and `varname` are **not optional**, as they specify how data is extracted from the Sleuth object.
+
+Our simulated data also has a variable called "batch", with values "ba" and "bb", so if we wanted to compare samples by batch
+instead of condition we would do it like this:
+
+```{r}
+# See available variables and values.
+print( myslo$sample_to_covariates )
+```
 
 ```{r eval=FALSE}
-# Comparing samples by a different variable.
+# Compare samples by a non-default variable.
 mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "ba", name_B= "bb", varname= "batch")
 ```
+
+Please note that currently only one covariate is used in each run. therefore, any comparison you may wish to make must
+be encoded as a single column in `myslo$sample_to_covariates`, by modifying the table if necessary.
 
 
 ## Quick results
@@ -322,6 +345,12 @@ print( names(mydtu$Parameters) )
 7. `tests` - Which of the two tests (gene-wise, transcript-wise) were carried out.
 8. `bootstrap` - Which of the two tests (gene-wise, transcript-wise) was bootstrapped.
 9. `bootnum` - The number of bootstrap iterations.
+10. `data_type` - The format of the input data.
+11. `num_genes` - The number of genes in the provided annotation.
+12. `num_transc` - The number of transcripts in the provided annotation.
+13. `description` - Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters...
+14. `rats_version` - The version of the package.
+15. `R_version` - A list with the details of the R version.
 
 ### Genes
 

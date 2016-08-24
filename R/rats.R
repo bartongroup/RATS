@@ -28,6 +28,7 @@
 #' @param testmode One of "genes", "transc", "both". (Default "both")
 #' @param boots Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (Default "both")
 #' @param bootnum Number of bootstraps. (Default 100)
+#' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
 #' @param verbose Display progress updates. (Default \code{TRUE})
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
@@ -39,13 +40,16 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, count_thresh= 5, dprop_thresh= 0.1, correction= "BH", 
-                     testmode= "both", boots= "both", bootnum= 100L, verbose= TRUE)
+                     testmode= "both", boots= "both", bootnum= 100L, 
+                     description=NA_character_, verbose= TRUE)
 {
   #---------- PREP
   
   # Input checks.
-  if (verbose)
+  if (verbose) {
+    message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
     message("Checking parameters...")
+  }
   paramcheck <- parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
                                 boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B)
@@ -121,17 +125,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Filling in info and descriptive statistics...")
   
-  # Fill in run info. (if done withing the with() block, changes don't take effect)
-  resobj$Parameters["var_name"] <- varname
-  resobj$Parameters["cond_A"] <- name_A
-  resobj$Parameters["cond_B"] <- name_B
-  resobj$Parameters["p_thresh"] <- p_thresh 
-  resobj$Parameters["count_thresh"] <- count_thresh
-  resobj$Parameters["dprop_thresh"] <- dprop_thresh
-  resobj$Parameters["tests"] <- testmode
-  resobj$Parameters["bootstrap"] <- boots
-  resobj$Parameters["bootnum"] <- bootnum
-  
   with(resobj, {
     # Fill in results detais.
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
@@ -146,6 +139,27 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
   })
+  
+  # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)
+  resobj$Parameters["var_name"] <- varname
+  resobj$Parameters["cond_A"] <- name_A
+  resobj$Parameters["cond_B"] <- name_B
+  resobj$Parameters["p_thresh"] <- p_thresh 
+  resobj$Parameters["count_thresh"] <- count_thresh
+  resobj$Parameters["dprop_thresh"] <- dprop_thresh
+  resobj$Parameters["tests"] <- testmode
+  resobj$Parameters["bootstrap"] <- boots
+  resobj$Parameters["bootnum"] <- bootnum
+  if (steps==3) { 
+    resobj$Parameters["data_type"] <- "sleuth" 
+  } else if (steps==2) {
+    resobj$Parameters["data_type"] <- "bootstrapped abundance estimates"
+  } else  if (steps==1) {
+    resobj$Parameters["data_type"] <- "plain abundance estimates"
+  }
+  resobj$Parameters["num_genes"] <- length(levels(annot$parent_id))
+  resobj$Parameters["num_transc"] <- length(annot$target_id)
+  resobj$Parameters["description"] <- description
   
   #---------- BOOTSTRAP
   
@@ -290,6 +304,8 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
   if (any(!c(TARGET_COL, PARENT_COL) %in% names(annot)))
     return(list("error"=TRUE, "message"="The specified target and/or parent IDs field names do not exist in annot!"))
+  if (length(annot$target_id) != length(unique(annot$target_id)))
+    return(list("error"=TRUE, "message"="Some transcript identifiers are not unique!"))
   
   # Parameters.
   if (!correction %in% p.adjust.methods)
@@ -395,7 +411,7 @@ group_samples <- function(covariates) {
 #' @param samples A numeric vector of samples to extract counts for.
 #' @param COUNTS_COL The name of the column with the counts.
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
-#' @return a list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
+#' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
 #' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 #' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
@@ -422,16 +438,19 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
 #================================================================================
 #' Create output structure.
 #' 
-#' @param annot a dataframe with at least 2 columns: target_id and parent_id.
+#' @param annot A dataframe with at least 2 columns: target_id and parent_id.
 #' @param full Full-sized structure or core fields only. One of "full", "short".
-#' @return a list-based structure of class dtu.
+#' @return A list.
 #' 
 alloc_out <- function(annot, full){
   if (full == "full") {
     Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "p_thresh"=NA_real_, "count_thresh"=NA_real_, "dprop_thresh"=NA_real_,
-                       "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_)
+                       "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_,
+                       "data_type"=NA_character_, "num_genes"=NA_integer_, "num_transc"=NA_integer_,
+                       "description"=NA_character_,
+                       "rats_version"=packageVersion("rats"), "R_version"=R.Version())
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                         "DTU"=NA, "transc_DTU"=NA, 
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
