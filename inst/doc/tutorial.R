@@ -6,11 +6,14 @@
 #  library{rats}
 #  
 #  # 3a. Call DTU on a sleuth object, using default settings.
-#  mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, name_A= "My_condition", name_B= "My_other_condition")
+#  mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object,
+#                    name_A= "My_condition", name_B= "My_other_condition")
 #  # 3b. Call DTU on generic bootstrapped abundance estimates.
-#  mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, boot_data_B= my_list_data_tables_A)
+#  mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A,
+#                    boot_data_B= my_list_data_tables_A)
 #  # 3c. Call DTU on generic abundance estimates.
-#  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, count_data_B= my_data_table_B, boots= "none")
+#  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A,
+#                    count_data_B= my_data_table_B, boots= "none")
 #  
 #  # 4. Tally of results.
 #  dtu_summary(mydtu)
@@ -170,40 +173,49 @@ myplot2
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Calling DTU with custom thresholds.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", p_thresh = 0.01,
-#                    count_thresh = 10, dprop_thresh = 0.25)
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients",
+#                    p_thresh = 0.01, count_thresh = 10, dprop_thresh = 0.25)
 
 ## ------------------------------------------------------------------------
 # Compare by a different variable. In this case "batch".
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", varname= "batch", verbose = FALSE)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", 
+                  varname= "batch", verbose = FALSE)
 
 ## ----eval=FALSE----------------------------------------------------------
-#  # Bootstrap everything. (default)
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "both", bootnum = 100)
+#  # Bootstrap both types of DTU calls (default), for 100 iterations (default).
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", boots = "both", bootnum = 100)
 #  
 #  # Only bootstrap transcript calls.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "transc")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", boots = "transc")
 #  
 #  # Only bootstrap gene calls.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "genes")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", boots = "genes")
 #  
 #  # Skip bootstraps.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "none")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", boots = "none")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Transcripts only.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="transc")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", testmode="transc")
 #  # Genes only.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="genes")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", testmode="genes")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Bonferroni correction.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", correction = "bonferroni")
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", correction = "bonferroni")
 
 ## ------------------------------------------------------------------------
-# Lets create some input with custom field names. The data is exactly the same as before.
-sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), COUNTS_COL="the-counts", 
-                       TARGET_COL="transcript", PARENT_COL="gene", BS_TARGET_COL = "trscr")
+# Lets emulate some input with custom field names. 
+sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), 
+                       COUNTS_COL="the-counts", TARGET_COL="transcript", 
+                       PARENT_COL="gene", BS_TARGET_COL = "trscr")
 myslo <- sim$slo
 myannot <- sim$annot
 
@@ -213,8 +225,8 @@ print( head(sim$annot) )
 
 ## ------------------------------------------------------------------------
 # Call DTU on data with custom field names.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", varname="mouse", 
-                  TARGET_COL="transcript", PARENT_COL="gene", 
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
+                  varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", 
                   COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
 
 # The output structure will always use the same field names, regardless of 

@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "24 AUG 2016"
+date: "29 AUG 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -10,7 +10,7 @@ output:
     toc: yes
 abstract: >
   The [rats](http://github.com/bartongroup/Rats) package is aimed at people analysing **gene expression** and **transcript abundance**, 
-  particularly with **RNA-Seq** type of data in mind. This R Markdown vignette constitutes the main 
+  particularly with **RNA-Seq** type of data in mind. This vignette constitutes the main 
   documentation for the package.
 vignette: >
   %\VignetteIndexEntry{RATs Tutorial}
@@ -43,11 +43,14 @@ devtools::install_github("bartongroup/rats")
 library{rats}
 
 # 3a. Call DTU on a sleuth object, using default settings.
-mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, name_A= "My_condition", name_B= "My_other_condition")
+mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, 
+                  name_A= "My_condition", name_B= "My_other_condition")
 # 3b. Call DTU on generic bootstrapped abundance estimates.
-mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, boot_data_B= my_list_data_tables_A)
+mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, 
+                  boot_data_B= my_list_data_tables_A)
 # 3c. Call DTU on generic abundance estimates.
-mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, count_data_B= my_data_table_B, boots= "none")
+mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
+                  count_data_B= my_data_table_B, boots= "none")
 
 # 4. Tally of results.
 dtu_summary(mydtu)
@@ -635,8 +638,8 @@ Three thresholds can be set in `rats`.
 
 ```{r eval=FALSE}
 # Calling DTU with custom thresholds.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", p_thresh = 0.01, 
-                  count_thresh = 10, dprop_thresh = 0.25)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
+                  p_thresh = 0.01, count_thresh = 10, dprop_thresh = 0.25)
 ```
 
 1. `p_thresh` - Significance level. P-values below this will be considered significant. 0.05 is a very permissive value.
@@ -660,7 +663,8 @@ variables as well. As we saw in a previous example, our simulated data contains 
 
 ```{r}
 # Compare by a different variable. In this case "batch".
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", varname= "batch", verbose = FALSE)
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb", 
+                  varname= "batch", verbose = FALSE)
 ```
 
 
@@ -684,17 +688,21 @@ computation time, so the option is provided to allow flexibility for special use
 your annotation. This is due to R's limit on the maximum size of matrices.
 
 ```{r eval=FALSE}
-# Bootstrap everything. (default)
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "both", bootnum = 100)
+# Bootstrap both types of DTU calls (default), for 100 iterations (default).
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", boots = "both", bootnum = 100)
 
 # Only bootstrap transcript calls.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "transc")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", boots = "transc")
 
 # Only bootstrap gene calls.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "genes")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", boots = "genes")
 
 # Skip bootstraps.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", boots = "none")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", boots = "none")
 ```
 
 
@@ -707,9 +715,11 @@ The fields of the skipped test will be filled with `NA`.
 
 ```{r eval=FALSE}
 # Transcripts only.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="transc")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", testmode="transc")
 # Genes only.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", testmode="genes")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", testmode="genes")
 ```
 
 
@@ -721,7 +731,8 @@ method is `BH` (Benjamini-Hochberg). A full list of options is listed in R's `p.
 
 ```{r eval=FALSE}
 # Bonferroni correction.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", correction = "bonferroni")
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", correction = "bonferroni")
 ```
 
 
@@ -731,9 +742,10 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 change the names of these fields.
 
 ```{r}
-# Lets create some input with custom field names. The data is exactly the same as before.
-sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), COUNTS_COL="the-counts", 
-                       TARGET_COL="transcript", PARENT_COL="gene", BS_TARGET_COL = "trscr")
+# Lets emulate some input with custom field names. 
+sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), 
+                       COUNTS_COL="the-counts", TARGET_COL="transcript", 
+                       PARENT_COL="gene", BS_TARGET_COL = "trscr")
 myslo <- sim$slo
 myannot <- sim$annot
 
@@ -746,8 +758,8 @@ With the field names changed, we need to tell `rats` where to find the data:
 
 ```{r}
 # Call DTU on data with custom field names.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", varname="mouse", 
-                  TARGET_COL="transcript", PARENT_COL="gene", 
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
+                  varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", 
                   COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
 
 # The output structure will always use the same field names, regardless of 
