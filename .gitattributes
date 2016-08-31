@@ -1,2 +1,2 @@
-inst/doc* linguist-documentation
-vignettes* linguist-documentation
+inst/doc/* linguist-documentation
+vignettes/* linguist-documentation
