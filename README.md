@@ -17,7 +17,7 @@ of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pac
 
 #### What it needs
 
-This is an R package, therefore access to an R terminal is required for all the commands shown here and in the tutorial.
+This is an R source package, and will run on any platform with an R engine.
 
 As input, `rats` requires transcript abundance estimates with or without bootstrapping. For convenience, these can also be extracted directly
 from the output of [Sleuth](http://pachterlab.github.io/sleuth/). It also requires a look-up table matching transcript identifiers to 
@@ -57,7 +57,7 @@ If you have trouble installing these dependencies, your system could be missing 
 Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
 Download the latest release and then install it using:
 
-`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
+`install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
 Eventually, we aim to make `rats` available through **Bioconductor** as well.
 
