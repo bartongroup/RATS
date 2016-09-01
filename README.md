@@ -38,8 +38,6 @@ available locally by calling:
 
 `browseVignettes("rats")`
 
-If this fails, you can view the vignette on-line directly [from its Github file, here](https://github.com/bartongroup/Rats/blob/master/vignettes/tutorial.md). 
-
 We recommend studying the vignette before using `rats`.
 
 ### Dependencies
