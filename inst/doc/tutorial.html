@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kimon Froussios" />
 
-<meta name="date" content="2016-08-29" />
+<meta name="date" content="2016-09-01" />
 
 <title>RATs Tutorial</title>
 
@@ -128,7 +128,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">RATs Tutorial</h1>
 <h4 class="author"><em>Kimon Froussios</em></h4>
-<h4 class="date"><em>29 AUG 2016</em></h4>
+<h4 class="date"><em>01 SEP 2016</em></h4>
 <div class="abstract">
 <p class="abstract">Abstract</p>
 <p>The <a href="http://github.com/bartongroup/Rats">rats</a> package is aimed at people analysing <strong>gene expression</strong> and <strong>transcript abundance</strong>, particularly with <strong>RNA-Seq</strong> type of data in mind. This vignette constitutes the main documentation for the package.</p>
@@ -147,7 +147,10 @@ $(document).ready(function () {
 <li><a href="#loading">Loading</a></li>
 </ul></li>
 <li><a href="#the-package-in-detail">The package in detail</a><ul>
-<li><a href="#input-formats">Input formats</a></li>
+<li><a href="#input-formats">Input formats</a><ul>
+<li><a href="#data">Data</a></li>
+<li><a href="#annotation">Annotation</a></li>
+</ul></li>
 <li><a href="#calling-dtu">Calling DTU</a><ul>
 <li><a href="#with-generic-abundance-estimates-without-bootstraps">with generic abundance estimates, without bootstraps</a></li>
 <li><a href="#with-generic-bootstrapped-abundance-estimates">with generic bootstrapped abundance estimates</a></li>
@@ -192,24 +195,24 @@ devtools::install_github(&quot;bartongroup/rats&quot;)
 # 2. Load into R session.
 library{rats}
 
-# 3a. Call DTU on a sleuth object, using default settings.
+# 3. Specify transcript grouping:
+my_identifiers_table &lt;- annot2ids(&quot;my_annotation.gtf&quot;)
+
+# 4a. Call DTU on a sleuth object, using default settings:
 mydtu &lt;- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, 
                   name_A= &quot;My_condition&quot;, name_B= &quot;My_other_condition&quot;)
-# 3b. Call DTU on generic bootstrapped abundance estimates.
+# 4b. Call DTU on generic bootstrapped abundance estimates:
 mydtu &lt;- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, 
                   boot_data_B= my_list_data_tables_A)
-# 3c. Call DTU on generic abundance estimates.
+# 4c. Call DTU on generic abundance estimates:
 mydtu &lt;- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
                   count_data_B= my_data_table_B, boots= &quot;none&quot;)
 
-# 4. Tally of results.
-dtu_summary(mydtu)
-
-# 5. Get all gene and transcript identifiers that correspond to the above tally.
+# 5. Get all gene and transcript identifiers per category (significant DTU, 
+# no DTU, Not Applicable):
 myids &lt;- get_dtu_ids(mydtu)
-# A list of vectors, one for each category of the tally.
 
-# 6. Plot significance VS effect size.
+# 6. Plot significance VS effect size:
 plot_overview(mydtu)</code></pre>
 <p>The input and output structures and the command options are discussed in more detail in the rest of this tutorial.</p>
 </div>
@@ -248,6 +251,8 @@ plot_overview(mydtu)</code></pre>
 <h1>The package in detail</h1>
 <div id="input-formats" class="section level2">
 <h2>Input formats</h2>
+<div id="data" class="section level3">
+<h3>Data</h3>
 <p><code>rats</code> can work with any of three input types:</p>
 <ol style="list-style-type: decimal">
 <li>A <a href="http://pachterlab.github.io/sleuth/">Sleuth</a> object.</li>
@@ -266,6 +271,9 @@ head(sim_boot_data()[[2]][[1]])</code></pre>
 ## 5:    1B1C.1  0  0  0
 ## 6:    1B1C.2 52 55 50</code></pre>
 <p>Generic abundance estimates, without bootstrapping information, can be input simply as two <code>data.table</code>s, one per condition. The first column should contain the transcript identifiers, followed by columns listing the abundance per sample. The format of each table is identical to the one shown above, only the meaning of the numbers changes.</p>
+</div>
+<div id="annotation" class="section level3">
+<h3>Annotation</h3>
 <p><strong>Regardless of data format</strong>, <code>rats</code> also needs an annotation <code>data.frame</code> that matches transcript identifiers to gene identifiers. This looks like this:</p>
 <pre class="r"><code># Show the first rows of the table corresponding to the annotation, from simulated data.
 head(sim_count_data()[[1]])</code></pre>
@@ -276,6 +284,10 @@ head(sim_count_data()[[1]])</code></pre>
 ## 4  1D1C:two      1D1C
 ## 5    1B1C.1      1B1C
 ## 6    1B1C.2      1B1C</code></pre>
+<p>A function is provided to create this table, given a GTF file. <strong>Note:</strong> GFF3 is <em>not</em> supported, as the specification is too relaxed regarding identifiers. Other ways to create such a table exist, for example using the <a href="https://bioconductor.org/packages/release/bioc/html/biomaRt.html">biomaRt</a> interface, but they are beyond the scope of this tutorial.</p>
+<pre class="r"><code># Extract transcript ID to gene ID index from a GTF annotation.
+myannot &lt;- annot2ids(&quot;my_annotation_file.gtf&quot;)</code></pre>
+</div>
 </div>
 <div id="calling-dtu" class="section level2">
 <h2>Calling DTU</h2>
@@ -638,18 +650,18 @@ print( mydtu$Genes )</code></pre>
 ##  3:        NA          NA           NA           NA           NA
 ##  4:        NA          NA           NA           NA           NA
 ##  5:        NA          NA           NA           NA           NA
-##  6:      0.77 0.003133073 0.0009555915   0.00439237  0.001445742
+##  6:      0.77 0.002649318 0.0008658854  0.003607243  0.001268858
 ##  7:        NA          NA           NA           NA           NA
-##  8:      1.00 0.000000000 0.0000000000   0.00000000  0.000000000
+##  8:      1.00 0.000000000 0.0000000000  0.000000000  0.000000000
 ##  9:        NA          NA           NA           NA           NA
-## 10:      0.00 0.814601688 0.7454983039   0.13466100  0.186161190
+## 10:      0.00 0.796427590 0.7218465516  0.148057124  0.201785397
 ##       boot_minAB   boot_minBA boot_maxAB boot_maxBA boot_na
 ##  1:           NA           NA         NA         NA      NA
 ##  2:           NA           NA         NA         NA      NA
 ##  3:           NA           NA         NA         NA      NA
 ##  4:           NA           NA         NA         NA      NA
 ##  5:           NA           NA         NA         NA      NA
-##  6: 5.030128e-05 1.664273e-05  0.0154553 0.00480727       0
+##  6: 5.030128e-05 1.550451e-05  0.0154553 0.00480727       0
 ##  7:           NA           NA         NA         NA      NA
 ##  8: 0.000000e+00 0.000000e+00  0.0000000 0.00000000       0
 ##  9:           NA           NA         NA         NA      NA
@@ -748,19 +760,19 @@ print( mydtu$Transcripts )</code></pre>
 ##  6:    NA        NA           NA           NA           NA           NA
 ##  7:    NA        NA           NA           NA           NA           NA
 ##  8:    NA        NA           NA           NA           NA           NA
-##  9:  TRUE      0.69 3.797519e-02 3.046135e-02 6.605471e-03 1.095659e-01
-## 10:  TRUE      0.69 3.797519e-02 3.046135e-02 6.605471e-03 1.095659e-01
+##  9:  TRUE      0.68 3.653541e-02 2.883307e-02 6.605471e-03 1.095659e-01
+## 10:  TRUE      0.68 3.653541e-02 2.883307e-02 6.605471e-03 1.095659e-01
 ## 11:    NA        NA           NA           NA           NA           NA
-## 12: FALSE      0.07 5.521166e-01 3.576145e-01 1.380439e-02 1.000000e+00
-## 13:  TRUE      1.00 2.042087e-78 4.123264e-78 5.067939e-84 2.129120e-77
-## 14:  TRUE      1.00 6.702787e-49 1.502827e-48 6.413781e-53 6.559376e-48
-## 15:  TRUE      0.00 1.601238e-21 2.710906e-21 1.066067e-24 8.294307e-21
-## 16:  TRUE      1.00 1.081499e-44 1.591293e-44 1.516132e-46 7.296158e-44
+## 12: FALSE      0.03 6.137604e-01 3.238396e-01 1.380439e-02 1.000000e+00
+## 13:  TRUE      1.00 1.419836e-78 3.514303e-78 5.067939e-84 2.129120e-77
+## 14:  TRUE      1.00 4.266708e-49 1.076279e-48 6.413781e-53 6.559376e-48
+## 15:  TRUE      0.00 2.101828e-21 2.917782e-21 1.066067e-24 8.294307e-21
+## 16:  TRUE      1.00 1.266452e-44 1.734573e-44 1.516132e-46 7.296158e-44
 ## 17:    NA        NA           NA           NA           NA           NA
-## 18: FALSE      0.00 7.346421e-01 1.590675e-01 3.567434e-01 9.643718e-01
+## 18: FALSE      0.00 7.188794e-01 1.455882e-01 4.212087e-01 9.493136e-01
 ## 19:    NA        NA           NA           NA           NA           NA
-## 20: FALSE      0.00 9.626973e-01 6.153865e-02 7.948790e-01 1.000000e+00
-## 21: FALSE      0.00 9.626973e-01 6.153865e-02 7.948790e-01 1.000000e+00
+## 20: FALSE      0.00 9.480081e-01 7.257270e-02 7.948790e-01 1.000000e+00
+## 21: FALSE      0.00 9.480081e-01 7.257270e-02 7.948790e-01 1.000000e+00
 ##       sig boot_freq    boot_mean   boot_stdev     boot_min     boot_max
 ##     boot_na
 ##  1:      NA

@@ -74,7 +74,8 @@ Mandatory parameters:
 * a sleuth object
 * the names of two conditions recorded in the sleuth object
 
-`rats` also accepts data input in generic format that does not depend on Sleuth. Please consult the vignette for syntax and specifications.
+`rats` also accepts data input in **generic format** that does not depend on Sleuth. A function for creating the IDs table from a GTF file
+is also provided. Please consult the vignette for syntax and formats specifications.
 
 The output is a list containing two tables that list the final results as well as the intermediate calculations and decisions.
 For details on the parameters, input and output, please refer to the tutorial vignette.

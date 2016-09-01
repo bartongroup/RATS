@@ -5,24 +5,24 @@
 #  # 2. Load into R session.
 #  library{rats}
 #  
-#  # 3a. Call DTU on a sleuth object, using default settings.
+#  # 3. Specify transcript grouping:
+#  my_identifiers_table <- annot2ids("my_annotation.gtf")
+#  
+#  # 4a. Call DTU on a sleuth object, using default settings:
 #  mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object,
 #                    name_A= "My_condition", name_B= "My_other_condition")
-#  # 3b. Call DTU on generic bootstrapped abundance estimates.
+#  # 4b. Call DTU on generic bootstrapped abundance estimates:
 #  mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A,
 #                    boot_data_B= my_list_data_tables_A)
-#  # 3c. Call DTU on generic abundance estimates.
+#  # 4c. Call DTU on generic abundance estimates:
 #  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A,
 #                    count_data_B= my_data_table_B, boots= "none")
 #  
-#  # 4. Tally of results.
-#  dtu_summary(mydtu)
-#  
-#  # 5. Get all gene and transcript identifiers that correspond to the above tally.
+#  # 5. Get all gene and transcript identifiers per category (significant DTU,
+#  # no DTU, Not Applicable):
 #  myids <- get_dtu_ids(mydtu)
-#  # A list of vectors, one for each category of the tally.
 #  
-#  # 6. Plot significance VS effect size.
+#  # 6. Plot significance VS effect size:
 #  plot_overview(mydtu)
 
 ## ------------------------------------------------------------------------
@@ -35,6 +35,10 @@ head(sim_boot_data()[[2]][[1]])
 ## ------------------------------------------------------------------------
 # Show the first rows of the table corresponding to the annotation, from simulated data.
 head(sim_count_data()[[1]])
+
+## ----eval=FALSE----------------------------------------------------------
+#  # Extract transcript ID to gene ID index from a GTF annotation.
+#  myannot <- annot2ids("my_annotation_file.gtf")
 
 ## ------------------------------------------------------------------------
 # Simulate some data.

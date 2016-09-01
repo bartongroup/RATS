@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "29 AUG 2016"
+date: "01 SEP 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -42,24 +42,24 @@ devtools::install_github("bartongroup/rats")
 # 2. Load into R session.
 library{rats}
 
-# 3a. Call DTU on a sleuth object, using default settings.
+# 3. Specify transcript grouping:
+my_identifiers_table <- annot2ids("my_annotation.gtf")
+
+# 4a. Call DTU on a sleuth object, using default settings:
 mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, 
                   name_A= "My_condition", name_B= "My_other_condition")
-# 3b. Call DTU on generic bootstrapped abundance estimates.
+# 4b. Call DTU on generic bootstrapped abundance estimates:
 mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, 
                   boot_data_B= my_list_data_tables_A)
-# 3c. Call DTU on generic abundance estimates.
+# 4c. Call DTU on generic abundance estimates:
 mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
                   count_data_B= my_data_table_B, boots= "none")
 
-# 4. Tally of results.
-dtu_summary(mydtu)
-
-# 5. Get all gene and transcript identifiers that correspond to the above tally.
+# 5. Get all gene and transcript identifiers per category (significant DTU, 
+# no DTU, Not Applicable):
 myids <- get_dtu_ids(mydtu)
-# A list of vectors, one for each category of the tally.
 
-# 6. Plot significance VS effect size.
+# 6. Plot significance VS effect size:
 plot_overview(mydtu)
 ```
 
@@ -110,6 +110,8 @@ library(rats)
 
 ## Input formats
 
+### Data
+
 `rats` can work with any of three input types:
 
 1. A [Sleuth](http://pachterlab.github.io/sleuth/) object.
@@ -135,11 +137,22 @@ Generic abundance estimates, without bootstrapping information, can be input sim
 contain the transcript identifiers, followed by columns listing the abundance per sample. The format of each table is identical to the one shown above,
 only the meaning of the numbers changes.
 
+### Annotation
+
 **Regardless of data format**, `rats` also needs an annotation `data.frame` that matches transcript identifiers to gene identifiers. This looks like this:
 
 ```{r}
 # Show the first rows of the table corresponding to the annotation, from simulated data.
 head(sim_count_data()[[1]])
+```
+
+A function is provided to create this table, given a GTF file. **Note:** GFF3 is *not* supported, as the specification is too relaxed regarding identifiers.
+Other ways to create such a table exist, for example using the [biomaRt](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) interface, but they
+are beyond the scope of this tutorial.
+
+```{r eval=FALSE}
+# Extract transcript ID to gene ID index from a GTF annotation.
+myannot <- annot2ids("my_annotation_file.gtf")
 ```
 
 
