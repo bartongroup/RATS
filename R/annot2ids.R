@@ -13,7 +13,6 @@
 #'
 annot2ids <- function(annotfile, transc_header = "target_id", gene_header = "parent_id")
 {
-  annotfile <- "~/Araport11.gff3"
   annot <- read.delim(annotfile, comment.char = "#", header = FALSE)
   t2g <- data.frame("transc_id" = gsub(".*transcript_id \"?(.+?)\"?;.*", "\\1", annot[[9]]),
                     "gene_id" = gsub(".*gene_id \"?(.+?)\"?;.*", "\\1", annot[[9]]) )
