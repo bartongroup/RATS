@@ -1,7 +1,7 @@
 Type: Package
 Package: rats
 Version: 0.1.0
-Date: 2016-08-29
+Date: 2016-09-01
 Title: Relative Abundance of Transcripts
 Authors@R: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
              person("Kira Mourão", role=c("aut"), email="k.mourao@dundee.ac.uk"),
