@@ -657,22 +657,22 @@ print( mydtu$Genes )</code></pre>
 ##  3:            NA    NA            NA            NA             NA
 ##  4:            NA    NA            NA            NA             NA
 ##  5:            NA    NA            NA            NA             NA
-##  6:          0.74 FALSE   0.003309513   0.001015446    0.004085056
+##  6:          0.73 FALSE   0.003622041   0.001149198    0.004390658
 ##  7:            NA    NA            NA            NA             NA
 ##  8:          1.00  TRUE   0.000000000   0.000000000    0.000000000
 ##  9:            NA    NA            NA            NA             NA
-## 10:          0.00  TRUE   0.796304675   0.720626904    0.133354028
+## 10:          0.00  TRUE   0.788718175   0.712346523    0.139150241
 ##     boot_p_stdevBA boot_p_minAB boot_p_minBA boot_p_maxAB boot_p_maxBA
 ##  1:             NA           NA           NA           NA           NA
 ##  2:             NA           NA           NA           NA           NA
 ##  3:             NA           NA           NA           NA           NA
 ##  4:             NA           NA           NA           NA           NA
 ##  5:             NA           NA           NA           NA           NA
-##  6:    0.001332991 5.030128e-05 1.550451e-05    0.0154553   0.00480727
+##  6:    0.001471376 5.451397e-05 1.550451e-05    0.0154553   0.00480727
 ##  7:             NA           NA           NA           NA           NA
 ##  8:    0.000000000 0.000000e+00 0.000000e+00    0.0000000   0.00000000
 ##  9:             NA           NA           NA           NA           NA
-## 10:    0.184025240 5.143483e-01 3.311102e-01    0.9915083   0.98871978
+## 10:    0.191607688 5.143483e-01 3.311102e-01    0.9915083   0.98871978
 ##     boot_na
 ##  1:      NA
 ##  2:      NA
@@ -778,19 +778,19 @@ print( mydtu$Transcripts )</code></pre>
 ##  6:    NA            NA    NA           NA           NA           NA
 ##  7:    NA            NA    NA           NA           NA           NA
 ##  8:    NA            NA    NA           NA           NA           NA
-##  9:  TRUE          0.63 FALSE 4.064873e-02 2.968902e-02 6.605471e-03
-## 10:  TRUE          0.63 FALSE 4.064873e-02 2.968902e-02 6.605471e-03
+##  9:  TRUE          0.58 FALSE 4.345906e-02 3.114916e-02 6.605471e-03
+## 10:  TRUE          0.58 FALSE 4.345906e-02 3.114916e-02 6.605471e-03
 ## 11:    NA            NA    NA           NA           NA           NA
-## 12: FALSE          0.07 FALSE 5.718266e-01 3.573294e-01 1.380439e-02
-## 13:  TRUE          1.00  TRUE 2.050422e-78 4.553587e-78 5.067939e-84
-## 14:  TRUE          1.00  TRUE 4.993224e-49 1.094574e-48 6.413781e-53
-## 15:  TRUE          0.00  TRUE 1.828359e-21 2.836148e-21 1.066067e-24
-## 16:  TRUE          1.00  TRUE 1.159224e-44 1.722081e-44 1.516132e-46
+## 12: FALSE          0.07 FALSE 6.066062e-01 3.508156e-01 1.380439e-02
+## 13:  TRUE          1.00  TRUE 1.157590e-78 2.740787e-78 5.067939e-84
+## 14:  TRUE          1.00  TRUE 5.396175e-49 1.362972e-48 6.413781e-53
+## 15:  TRUE          0.00  TRUE 2.400417e-21 3.058516e-21 1.066067e-24
+## 16:  TRUE          1.00  TRUE 1.198507e-44 1.836449e-44 1.516132e-46
 ## 17:    NA            NA    NA           NA           NA           NA
-## 18: FALSE          0.00  TRUE 7.232565e-01 1.503342e-01 3.567434e-01
+## 18: FALSE          0.00  TRUE 6.866219e-01 1.656446e-01 3.567434e-01
 ## 19:    NA            NA    NA           NA           NA           NA
-## 20: FALSE          0.00  TRUE 9.554959e-01 6.400718e-02 7.948790e-01
-## 21: FALSE          0.00  TRUE 9.554959e-01 6.400718e-02 7.948790e-01
+## 20: FALSE          0.00  TRUE 9.481676e-01 7.258719e-02 7.948790e-01
+## 21: FALSE          0.00  TRUE 9.481676e-01 7.258719e-02 7.948790e-01
 ##       sig boot_dtu_freq  conf  boot_p_mean boot_p_stdev   boot_p_min
 ##       boot_p_max boot_na
 ##  1:           NA      NA
@@ -879,7 +879,7 @@ myplot2 &lt;- myplot + scale_y_continuous(trans = &quot;identity&quot;)</code></
 <h2>Advanced options</h2>
 <div id="thresholds" class="section level3">
 <h3>Thresholds</h3>
-<p>Three thresholds can be set in <code>rats</code>.</p>
+<p>Four thresholds can be set in <code>rats</code>.</p>
 <pre class="r"><code># Calling DTU with custom thresholds.
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, name_B = &quot;patients&quot;, 
                   p_thresh = 0.01, count_thresh = 10, dprop_thresh = 0.25)</code></pre>
@@ -887,8 +887,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <li><code>p_thresh</code> - Significance level. P-values below this will be considered significant. 0.05 is a very permissive value.</li>
 <li><code>count_thresh</code> - At least one of the two conditions needs to exceed this number of fragments per sample for the transcript to be considered. Low counts have high uncertainty and low significance. Removing such entries from the analysis when both conditions are low-count improves the confidence in the predictions of the remaining transcripts, and reduces computation time. the reason this threshold requires only one condition to meet it is that enforcing it on both conditions would erroneously disqualify transcripts that may be silenced in one of the two conditions but highly expressed in the other.</li>
 <li><code>dprop_thresh</code> - This is a proxy for biological significance. A transcript’s proportion must change by at least this much for it to be considered. The need for this is due to the fact that high counts will make even minute differences show up as statistically significant, however very small changes are likely to be biologically indifferent.</li>
+<li><code>conf_thresh</code> - Confidence threshold. Only applies when bootstraps are enabled. It sets the fraction of bootstrap iterations that support the DTU call that are required to consider the call confident.</li>
 </ol>
-<p>The default values for all three thresholds are rather lenient. You may want to set them higher.</p>
+<p>The default values for the first three thresholds are rather lenient. You may want to set them to stricter values, as they generally produce many positive calls. The fourth threshold is set to a rather strict value. You can visualise its effect using the plotting function discussed later in the section about bootstrapping.</p>
 </div>
 <div id="comparing-by-different-variables" class="section level3">
 <h3>Comparing by different variables</h3>

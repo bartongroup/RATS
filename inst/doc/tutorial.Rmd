@@ -636,7 +636,7 @@ myplot2
 
 ### Thresholds
 
-Three thresholds can be set in `rats`.
+Four thresholds can be set in `rats`.
 
 ```{r eval=FALSE}
 # Calling DTU with custom thresholds.
@@ -653,8 +653,12 @@ would erroneously disqualify transcripts that may be silenced in one of the two 
 3. `dprop_thresh` - This is a proxy for biological significance. A transcript's proportion must change by at least this much 
 for it to be considered. The need for this is due to the fact that high counts will make even minute differences show up as 
 statistically significant, however very small changes are likely to be biologically indifferent.
+4. `conf_thresh` - Confidence threshold. Only applies when bootstraps are enabled. It sets the fraction of bootstrap iterations
+that support the DTU call that are required to consider the call confident.
 
-The default values for all three thresholds are rather lenient. You may want to set them higher. 
+The default values for the first three thresholds are rather lenient. You may want to set them to stricter values, as they generally produce
+many positive calls. The fourth threshold is set to a rather strict value. You can visualise its effect using
+the plotting function discussed later in the section about bootstrapping.
 
 
 ### Comparing by different variables
