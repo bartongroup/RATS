@@ -158,14 +158,6 @@ plot_overview(mydtu, type="volcano")
 plot_overview(mydtu, type="maxdprop")
 
 ## ------------------------------------------------------------------------
-# Transcript-level confidence threshold VS. number of DTU positive calls.
-plot_overview(mydtu, type="transc_conf")
-
-## ------------------------------------------------------------------------
-# Gene-level confidence threshold VS. number of DTU positive calls.
-plot_overview(mydtu, type="gene_conf")
-
-## ------------------------------------------------------------------------
 library(ggplot2)
 
 myplot <- plot_overview(mydtu, "volcano")
@@ -203,6 +195,17 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb",
 #                    name_B = "patients", boots = "none")
 
 ## ----eval=FALSE----------------------------------------------------------
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", conf_thresh = 0.9)
+
+## ----eval=FALSE----------------------------------------------------------
+#  # Transcript-level confidence threshold VS. number of DTU positive calls.
+#  plot_overview(mydtu, type="transc_conf")
+#  
+#  # Gene-level confidence threshold VS. number of DTU positive calls.
+#  plot_overview(mydtu, type="gene_conf")
+
+## ----eval=FALSE----------------------------------------------------------
 #  # Transcripts only.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", testmode="transc")
@@ -233,7 +236,6 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
                   varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", 
                   COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
 
-# The output structure will always use the same field names, regardless of 
-# what the input field names are.
+## ------------------------------------------------------------------------
 print( names(mydtu$Transcripts) )
 

@@ -7,7 +7,7 @@
 parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
   p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode,
   boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A,
-  boot_data_B)
+  boot_data_B, conf_thresh)
 }
 \arguments{
 \item{slo}{sleuth object}
@@ -49,6 +49,8 @@ parameters_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 \item{boot_data_A}{A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.}
 
 \item{boot_data_B}{A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.}
+
+\item{conf_thresh}{Confidence threshold.}
 }
 \value{
 List with a logical value and a message.

@@ -358,15 +358,16 @@ print( names(mydtu$Parameters) )
 4. `p_thresh` - The significance level at which DTU is called, applicable to both tests.
 5. `count_thresh` - The minimum required fragment count per sample for each transcript.
 6. `dprop_thresh` - The minimum difference in proportion that is considered biologically significant.
-7. `tests` - Which of the two tests (gene-wise, transcript-wise) were carried out.
-8. `bootstrap` - Which of the two tests (gene-wise, transcript-wise) was bootstrapped.
-9. `bootnum` - The number of bootstrap iterations.
-10. `data_type` - The format of the input data.
-11. `num_genes` - The number of genes in the provided annotation.
-12. `num_transc` - The number of transcripts in the provided annotation.
-13. `description` - Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters...
-14. `rats_version` - The version of the package.
-15. `R_version` - A list with the details of the R version.
+7. `conf_thresh` - Confidence threshold. The fraction of bootstrap iterations that must agree on the given outcome.
+8. `tests` - Which of the two tests (gene-wise, transcript-wise) were carried out.
+9. `bootstrap` - Which of the two tests (gene-wise, transcript-wise) was bootstrapped.
+10. `bootnum` - The number of bootstrap iterations.
+11. `data_type` - The format of the input data.
+12. `num_genes` - The number of genes in the provided annotation.
+13. `num_transc` - The number of transcripts in the provided annotation.
+14. `description` - Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters...
+15. `rats_version` - The version of the package.
+16. `R_version` - A list with the details of the R version.
 
 ### Genes
 
@@ -387,7 +388,8 @@ print( names(mydtu$Genes) )
 
 1. `parent_id` - The identification name/code of the gene.
 2. `DTU` - The gene collectively shows DTU, according to the gene-wise test. It is not possible to attribute 
-this to specific transcripts. To be DTU, a gene needs both biological and statistical significance: `DTU = (sig & elig_fx)`.
+this to specific transcripts. To be DTU, a gene needs both biological and statistical significance, as well as consistent
+classification in the bootstraps: `DTU = (sig & elig_fx & conf)`.
 3. `transc_DTU` - Aggregated from `Transcript$DTU`. Signifies that at least one transcript has changed significantly 
 according to the transcript-wise test. Look up the gene in the `Transcripts` table to see which transcripts are responsible.
 4. `known_transc` - The number of annotated transcripts for the gene.
@@ -402,17 +404,20 @@ possible.
 9. `pvalAB` and `pvalBA` - The raw P-values from the G tests, using in turn each condition as reference.
 10. `pvalAB_corr` and `pvalBA_corr` - The above P-values adjusted for multiple testing (number of tested genes).
 11. `sig` - Statistically significant: `pvalAB_corr < Parameters$p_thresh  &  pvalBA_corr < Parameters$p_thresh`.
-12. `boot_freq` - The fraction of bootstrap iterations in which the gene was called DTU. It can be used as a 
+12. `boot_dtu_freq` - The fraction of bootstrap iterations in which the gene was called DTU. It can be used as a 
 measure of confidence in the DTU call. Values closer to `1` indicate strong tendency for DTU, whereas values 
 nearer `0` indicate lack of DTU. Values near `0.5` indicate lack of confidence either way and should be treated 
 carefully.
-13. `boot_meanAB` and `boot_meanBA` - Mean P-values across the bootstraps.
-14. `boot_stdevAB` and `boot_stdevBA` - Standard deviations of the mean P-values across the bootstraps.
-15. `boot_minAB` and `boot_minBA` - The minimum (=most significant) P-values that occurred in the bootstraps.
-16. `boot_maxAB` and `boot_maxBA` - The maximum (=least significant) P-values that occurred in the bootstraps.
-17. `boot_na` - The fraction of bootstrap iterations in which the gene was not eligible for DTU calling.
+13. `conf` - Whether `boot_dtu_freq` meets the confidence threshold. `conf <- boot_dtu_freq >= Parameters$conf_thresh` for
+DTU positive calls, and `conf <- boot_dtu_freq <= 1 - Parameters$conf_thresh` for DTU negative calls.
+14. `boot_p_meanAB` and `boot_p_meanBA` - Mean P-values across the bootstraps.
+15. `boot_p_stdevAB` and `boot_p_stdevBA` - Standard deviations of the mean P-values across the bootstraps.
+16. `boot_p_minAB` and `boot_p_minBA` - The minimum (=most significant) P-values that occurred in the bootstraps.
+17. `boot_p_maxAB` and `boot_p_maxBA` - The maximum (=least significant) P-values that occurred in the bootstraps.
+18. `boot_na` - The fraction of bootstrap iterations in which the gene was not eligible for DTU calling.
 
 **Note:** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
+
 
 ### Transcripts
 
@@ -429,6 +434,8 @@ print( names(mydtu$Transcripts) )
 
 1. `target_id` and `parent_id` - The identification name/code of the transcript and gene, respectively.
 2. `DTU` - Whether the transcript's proportion changed significantly, according to the transcript-wise test.
+To be DTU, a transcripts needs both biological and statistical significance, as well as consistent
+classification in the bootstraps: `DTU = (sig & elig_fx & conf)`.
 3. `gene_DTU` - Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in proportions.
 4. `meanA` and `meanB` - The mean of counts across samples, for each condition.
 5. `stdevA` and `stdevB` - The standard deviation of the mean counts across samples, for each condition.
@@ -448,15 +455,17 @@ proportion can be statistically significant if transcript expression or sequenci
 13. `pval` - The raw P-value of the proportions test for the transcript.
 14. `pval_corr` - The above P-value adjusted for multiple testing (number of transcripts).
 15. `sig` - Statistically significant: `pval_corr < Parameters$p_thresh`.
-16. `boot_freq` - The fraction of bootstrap iterations in which the transcript was called DTU. It can be used as 
+16. `boot_dtu_freq` - The fraction of bootstrap iterations in which the transcript was called DTU. It can be used as 
 a measure of confidence in the DTU call. Values closer to `1` indicate strong tendency for DTU, whereas values 
 nearer `0` indicate lack of DTU. Values near `0.5` indicate lack of confidence either way and should be treated 
 carefully.
-17. `boot_mean` - The mean P-value across the bootstraps.
-18. `boot_stdev` - The standard deviation of the mean P-value across the bootstraps.
-19. `boot_min` - The minimum (most significant) P-value that occurred in the bootstraps.
-20. `boot_max` - The maximum (most significant) P-value that occurred in the bootstraps.
-21. `boot_na` - The fraction of bootstrap iterations in which the transcripts were not eligible for DTU calling.
+17. `conf` - Whether `boot_dtu_freq` meets the confidence threshold. `conf <- boot_dtu_freq >= Parameters$conf_thresh` for
+DTU positive calls, and `conf <- boot_dtu_freq <= 1 - Parameters$conf_thresh` for DTU negative calls.
+18. `boot_p_mean` - The mean P-value across the bootstraps.
+19. `boot_p_stdev` - The standard deviation of the mean P-value across the bootstraps.
+20. `boot_p_min` - The minimum (most significant) P-value that occurred in the bootstraps.
+21. `boot_p_max` - The maximum (most significant) P-value that occurred in the bootstraps.
+22. `boot_na` - The fraction of bootstrap iterations in which the transcripts were not eligible for DTU calling.
 
 **Note** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
 
@@ -476,7 +485,8 @@ print( mydtu$Parameters )
 samples). 
 * The significance threshold is set to `r mydtu$Parameters[["p_thresh"]]`, the minimum count per sample is set to 
 `r mydtu$Parameters[["count_thresh"]]` fragments and the proportion has to change by at least `r mydtu$Parameters[["dprop_thresh"]]` 
-to be considered biologically significant.
+to be considered biologically significant. We require at least `r mydtu$Parameters[["conf_thresh"]]` of bootstrap iterations to agree
+on the call.
 * Are we doing gene-level or transcript-level tests? `r mydtu$Parameters[["tests"]]`
 * Are we bootstrapping the gene-level or transcript-level tests? `r mydtu$Parameters[["bootstrap"]]`. And we're 
 doing `r mydtu$Parameters[["bootnum"]]` iterations.
@@ -498,8 +508,8 @@ our data whereas the other is missing completely, so the gene does not have enou
 * `1D1C` has two transcripts, but only one was detected in our data, so it too is not eligible. Both transcript are 
 present in the sleuth data, but one of them has zero counts in both conditions. Thus this gene is also not eligible. 
 * `CC` has two known transcripts, both of which are detected and eligible, therefore it is eligible for DTU. It is 
-called as DTU on both the transcript and gene levels, with very high significances. The bootstraps show that the calls
-were not 100% positive, so there is a small level of uncertainty regarding this gene.
+significant, with eligible effect size, however it is not called as DTU. The bootstraps show that the calls
+were less than 95% positive, thus it fell short of the confidence threshold.
 * `LC` has two known transcripts, both of which are detected but only one of them is eligible, so it is not eligible for 
 testing at the gene level. An inspection of the `Transcripts` table shows that the reason is that one of the two 
 transcripts does not meet the minimum fragment count requirement.
@@ -526,10 +536,9 @@ print( mydtu$Transcripts )
 
 Several mentions of this table were made during analysis of the `Genes` table. Here are some possible scenarios:
 
-* `CC_a` and `CC_b` both show counts above the threshold, so they are eligible. 
-They are positive for DTU at both the gene and transcript level. The frequency of positive calls in the bootstraps, however,
-is not quite so good. Additionally, the change in proportion is only marginally above the already quite permissive threshold.
-So these transcripts are marginal and should be treated carefully.
+* `CC_a` and `CC_b` both show counts above the threshold, so they are eligible. They are significant, with eligible effect size,
+but they fall short of the confidence threshold. This may be because the change in proportion is only marginally above the already 
+quite permissive threshold.
 * `LC1` and `LC2` both change in proportion above the threshold, but `LC1` does not meet the counts threshold. 
 `LC2` is eligible for transcript-wise testing and comes out as non-DTU, with good support by the bootstraps.
 Gene-level DTU cannot be called since `LC1` did not meet all the criteria, leaving the gene with insufficient eligible transcripts.
@@ -601,26 +610,6 @@ plot_overview(mydtu, type="maxdprop")
 
 And this is what it looks like on a larger dataset:
 ![Max Dprop](./fig/maxdprop.jpg)
-
-As mentioned before, bootstrapping provides a measure of confidence. This confidence in not taken into account
-for the DTU calls. It is therefore useful to plot its potential influence. The following two plots show how
-different confidence thresholds would affect the number of DTU positive calls.
-
-```{r}
-# Transcript-level confidence threshold VS. number of DTU positive calls.
-plot_overview(mydtu, type="transc_conf")
-```
-
-And this is what it looks like on a larger dataset:
-![Transc Conf VS DTU](./fig/transc_conf.jpg)
-
-```{r}
-# Gene-level confidence threshold VS. number of DTU positive calls.
-plot_overview(mydtu, type="gene_conf")
-```
-
-And this is what it looks like on a larger dataset:
-![Gene Conf VS DTU](./fig/gene_conf.jpg)
 
 
 ### Plot customisation
@@ -718,6 +707,30 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
                   name_B = "patients", boots = "none")
 ```
 
+As measure of confidence in the DTU calls, we take the fraction of iterations that returned a positive DTU call for
+the given gene/transcript. A positive call is considered confident if the fraction of positive calls exceeds the threshold (`>= conf_thresh`). 
+A negative call is considered confident if the fraction of positive calls is below the complement of the threshold (`<= 1 - conf_thresh`).
+
+The default confidence threshold is somewhat strict, but can be over-ridden.
+
+```{r eval=FALSE}
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
+                  name_B = "patients", conf_thresh = 0.9)
+```
+
+In order to visualise the effect of the confidence threshold, the number of positive DTU calls can be plotted against the threshold.
+
+```{r eval=FALSE}
+# Transcript-level confidence threshold VS. number of DTU positive calls.
+plot_overview(mydtu, type="transc_conf")
+
+# Gene-level confidence threshold VS. number of DTU positive calls.
+plot_overview(mydtu, type="gene_conf")
+```
+
+This is what either of these plots looks like on a larger dataset:
+![Transc Conf VS DTU](./fig/transc_conf.jpg)
+
 
 ### Test selection
 
@@ -774,9 +787,11 @@ With the field names changed, we need to tell `rats` where to find the data:
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
                   varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", 
                   COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
+```
 
-# The output structure will always use the same field names, regardless of 
-# what the input field names are.
+The output structure will always use the same field names, regardless of what the input field names are.
+
+```{r}
 print( names(mydtu$Transcripts) )
 ```
 

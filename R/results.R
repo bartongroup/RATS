@@ -163,7 +163,7 @@ plot_overview <- function(dtuo, type="volcano") {
     } else if (type == "transc_conf") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
                            "count"= sapply(seq(0, 1, 0.01), function(x) {
-                                           sum(Transcripts[(boot_freq >= x), DTU], na.rm=TRUE) }))
+                                           sum(Transcripts[(boot_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
@@ -173,7 +173,7 @@ plot_overview <- function(dtuo, type="volcano") {
     } else if (type == "gene_conf") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
                            "count"= sapply(seq(0, 1, 0.01), function(x) {
-                                           sum(Genes[(boot_freq >= x), DTU], na.rm=TRUE) }))
+                                           sum(Genes[(boot_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
