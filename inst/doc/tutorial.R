@@ -149,13 +149,13 @@ plot_gene(mydtu, "MIX6", vals="proportions")
 # The ERROR BARS represent 2 standard deviations from the mean count across replicates.
 plot_gene(mydtu, "MIX6", vals="counts")
 
-## ------------------------------------------------------------------------
-# Proportion change VS significance.
-plot_overview(mydtu, type="volcano")
+## ----eval=FALSE----------------------------------------------------------
+#  # Proportion change VS significance.
+#  plot_overview(mydtu, type="volcano")
 
-## ------------------------------------------------------------------------
-# Distribution of maximum proportion change.
-plot_overview(mydtu, type="maxdprop")
+## ----eval=FALSE----------------------------------------------------------
+#  # Distribution of maximum proportion change.
+#  plot_overview(mydtu, type="maxdprop")
 
 ## ------------------------------------------------------------------------
 library(ggplot2)
@@ -163,8 +163,8 @@ library(ggplot2)
 myplot <- plot_overview(mydtu, "volcano")
 myplot  # display
 
-# Change scale of y axis to linear. 
-myplot2 <- myplot + scale_y_continuous(trans = "identity")
+# Change title. 
+myplot2 <- myplot + ggtitle("My epic title")
 myplot2
 
 ## ----eval=FALSE----------------------------------------------------------
