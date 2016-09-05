@@ -138,13 +138,12 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
     if (any(type == c("volcano"))) {
-      result <- ggplot(data = Transcripts, aes(Dprop, pval_corr, colour = DTU)) +
+      result <- ggplot(data = Transcripts, aes(Dprop, -log10(pval_corr), colour = DTU)) +
         geom_point(alpha = 0.3) +
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
-             y ="P-value") +
-        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
-        scale_y_log10()
+             y ="-log10(P-value)") +
+        scale_x_continuous(breaks = seq(-1, 1, 0.2))
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts)  # I don't want the intermediate calculations to modify the dtu object.
       tmp[, abma := abs(Dprop)]
