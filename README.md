@@ -45,7 +45,7 @@ We recommend studying the vignette before using `rats`.
 The package depends on a few additional CRAN packages, which you may need to install first, 
 if they are not present already:
 
-`install.packages(c("data.table", "matrixStats", "ggplot2"), dependencies=TRUE)`
+`install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
 
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual for help.
 
