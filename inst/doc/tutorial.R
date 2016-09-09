@@ -168,6 +168,10 @@ myplot2 <- myplot + ggtitle("My epic title")
 myplot2
 
 ## ----eval=FALSE----------------------------------------------------------
+#  # Start the interactive volcano plot.
+#  plot_shiny_volcano(mydtu)
+
+## ----eval=FALSE----------------------------------------------------------
 #  # Calling DTU with custom thresholds.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients",
 #                    p_thresh = 0.01, count_thresh = 10, dprop_thresh = 0.25)

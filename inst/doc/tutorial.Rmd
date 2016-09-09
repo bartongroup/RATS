@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "01 SEP 2016"
+date: "09 SEP 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -19,7 +19,7 @@ vignette: >
 ---
 
 
-# Relative Abundance of Transcripts (RATs).
+# Relative Abundance of Transcripts (RATs v0.2.2).
 
 The `rats` R package aims to identify genes that show a shift in the relative abundance of their transcript isoforms 
 between two conditions (*Differential Transcript Usage* -- **DTU**). This is supplementary
@@ -558,7 +558,7 @@ the other condition (division by 0), so they are not eligible for testing.
 
 The output object's tables provide a host of information. The `rats` package also includes some basic visualisation aids.
 
-### Plot individual abundance changes
+### Plot isoform abundance changes
 
 A table full of numbers may be heaven to some and hell to others. This function allows you to visualise what's
 going on in any particular gene. 
@@ -629,6 +629,23 @@ myplot2 <- myplot + ggtitle("My epic title")
 myplot2
 ```
 
+
+### Interactive plots
+
+The volcano plot and the isoform abundance change plots mentioned above are also available through a `shiny` app. This is a great way to
+explore your data and identify interesting transcripts.
+
+1. By hovering over points on the volcano plot in the app, you can see the respective transcript identifier(s). 
+2. Clicking will pull up information on the effect size, significance and confidence of the point(s), as well as 
+the isoform abundance change plots for the point nearest to the click.
+
+```{r eval=FALSE}
+# Start the interactive volcano plot.
+plot_shiny_volcano(mydtu)
+```
+
+
+You will need to close down the app to return to your R terminal.
 
 
 ## Advanced options
