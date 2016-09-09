@@ -99,16 +99,19 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
       # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
       result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
           geom_freqpoly(aes(group= condition, colour= condition), stat= "identity", size= 1.5) +
+          scale_colour_manual(values=c("darkgreen", "orange")) +
           labs(title= pid, y= vals)
       if (vals == "counts")
           result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax, colour= condition), width= 0.5, size= 0.5)
     } else if (style == "bars"){
       # Display as dodged bar chart.
       result <- ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
-          geom_bar(aes(group= condition, colour= condition), stat= "identity", position= position_dodge(0.45), width= 0.5) +
+          geom_bar(aes(group= condition), stat= "identity", position= position_dodge(0.5), width= 0.5) +
+          scale_fill_manual(values=c("darkgreen", "orange")) +
+          # scale_colour_manual(values=c("darkgreen", "orange")) +
           labs(title= pid, y= vals)
       if (vals == "counts")
-        result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.45), width= 0.3, size= 0.5)
+        result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.5), width= 0.3, size= 0.5)
     } else {
       stop("Invalid plot style.")
     }
@@ -138,7 +141,9 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
     if (any(type == c("volcano"))) {
-      result <- ggplot(data = Transcripts, aes(Dprop, -log10(pval_corr), colour = DTU)) +
+      mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
+      names(mydata)[3] <- "neglogP"
+      result <- ggplot(data = mydata, aes(Dprop, neglogP, colour = DTU)) +
         geom_point(alpha = 0.3) +
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
@@ -186,3 +191,129 @@ plot_overview <- function(dtuo, type="volcano") {
     return(result)
   })
 }
+
+
+
+
+
+
+
+#================================================================================
+#' Interactive volcano plot, using shiny.
+#' 
+#' @param dtuo A DTU object.
+#' 
+#' @import data.table
+#' @import ggplot2
+#' @import shiny
+#' @export
+#' 
+plot_shiny_volcano <- function(dtuo) {
+  # Set up interface.
+  volcano_ui <- fluidPage(
+    # Prepare space for plot display.
+    fluidRow(
+      column(width= 12, 
+             plotOutput("plot1", height= 800, 
+                        hover= hoverOpts(id= "plot_hover"),
+                        click= clickOpts(id= "plot_click")) )),
+    # Instructions.
+    fluidRow(
+      column(width=12,
+             wellPanel("* Hover over points to see Transcript ID.
+                       * Click to get more info for Transcript.") )),
+    # Hover and click info.
+    fluidRow(
+      column(width= 3,
+             verbatimTextOutput("hover_info")),
+      column(width= 9,
+             verbatimTextOutput("click_info")) ),
+    fluidRow(
+      column(width= 6, 
+             plotOutput("plot2", height= 600)),
+      column(width= 6, 
+             plotOutput("plot3", height= 600)) )
+  )
+  
+  # Set up mouse responses.
+  volcano_server <- function(input, output) {
+    # Set up data
+    mydata <- NULL
+    with(dtuo, {
+      if ("boot_dtu_freq" %in% names(dtuo$Transcripts)) {
+        mydata = Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), boot_dtu_freq, DTU)]
+      } else {
+        mydata = Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), DTU)]
+      }
+    })
+    names(mydata)[4] <- "neglogP"
+    
+    # Plot
+    output$plot1 <- renderPlot({
+      plot_overview(dtuo, "volcano")
+    })
+    
+    # Assign mouse hover action to corresponding output space.
+    output$hover_info <- renderPrint({
+      cat("Hover info: \n")
+      myhover <- input$plot_hover
+      points <- nearPoints(mydata, myhover, threshold= 5)
+      with(mydata, {
+        if(dim(points)[1] != 0)
+          points[, target_id]
+      })
+    })
+    
+    # Assign mouse click action to corresponding output space.
+    output$click_info <- renderPrint({
+      cat("Click info: \n")
+      myclick <- input$plot_click
+      points <- nearPoints(mydata, myclick, threshold= 5)
+      with(mydata, {
+        suppressWarnings({ points[, pval_corr := 10 ^ (0-neglogP)] })
+        if(dim(points)[1] != 0)
+          points[, .(target_id, parent_id, DTU, Dprop, pval_corr, boot_dtu_freq)]
+      })
+    })
+    
+    # Assign mouse double click action to corresponding output space.
+    output$plot2 <- renderPlot({
+      myclick <- input$plot_click
+      points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
+      with(mydata, {
+        md <- which.min(points[, dist_])
+        tid <- points[md, target_id]
+      })
+      with(dtuo, {
+        gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
+        if(!is.na(gid[1]))
+          plot_gene(dtuo, gid, vals= "proportions")
+      })
+    })
+    output$plot3 <- renderPlot({
+      myclick <- input$plot_click
+      with(mydata, {
+        points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
+        md <- which.min(points[, dist_])
+        tid <- points[md, target_id]
+      })
+      with(dtuo, {
+        gid <- as.vector(dtu_hen$Transcripts[(target_id == tid), parent_id])
+        if(!is.na(gid[1]))
+          plot_gene(dtu_hen, gid, vals= "counts")
+      })
+    })
+  }
+  
+  # Display
+  shinyApp(volcano_ui, volcano_server)
+}
+
+
+
+
+
+
+
+
+
