@@ -298,9 +298,9 @@ plot_shiny_volcano <- function(dtuo) {
         tid <- points[md, target_id]
       })
       with(dtuo, {
-        gid <- as.vector(dtu_hen$Transcripts[(target_id == tid), parent_id])
+        gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
         if(!is.na(gid[1]))
-          plot_gene(dtu_hen, gid, vals= "counts")
+          plot_gene(dtuo, gid, vals= "counts")
       })
     })
   }
