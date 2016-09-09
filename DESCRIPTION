@@ -1,7 +1,7 @@
 Type: Package
 Package: rats
-Version: 0.2.1
-Date: 2016-09-05
+Version: 0.2.2
+Date: 2016-09-09
 Title: Relative Abundance of Transcripts
 Authors@R: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
              person("Kira Mourão", role=c("aut"), email="k.mourao@dundee.ac.uk"),
@@ -21,7 +21,8 @@ Imports:
     matrixStats,
     data.table,
     ggplot2,
-    utils
+    utils,
+    shiny
 URL: https://github.com/bartongroup/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/bartongroup/Rats
 RoxygenNote: 5.0.1
