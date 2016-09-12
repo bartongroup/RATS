@@ -209,104 +209,92 @@ plot_overview <- function(dtuo, type="volcano") {
 #' @export
 #' 
 plot_shiny_volcano <- function(dtuo) {
-  # Set up interface.
-  volcano_ui <- fluidPage(
-    # Prepare space for plot display.
-    fluidRow(
-      column(width= 12, 
-             plotOutput("plot1", height= 800, 
-                        hover= hoverOpts(id= "plot_hover"),
-                        click= clickOpts(id= "plot_click")) )),
-    # Instructions.
-    fluidRow(
-      column(width=12,
-             wellPanel("* Hover over points to see Transcript ID.
-                       * Click to get more info for Transcript.") )),
-    # Hover and click info.
-    fluidRow(
-      column(width= 3,
-             verbatimTextOutput("hover_info")),
-      column(width= 9,
-             verbatimTextOutput("click_info")) ),
-    fluidRow(
-      column(width= 6, 
-             plotOutput("plot2", height= 600)),
-      column(width= 6, 
-             plotOutput("plot3", height= 600)) )
-  )
-  
-  # Set up mouse responses.
-  volcano_server <- function(input, output) {
-    # Set up data
-    mydata <- NULL
-    with(dtuo, {
+  with(dtuo, {
+    # Set up interface.
+    volcano_ui <- fluidPage(
+      # Prepare space for plot display.
+      fluidRow(
+        column(width= 12, 
+               plotOutput("plot1", height= 800, 
+                          hover= hoverOpts(id= "plot_hover"),
+                          click= clickOpts(id= "plot_click")) )),
+      # Instructions.
+      fluidRow(
+        column(width=12,
+               wellPanel("* Hover over points to see Transcript ID.
+                         * Click to get more info for Transcript.") )),
+      # Hover and click info.
+      fluidRow(
+        column(width= 3,
+               verbatimTextOutput("hover_info")),
+        column(width= 9,
+               verbatimTextOutput("click_info")) ),
+      fluidRow(
+        column(width= 6, 
+               plotOutput("plot2", height= 600)),
+        column(width= 6, 
+               plotOutput("plot3", height= 600)) )
+    )
+    
+    # Set up mouse responses.
+    volcano_server <- function(input, output) {
+      # Set up data
+      mydata <- NULL
       if ("boot_dtu_freq" %in% names(dtuo$Transcripts)) {
-        mydata = Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), boot_dtu_freq, DTU)]
+        mydata <- dtuo$Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), boot_dtu_freq, DTU)]
       } else {
-        mydata = Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), DTU)]
+        mydata <- dtuo$Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), DTU)]
       }
-    })
-    names(mydata)[4] <- "neglogP"
+      names(mydata)[4] <- "neglogP"
     
-    # Plot
-    output$plot1 <- renderPlot({
-      plot_overview(dtuo, "volcano")
-    })
-    
-    # Assign mouse hover action to corresponding output space.
-    output$hover_info <- renderPrint({
-      cat("Hover info: \n")
-      myhover <- input$plot_hover
-      points <- nearPoints(mydata, myhover, threshold= 5)
-      with(mydata, {
-        if(dim(points)[1] != 0)
-          points[, target_id]
+      # Plot
+      output$plot1 <- renderPlot({
+        plot_overview(dtuo, "volcano")
       })
-    })
     
-    # Assign mouse click action to corresponding output space.
-    output$click_info <- renderPrint({
-      cat("Click info: \n")
-      myclick <- input$plot_click
-      points <- nearPoints(mydata, myclick, threshold= 5)
-      with(mydata, {
+      # Assign mouse hover action to corresponding output space.
+      output$hover_info <- renderPrint({
+        cat("Hover info: \n")
+        myhover <- input$plot_hover
+        points <- nearPoints(mydata, myhover, threshold= 5)
+        if(dim(points)[1] != 0)
+          noquote(as.vector.factor(points[, target_id]))
+      })
+    
+      # Assign mouse click action to corresponding output space.
+      output$click_info <- renderPrint({
+        cat("Click info: \n")
+        myclick <- input$plot_click
+        points <- nearPoints(mydata, myclick, threshold= 5)
         suppressWarnings({ points[, pval_corr := 10 ^ (0-neglogP)] })
         if(dim(points)[1] != 0)
           points[, .(target_id, parent_id, DTU, Dprop, pval_corr, boot_dtu_freq)]
       })
-    })
-    
-    # Assign mouse double click action to corresponding output space.
-    output$plot2 <- renderPlot({
-      myclick <- input$plot_click
-      points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
-      with(mydata, {
+      
+      # Assign mouse double click action to corresponding output space.
+      output$plot2 <- renderPlot({
+        myclick <- input$plot_click
+        points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
         md <- which.min(points[, dist_])
         tid <- points[md, target_id]
-      })
-      with(dtuo, {
         gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
         if(!is.na(gid[1]))
           plot_gene(dtuo, gid, vals= "proportions")
       })
-    })
-    output$plot3 <- renderPlot({
-      myclick <- input$plot_click
-      with(mydata, {
+      output$plot3 <- renderPlot({
+        myclick <- input$plot_click
         points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
         md <- which.min(points[, dist_])
         tid <- points[md, target_id]
-      })
-      with(dtuo, {
         gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
         if(!is.na(gid[1]))
           plot_gene(dtuo, gid, vals= "counts")
       })
-    })
-  }
-  
-  # Display
-  shinyApp(volcano_ui, volcano_server)
+    }
+    
+    # Display
+    shinyApp(ui= volcano_ui, server= volcano_server)
+  })
 }
 
 
