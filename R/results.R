@@ -144,6 +144,7 @@ plot_overview <- function(dtuo, type="volcano") {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
       result <- ggplot(data = mydata, aes(Dprop, neglogP, colour = DTU)) +
+        scale_color_manual(values=c("steelblue3", "red")) +
         geom_point(alpha = 0.3) +
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
