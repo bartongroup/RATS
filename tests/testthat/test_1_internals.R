@@ -187,3 +187,18 @@ test_that("Filters work correctly", {
   expect_equivalent(as.list(mydtu$Transcripts["2NN", .(elig_xp, elig, elig_fx)]),
                     list(TRUE, TRUE, FALSE))
 })
+
+test_that("DTU summary and ID extraction", {
+  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")
+  
+  ids <- get_dtu_ids(mydtu)
+  smry <- dtu_summary(mydtu)
+  
+  expect_equal(length(ids[["dtu-genes"]]), smry[["DTU genes"]])
+  expect_equal(length(ids[["ndtu-genes"]]), smry[["non-DTU genes"]])
+  expect_equal(length(ids[["na-genes"]]), smry[["NA genes"]])
+  expect_equal(length(ids[["dtu-transc"]]), smry[["DTU transcripts"]])
+  expect_equal(length(ids[["ndtu-transc"]]), smry[["non-DTU transcripts"]])
+  expect_equal(length(ids[["na-transc"]]), smry[["NA transcripts"]])
+})
