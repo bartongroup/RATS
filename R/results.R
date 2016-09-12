@@ -20,20 +20,32 @@ dtu_summary <- function(dtuo) {
 #' List of DTU ids.
 #' 
 #' Get the IDs for DTU/nonDTU/NA genes and transcripts.
+#' The IDs will be ordered by effect size.
 #' 
 #' @param dtuo A DTU object.
 #' @return A list of vectors.
 #'
 #'@export
 get_dtu_ids <- function(dtuo) {
-  with(dtuo,
-       return(list("dtu-genes" = as.vector(Genes[DTU==TRUE, parent_id]),  # Necessary to use equality syntax, otherwise NA interfere.
-                   "dtu-transc" = as.vector(Transcripts[DTU==TRUE, target_id]),
-                   "ndtu-genes" = as.vector(Genes[DTU==FALSE, parent_id]),
-                   "ndtu-transc" = as.vector(Transcripts[DTU==FALSE, target_id]),
-                   "na-genes" = as.vector(Genes[is.na(DTU), parent_id]),
-                   "na-transc" = as.vector(Transcripts[is.na(DTU), target_id])
-       )) )
+  with(dtuo, {
+    # Sort transcripts.
+    myt <- copy(dtuo$Transcripts)
+    myt[, adp := abs(Dprop)]
+    setorder(myt, -adp, na.last=TRUE)
+    # Sort genes.
+    pid <- unique(myt[, parent_id])
+    po <- match(Genes[, parent_id], pid)
+    myp <- copy(Genes[order(po), ])
+    
+    # Extract.
+    return(list("dtu-genes" = as.vector(myp[(DTU), parent_id]),
+               "dtu-transc" = as.vector(myt[(DTU), target_id]),
+               "ndtu-genes" = as.vector(myp[DTU==FALSE, parent_id]),
+               "ndtu-transc" = as.vector(myt[DTU==FALSE, target_id]),
+               "na-genes" = as.vector(myp[is.na(DTU), parent_id]),
+               "na-transc" = as.vector(myt[is.na(DTU), target_id])
+    ))
+  })
 }
 
 
@@ -140,15 +152,15 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
 #' @export
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
-    if (any(type == c("volcano"))) {
+    if (any(type == c("gene_volcano", "volcano"))) {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
       result <- ggplot(data = mydata, aes(Dprop, neglogP, colour = DTU)) +
-        scale_color_manual(values=c("steelblue3", "red")) +
         geom_point(alpha = 0.3) +
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
              y ="-log10(P-value)") +
+        scale_color_manual(values=c("steelblue3", "red")) +
         scale_x_continuous(breaks = seq(-1, 1, 0.2))
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts)  # I don't want the intermediate calculations to modify the dtu object.
@@ -160,31 +172,32 @@ plot_overview <- function(dtuo, type="volcano") {
       # ok, plotting time
       result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
         geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-        scale_y_continuous(trans="sqrt") +
         ggtitle("Distribution of largest proportion change per gene") +
         labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
-             y ="Number of genes")
+             y ="Number of genes") +
+        scale_color_manual(values=c("steelblue3", "red")) +
+        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+        scale_y_continuous(trans="sqrt")
     } else if (type == "transc_conf") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
                            "count"= sapply(seq(0, 1, 0.01), function(x) {
                                            sum(Transcripts[(boot_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
-        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
         ggtitle("Confidence VS DTU transcripts") +
         labs(x="DTU call frequency threshold",
-             y="Number of transcripts")
+             y="Number of transcripts") +
+        scale_x_continuous(breaks = seq(0, 1, 0.1))
     } else if (type == "gene_conf") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
                            "count"= sapply(seq(0, 1, 0.01), function(x) {
                                            sum(Genes[(boot_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
-        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
         ggtitle("Confidence VS DTU genes") +
         labs(x="DTU call frequency threshold",
-             y="Number of genes")
+             y="Number of genes") +
+        scale_x_continuous(breaks = seq(0, 1, 0.1))
     } else {
       stop("Unrecognized plot type!")
     }
@@ -210,47 +223,53 @@ plot_overview <- function(dtuo, type="volcano") {
 #' @export
 #' 
 plot_shiny_volcano <- function(dtuo) {
-  with(dtuo, {
-    # Set up interface.
-    volcano_ui <- fluidPage(
-      # Prepare space for plot display.
-      fluidRow(
-        column(width= 12, 
-               plotOutput("plot1", height= 800, 
-                          hover= hoverOpts(id= "plot_hover"),
-                          click= clickOpts(id= "plot_click")) )),
-      # Instructions.
-      fluidRow(
-        column(width=12,
-               wellPanel("* Hover over points to see Transcript ID.
-                         * Click to get more info for Transcript.") )),
-      # Hover and click info.
-      fluidRow(
-        column(width= 3,
-               verbatimTextOutput("hover_info")),
-        column(width= 9,
-               verbatimTextOutput("click_info")) ),
-      fluidRow(
-        column(width= 6, 
-               plotOutput("plot2", height= 600)),
-        column(width= 6, 
-               plotOutput("plot3", height= 600)) )
-    )
+  # Set up interface.
+  volcano_ui <- fluidPage(
+    # Prepare space for plot display.
+    fluidRow(
+      column(width= 12, 
+             plotOutput("plot1", height= 800, 
+                        hover= hoverOpts(id= "plot_hover"),
+                        click= clickOpts(id= "plot_click")) )),
+    # Instructions.
+    fluidRow(
+      column(width=12,
+             wellPanel("* Hover over points to see Transcript ID.
+                       * Click to get more info for Transcript.") )),
+    # Hover and click info.
+    fluidRow(
+      column(width= 3,
+             verbatimTextOutput("hover_info")),
+      column(width= 9,
+             verbatimTextOutput("click_info")) ),
+    fluidRow(
+      column(width= 6, 
+             plotOutput("plot2", height= 600)),
+      column(width= 6, 
+             plotOutput("plot3", height= 600)) )
+  )
     
+  with(dtuo, {
     # Set up mouse responses.
     volcano_server <- function(input, output) {
+      # For storing which rows have been excluded
+      vals <- reactiveValues(
+        keeprows = rep(TRUE, nrow(mtcars))
+      )
+      
       # Set up data
       mydata <- NULL
       if ("boot_dtu_freq" %in% names(dtuo$Transcripts)) {
-        mydata <- dtuo$Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), boot_dtu_freq, DTU)]
+        mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), boot_dtu_freq, DTU)]
       } else {
-        mydata <- dtuo$Transcripts[, list(target_id, parent_id, Dprop, -log10(pval_corr), DTU)]
+        mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), DTU)]
       }
+      names(mydata)[1] <- "target_id"
       names(mydata)[4] <- "neglogP"
     
       # Plot
       output$plot1 <- renderPlot({
-        plot_overview(dtuo, "volcano")
+        plot_overview(dtuo, "gene_volcano")
       })
     
       # Assign mouse hover action to corresponding output space.
@@ -259,7 +278,7 @@ plot_shiny_volcano <- function(dtuo) {
         myhover <- input$plot_hover
         points <- nearPoints(mydata, myhover, threshold= 5)
         if(dim(points)[1] != 0)
-          noquote(as.vector.factor(points[, target_id]))
+          noquote(points[, target_id])
       })
     
       # Assign mouse click action to corresponding output space.

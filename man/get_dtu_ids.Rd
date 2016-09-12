@@ -14,5 +14,6 @@ A list of vectors.
 }
 \description{
 Get the IDs for DTU/nonDTU/NA genes and transcripts.
+The IDs will be ordered by effect size.
 }
 
