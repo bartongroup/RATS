@@ -33,8 +33,7 @@ available from CRAN.
 
 
 A full **tutorial vignette** is included in the package, explaining the input, output, commands and options. 
-If you install the package either from a compiled source release or through Bioconductor, the vignette should be 
-available locally by calling:
+The vignette should be available locally by calling:
 
 `browseVignettes("rats")`
 
