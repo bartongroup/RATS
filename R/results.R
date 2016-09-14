@@ -111,23 +111,22 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
       # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
       result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
           geom_freqpoly(aes(group= condition, colour= condition), stat= "identity", size= 1.5) +
-          scale_colour_manual(values=c("darkgreen", "orange")) +
-          labs(title= pid, y= vals)
+          scale_colour_manual(values=c("darkgreen", "orange"))
       if (vals == "counts")
           result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax, colour= condition), width= 0.5, size= 0.5)
     } else if (style == "bars"){
       # Display as dodged bar chart.
       result <- ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
           geom_bar(aes(group= condition), stat= "identity", position= position_dodge(0.5), width= 0.5) +
-          scale_fill_manual(values=c("darkgreen", "orange")) +
-          # scale_colour_manual(values=c("darkgreen", "orange")) +
-          labs(title= pid, y= vals)
+          scale_fill_manual(values=c("darkgreen", "orange"))
       if (vals == "counts")
         result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.5), width= 0.3, size= 0.5)
     } else {
       stop("Invalid plot style.")
     }
-    
+    result <- result + 
+      labs(title= pid, y= vals) + 
+      theme(axis.text.x = element_text(angle=90))
     return(result)
   })
 }
