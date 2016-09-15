@@ -9,7 +9,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   varname = "condition", COUNTS_COL = "est_counts",
   BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
-  count_thresh = 5, dprop_thresh = 0.1, conf_thresh = 0.95,
+  count_thresh = 10, dprop_thresh = 0.1, conf_thresh = 0.95,
   correction = "BH", testmode = "both", boots = "both", bootnum = 100L,
   description = NA_character_, verbose = TRUE)
 }
@@ -42,7 +42,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{p_thresh}{The p-value threshold, default 0.05.}
 
-\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 5)}
+\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 10)}
 
 \item{dprop_thresh}{Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)}
 
