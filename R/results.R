@@ -125,7 +125,7 @@ plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
       stop("Invalid plot style.")
     }
     result <- result + 
-      labs(title= pid, y= vals) + 
+      labs(title= pid, y= vals, x=NULL) + 
       theme(axis.text.x = element_text(angle=90))
     return(result)
   })
