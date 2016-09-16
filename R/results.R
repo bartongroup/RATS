@@ -158,7 +158,7 @@ plot_overview <- function(dtuo, type="volcano") {
         geom_point(alpha = 0.3) +
         ggtitle("Proportion change VS significance") +
         labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
-             y ="-log10(P-value)") +
+             y ="-log10 (Pval)") +
         scale_color_manual(values=c("steelblue3", "red")) +
         scale_x_continuous(breaks = seq(-1, 1, 0.2))
     } else if (type == "maxdprop") {
