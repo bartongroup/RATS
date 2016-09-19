@@ -50,83 +50,45 @@ get_dtu_ids <- function(dtuo) {
 
 
 #================================================================================
-#' Plot count or proportion changes for all transcripts of a specified gene.
+#' Plot count and proportion changes for all transcripts of a specified gene.
 #'
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
-#' @param vals Values to plot. Either "counts" or "proportions". Default "counts".
-#' @param style Style of plot. Either "bars" or "lines". Default "bars".
 #' @return a ggplot2 object. Simply display it or you can also customize it.
-#'
-#' The error bars represent either the error of proportion or 2 standard deviations
-#' of the mean count, according to the type of plot requested.
 #'
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_gene <- function(dtuo, pid, vals= "proportions", style= "bars") {
+plot_gene <- function(dtuo, pid) {
   # Slice the data to get just the relevant transcripts.
-  vis_data <- with(dtuo, 
-                   Transcripts[pid, .(target_id, meanA, meanB, stdevA, stdevB, propA, propB)] )
-  with(vis_data, {
-    vis_data[, peA := sqrt(propA * (1 - propA) / dtuo$Parameters[["num_replic_A"]]) ]
-    vis_data[, peB := sqrt(propB * (1 - propB) / dtuo$Parameters[["num_replic_B"]]) ]
-  })
-  
-  # Choose values to display.
-  vA = NA_real_; vB = NA_real_; eA = NA_real_; eB = NA_real_
-  if (vals == "counts") {
-    vA <- "meanA";  vB <- "meanB";  eA <- "stdevA";  eB <- "stdevB"
-  } else if (vals == "proportions"){
-    vA <- "propA";  vB <- "propB";  eA <- "peA";   eB <- "peB"
-  } else {
-    stop("Invalid plot type.")
-  }
-  
-  vis_data <- with(vis_data, {
-    # Aggregate, to simplify ggplot commands.
-    vis_data[, condA := dtuo$Parameters[["cond_A"]] ]  # Recycle single value.
-    vis_data[, condB := dtuo$Parameters[["cond_B"]] ]
+  with(dtuo, {
+    trdat <- Transcripts[pid, .(target_id, meanA, meanB, propA, propB, totalA, totalB)]
+    setkey(trdat, target_id)
+    repdatA <- ReplicateData[["condA"]][pid, -"parent_id", with=FALSE]
+    setkey(repdatA, target_id)
+    repdatB <- ReplicateData[["condB"]][pid, -"parent_id", with=FALSE]
+    setkey(repdatB, target_id)
     
-    data.table("expression" = c(vis_data[[vA]], vis_data[[vB]]),
-               "error" = c(vis_data[[eA]], vis_data[[eB]]),
-               "errmin" = NA_real_,
-               "errmax" = NA_real_,
-               "condition" = c(vis_data[, condA], vis_data[, condB]),
-               "transcript" = vis_data[, target_id])  # Recycle vector once.
-  })
-  
-  with(vis_data, {
-    # 2 standard deviations.
-    if (vals == "counts") 
-      vis_data[, error := 2 * error]
-    # Error limits, mind sensible limits.
-    vis_data[, errmin := expression - error]
-    vis_data[, errmin := ifelse(errmin<0, 0, errmin)]
-    vis_data[, errmax := expression + error]
-    if (vals == "proportions")
-      vis_data[, errmax := ifelse(errmax>1, 1, errmax)]
-    
-    if (style == "lines") {
-      # Display as overlapping lines (Nick's way of displaying it, but cleaned up).
-      result <- ggplot(data= vis_data, aes(x= transcript, y= expression, colour= condition)) +
-          geom_freqpoly(aes(group= condition, colour= condition), stat= "identity", size= 1.5) +
-          scale_colour_manual(values=c("darkgreen", "orange"))
-      if (vals == "counts")
-          result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax, colour= condition), width= 0.5, size= 0.5)
-    } else if (style == "bars"){
-      # Display as dodged bar chart.
-      result <- ggplot(data= vis_data, aes(x= transcript, y= expression, fill= condition)) +
-          geom_bar(aes(group= condition), stat= "identity", position= position_dodge(0.5), width= 0.5) +
-          scale_fill_manual(values=c("darkgreen", "orange"))
-      if (vals == "counts")
-        result <- result + geom_errorbar(aes(x= transcript, ymin= errmin, ymax= errmax),  position= position_dodge(0.5), width= 0.3, size= 0.5)
-    } else {
-      stop("Invalid plot style.")
-    }
-    result <- result + 
-      labs(title= pid, y= vals, x=NULL) + 
+    # Restructure
+    trnum <- dim(trdat)[1]
+    anum <- dtuo$Parameters$num_replic_A
+    bnum <- dtuo$Parameters$num_replic_B
+    vis_data <- data.frame("values"=               c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]), with(trdat, propA),                with(trdat, propB) ),
+                           "target_id"=  unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),     with(trdat, target_id),            with(trdat, target_id) )),
+                           "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum),    rep.int(Parameters$cond_A, trnum), rep.int(Parameters$cond_B, trnum) )),
+                           "type"=                 c( rep.int("counts", trnum * anum),             rep.int("counts", trnum * bnum),             rep.int("proportion", trnum),      rep.int("proportion", trnum) ) )
+    # Plot.
+    result <- 
+      ggplot(vis_data, aes(x=target_id, y=values)) +
+      facet_grid(type ~ ., scales= "free") +
+      geom_point(position=position_dodge(0.25), aes(shape= condition, color= condition, size= 16)) +
+      geom_boxplot(aes(fill=condition), alpha= 0.3) + 
+      scale_fill_manual(values=c("darkgreen", "orange")) +
+      labs(title= paste("gene:", pid), y= NULL, x=NULL) + 
       theme(axis.text.x = element_text(angle=90))
+    
+    result
+    
     return(result)
   })
 }

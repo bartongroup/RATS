@@ -10,9 +10,9 @@ test_that("The reporting structures are created correctly", {
   
   expect_type(full, "list")
   expect_type(short, "list")
-  expect_equal(length(full), 3)
+  expect_equal(length(full), 4)
   expect_equal(length(full), length(short))
-  expect_named(full, c("Parameters", "Genes", "Transcripts"))
+  expect_named(full, c("Parameters", "Genes", "Transcripts", "ReplicateData"))
   expect_true(all(names(full) == names(short)))
   
   expect_type(full$Parameters, "list")
@@ -116,7 +116,7 @@ test_that("Bootstrapped counts are extracted correctly", {
 #==============================================================================
 test_that("Filters work correctly", {
   
-  # !!! This test is tightly dependent on the data used for the test, in order to
+  # !!! This test is tightly dependent on the data used for the test and the default parameter values, in order to
   # !!! ensure correct response to specific scenarios.
   
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))

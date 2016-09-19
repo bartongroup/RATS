@@ -97,7 +97,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
   }
   
-  if (steps > 1) {
+  if (steps > 1) {  # ID columns are removed so I don't have to constantly subset.
     # Calculate mean count across bootstraps.
     count_data_A <- as.data.table(lapply(boot_data_A, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
     count_data_B <- as.data.table(lapply(boot_data_B, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
@@ -243,16 +243,26 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Tidying up...")
   
+  # Store the replicate means adter re-adding the IDs.
+  with(count_data_A, {
+    count_data_A[,  target_id := tx_filter$target_id]
+    count_data_A[,  parent_id := tx_filter$parent_id]
+    setkey(count_data_A, parent_id)
+  })
+  with(count_data_B, {
+    count_data_B[,  target_id := tx_filter$target_id]
+    count_data_B[,  parent_id := tx_filter$parent_id]
+    setkey(count_data_B, parent_id)
+  })
+  resobj$ReplicateData <- list("condA"= count_data_A, "condB"= count_data_B)
+  
   with(resobj, {
-    # Cross-display calls.
+    # Cross-display the DTU calls.
     if (test_transc)
       Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
-
-#     # Drop columns that exist for convenient calculations but are not useful to end users.
-#     Transcripts[, c("totalA", "totalB") := NULL]  # Some plots need it but it's ugly in the report tables. It takes a blink to recalculate.
-
+    
     # Drop the bootstrap columns, if unused.
     if (!boot_transc)
       Transcripts[, c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") := NULL]
@@ -265,6 +275,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     message("All done!")
     print(dtu_summary(resobj))
   }
+  
   return(resobj)
 }
 
@@ -458,7 +469,7 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
 #' Create output structure.
 #' 
 #' @param annot A dataframe with at least 2 columns: target_id and parent_id.
-#' @param full Full-sized structure or core fields only. One of "full", "short".
+#' @param full Full-sized structure or core fields only. Either "full" or "short".
 #' @return A list.
 #' 
 alloc_out <- function(annot, full){
@@ -489,6 +500,7 @@ alloc_out <- function(annot, full){
                               "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA, 
                               "boot_dtu_freq"=NA_real_, "conf"=NA, "boot_p_mean"=NA_real_, "boot_p_stdev"=NA_real_, 
                               "boot_p_min"=NA_real_,"boot_p_max"=NA_real_, "boot_na"=NA_real_)
+    ReplicateData <- list()
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)), "DTU"=NA, 
@@ -501,13 +513,14 @@ alloc_out <- function(annot, full){
                               "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
+    ReplicateData <- NULL
   }
   with(Genes,
        setkey(Genes, parent_id) )
   with(Transcripts, 
        setkey(Transcripts, parent_id, target_id) )
   
-  return(list("Parameters"=Parameters, "Genes"=Genes, "Transcripts"=Transcripts))
+  return(list("Parameters"= Parameters, "Genes"= Genes, "Transcripts"= Transcripts, "ReplicateData"= ReplicateData))
 }
 
 

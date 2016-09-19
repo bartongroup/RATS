@@ -136,8 +136,8 @@ test_that("The output structure is correct", {
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", bootnum=2, verbose = FALSE)
   
   expect_type(mydtu, "list")
-  expect_equal(length(mydtu), 3)
-  expect_named(mydtu, c("Parameters", "Genes", "Transcripts"))
+  expect_equal(length(mydtu), 4)
+  expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "ReplicateData"))
   
   expect_type(mydtu$Parameters, "list")
   expect_length(mydtu$Parameters, 18)
@@ -207,14 +207,20 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["boot_na"]]))
   
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")  
-  expect_false(any(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Genes)))
+  expect_false(any(c("boot_dtu_freq", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB",  "boot_p_stdevBA", 
+                     "boot_p_minAB",  "boot_p_minBA", "boot_p_maxAB",  "boot_p_maxBA", "boot_na") %in% names(mydtu$Genes)))
   expect_false(any(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Transcripts)))
   
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="transc", bootnum=2, verbose = FALSE)  
-  expect_false( any(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Genes)))
+  expect_false(any(c("boot_dtu_freq", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB",  "boot_p_stdevBA", 
+                     "boot_p_minAB",  "boot_p_minBA", "boot_p_maxAB",  "boot_p_maxBA", "boot_na") %in% names(mydtu$Genes)))
+  expect_true(all(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Transcripts)))
   
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="genes", bootnum=2, verbose = FALSE)  
   expect_false(any(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Transcripts)))
+  expect_true(all(c("boot_dtu_freq", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB",  "boot_p_stdevBA", 
+                    "boot_p_minAB",  "boot_p_minBA", "boot_p_maxAB",  "boot_p_maxBA", "boot_na") %in% names(mydtu$Genes)))
+  
 })
 
 #==============================================================================
