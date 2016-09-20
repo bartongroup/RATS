@@ -62,34 +62,42 @@ get_dtu_ids <- function(dtuo) {
 plot_gene <- function(dtuo, pid) {
   # Slice the data to get just the relevant transcripts.
   with(dtuo, {
-    trdat <- Transcripts[pid, .(target_id, meanA, meanB, propA, propB, totalA, totalB)]
+    trdat <- dtuo$Transcripts[pid, target_id]
     setkey(trdat, target_id)
-    repdatA <- ReplicateData[["condA"]][pid, -"parent_id", with=FALSE]
+    repdatA <- dtuo$ReplicateData[["condA"]][pid, -"parent_id", with=FALSE]
     setkey(repdatA, target_id)
-    repdatB <- ReplicateData[["condB"]][pid, -"parent_id", with=FALSE]
+    repdatB <- dtuo$ReplicateData[["condB"]][pid, -"parent_id", with=FALSE]
     setkey(repdatB, target_id)
     
     # Restructure
     trnum <- dim(trdat)[1]
     anum <- dtuo$Parameters$num_replic_A
     bnum <- dtuo$Parameters$num_replic_B
-    vis_data <- data.frame("values"=               c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]), with(trdat, propA),                with(trdat, propB) ),
-                           "target_id"=  unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),     with(trdat, target_id),            with(trdat, target_id) )),
-                           "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum),    rep.int(Parameters$cond_A, trnum), rep.int(Parameters$cond_B, trnum) )),
-                           "type"=                 c( rep.int("counts", trnum * anum),             rep.int("counts", trnum * bnum),             rep.int("proportion", trnum),      rep.int("proportion", trnum) ) )
+    sA <- colSums(repdatA[, -"target_id", with= FALSE])
+    sB <- colSums(repdatB[, -"target_id", with= FALSE])
+    pA <- sweep(repdatA[, -"target_id", with= FALSE], 2, sA, "/")
+    pB <- sweep(repdatB[, -"target_id", with= FALSE], 2, sB, "/")
+    vis_data <- data.table("values"=               c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]), unlist(pA),                               unlist(pB) ),
+                           "target_id"=  unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),     with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum))  )),
+                           "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum),    rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
+                           "type"=                 c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),             rep.int("Proportions", trnum * anum),     rep.int("Proportions", trnum * bnum) ) )
+    
     # Plot.
-    result <- 
-      ggplot(vis_data, aes(x=target_id, y=values)) +
+    result <- ggplot(vis_data, aes(x= target_id, y= values)) +
       facet_grid(type ~ ., scales= "free") +
-      geom_point(position=position_dodge(0.25), aes(shape= condition, color= condition, size= 16)) +
-      geom_boxplot(aes(fill=condition), alpha= 0.3) + 
-      scale_fill_manual(values=c("darkgreen", "orange")) +
-      labs(title= paste("gene:", pid), y= NULL, x=NULL) + 
-      theme(axis.text.x = element_text(angle=90))
+      geom_boxplot(aes(fill= condition), alpha= 0.2, show.legend= TRUE, outlier.size= 0) + 
+      geom_jitter(position= position_dodge(0.3), aes(shape= condition, color= condition), stroke= 1, show.legend= TRUE) +
+      scale_fill_manual(values= c("darkgreen", "orange")) +
+      scale_colour_manual(values= c("darkgreen", "darkorange")) +
+      scale_shape(solid= FALSE) +
+      labs(title= paste("gene:", pid), y= NULL, x= NULL) + 
+      theme(title= element_text(size= 12),
+            axis.text.x= element_text(angle= 90, size= 12),
+            axis.text.y= element_text(size= 12),
+            strip.text.y= element_text(size= 14))
     
-    result
     
-    return(result)
+      return(result)
   })
 }
 
@@ -166,11 +174,6 @@ plot_overview <- function(dtuo, type="volcano") {
     return(result)
   })
 }
-
-
-
-
-
 
 
 #================================================================================
