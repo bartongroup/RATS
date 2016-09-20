@@ -63,14 +63,11 @@ plot_gene <- function(dtuo, pid) {
   # Slice the data to get just the relevant transcripts.
   with(dtuo, {
     trdat <- dtuo$Transcripts[pid, target_id]
-    setkey(trdat, target_id)
     repdatA <- dtuo$ReplicateData[["condA"]][pid, -"parent_id", with=FALSE]
-    setkey(repdatA, target_id)
     repdatB <- dtuo$ReplicateData[["condB"]][pid, -"parent_id", with=FALSE]
-    setkey(repdatB, target_id)
     
     # Restructure
-    trnum <- dim(trdat)[1]
+    trnum <- length(trdat)
     anum <- dtuo$Parameters$num_replic_A
     bnum <- dtuo$Parameters$num_replic_B
     sA <- colSums(repdatA[, -"target_id", with= FALSE])
