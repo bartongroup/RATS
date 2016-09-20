@@ -129,6 +129,10 @@ print( names(mydtu$Genes) )
 print( names(mydtu$Transcripts) )
 
 ## ------------------------------------------------------------------------
+# Elements of ReplicateData
+print( names(mydtu$ReplicateData) )
+
+## ------------------------------------------------------------------------
 # Let's check the info and settings.
 print( mydtu$Parameters )
 
@@ -141,13 +145,10 @@ print( mydtu$Genes )
 print( mydtu$Transcripts )
 
 ## ------------------------------------------------------------------------
-# Proportion changes for all the transcripts of the "MIX6" gene.
-plot_gene(mydtu, "MIX6", vals="proportions")
-
-## ------------------------------------------------------------------------
-# Absolute expression changes for all the transcripts of the "MIX6" gene.
-# The ERROR BARS represent 2 standard deviations from the mean count across replicates.
-plot_gene(mydtu, "MIX6", vals="counts")
+# Proportion and count changes for all the transcripts of the "MIX6" gene.
+# In our example dataset, there are only two replicates per condition and the dispersion is small,
+# so the boxplots appear squashed.
+plot_gene(mydtu, "MIX6")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Proportion change VS significance.

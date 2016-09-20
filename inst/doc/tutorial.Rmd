@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "09 SEP 2016"
+date: "20 SEP 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -70,9 +70,9 @@ The input and output structures and the command options are discussed in more de
 
 ### Install dependencies first
 
-`install.packages(c("data.table", "matrixStats", "ggplot2"), dependencies=TRUE)`
+`install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
 
-If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual for help.
+If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
 
 
 ### Install latest release
@@ -336,7 +336,7 @@ print( ids[["dtu-genes"]] )
 
 ## Output structure
 
-The output of `rats` is a list containing 3 elements:
+The output of `rats` is a list containing 4 elements:
 
 ```{r}
 print( names(mydtu) )
@@ -412,8 +412,8 @@ carefully.
 DTU positive calls, and `conf <- boot_dtu_freq <= 1 - Parameters$conf_thresh` for DTU negative calls.
 14. `boot_p_meanAB` and `boot_p_meanBA` - Mean P-values across the bootstraps.
 15. `boot_p_stdevAB` and `boot_p_stdevBA` - Standard deviations of the mean P-values across the bootstraps.
-16. `boot_p_minAB` and `boot_p_minBA` - The minimum (=most significant) P-values that occurred in the bootstraps.
-17. `boot_p_maxAB` and `boot_p_maxBA` - The maximum (=least significant) P-values that occurred in the bootstraps.
+16. `boot_p_minAB` and `boot_p_minBA` - The minimum (most significant) P-values that occurred in the bootstraps.
+17. `boot_p_maxAB` and `boot_p_maxBA` - The maximum (least significant) P-values that occurred in the bootstraps.
 18. `boot_na` - The fraction of bootstrap iterations in which the gene was not eligible for DTU calling.
 
 **Note:** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
@@ -464,11 +464,25 @@ DTU positive calls, and `conf <- boot_dtu_freq <= 1 - Parameters$conf_thresh` fo
 18. `boot_p_mean` - The mean P-value across the bootstraps.
 19. `boot_p_stdev` - The standard deviation of the mean P-value across the bootstraps.
 20. `boot_p_min` - The minimum (most significant) P-value that occurred in the bootstraps.
-21. `boot_p_max` - The maximum (most significant) P-value that occurred in the bootstraps.
+21. `boot_p_max` - The maximum (least significant) P-value that occurred in the bootstraps.
 22. `boot_na` - The fraction of bootstrap iterations in which the transcripts were not eligible for DTU calling.
 
 **Note** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
 
+### ReplicateData
+ 
+`ReplicateData` is a list of two `data.table`s, one for each condition. Each table contains the actual counts used in the statistical tests for DTU.
+Each transcript gets a single counts value per replicate, so if bootstrapped data was used, the values are the means across iterations. Otherwise, the values 
+are essentially the same as the input.
+
+
+```{r}
+# Elements of ReplicateData
+print( names(mydtu$ReplicateData) )
+```
+
+1. `condA` - The averaged counts across bootstraps, for eash transcript and replicate in the first condition.
+2. `condB` - The averaged counts across bootstraps, for eash transcript and replicate in the other condition.
 
 
 ## Example results
@@ -487,9 +501,11 @@ samples).
 `r mydtu$Parameters[["count_thresh"]]` fragments and the proportion has to change by at least `r mydtu$Parameters[["dprop_thresh"]]` 
 to be considered biologically significant. We require at least `r mydtu$Parameters[["conf_thresh"]]` of bootstrap iterations to agree
 on the call.
-* Are we doing gene-level or transcript-level tests? `r mydtu$Parameters[["tests"]]`
-* Are we bootstrapping the gene-level or transcript-level tests? `r mydtu$Parameters[["bootstrap"]]`. And we're 
+* Are we doing gene-level or transcript-level tests: `r mydtu$Parameters[["tests"]]`.
+* Are we bootstrapping the gene-level or transcript-level tests: `r mydtu$Parameters[["bootstrap"]]`. And we're 
 doing `r mydtu$Parameters[["bootnum"]]` iterations.
+* We used version "`r mydtu$Parameters[["rats_version"]]`" of the RATs package, and version "`r mydtu$Parameters$R_version$version.string`"
+of the R engine.
 
 
 ```{r}
@@ -560,24 +576,19 @@ The output object's tables provide a host of information. The `rats` package als
 
 ### Plot isoform abundance changes
 
-A table full of numbers may be heaven to some and hell to others. This function allows you to visualise what's
-going on in any particular gene. 
+This function allows you to visualise what's going on in any particular gene. Both the absolute counts and the relative 
+proportions are plotted for each transcript. The data is shown a both a box plot and as indivual points representing 
+each replicate.
 
 ```{r}
-# Proportion changes for all the transcripts of the "MIX6" gene.
-plot_gene(mydtu, "MIX6", vals="proportions")
+# Proportion and count changes for all the transcripts of the "MIX6" gene.
+# In our example dataset, there are only two replicates per condition and the dispersion is small,
+# so the boxplots appear squashed.
+plot_gene(mydtu, "MIX6")
 ```
 
-A variation of the above is to plot the mean fragment counts instead of the proportions:
-
-```{r}
-# Absolute expression changes for all the transcripts of the "MIX6" gene.
-# The ERROR BARS represent 2 standard deviations from the mean count across replicates.
-plot_gene(mydtu, "MIX6", vals="counts")
-```
-
-The two versions of the plot are best interpreted together, as no expression normalisation is carried out by `rats`.
-
+This is a very handy function for inspecting genes that have been called DTU. It enables quick visual evaluation of
+the dispersion of the measurements, the magnitude of the change and the presence of outliers that may skew the DTU call.
 
 ### Plots of overall run
 
@@ -643,6 +654,10 @@ the isoform abundance change plots for the point nearest to the click.
 # Start the interactive volcano plot.
 plot_shiny_volcano(mydtu)
 ```
+
+This is what is looks like for the example data (remember that the example has very few genes).
+
+![Transc Conf VS DTU](./fig/shiny_screenshot.png)
 
 
 You will need to close down the app to return to your R terminal.
