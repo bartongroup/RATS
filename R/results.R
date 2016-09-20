@@ -196,7 +196,7 @@ plot_shiny_volcano <- function(dtuo) {
     fluidRow(
       column(width=12,
              wellPanel("* Hover over points to see Transcript ID.
-                       * Click to get more info for Transcript.") )),
+                       * Click to get more info on the Transcript and to plot the relevant Gene.") )),
     # Hover and click info.
     fluidRow(
       column(width= 3,
@@ -204,10 +204,8 @@ plot_shiny_volcano <- function(dtuo) {
       column(width= 9,
              verbatimTextOutput("click_info")) ),
     fluidRow(
-      column(width= 6, 
-             plotOutput("plot2", height= 600)),
-      column(width= 6, 
-             plotOutput("plot3", height= 600)) )
+      column(width= 12, 
+             plotOutput("plot2", height= 600)) )
   )
     
   with(dtuo, {
@@ -260,16 +258,7 @@ plot_shiny_volcano <- function(dtuo) {
         tid <- points[md, target_id]
         gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
         if(!is.na(gid[1]))
-          plot_gene(dtuo, gid, vals= "proportions")
-      })
-      output$plot3 <- renderPlot({
-        myclick <- input$plot_click
-        points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
-        md <- which.min(points[, dist_])
-        tid <- points[md, target_id]
-        gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
-        if(!is.na(gid[1]))
-          plot_gene(dtuo, gid, vals= "counts")
+          plot_gene(dtuo, gid)
       })
     }
     
