@@ -146,8 +146,8 @@ print( mydtu$Transcripts )
 
 ## ------------------------------------------------------------------------
 # Proportion and count changes for all the transcripts of the "MIX6" gene.
-# In our example dataset, there are only two replicates per condition and the dispersion is small,
-# so the boxplots appear squashed.
+# ! In our example dataset, there are only two replicates per condition and the dispersion is
+# ! very small, so the boxplots appear squashed.
 plot_gene(mydtu, "MIX6")
 
 ## ----eval=FALSE----------------------------------------------------------
