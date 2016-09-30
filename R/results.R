@@ -84,7 +84,7 @@ plot_gene <- function(dtuo, pid) {
     # Plot.
     result <- ggplot(vis_data, aes(x= target_id, y= vals)) +
       facet_grid(type ~ ., scales= "free") +
-      geom_point(position= position_dodge(0.8), aes(shape= condition, color= sample), stroke= 1.5, size= 3, show.legend= TRUE) +
+      geom_point(position= position_dodge(0.8), aes(shape= condition, color= sample), stroke= 1, size= 2, show.legend= TRUE) +
       geom_boxplot(aes(fill= condition), alpha= 0.2, show.legend= TRUE, outlier.size= 1) + 
       scale_fill_manual(values= c("darkgreen", "orange")) +
       #scale_colour_manual(values= c("darkgreen", "darkorange")) +
