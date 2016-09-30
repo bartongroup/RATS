@@ -74,26 +74,28 @@ plot_gene <- function(dtuo, pid) {
     sB <- colSums(repdatB[, -"target_id", with= FALSE])
     pA <- sweep(repdatA[, -"target_id", with= FALSE], 2, sA, "/")
     pB <- sweep(repdatB[, -"target_id", with= FALSE], 2, sB, "/")
-    vis_data <- data.table("values"=               c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]), unlist(pA),                               unlist(pB) ),
-                           "target_id"=  unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),     with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum))  )),
-                           "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum),    rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
-                           "type"=                 c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),             rep.int("Proportions", trnum * anum),     rep.int("Proportions", trnum * bnum) ) )
+    vis_data <- data.table("vals"=             c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
+                           "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum), rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
+                           "target_id"=   unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
+                           "type"=                          c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),     rep.int("Proportions", trnum * anum),      rep.int("Proportions", trnum * bnum) ),
+                           "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),    rep(seq(anum+1, anum+bnum), each=trnum)) )
+                           )
     
     # Plot.
-    result <- ggplot(vis_data, aes(x= target_id, y= values)) +
+    result <- ggplot(vis_data, aes(x= target_id, y= vals)) +
       facet_grid(type ~ ., scales= "free") +
-      geom_boxplot(aes(fill= condition), alpha= 0.2, show.legend= TRUE, outlier.size= 0) + 
-      geom_jitter(position= position_dodge(0.3), aes(shape= condition, color= condition), stroke= 1, show.legend= TRUE) +
+      geom_point(position= position_dodge(0.8), aes(shape= condition, color= sample), stroke= 1.5, size= 3, show.legend= TRUE) +
+      geom_boxplot(aes(fill= condition), alpha= 0.2, show.legend= TRUE, outlier.size= 1) + 
       scale_fill_manual(values= c("darkgreen", "orange")) +
-      scale_colour_manual(values= c("darkgreen", "darkorange")) +
+      #scale_colour_manual(values= c("darkgreen", "darkorange")) +
       scale_shape(solid= FALSE) +
-      labs(title= paste("gene:", pid), y= NULL, x= NULL) + 
+      labs(title= paste("gene:", pid), y= NULL, x= NULL) +
+      guides(fill= "legend", shape= "legend", colour= "none") +
       theme(title= element_text(size= 12),
             axis.text.x= element_text(angle= 90, size= 12),
             axis.text.y= element_text(size= 12),
             strip.text.y= element_text(size= 14))
-    
-    
+      result
       return(result)
   })
 }
