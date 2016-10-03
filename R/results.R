@@ -90,7 +90,7 @@ plot_gene <- function(dtuo, pid) {
       geom_boxplot(aes(fill= condition, linetype= DTU), alpha= 0.2, outlier.shape= NA, show.legend= TRUE) + 
       scale_fill_manual(values= c("darkgreen", "orange")) +
       scale_linetype_manual(values= linestyles) +
-      geom_point(aes(shape= condition, color= sample), position= position_dodge(0.7), stroke= 1, size= 2, show.legend= TRUE) +
+      geom_point(aes(shape= condition, color= sample), position= position_dodge(0.7), size= 1, stroke= 1, show.legend= TRUE) +
       scale_shape(solid= TRUE) +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
       guides(fill= "legend", shape= "legend", colour= "none") +
