@@ -62,12 +62,13 @@ get_dtu_ids <- function(dtuo) {
 plot_gene <- function(dtuo, pid) {
   # Slice the data to get just the relevant transcripts.
   with(dtuo, {
-    trdat <- dtuo$Transcripts[pid, target_id]
+    trdat <- dtuo$Transcripts[pid, .(target_id, as.character(DTU))]  # transformed DTU will appear as V2
+    trdat[is.na(V2), V2 := "NA"]
     repdatA <- dtuo$ReplicateData[["condA"]][pid, -"parent_id", with=FALSE]
     repdatB <- dtuo$ReplicateData[["condB"]][pid, -"parent_id", with=FALSE]
     
     # Restructure
-    trnum <- length(trdat)
+    trnum <- dim(trdat)[1]
     anum <- dtuo$Parameters$num_replic_A
     bnum <- dtuo$Parameters$num_replic_B
     sA <- colSums(repdatA[, -"target_id", with= FALSE])
@@ -77,24 +78,27 @@ plot_gene <- function(dtuo, pid) {
     vis_data <- data.table("vals"=             c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
                            "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum), rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
                            "target_id"=   unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
+                           "DTU"=                 unlist(list( with(trdat, rep.int(V2, anum)),             with(trdat, rep.int(V2, bnum)),          with(trdat, rep.int(V2, anum)),          with(trdat, rep.int(V2, bnum)) )),
                            "type"=                          c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),     rep.int("Proportions", trnum * anum),      rep.int("Proportions", trnum * bnum) ),
-                           "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),    rep(seq(anum+1, anum+bnum), each=trnum)) )
+                           "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(anum+1, anum+bnum), each=trnum) ) )
                            )
     
     # Plot.
+    linestyles <- c("TRUE"="solid", "FALSE"="longdash", "NA"="dotted")
     result <- ggplot(vis_data, aes(x= target_id, y= vals)) +
       facet_grid(type ~ ., scales= "free") +
-      geom_point(position= position_dodge(0.75), aes(shape= condition, color= sample), stroke= 1, size= 2, show.legend= TRUE) +
-      geom_boxplot(aes(fill= condition), alpha= 0.2, show.legend= TRUE, outlier.size= 1) + 
+      geom_boxplot(aes(fill= condition, linetype= DTU), alpha= 0.2, outlier.shape= NA, show.legend= TRUE) + 
       scale_fill_manual(values= c("darkgreen", "orange")) +
-      #scale_colour_manual(values= c("darkgreen", "darkorange")) +
-      scale_shape(solid= FALSE) +
+      scale_linetype_manual(values= linestyles) +
+      geom_point(aes(shape= condition, color= sample), position= position_dodge(0.7), stroke= 1, size= 2, show.legend= TRUE) +
+      scale_shape(solid= TRUE) +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
       guides(fill= "legend", shape= "legend", colour= "none") +
       theme(title= element_text(size= 12),
             axis.text.x= element_text(angle= 90, size= 12),
             axis.text.y= element_text(size= 12),
             strip.text.y= element_text(size= 14))
+      
       result
       return(result)
   })
