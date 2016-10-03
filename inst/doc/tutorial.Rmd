@@ -587,6 +587,8 @@ each sample. The samples are coloured and offset differently, to allow finding t
 plot_gene(mydtu, "MIX6")
 ```
 
+The boxplot line type encodes the transcript-level DTU calls, to highlight the relevant isoforms.
+
 This is a very handy function for inspecting genes that have been called DTU. It enables quick visual evaluation of
 the dispersion of the measurements, the magnitude of the change and the presence of outliers that may skew the DTU call.
 
