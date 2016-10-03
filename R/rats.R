@@ -203,13 +203,13 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       if (boot_transc) {
         # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
         pd <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pdtu"]] })))
-        Transcripts[(elig), boot_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE) / bootnum]
+        Transcripts[(elig), boot_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / bootnum]
         pp <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
         Transcripts[(elig), boot_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), boot_na := rowCounts(pp[Transcripts[, elig], ], value = NA) / bootnum]
+        Transcripts[(elig), boot_na := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / bootnum]
         Transcripts[(elig & DTU), conf := (boot_dtu_freq >= conf_thresh)]
         Transcripts[(elig & !DTU), conf := (boot_dtu_freq <= 1-conf_thresh)]
         # Adjust DTU calls.
@@ -220,7 +220,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpab"]] })))
         gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpba"]] })))
         gdres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gdtu"]] })))
-        Genes[(elig), boot_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE) / bootnum]
+        Genes[(elig), boot_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / bootnum]
         Genes[(elig), boot_p_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_p_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_p_stdevAB := rowSds(gabres[Genes[, elig], ], na.rm = TRUE)]
@@ -229,7 +229,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), boot_p_minBA := rowMins(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_na := rowCounts(gabres[Genes[, elig], ], value = NA) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+        Genes[(elig), boot_na := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
         Genes[(elig & DTU), conf := (boot_dtu_freq >= conf_thresh)]
         Genes[(elig & !DTU), conf := (boot_dtu_freq <= 1-conf_thresh)]
         # Adjust DTU calls.
@@ -289,6 +289,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
 #================================================================================
 #================================================================================
+
+
+
+
+
 #================================================================================
 #' Check input parameters.
 #' 
