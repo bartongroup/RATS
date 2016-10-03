@@ -556,8 +556,9 @@ Several mentions of this table were made during analysis of the `Genes` table. H
 but they fall short of the confidence threshold. This may be because the change in proportion is only marginally above the already 
 quite permissive threshold.
 * `LC1` and `LC2` both change in proportion above the threshold, but `LC1` does not meet the counts threshold. 
-`LC2` is eligible for transcript-wise testing and comes out as non-DTU, with good support by the bootstraps.
-Gene-level DTU cannot be called since `LC1` did not meet all the criteria, leaving the gene with insufficient eligible transcripts.
+`LC2` is eligible for transcript-wise testing and comes out as non-DTU. The confidence threshold is set to 95% bootstrap agreement, 
+so this call is not considered confident enough (only 87% = 100% - 13%). Gene-level DTU cannot be called since `LC1` did not meet all 
+the criteria, leaving the gene with insufficient eligible transcripts.
 * `MIX.c1`, `MIX.c2` and `MIX.c4` all show significant individual change. `MIX.c3`, despite statistical significance,
 does not meet the effect size threshold and is thus called non-DTU. `MIX.nc` shows no significant change. `MIX6.d` is 
 not detected at all.
@@ -578,7 +579,7 @@ The output object's tables provide a host of information. The `rats` package als
 
 This function allows you to visualise what's going on in any particular gene. Both the absolute counts and the relative 
 proportions are plotted for each transcript. The data is shown as both a box plot and as indivual points representing 
-each sample. The samples are coloured and offset differently, to allow finding the related points across isoforms.
+each sample. 
 
 ```{r}
 # Proportion and count changes for all the transcripts of the "MIX6" gene.
@@ -587,6 +588,7 @@ each sample. The samples are coloured and offset differently, to allow finding t
 plot_gene(mydtu, "MIX6")
 ```
 
+The samples are coloured and offset differently, to allow finding the related points across isoforms.
 The boxplot line type encodes the transcript-level DTU calls, to highlight the relevant isoforms.
 
 This is a very handy function for inspecting genes that have been called DTU. It enables quick visual evaluation of
