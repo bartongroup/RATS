@@ -25,7 +25,7 @@ respective gene identifiers.
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
 [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, as well as 
-[ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) for visualisations. All these are
+[ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) and [shiny](https://cran.r-project.org/web/packages/shiny/shiny.pdf) for visualisations. All these are
 available from CRAN.
 
 
@@ -41,12 +41,12 @@ We recommend studying the vignette before using `rats`.
 
 ### Dependencies
 
-The package depends on a few additional CRAN packages, which you may need to install first, 
+The package depends on a few third-party packages, which you may need to install first, 
 if they are not present already:
 
 `install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
 
-If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual for help.
+If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual for help.
 
 
 ### Installation
