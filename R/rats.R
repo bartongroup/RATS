@@ -129,7 +129,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   with(resobj, {
     # Fill in results detais.
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
-    Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns double..
+    Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns type double.
     Genes[(is.na(detect_transc)), detect_transc := 0]
     Transcripts[, meanA :=  rowMeans(count_data_A) ]
     Transcripts[, meanB :=  rowMeans(count_data_B) ]
@@ -563,11 +563,11 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     #---------- STATS
     
     # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-    Transcripts[, sumA :=  rowSums(counts_A) ]
-    Transcripts[, sumB :=  rowSums(counts_B) ]
+    Transcripts[, sumA :=  rowSums(counts_A, na.rm=TRUE) ]
+    Transcripts[, sumB :=  rowSums(counts_B, na.rm=TRUE) ]
     # Sums and proportions, for filtered targets only.
-    Transcripts[, totalA := sum(sumA), by=parent_id]
-    Transcripts[, totalB := sum(sumB), by=parent_id]
+    Transcripts[, totalA := sum(sumA, na.rm=TRUE), by=parent_id]
+    Transcripts[, totalB := sum(sumB, na.rm=TRUE), by=parent_id]
     Transcripts[, propA := sumA/totalA]
     Transcripts[, propB := sumB/totalB]
     Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
@@ -582,7 +582,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
     Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off, changes in proportion cannot be defined.
                                                                                                       # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
-    Genes[, elig_transc := Transcripts[, as.integer(sum(elig)), by=parent_id][, V1] ]
+    Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]
     
     # Biologically significant.
