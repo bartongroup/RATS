@@ -147,7 +147,7 @@ plot_overview <- function(dtuo, type="volcano") {
         ggtitle("Distribution of largest proportion change per gene") +
         labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
              y ="Number of genes") +
-        scale_color_manual(values=c("steelblue3", "red")) +
+        scale_fill_manual(values=c("steelblue3", "red")) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
         scale_y_continuous(trans="sqrt")
     } else if (type == "transc_conf") {
