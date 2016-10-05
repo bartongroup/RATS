@@ -75,7 +75,7 @@ The input and output structures and the command options are discussed in more de
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
 
 
-### Install latest release
+### Install Rats
 
 #### from Github
 
@@ -89,13 +89,12 @@ Download the latest release and then install it using:
 Not available yet.
 
 
-### Install latest developmental version from Github
+### Install latest version from Github
 
-The most current `rats` can be installed directly, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+The most current version (in progress) of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
 `devtools::install_github("bartongroup/rats")`
 
-This way might not install the vignettes and the version may also contain more bugs.
 
 
 ### Loading
