@@ -259,7 +259,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   with(resobj, {
     # Cross-display the DTU calls.
     if (test_transc)
-      Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
+      Genes[, transc_DTU := Transcripts[, any(DTU, na.rm=TRUE), by = parent_id][, V1] ]
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
     
