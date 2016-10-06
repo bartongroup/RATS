@@ -80,26 +80,32 @@ plot_gene <- function(dtuo, pid) {
                            "target_id"=   unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
                            "DTU"=                 unlist(list( with(trdat, rep.int(V2, anum)),             with(trdat, rep.int(V2, bnum)),          with(trdat, rep.int(V2, anum)),          with(trdat, rep.int(V2, bnum)) )),
                            "type"=                          c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),     rep.int("Proportions", trnum * anum),      rep.int("Proportions", trnum * bnum) ),
-                           "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(anum+1, anum+bnum), each=trnum) ) )
+                           "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1, bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(1, bnum), each=trnum) ) )
+                           # "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(anum+1, anum+bnum), each=trnum) ) )
                            )
     
     # Plot.
-    linestyles <- c("TRUE"="solid", "FALSE"="longdash", "NA"="dotted")
+    dtushp <- c("TRUE"=24, "FALSE"=25, "NA"=21)
+    dtucol <- c("TRUE"="red", "FALSE"="blue", "NA"="grey40")
+    cndcol <- c("darkgreen", "orange")
+    shapes <- c(21,22,23,24,25)
     result <- ggplot(vis_data, aes(x= target_id, y= vals)) +
-      facet_grid(type ~ ., scales= "free") +
-      geom_boxplot(aes(fill= condition, linetype= DTU), alpha= 0.2, outlier.shape= NA, show.legend= TRUE) + 
-      scale_fill_manual(values= c("darkgreen", "orange")) +
-      scale_linetype_manual(values= linestyles) +
-      geom_point(aes(shape= condition, color= sample), position= position_dodge(0.7), size= 1, stroke= 1, show.legend= TRUE) +
-      scale_shape(solid= TRUE) +
+      facet_grid(type ~ condition, scales= "free") +
+      geom_boxplot(aes(colour= DTU), outlier.shape= NA, show.legend= TRUE) + 
+      scale_colour_manual(values= dtucol) +
+      # scale_fill_manual(values= dtucol) +
+      geom_jitter(aes(fill= sample, shape= target_id), width= 0.7, size= rel(2), show.legend= TRUE) +
+      scale_shape_manual(values= rep(shapes, 20)) +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
-      guides(fill= "legend", shape= "legend", colour= "none") +
-      theme(title= element_text(size= 12),
-            axis.text.x= element_text(angle= 90, size= 12),
-            axis.text.y= element_text(size= 12),
-            strip.text.y= element_text(size= 14))
+      guides(fill= "none", shape= "none", colour= "legend") +
+      theme(title= element_text(size= rel(1.5)),
+            axis.text.x= element_text(angle= 90, size= rel(1.5)),
+            axis.text.y= element_text(size= rel(1.5)),
+            strip.text.y= element_text(size= rel(1.8)),
+            panel.grid.major = element_line(colour = "grey70"),
+            panel.grid.minor = element_blank(),
+            panel.background = element_rect(fill = "grey90"))
       
-      result
       return(result)
   })
 }
