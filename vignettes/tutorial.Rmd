@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "06 OCT 2016"
+date: "07 OCT 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -89,11 +89,14 @@ Download the latest release and then install it using:
 Not available yet.
 
 
-### Install latest version from Github
+### Install current developmental version of Rats
 
-The most current version (in progress) of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
 `devtools::install_github("bartongroup/rats")`
+
+As this version represents active development, it can change at any moment, Features may be added, removed or changed without notice. **Do not rely on this version for reproducible analysis of important data.**
+A main reason to use this version would be to test the resolution of bugs, or to give us feedback on the changes as they happen.
 
 
 
@@ -587,8 +590,11 @@ each individual sample.
 plot_gene(mydtu, "MIX6")
 ```
 
-The samples are coloured differently, to allow finding the related points across isoforms.
-The boxplot line colour encodes the transcript-level DTU calls, to highlight the relevant isoforms.
+1. The point shapes represent the replicates, to allow finding the related points across isoforms. The **maximum allowed number of 
+replicates per condition** is 25, which should be ample for typical use. 
+2. The line colour encodes the transcript-level DTU calls, to highlight the relevant isoforms. Remember that it is possible for a
+a positive gene-level DTU prediction even if every individual isoform is predicted negative, as different tests are used for each level.
+3. The fill colour allows the easy identification of an isoform across all facets of the plot.
 
 This is a very handy function for inspecting genes that have been called DTU. It enables quick visual evaluation of
 the dispersion of the measurements, the magnitude of the change and the presence of outliers that may skew the DTU call.
