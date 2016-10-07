@@ -77,31 +77,34 @@ plot_gene <- function(dtuo, pid) {
     pB <- sweep(repdatB[, -"target_id", with= FALSE], 2, sB, "/")
     vis_data <- data.table("vals"=             c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
                            "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum), rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
-                           "target_id"=   unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
+                           "isoform"=   unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
                            "DTU"=                 unlist(list( with(trdat, rep.int(V2, anum)),             with(trdat, rep.int(V2, bnum)),          with(trdat, rep.int(V2, anum)),          with(trdat, rep.int(V2, bnum)) )),
                            "type"=                          c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),     rep.int("Proportions", trnum * anum),      rep.int("Proportions", trnum * bnum) ),
-                           "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1, bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(1, bnum), each=trnum) ) )
+                           "replicate"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1, bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(1, bnum), each=trnum) ) )
                            # "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(anum+1, anum+bnum), each=trnum) ) )
                            )
     
     # Plot.
-    dtucol <- c("TRUE"="red", "FALSE"="blue", "NA"="grey40")
-    cndcol <- c("darkgreen", "orange")
-    shapes <- c(21,22,23,24,25)
-    result <- ggplot(vis_data, aes(x= target_id, y= vals)) +
+    dtucol <- c("TRUE"="red", "FALSE"="steelblue3", "NA"="yellow")
+    dtupnt <- c("TRUE"="darkred", "FALSE"="darkblue", "NA"="darkgreen")
+    isocol <- rep(c("grey20", "grey60"),50)
+    shapes <- seq(0, 25)
+    result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
       facet_grid(type ~ condition, scales= "free") +
-      geom_boxplot(aes(colour= DTU), outlier.shape= NA, show.legend= TRUE) + 
-      scale_colour_manual(values= dtucol) +
-      # scale_fill_manual(values= dtucol) +
-      geom_jitter(aes(fill= sample, shape= target_id), width= 0.7, size= rel(2), show.legend= TRUE) +
-      scale_shape_manual(values= rep(shapes, 20)) +
+      geom_boxplot(aes(colour= DTU, fill= isoform), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+      scale_colour_manual(values= dtupnt) +
+      # scale_fill_manual(values= isocol) +
+      geom_point(aes(shape= replicate, colour= DTU), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
+      scale_shape_manual(values= shapes) +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
-      guides(fill= "none", shape= "none", colour= "legend") +
+      guides(fill= "legend", shape= "legend", colour= "legend") +
       theme(title= element_text(size= rel(1.5)),
             axis.text.x= element_text(angle= 90, size= rel(1.5)),
             axis.text.y= element_text(size= rel(1.5)),
             strip.text.y= element_text(size= rel(1.8)),
-            panel.grid.major = element_line(colour = "grey70"),
+            strip.text.x= element_text(size= rel(1.8)),
+            strip.background= element_rect(fill= "grey85"),
+            panel.grid.major = element_line(colour = "grey95"),
             panel.grid.minor = element_blank(),
             panel.background = element_rect(fill = "grey90"))
       
