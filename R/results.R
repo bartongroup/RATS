@@ -85,7 +85,6 @@ plot_gene <- function(dtuo, pid) {
                            )
     
     # Plot.
-    dtushp <- c("TRUE"=24, "FALSE"=25, "NA"=21)
     dtucol <- c("TRUE"="red", "FALSE"="blue", "NA"="grey40")
     cndcol <- c("darkgreen", "orange")
     shapes <- c(21,22,23,24,25)
