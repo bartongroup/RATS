@@ -91,13 +91,13 @@ plot_gene <- function(dtuo, pid) {
     shapes <- seq(0, 25)
     result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
       facet_grid(type ~ condition, scales= "free") +
-      geom_boxplot(aes(colour= DTU, fill= isoform), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+      geom_boxplot(aes(fill= DTU, colour= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
       scale_colour_manual(values= dtupnt) +
-      # scale_fill_manual(values= isocol) +
+      scale_fill_manual(values= dtucol) +
       geom_point(aes(shape= replicate, colour= DTU), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
       scale_shape_manual(values= shapes) +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
-      guides(fill= "legend", shape= "legend", colour= "legend") +
+      guides(fill= "none", shape= "legend", colour= "legend") +
       theme(title= element_text(size= rel(1.5)),
             axis.text.x= element_text(angle= 90, size= rel(1.5)),
             axis.text.y= element_text(size= rel(1.5)),
