@@ -54,12 +54,13 @@ get_dtu_ids <- function(dtuo) {
 #'
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
+#' @param style Different themes: "lines", "points", "rainbow", "merged", "dashed".
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #'
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_gene <- function(dtuo, pid) {
+plot_gene <- function(dtuo, pid, style="lines") {
   # Slice the data to get just the relevant transcripts.
   with(dtuo, {
     trdat <- dtuo$Transcripts[pid, .(target_id, as.character(DTU))]  # transformed DTU will appear as V2
@@ -85,19 +86,56 @@ plot_gene <- function(dtuo, pid) {
                            )
     
     # Plot.
-    dtucol <- c("TRUE"="red", "FALSE"="steelblue3", "NA"="yellow")
-    dtupnt <- c("TRUE"="darkred", "FALSE"="darkblue", "NA"="darkgreen")
-    isocol <- rep(c("grey20", "grey60"),50)
+    dtucol <- c("TRUE"="red", "FALSE"="steelblue3", "NA"="orange")
+    dtupnt <- c("TRUE"="darkred", "FALSE"="darkblue", "NA"="orange")
+    cndcol <- c("darkgreen", "darkorange")
     shapes <- seq(0, 25)
-    result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-      facet_grid(type ~ condition, scales= "free") +
-      geom_boxplot(aes(fill= DTU, colour= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
-      scale_colour_manual(values= dtupnt) +
-      scale_fill_manual(values= dtucol) +
-      geom_point(aes(shape= replicate, colour= DTU), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
-      scale_shape_manual(values= shapes) +
+    dtulin <- c("TRUE"="solid", "FALSE"="dashed", "NA"="dotted")
+    result <- NULL
+    
+    if (style=="lines") {
+      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+        facet_grid(type ~ condition, scales= "free") +
+        geom_boxplot(aes(fill= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        scale_fill_manual(values= dtucol) +
+        geom_path(aes(colour= replicate, group= replicate), show.legend= TRUE)
+    } else if (style=="points") {
+      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+        facet_grid(type ~ condition, scales= "free") +
+        geom_boxplot(aes(colour= DTU, fill= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        scale_colour_manual(values= dtupnt) +
+        scale_fill_manual(values= dtucol) +
+        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
+        scale_shape_manual(values= shapes)
+    } else if (style=="rainbow") {
+      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+        facet_grid(type ~ condition, scales= "free") +
+        geom_boxplot(aes(colour= DTU, fill= isoform), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        scale_colour_manual(values= dtucol) +
+        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
+        scale_shape_manual(values= shapes)
+    } else if (style=="merged") {
+      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+        facet_grid(type ~ ., scales= "free") +
+        geom_boxplot(aes(fill= condition), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        scale_colour_manual(values= cndcol) +
+        scale_fill_manual(values= cndcol) +
+        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
+        scale_shape_manual(values= shapes)
+    } else if (style=="dashed") {
+      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+        facet_grid(type ~ ., scales= "free") +
+        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
+        scale_shape_manual(values= shapes) +
+        scale_colour_manual(values= cndcol) +
+        geom_boxplot(aes(fill= condition, linetype= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        scale_fill_manual(values= cndcol) +
+        scale_linetype_manual(values= dtulin)
+    } else {
+      stop("Unknown plot style.")
+    }
+    result <- result +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
-      guides(fill= "none", shape= "legend", colour= "legend") +
       theme(title= element_text(size= rel(1.5)),
             axis.text.x= element_text(angle= 90, size= rel(1.5)),
             axis.text.y= element_text(size= rel(1.5)),
@@ -107,8 +145,8 @@ plot_gene <- function(dtuo, pid) {
             panel.grid.major = element_line(colour = "grey95"),
             panel.grid.minor = element_blank(),
             panel.background = element_rect(fill = "grey90"))
-      
-      return(result)
+    
+    return(result)
   })
 }
 

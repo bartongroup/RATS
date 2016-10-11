@@ -4,12 +4,14 @@
 \alias{plot_gene}
 \title{Plot count and proportion changes for all transcripts of a specified gene.}
 \usage{
-plot_gene(dtuo, pid)
+plot_gene(dtuo, pid, style = "lines")
 }
 \arguments{
 \item{dtuo}{A DTU object.}
 
 \item{pid}{A \code{parent_id} to make the plot for.}
+
+\item{style}{Different themes: "lines", "points", "rainbow", "merged", "dashed".}
 }
 \value{
 a ggplot2 object. Simply display it or you can also customize it.

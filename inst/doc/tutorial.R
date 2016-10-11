@@ -148,7 +148,11 @@ print( mydtu$Transcripts )
 # Proportion and count changes for all the transcripts of the "MIX6" gene.
 # ! In our example dataset, there are only two replicates per condition and the dispersion is
 # ! very small, so the boxplots appear squashed.
-plot_gene(mydtu, "MIX6")
+plot_gene(mydtu, "MIX6", style="lines")  # default
+plot_gene(mydtu, "MIX6", style="points")
+plot_gene(mydtu, "MIX6", style="rainbow")
+plot_gene(mydtu, "MIX6", style="merged")
+plot_gene(mydtu, "MIX6", style="dashed")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Proportion change VS significance.
