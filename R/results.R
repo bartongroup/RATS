@@ -96,45 +96,47 @@ plot_gene <- function(dtuo, pid, style="lines") {
     if (style=="lines") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
         facet_grid(type ~ condition, scales= "free") +
-        geom_boxplot(aes(fill= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
-        scale_fill_manual(values= dtucol) +
-        geom_path(aes(colour= replicate, group= replicate), show.legend= TRUE)
+        geom_path(aes(colour= replicate, group= replicate)) +
+        geom_boxplot(aes(fill= DTU), alpha=0.3, outlier.shape= NA) +
+        scale_fill_manual(values= dtucol)
     } else if (style=="points") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
         facet_grid(type ~ condition, scales= "free") +
-        geom_boxplot(aes(colour= DTU, fill= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
+        geom_boxplot(aes(colour= DTU, fill= DTU), alpha=0.3, outlier.shape= NA) +
+        scale_shape_manual(values= shapes) +
         scale_colour_manual(values= dtupnt) +
-        scale_fill_manual(values= dtucol) +
-        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
-        scale_shape_manual(values= shapes)
+        scale_fill_manual(values= dtucol)
     } else if (style=="rainbow") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
         facet_grid(type ~ condition, scales= "free") +
-        geom_boxplot(aes(colour= DTU, fill= isoform), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
+        geom_boxplot(aes(colour= DTU, fill= isoform), alpha=0.3, outlier.shape= NA) +
         scale_colour_manual(values= dtucol) +
-        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
         scale_shape_manual(values= shapes)
     } else if (style=="merged") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
         facet_grid(type ~ ., scales= "free") +
-        geom_boxplot(aes(fill= condition), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
+        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
+        geom_boxplot(aes(fill= condition), alpha=0.3, outlier.shape= NA) +
         scale_colour_manual(values= cndcol) +
         scale_fill_manual(values= cndcol) +
-        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
         scale_shape_manual(values= shapes)
     } else if (style=="dashed") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
         facet_grid(type ~ ., scales= "free") +
-        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1), show.legend= TRUE) +
+        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
+        geom_boxplot(aes(fill= condition, linetype= DTU), alpha=0.3, outlier.shape= NA) +
         scale_shape_manual(values= shapes) +
         scale_colour_manual(values= cndcol) +
-        geom_boxplot(aes(fill= condition, linetype= DTU), alpha=0.3, outlier.shape= NA, show.legend= TRUE) +
         scale_fill_manual(values= cndcol) +
         scale_linetype_manual(values= dtulin)
     } else {
       stop("Unknown plot style.")
     }
     result <- result +
+      scale_y_continuous(limits= c(0, NA)) +
+      guides(colour="legend", fill="legend", shape="legend", linetype="legend") +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
       theme(title= element_text(size= rel(1.5)),
             axis.text.x= element_text(angle= 90, size= rel(1.5)),
