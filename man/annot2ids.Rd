@@ -14,7 +14,7 @@ annot2ids(annotfile, transc_header = "target_id", gene_header = "parent_id")
 \item{gene_header}{The tile for the genes column in the output. (parent_id)}
 }
 \value{
-A data.frame with two columns, matching transcript IDs to gene IDs.
+A data.table with two columns, matching transcript IDs to gene IDs.
 }
 \description{
 This function performs no file format validation. Please use the appropriate type.
