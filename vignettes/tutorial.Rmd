@@ -28,8 +28,13 @@ abundance, but does not compare them to their sibling isoforms within each gene.
 subset of those that show DTE. The figure below shows the relationship between DTU and DTE, as well as between them and
 *differential gene expression* (**DGE**):
 
-![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.jpg)
+![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.png)
 
+
+`Rats` differs from the other tools that call DTU, because it is tailored to alignment-free quantifications. It operates solely on
+numerical abundances, leaving the details of quantification accuracy to the quantification tool. This makes it independent of the 
+quantification method, although it is originally meant to be used in workflows that use [Kallisto](http://pachterlab.github.io/kallisto/), [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) as isoform quantification tools, 
+as output from these quantifiers is not compatible with the existing alignment-based DTU callers.
 
 
 # Quick start.
@@ -733,8 +738,9 @@ Two parameters control bootstrapping of DTU calls on the abundance estimates:
 
 1. `boots` - Although we recommend bootstrapping both gene-level and transcript-level DTU calls, dropping one would reduce
 computation time, so the option is provided to allow flexibility for special use cases.
-2. `bootnum` - Generally, greater is better but it takes longer. There is also an upper limit that depends on the size of 
-your annotation. This is due to R's limit on the maximum size of matrices.
+2. `bootnum` - Generally, greater is better but it takes longer. This parameter needs to be sensible with regards
+to the number of quantification bootstraps available in the input data, with a rule-of-thumb upper limit being the number
+of quantification iterations. There is currently also a hard upper limit as a result of R's maximum allowed matrix size.
 
 ```{r eval=FALSE}
 # Bootstrap both types of DTU calls (default), for 100 iterations (default).
@@ -757,14 +763,19 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 As measure of confidence in the DTU calls, we take the fraction of iterations that returned a positive DTU call for
 the given gene/transcript. A positive call is considered confident if the fraction of positive calls exceeds the threshold (`>= conf_thresh`). 
 A negative call is considered confident if the fraction of positive calls is below the complement of the threshold (`<= 1 - conf_thresh`).
-The default confidence threshold can be over-ridden.
+The default confidence threshold can be overridden.
 
 ```{r eval=FALSE}
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
                   name_B = "patients", conf_thresh = 0.9)
 ```
 
-In order to visualise the effect of the confidence threshold, the number of positive DTU calls can be plotted against the threshold.
+**IMPORTANT:** Due to the nature of random sampling, the confidence value can still fluctuate from one run to the next, 
+even if the input data is identical. This can lead to differences in the set of DTU genes/transcripts between runs. 
+These inconsistencies can be reduced by doing more bootstrap iterations, both in `Rats` and in your chosen quantification tool.
+
+The effect of the confidence threshold in a particular run, can be visualised by plotting the number of positive DTU calls
+against the threshold.
 
 ```{r eval=FALSE}
 # Transcript-level confidence threshold VS. number of DTU positive calls.
