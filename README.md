@@ -11,6 +11,10 @@ Anyone working in transcriptomics, analysing gene expression and transcript abun
 It provides a method to detect changes in the relative abundance of the alternative transcripts (isoforms) of genes. 
 This is called **Differential Transcript Usage (DTU)**.  
 
+`Rats` differs from the other tools that call DTU, because it is tailored to alignment-free quantifications. It operates solely on
+numerical abundances. This makes it independent of the quantification method, although it is originally meant to be used in workflows that use [Kallisto](http://pachterlab.github.io/kallisto/), [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
+as isoform quantification tools, as output from these quantifiers is not compatible with the existing alignment-based DTU callers.
+
 Detecting DTU is supplementary to the quantification of transcripts by tools like [Salmon](http://combine-lab.github.io/salmon/), 
 [Sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) and [Kallisto](http://pachterlab.github.io/kallisto/) and the detection 
 of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pachterlab.github.io/sleuth/).
