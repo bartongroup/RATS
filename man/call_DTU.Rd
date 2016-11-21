@@ -10,8 +10,8 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   count_thresh = 10, dprop_thresh = 0.1, conf_thresh = 0.95,
-  correction = "BH", testmode = "both", boots = "both", bootnum = 100L,
-  description = NA_character_, verbose = TRUE)
+  correction = "BH", testmode = "both", boots = "both", bootnum = 0L,
+  description = NA_character_, verbose = TRUE, dbg = 0)
 }
 \arguments{
 \item{annot}{A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.}
@@ -50,15 +50,17 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})}
 
-\item{testmode}{One of "genes", "transc", "both". (Default "both")}
+\item{testmode}{One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.}
 
-\item{boots}{Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (Default "both")}
+\item{boots}{Bootstrap the p-values of either test. One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)} \item{"none"}}.}
 
-\item{bootnum}{Number of bootstraps. (Default 100)}
+\item{bootnum}{Number of bootstraps. (if 0, bootnum will be infered from the data)}
 
 \item{description}{Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.}
 
-\item{verbose}{Display progress updates. (Default \code{TRUE})}
+\item{verbose}{Display progress updates and warnings. (Default \code{TRUE})}
+
+\item{dbg}{Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing.}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.
