@@ -23,12 +23,20 @@
 #' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param conf_thresh Confidence threshold.
 #' 
-#' @return List with a logical value and a message.
+#' @return List: \itemize{
+#'  \item{"error"}{logical}
+#'  \item{"message"}{string}
+#'  \item{"maxboots"}{Infered rule-of-thumbs number of iterations to do.}
+#'  \item{"warn"}{logical}
+#'  \item{"warnings}{list of strings}
+#' }
 #'
-parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
+parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
                             count_thresh, testmode, boots, bootnum, dprop_thresh,
                             count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh) {
+  warnmsg <- list()
+  
   # Input format.
   if(any(is.null(annot), 
          all( any(is.null(slo), is.null(name_A), is.null(name_B), is.null(varname), is.null(BS_TARGET_COL), is.null(COUNTS_COL)),
@@ -55,10 +63,8 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
   if ((!is.numeric(count_thresh)) || count_thresh < 0)
     return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be between 0 and 1."))
-  if ((!is.numeric(bootnum)) || bootnum <= 0)
+  if ((!is.numeric(bootnum)) || bootnum < 0)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive integer number."))
-  if (bootnum == 0)
-    return(list("error"=TRUE, "message"="Please specify the number of bootstrap iterations."))
   if (!boots %in% c("genes", "transc", "both", "none"))
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
   if ((!is.numeric(conf_thresh)) || conf_thresh < 0 || conf_thresh > 1)
@@ -79,33 +85,44 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   } 
   
   # Booted counts.
-  if (!is.null(boot_data_A)  && is.null(slo))  # If slo available ignore boot_data.
-    if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
-      return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
+  if (!is.null(boot_data_A)) {  # If slo available ignore boot_data.
+    if(is.null(slo)) {
+      if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
+        return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
+    } else {
+      warnmsg["slo&boots"] <- "Received multiple input formats! Only the sleuth object will be used."
+    }
+  }
   
   # Counts.
-  if (!is.null(count_data_A)  && is.null(slo) && any(is.null(boot_data_A), is.null(boot_data_B))){  # If slo or boot_data available, ignore count_data.
-    if (any(!is.data.table(count_data_A), !is.data.table(count_data_B)))
-      return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
-    if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
-      return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs between conditions!"))
+  if (!is.null(count_data_A)) {  # If slo or boot_data available, ignore count_data.
+    if(is.null(slo) && any(is.null(boot_data_A), is.null(boot_data_B))) {
+      if (any(!is.data.table(count_data_A), !is.data.table(count_data_B)))
+        return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
+      if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
+        return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs between conditions!"))
+    } else {
+      warnmsg["cnts&boots"] <- "Received multiple input formats! Only the bootstrapped data will be used."
+    }
   }
   
   # Bootstrap.
+  minboots <- NA_integer_
   if (boots != "none") {
-    # Direct data.
+    # Consistency,
     if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
+      # Direct data.
       tx <- boot_data_A[[1]][[1]][order(boot_data_A[[1]][[1]])]
       for (k in 2:length(boot_data_A)){
         if (!all( tx == boot_data_A[[k]][[1]][order(boot_data_A[[k]][[1]])] ))
           return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
       }
-      for (k in 2:length(boot_data_B)){
+      for (k in 1:length(boot_data_B)){
         if (!all( tx == boot_data_B[[k]][[1]][order(boot_data_B[[k]][[1]])] ))
           return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
       }
-      # Sleuth.  
     } else if (!is.null(slo)) {
+      # Sleuth.  
       tx <- slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]]) ]
       for (k in 2:length(slo$kal)) {
         if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
@@ -114,16 +131,56 @@ parameters_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     } else {
       return(list("error"=TRUE, "message"="No bootstrapped estimates were provided!"))
     }
+    
+    # Number of iterations.
+    minboots <- infer_bootnum(slo, boot_data_A, boot_data_B)
+    if (is.na(minboots) || minboots == 0)
+      return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
+    if (bootnum > minboots)
+      warnmsg["toomanyboots"] <- "You are requesting more RATs bootstrap iterations than available in your quantification data! Are you sure about this?"
+    if (100 > minboots)
+      warnmsg["toofewboots"] <- "You are requesting fairly few bootstrap iterations, which reduces reproducibility of the calls. Are you sure about this?"
   } 
   
-  return(list("error"=FALSE, "message"="All good!"))
+  return(list("error"=FALSE, "message"="All good!", "maxboots"=minboots, "warn"=(length(warnmsg) > 0), "warnings"= warnmsg))
 }
+
+
+#================================================================================
+#' Rule-of-thumb number of iterations.
+#' 
+#' @param slo Sleuth object.
+#' @param boot_data_A List of tables of bootstrapped counts.
+#' @param boot_data_B List of tables of bootstrapped counts.
+#' @return The least number of iterations seen in the input.
+#'
+infer_bootnum <- function(slo, boot_data_A, boot_data_B){
+  minboot <- NA_integer_
+  # Bootstrapped counts.
+  if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
+    minboot <- length(boot_data_A[[1]]) - 1   # ID column
+    for (k in 2:length(boot_data_A)){
+      minboot <- min(minboot, length(boot_data_A[[k]]) - 1)
+    }
+    for (k in 1:length(boot_data_B)){
+      minboot <- min(minboot, length(boot_data_B[[k]]) - 1)
+    }
+  # Sleuth.  
+  } else if (!is.null(slo)) {
+    minboot <- length(slo$kal[[1]]$bootstrap)
+    for (k in 2:length(slo$kal)) {
+      minboot <- min(minboot, length(slo$kal[[k]]$bootstrap))
+    }
+  }
+  
+  return(minboot)
+} 
 
 
 #================================================================================
 #' Group sample numbers by factor.
 #'
-#' @param covariates a dataframe with different factor variables.
+#' @param covariates A dataframe with different factor variables.
 #' @return list of lists (per covariate) of vectors (per factor level).
 #'
 #' Row number corresponds to sample number.
@@ -144,9 +201,6 @@ group_samples <- function(covariates) {
 #================================================================================
 #' Extract bootstrap counts into a less nested structure.
 #' 
-#' NA replaced with 0. Means counts per transcripts are calculated and included as
-#' a column per sample.
-#' 
 #' @param slo A sleuth object.
 #' @param tx A vector of transcript ids. The results will be ordered according to this vector.
 #' @param samples A numeric vector of samples to extract counts for.
@@ -154,9 +208,12 @@ group_samples <- function(covariates) {
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
 #' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
+#' NA replaced with 0. 
+#' 
 #' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 #' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
+#' @export
 denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
   lapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
