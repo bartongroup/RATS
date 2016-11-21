@@ -1,6 +1,6 @@
 #==============================================================================
 #==============================================================================
-context("DTU Input checks.")
+context("DTU Input checks")
 
 #==============================================================================
 test_that("The input checks work", {
@@ -22,105 +22,118 @@ test_that("The input checks work", {
   # No false alarms with valid calls.
   expect_silent(call_DTU(annot= sim2$annot, slo= sim2$slo, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, count_thresh= 10,
                          conf_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, boots= "genes",
-                         bootnum= 2, COUNTS_COL= "counts", TARGET_COL= "target", 
-                         PARENT_COL= "parent", BS_TARGET_COL= "id"))
-  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE))
-  expect_silent(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= data_B, verbose = FALSE))
-  expect_silent(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= counts_B, boots= "none", verbose = FALSE))
+                         bootnum= 100, COUNTS_COL= "counts", TARGET_COL= "target", 
+                         PARENT_COL= "parent", BS_TARGET_COL= "id", dbg= 1))
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= 1))
+  expect_silent(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= data_B, verbose = FALSE, dbg= 1))
+  expect_silent(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= counts_B, boots= "none", verbose = FALSE, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE,
-                         boot_data_A= data_A, boot_data_B= data_B, count_data_A= counts_A, count_data_B= counts_B))
+                         boot_data_A= data_A, boot_data_B= data_B, count_data_A= counts_A, count_data_B= counts_B, dbg= 1))
+  
+  # Mixed input formats.
+  expect_warning(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = TRUE,
+                          boot_data_A= data_A, boot_data_B= data_B, bootnum= 100, dbg= 1),
+                 "Only the sleuth object will be used", fixed= TRUE)
+  expect_warning(call_DTU(annot= sim1$annot, verbose = TRUE, boot_data_A= data_A, boot_data_B= data_B, 
+                          count_data_A= counts_A, count_data_B= counts_B, bootnum= 100, dbg= 1),
+                 "Only the bootstrapped data will be used", fixed= TRUE)
   
   # Annotation is not a dataframe.
-  expect_error(call_DTU(annot= list("not", "a", "dataframe"), slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE), "annot is not a data.frame")
+  expect_error(call_DTU(annot= list("not", "a", "dataframe"), slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= 1), "annot is not a data.frame")
   # Annotation field names.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, TARGET_COL= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, TARGET_COL= wrong_name, verbose = FALSE, dbg= 1),
                "target and/or parent IDs field names do not exist in annot", fixed= TRUE)
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, PARENT_COL= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, PARENT_COL= wrong_name, verbose = FALSE, dbg= 1),
                "target and/or parent IDs field names do not exist in annot", fixed= TRUE)
   # Inconsistent annotation.
   sim3 <- sim_sleuth_data(errannot_inconsistent= TRUE, cnames= c(name_A, name_B))
-  expect_error(call_DTU(annot= sim3$annot, slo= sim3$slo, name_A= name_A, name_B= name_B, verbose = FALSE),
+  expect_error(call_DTU(annot= sim3$annot, slo= sim3$slo, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= 1),
                "Inconsistent set of transcript IDs", fixed= TRUE)
   # Non unique IDs.
   a <- copy(sim1$annot)
   a[1, "target_id"] <- a[2, "target_id"]
-  expect_error(call_DTU(annot= a, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE), "transcript identifiers are not unique")
+  expect_error(call_DTU(annot= a, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= 1), "transcript identifiers are not unique")
   
   # Boot data is not a list of datatables.
-  expect_error(call_DTU(annot= sim1$annot, boot_data_A= c("not", "a", "list"), boot_data_B= data_B, verbose = FALSE), "bootstrap data are not lists")
-  expect_error(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= c("not", "a", "list"), verbose = FALSE), "bootstrap data are not lists")
-  expect_error(call_DTU(annot= sim1$annot, boot_data_A= list( list("not"), list("a"), list("table")), boot_data_B= data_B, verbose = FALSE), "bootstrap data are not lists")
-  expect_error(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= list( list("not"), list("a"), list("table")), verbose = FALSE), "bootstrap data are not lists")
-  expect_error(call_DTU(annot= sim1$annot, boot_data_A= list(data.frame(a="not", b="a", c="table")), boot_data_B= data_B, verbose = FALSE), "not lists of data.tables")
-  expect_error(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= list(data.frame(a="not", b="a", c="table")), verbose = FALSE), "not lists of data.tables")
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= c("not", "a", "list"), boot_data_B= data_B, verbose = FALSE, dbg= 1), "bootstrap data are not lists")
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= c("not", "a", "list"), verbose = FALSE, dbg= 1), "bootstrap data are not lists")
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= list( list("not"), list("a"), list("table")), boot_data_B= data_B, verbose = FALSE, dbg= 1), "bootstrap data are not lists")
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= list( list("not"), list("a"), list("table")), verbose = FALSE, dbg= 1), "bootstrap data are not lists")
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= list(data.frame(a="not", b="a", c="table")), boot_data_B= data_B, verbose = FALSE, dbg= 1), "not lists of data.tables")
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= list(data.frame(a="not", b="a", c="table")), verbose = FALSE, dbg= 1), "not lists of data.tables")
   
   # Counts data is not datatables.
-  expect_error(call_DTU(annot= sim1$annot, count_data_A= c("not", "a", "list"), count_data_B= counts_B, verbose = FALSE), "counts data are not data.tables")
-  expect_error(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= c("not", "a", "list"), verbose = FALSE), "counts data are not data.tables")
-  expect_error(call_DTU(annot= sim1$annot, count_data_A= data.frame(a="not", b="a", c="table"), count_data_B= counts_B, verbose = FALSE), "counts data are not data.tables")
-  expect_error(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= data.frame(a="not", b="a", c="table"), verbose = FALSE), "counts data are not data.tables")
+  expect_error(call_DTU(annot= sim1$annot, count_data_A= c("not", "a", "list"), count_data_B= counts_B, verbose = FALSE, dbg= 1), "counts data are not data.tables")
+  expect_error(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= c("not", "a", "list"), verbose = FALSE, dbg= 1), "counts data are not data.tables")
+  expect_error(call_DTU(annot= sim1$annot, count_data_A= data.frame(a="not", b="a", c="table"), count_data_B= counts_B, verbose = FALSE, dbg= 1), "counts data are not data.tables")
+  expect_error(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= data.frame(a="not", b="a", c="table"), verbose = FALSE, dbg= 1), "counts data are not data.tables")
   
   # Bootstrap field names.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, BS_TARGET_COL= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, BS_TARGET_COL= wrong_name, verbose = FALSE, dbg= 1),
                "target IDs field name does not exist in the bootstraps", fixed= TRUE)
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, COUNTS_COL= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, COUNTS_COL= wrong_name, verbose = FALSE, dbg= 1),
                "counts field name does not exist", fixed= TRUE)
   # Number of bootstraps.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, bootnum = -5, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, bootnum = -5, verbose = FALSE, dbg= 1),
                "Invalid number of bootstraps", fixed= TRUE)
+  expect_warning(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, bootnum = 5, verbose = TRUE, dbg= 1),
+                 "few bootstrap iterations", fixed= TRUE)
+  expect_warning(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, bootnum = 5000, verbose = TRUE, dbg= 1),
+                 "more RATs bootstrap iterations than available", fixed= TRUE)
+
   # Bootstraps without boot data.
-  expect_error(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= counts_B, boots="both", bootnum=2, verbose= FALSE ), 
+  expect_error(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= counts_B, boots="both", bootnum=2, verbose= FALSE, dbg= 1), 
                "No bootstrapped estimates", fixed= TRUE)
   
   # Correction method.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, correction= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, correction= wrong_name, verbose= FALSE, dbg= 1),
                "Invalid p-value correction method name", fixed= TRUE)
   
   # Covariate name.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, varname= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, varname= wrong_name, verbose= FALSE, dbg= 1),
                "covariate name does not exist", fixed= TRUE)
   
   # Condition names.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= wrong_name, name_B= name_B, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= wrong_name, name_B= name_B, verbose= FALSE, dbg= 1),
                "conditions do not exist", fixed= TRUE)
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= wrong_name, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= wrong_name, verbose= FALSE, dbg= 1),
                "conditions do not exist", fixed= TRUE)
   
   # Verbose is bool.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose="yes"),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose="yes", dbg= 1),
                "not interpretable as logical", fixed= TRUE)
   
   # Tests.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, testmode="GCSE", verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, testmode="GCSE", verbose = FALSE, dbg= 1),
                "Unrecognized value for testmode", fixed= TRUE)
-  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, testmode="genes", verbose = FALSE, boots = "none"))
-  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, testmode="transc", verbose = FALSE, boots = "none"))
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, testmode="genes", verbose = FALSE, boots = "none", dbg= 1))
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, testmode="transc", verbose = FALSE, boots = "none", dbg= 1))
   
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, boots="GCSE", verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, boots="GCSE", verbose = FALSE, dbg= 1),
                "Unrecognized value for boots", fixed= TRUE)
-  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, boots="genes", bootnum = 2, verbose = FALSE))
-  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, boots="transc", bootnum = 2, verbose = FALSE))
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, boots="genes", bootnum = 2, verbose = FALSE, dbg= 1))
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, boots="transc", bootnum = 2, verbose = FALSE, dbg= 1))
   
   # Probability threshold.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, p_thresh = 666, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, p_thresh = 666, verbose = FALSE, dbg= 1),
                "Invalid p-value threshold", fixed= TRUE)
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, p_thresh = -0.05, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, p_thresh = -0.05, verbose = FALSE, dbg= 1),
                "Invalid p-value threshold", fixed= TRUE)
   
   # Read counts threshold.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, count_thresh = -5, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, count_thresh = -5, verbose = FALSE, dbg= 1),
                "Invalid read-count threshold", fixed= TRUE)
   
   # Proportion change threshold.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, dprop_thresh = -2, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, dprop_thresh = -2, verbose = FALSE, dbg= 1),
                "Invalid proportion difference threshold", fixed= TRUE)
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, dprop_thresh = 2, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, dprop_thresh = 2, verbose = FALSE, dbg= 1),
                "Invalid proportion difference threshold", fixed= TRUE)
   
   # Confidence threshold.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, conf_thresh = -2, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, conf_thresh = -2, verbose = FALSE, dbg= 1),
                "Invalid confidence threshold", fixed= TRUE)
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, conf_thresh = 2, verbose = FALSE),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, conf_thresh = 2, verbose = FALSE, dbg= 1),
                "Invalid confidence threshold", fixed= TRUE)
   
 })
@@ -211,12 +224,12 @@ test_that("The output structure is correct", {
                      "boot_p_minAB",  "boot_p_minBA", "boot_p_maxAB",  "boot_p_maxBA", "boot_na") %in% names(mydtu$Genes)))
   expect_false(any(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Transcripts)))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="transc", bootnum=2, verbose = FALSE)  
+  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="transc", bootnum=2, verbose = FALSE)
   expect_false(any(c("boot_dtu_freq", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB",  "boot_p_stdevBA", 
                      "boot_p_minAB",  "boot_p_minBA", "boot_p_maxAB",  "boot_p_maxBA", "boot_na") %in% names(mydtu$Genes)))
   expect_true(all(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Transcripts)))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="genes", bootnum=2, verbose = FALSE)  
+  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="genes", bootnum=2, verbose = FALSE)
   expect_false(any(c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na") %in% names(mydtu$Transcripts)))
   expect_true(all(c("boot_dtu_freq", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB",  "boot_p_stdevBA", 
                     "boot_p_minAB",  "boot_p_minBA", "boot_p_maxAB",  "boot_p_maxBA", "boot_na") %in% names(mydtu$Genes)))

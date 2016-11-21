@@ -188,6 +188,19 @@ test_that("Filters work correctly", {
                     list(TRUE, TRUE, FALSE))
 })
 
+#==============================================================================
+test_that("The number of iterations is detected correctly", {
+  sim <- sim_sleuth_data()
+  expect_equal(infer_bootnum(sim$slo, NULL, NULL), 2)
+  
+  sim <- sim_boot_data()
+  expect_equal(infer_bootnum(NULL,sim$boots_A, sim$boots_B), 2)
+})
+
+#==============================================================================
+#==============================================================================
+context("DTU reporting")
+
 test_that("DTU summary and ID extraction", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")
