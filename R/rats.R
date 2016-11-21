@@ -84,33 +84,33 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   
   #---------- EXTRACT DATA
   
-  if (steps == 3) {
+  if (steps == 3) {   # From Sleuth
     if (verbose)
       message("Restructuring and aggregating bootstraps...")
     # Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
     # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.  
     boot_data_A <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
     boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
-  } else if (steps == 2) {
+  } else if (steps == 2) {    # From generic bootstrapped data  
     # Just re-order rows.
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
     boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
   }
   
-  if (steps > 1) {  # ID columns are removed so I don't have to constantly subset.
+  # ID columns are removed so I don't have to constantly subset.
+  if (steps > 1) {    # Either Sleuth or generic bootstraps.
     # Calculate mean count across bootstraps.
     count_data_A <- as.data.table(lapply(boot_data_A, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
     count_data_B <- as.data.table(lapply(boot_data_B, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
     # (data.tables don't have access to column ranges by index, so I have to go roundabout via their names).
     # (Also, the first column is the target_id, so I leave it out).
-  } else {
+  } else {    # From generic unbootstrapped data.
     # Just re-order rows and crop out the transcript IDs.
     nn <- names(count_data_A)
     count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
     nn <- names(count_data_B)  # The number of columns may be different from A.
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
   }
-  
   
   
   #---------- TEST
