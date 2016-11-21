@@ -213,7 +213,6 @@ group_samples <- function(covariates) {
 #' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 #' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
-#' @export
 denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
   lapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
