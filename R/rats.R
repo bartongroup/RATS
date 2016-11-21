@@ -26,8 +26,8 @@
 #' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
 #' @param conf_thresh Confidence threshold. The fraction of bootstrap iterations calling DTU required to have confidence in the final call. (Default 0.95) Ignored if no bootstraps.
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
-#' @param testmode One of \itemize{\item{"genes"}{}, \item{"transc"}{}, \item{"both"}{Default}}.
-#' @param boots Bootstrap the p-values of either test. One of \itemize{\item{"genes"}{}, \item{"transc"}{}, \item{"both"}{Default} or \item{"none"}{}}.
+#' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
+#' @param boots Bootstrap the p-values of either test. One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)} \item{"none"}}.
 #' @param bootnum Number of bootstraps. (if 0, bootnum will be infered from the data)
 #' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
