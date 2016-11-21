@@ -193,6 +193,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gpab" = Genes[, pvalAB_corr],
                                 "gpba" = Genes[, pvalBA_corr],
                                 "gdtu" = Genes[, DTU] )) }) })
+    if (verbose)  # Forcing a new line after the progress bar.
+      message("")
     
     #----- Stats
     
