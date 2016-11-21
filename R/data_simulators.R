@@ -102,7 +102,7 @@ sim_boot_data <- function(cnames=c("A", "B")) {
   # Emulate non-sleuth bootstrap data.
   data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
   data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
-  return(list(sim$annot, data_A, data_B))
+  return(list('annot'= sim$annot, 'boots_A'= data_A, 'boots_B'= data_B))
 }
 
 #==============================================================================
@@ -124,7 +124,7 @@ sim_count_data <- function(cnames=c("A","B")) {
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[1]]
-  return(list(sim$annot, counts_A, counts_B))
+  return(list(sim$annot, 'counts_A'= counts_A, 'counts_B'= counts_B))
 }
 
 
