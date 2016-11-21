@@ -26,11 +26,12 @@
 #' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
 #' @param conf_thresh Confidence threshold. The fraction of bootstrap iterations calling DTU required to have confidence in the final call. (Default 0.95) Ignored if no bootstraps.
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
-#' @param testmode One of "genes", "transc", "both". (Default "both")
-#' @param boots Bootstrap the p-values of either test. One of "genes", "transc", "both" or "none". (Default "both")
-#' @param bootnum Number of bootstraps. (no default)
+#' @param testmode One of \itemize{\item{"genes"}{}, \item{"transc"}{}, \item{"both"}{Default}}.
+#' @param boots Bootstrap the p-values of either test. One of \itemize{\item{"genes"}{}, \item{"transc"}{}, \item{"both"}{Default} or \item{"none"}{}}.
+#' @param bootnum Number of bootstraps. (if 0, bootnum will be infered from the data)
 #' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
-#' @param verbose Display progress updates. (Default \code{TRUE})
+#' @param verbose Display progress updates and warnings. (Default \code{TRUE})
+#' @param dbg Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing.
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
@@ -42,21 +43,30 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, count_thresh= 10, dprop_thresh= 0.1, conf_thresh= 0.95, correction= "BH", 
                      testmode= "both", boots= "both", bootnum= 0L, 
-                     description=NA_character_, verbose= TRUE)
+                     description=NA_character_, verbose= TRUE, dbg = 0)
 {
   #---------- PREP
   
-  # Input checks.
+  
   if (verbose) {
     message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
     message("Checking parameters...")
   }
+  # Input checks.
   paramcheck <- parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
                                 boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh)
   if (paramcheck$error) 
     stop(paramcheck$message)
+  if (verbose)
+    if(paramcheck$warn)
+      for (w in paramcheck$warnings) {
+        warning(w)  # So it displays as warning at the end of the run.
+        message(w)  # So it displays at runtime.
+      }
   
+  if (bootnum == 0 && boots != "none")   # Use smart default.
+    bootnum = paramcheck$maxboots
   bootnum <- as.integer(bootnum)
   test_transc <- any(testmode == c("transc", "both"))
   test_genes <- any(testmode == c("genes", "both"))
@@ -71,6 +81,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     steps <- 3  # Sleuth object. Most steps. Requires both extraction and averaging.
   }
   
+  if (dbg == 1)
+    return(NULL)
+  
   #----------- LOOK-UP
   
   # Look-up from target_id to parent_id.
@@ -81,6 +94,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         setkey(tx_filter, parent_id, target_id) )  # Fixates the order of genes and transcripts to be used throughout the rest of this package.
   # Reverse look-up from replicates to covariates.
   samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
+  
+  if (dbg == 2)
+    return(NULL)
   
   #---------- EXTRACT DATA
   
@@ -97,6 +113,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
   }
   
+  if (dbg == 3)
+    return(list("bootA"=count_data_A, "bootB"=count_data_B))
+  
   # ID columns are removed so I don't have to constantly subset.
   if (steps > 1) {    # Either Sleuth or generic bootstraps.
     # Calculate mean count across bootstraps.
@@ -112,6 +131,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
   }
   
+  if (dbg == 4)
+    return(list("countA"=count_data_A, "countB"=count_data_B))
   
   #---------- TEST
   
@@ -120,6 +141,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     message("Calculating significances...")
   suppressWarnings(
     resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction) )
+  
+  if (dbg == 5)
+    return(resobj)
   
   #-------- ADD INFO
   
@@ -159,6 +183,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters["num_transc"] <- length(annot$target_id)
   resobj$Parameters["description"] <- description
   
+  if (dbg == 6)
+    return(resobj)
+  
   #---------- BOOTSTRAP
   
   if (any(boot_transc, boot_genes)) {
@@ -195,6 +222,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gdtu" = Genes[, DTU] )) }) })
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
+    
+    if (dbg == 7)
+      return(resobj)
     
     #----- Stats
     
@@ -239,6 +269,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       }
     })
   }
+  
+  if (dbg == 8)
+    return(resobj)
   
   #---------- DONE
   
