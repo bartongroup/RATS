@@ -205,7 +205,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb",
 
 ## ----eval=FALSE----------------------------------------------------------
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
-#                    name_B = "patients", conf_thresh = 0.9)
+#                    name_B = "patients", conf_thresh = 0.99)
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Transcript-level confidence threshold VS. number of DTU positive calls.
