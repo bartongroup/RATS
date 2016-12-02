@@ -71,6 +71,19 @@ plot_overview(mydtu)
 The input and output structures and the command options are discussed in more detail in the rest of this tutorial.
 
 
+### Defaults
+
+Optimal threshold values will depend on the quantity, quality and biology of your data, so some trial and error 
+may be required on your part. The current default values for the various threshold parameters 
+are **very permissive**. This means you are likely to get an inflated number of positive calls. This enables users 
+who are comfortable with `data.table` syntax to explore their results by applying stricter filters after passing 
+it through `rats`. If, on the other hand, you plan to use only the provided `get_dtu_ids()`, we recommend 
+starting with stricter thresholds.
+
+For explanations of the thresholds, refer to the relevant section(s) further down the tutorial.
+
+
+
 # Installation and loading
 
 ### Install dependencies first
