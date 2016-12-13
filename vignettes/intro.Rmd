@@ -1,0 +1,157 @@
+---
+title: "Introduction, Installation, Quick-start"
+author: "Kimon Froussios"
+date: "13 DEC 2016"
+output: 
+  html_document: 
+    fig_caption: no
+    keep_md: yes
+    theme: readable
+    toc: yes
+abstract: >
+  The [rats](http://github.com/bartongroup/Rats) package is aimed at people analysing **gene expression** and **transcript abundance**, 
+  particularly with **RNA-Seq** type of data in mind. This vignette constitutes the main 
+  documentation for the package.
+vignette: >
+  %\VignetteIndexEntry{RATs Intro, Instllation, Quick Start}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+
+
+
+# Relative Abundance of Transcripts
+
+The `rats` R package aims to identify genes that show a shift in the relative abundance of their transcript isoforms 
+between two conditions (*Differential Transcript Usage* -- **DTU**). This is supplementary
+to identifying *Differential Transcript Expression* (**DTE**), which simply measures whether transcripts change in
+abundance, but does not compare them to their sibling isoforms within each gene. Situations that show DTU are a 
+subset of those that show DTE. The figure below shows the relationship between DTU and DTE, as well as between them and
+*differential gene expression* (**DGE**):
+
+![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.png)
+
+
+`Rats` differs from the other tools that call DTU, because it is tailored to alignment-free quantifications. It operates solely on
+numerical abundances, leaving the details of quantification accuracy to the quantification tool. This makes it independent of the 
+quantification method, although it is originally meant to be used in workflows that use [Kallisto](http://pachterlab.github.io/kallisto/), [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) as isoform quantification tools, 
+as output from these quantifiers is not compatible with the existing alignment-based DTU callers.
+
+![Workflows](./fig/RATs_place.png)
+
+
+Additionally, `rats` is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. This bootstrapped
+data is used by `rats` to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
+and thus provide a measure of confidence in the DTU calls. 
+
+
+***
+
+
+# Installation and loading
+
+### Install dependencies first
+
+`install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
+
+If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
+
+
+### Install Rats
+
+#### from Github
+
+Available as R source package form from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+Download the latest release and then install it using:
+
+`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
+
+#### through Bioconductor
+
+Not available yet.
+
+
+### Install current developmental version of Rats
+
+The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+
+`devtools::install_github("bartongroup/rats")`
+
+As this version represents active development, it can change at any moment, Features may be added, removed or changed without notice. **Do not rely on this version for reproducible analysis of important data.**
+A main reason to use this version would be to test the resolution of bugs, or to give us feedback on the changes as they happen.
+
+### Loading
+
+Once installed, rats is imported into your r session as normal:
+
+```{r eval=FALSE}
+library(rats)
+```
+
+
+***
+
+
+# Quick start.
+
+
+```{r eval=FALSE}
+# 1. Build latest developmental version from Github:
+devtools::install_github("bartongroup/rats")
+
+# 2. Load into R session.
+library{rats}
+
+# 3. Specify transcript grouping:
+my_identifiers_table <- annot2ids("my_annotation.gtf")
+
+# 4a. Call DTU on a sleuth object, using default settings:
+mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, 
+                  name_A= "My_condition", name_B= "My_other_condition")
+# 4b. Call DTU on generic bootstrapped abundance estimates:
+mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, 
+                  boot_data_B= my_list_data_tables_A)
+# 4c. Call DTU on generic abundance estimates:
+mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
+                  count_data_B= my_data_table_B, boots= "none")
+
+# 5. Plot significance VS effect size:
+plot_overview(mydtu)
+
+# 6. Get all gene and transcript identifiers per category (significant DTU, 
+# no DTU, Not Applicable):
+myids <- get_dtu_ids(mydtu)
+
+# 7. Plot isoform changes for the top DTU gene returned in previous step.
+plot_gene(mydtu, myids[["dtu-genes"]][1], style = "lines"")
+```
+
+The input and output structures and the command options are discussed in more detail in the rest of this tutorial.
+
+
+### Defaults
+
+Optimal threshold values will depend on the quantity, quality and biology of your data, so some trial and error 
+may be required on your part. The current default values for the various threshold parameters 
+are **very permissive**. This means you are likely to get an inflated number of positive calls. This enables users 
+who are comfortable with `data.table` syntax to explore their results by applying stricter filters after passing 
+it through `rats`. If, on the other hand, you plan to use only the provided `get_dtu_ids()`, we recommend 
+thinking sbout using stricter thresholds.
+
+For explanations of the thresholds, refer to the tutorial vignette.
+
+
+***
+
+
+# Contact information
+
+The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
+by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
+
+To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
+Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
+to **read the vignette(s)**, and browse/search the support forum before posting a new issue, in case your question is already answered there.
+
+Enjoy!

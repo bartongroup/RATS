@@ -1,31 +1,5 @@
-## ----eval=FALSE----------------------------------------------------------
-#  # 1. Build latest developmental version from Github:
-#  devtools::install_github("bartongroup/rats")
-#  
-#  # 2. Load into R session.
-#  library{rats}
-#  
-#  # 3. Specify transcript grouping:
-#  my_identifiers_table <- annot2ids("my_annotation.gtf")
-#  
-#  # 4a. Call DTU on a sleuth object, using default settings:
-#  mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object,
-#                    name_A= "My_condition", name_B= "My_other_condition")
-#  # 4b. Call DTU on generic bootstrapped abundance estimates:
-#  mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A,
-#                    boot_data_B= my_list_data_tables_A)
-#  # 4c. Call DTU on generic abundance estimates:
-#  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A,
-#                    count_data_B= my_data_table_B, boots= "none")
-#  
-#  # 5. Get all gene and transcript identifiers per category (significant DTU,
-#  # no DTU, Not Applicable):
-#  myids <- get_dtu_ids(mydtu)
-#  
-#  # 6. Plot significance VS effect size:
-#  plot_overview(mydtu)
-
 ## ------------------------------------------------------------------------
+# Load package.
 library(rats)
 
 ## ------------------------------------------------------------------------
@@ -149,10 +123,12 @@ print( mydtu$Transcripts )
 # ! In our example dataset, there are only two replicates per condition and the dispersion is
 # ! very small, so the boxplots appear squashed.
 plot_gene(mydtu, "MIX6", style="lines")  # default
-plot_gene(mydtu, "MIX6", style="points")
-plot_gene(mydtu, "MIX6", style="rainbow")
-plot_gene(mydtu, "MIX6", style="merged")
-plot_gene(mydtu, "MIX6", style="dashed")
+
+## ----eval=FALSE----------------------------------------------------------
+#  plot_gene(mydtu, "MIX6", style="points")
+#  plot_gene(mydtu, "MIX6", style="rainbow")
+#  plot_gene(mydtu, "MIX6", style="merged")
+#  plot_gene(mydtu, "MIX6", style="dashed")
 
 ## ----eval=FALSE----------------------------------------------------------
 #  # Proportion change VS significance.

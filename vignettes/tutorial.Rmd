@@ -1,7 +1,7 @@
 ---
 title: "RATs Tutorial"
 author: "Kimon Froussios"
-date: "22 NOV 2016"
+date: "13 DEC 2016"
 output: 
   html_document: 
     fig_caption: no
@@ -19,114 +19,20 @@ vignette: >
 ---
 
 
-# Relative Abundance of Transcripts (RATs v0.2.2).
+# Introduction, installation and quick-start
 
-The `rats` R package aims to identify genes that show a shift in the relative abundance of their transcript isoforms 
-between two conditions (*Differential Transcript Usage* -- **DTU**). This is supplementary
-to identifying *Differential Transcript Expression* (**DTE**), which simply measures whether transcripts change in
-abundance, but does not compare them to their sibling isoforms within each gene. Situations that show DTU are a 
-subset of those that show DTE. The figure below shows the relationship between DTU and DTE, as well as between them and
-*differential gene expression* (**DGE**):
-
-![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.png)
+For package introduction, installation and quick-start, please refer to the introduction vignette.
 
 
-`Rats` differs from the other tools that call DTU, because it is tailored to alignment-free quantifications. It operates solely on
-numerical abundances, leaving the details of quantification accuracy to the quantification tool. This makes it independent of the 
-quantification method, although it is originally meant to be used in workflows that use [Kallisto](http://pachterlab.github.io/kallisto/), [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) as isoform quantification tools, 
-as output from these quantifiers is not compatible with the existing alignment-based DTU callers.
+***
 
-
-# Quick start.
-
-
-```{r eval=FALSE}
-# 1. Build latest developmental version from Github:
-devtools::install_github("bartongroup/rats")
-
-# 2. Load into R session.
-library{rats}
-
-# 3. Specify transcript grouping:
-my_identifiers_table <- annot2ids("my_annotation.gtf")
-
-# 4a. Call DTU on a sleuth object, using default settings:
-mydtu <- call_DTU(annot= my_identifiers_table, slo= my_sleuth_object, 
-                  name_A= "My_condition", name_B= "My_other_condition")
-# 4b. Call DTU on generic bootstrapped abundance estimates:
-mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_A, 
-                  boot_data_B= my_list_data_tables_A)
-# 4c. Call DTU on generic abundance estimates:
-mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
-                  count_data_B= my_data_table_B, boots= "none")
-
-# 5. Get all gene and transcript identifiers per category (significant DTU, 
-# no DTU, Not Applicable):
-myids <- get_dtu_ids(mydtu)
-
-# 6. Plot significance VS effect size:
-plot_overview(mydtu)
-```
-
-The input and output structures and the command options are discussed in more detail in the rest of this tutorial.
-
-
-### Defaults
-
-Optimal threshold values will depend on the quantity, quality and biology of your data, so some trial and error 
-may be required on your part. The current default values for the various threshold parameters 
-are **very permissive**. This means you are likely to get an inflated number of positive calls. This enables users 
-who are comfortable with `data.table` syntax to explore their results by applying stricter filters after passing 
-it through `rats`. If, on the other hand, you plan to use only the provided `get_dtu_ids()`, we recommend 
-starting with stricter thresholds.
-
-For explanations of the thresholds, refer to the relevant section(s) further down the tutorial.
-
-
-
-# Installation and loading
-
-### Install dependencies first
-
-`install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
-
-If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
-
-
-### Install Rats
-
-#### from Github
-
-Available as R source package form from the [releases section](https://github.com/bartongroup/Rats/releases) on Github.
-Download the latest release and then install it using:
-
-`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
-
-#### through Bioconductor
-
-Not available yet.
-
-
-### Install current developmental version of Rats
-
-The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
-
-`devtools::install_github("bartongroup/rats")`
-
-As this version represents active development, it can change at any moment, Features may be added, removed or changed without notice. **Do not rely on this version for reproducible analysis of important data.**
-A main reason to use this version would be to test the resolution of bugs, or to give us feedback on the changes as they happen.
-
-
-
-### Loading
-
-Once installed, rats is imported into your r session as normal:
-
-```{r}
-library(rats)
-```
 
 # The package in detail
+
+```{r}
+# Load package.
+library(rats)
+```
 
 ## Input formats
 
@@ -138,12 +44,13 @@ library(rats)
 2. Generic bootstrapped abundance estimates.
 3. Generic abundance estimates.
 
-From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. See the 
-[introduction to Sleuth](http://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html) pages for details on how 
-to load the transcript abundance estimate data from [Kallisto](http://pachterlab.github.io/kallisto/) into a Sleuth 
-object, and see the [wasabi](http://github.com/COMBINE-lab/wasabi) tool for how to load the transcript abundance 
-estimate data from [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
-into a sleuth object.
+From a [Sleuth](http://pachterlab.github.io/sleuth/) object `rats` extracts the bootstrapped abundance estimates. To find
+out more about Sleuth-based workflows refer to the follwoing links:
+[introduction to Sleuth](http://rawgit.com/pachterlab/sleuth/master/inst/doc/intro.html),
+[Kallisto](http://pachterlab.github.io/kallisto/),
+[wasabi](http://github.com/COMBINE-lab/wasabi),
+[Sailfish](http://github.com/kingsfordgroup/sailfish),
+[Salmon](https://github.com/COMBINE-lab/salmon).
 
 Bootstrapped abundance estimates obtained by other means can be input as `list`s of `data.table`s. Two lists are needed, one per condition.
 Each data table should contain the transcript identifiers in the first column, followed by columns containing the estimates from the bootstrap iterations:
@@ -166,14 +73,20 @@ only the meaning of the numbers changes.
 head(sim_count_data()[[1]])
 ```
 
-A function is provided to create this table, given a GTF file. **Note:** GFF3 is *not* supported, as the specification is too relaxed regarding identifiers.
-Other ways to create such a table exist, for example using the [biomaRt](https://bioconductor.org/packages/release/bioc/html/biomaRt.html) interface, but they
-are beyond the scope of this tutorial.
+A rudimentary function is provided to create this table, given a GTF file. Currently, it has been tested only on a limited number of GTF files,
+so be sure to give the output a quick look to satisfy yourself that the GTF was parsed correctly. **Note:** GFF3 is *not* supported, as the 
+specification is too relaxed regarding identifiers.
 
 ```{r eval=FALSE}
 # Extract transcript ID to gene ID index from a GTF annotation.
 myannot <- annot2ids("my_annotation_file.gtf")
 ```
+
+Other ways to create the annotation table exist, for example using the [biomaRt](https://bioconductor.org/packages/release/bioc/html/biomaRt.html)
+interface, but they are beyond the scope of this tutorial.
+
+
+***
 
 
 ## Calling DTU 
@@ -182,19 +95,15 @@ To bypass the complexity of running third-party tools in this tutorial, we will 
 with data emulators, intended to be used for testing the code. However, they are also convenient to use for showcasing
 how `rats` works. If you happen to have real data available, go ahead and use that instead if you wish.
 
-By default, `rats` reports on its progress and produces a summary report that has 3 categories for each of genes and transcripts (more on this, later):
-
-* DTU - significant change in proportions.
-* non-DTU - no significant changes.
-* NA - The tests were not applicable (due to low/no fragment counts or lack of alternative transcripts).
-
+By default, `rats` reports on its progress and produces a summary report.
 The progress messages and summary can be suppressed by adding the `verbose = FALSE` parameter to the call. 
-To prevent cluttering this tutorial, we will use this option in all the examples, but we recommend you leave
+To prevent cluttering this tutorial with verbose output, we will use this option in all the examples, but we recommend you leave
 this feature switched on, as turning it off will also suppress some warnings.
 
-If you leave `verbose = TRUE` when trying out the examples below with the emulated data, you will get **warnings**
-about the number of bootstraps. This is because the dataset used in the examples only emulates the structure of 
-real data, not the actual volume of it, and as such contains very few iterations indeed.
+If you leave `verbose = TRUE` when trying out the examples below using the emulated data, you will get **warnings**
+about the number of bootstraps. The warnings are meant to guard against poor use of `rats`. In this specific case, 
+the warning is triggered because the emulated dataset used in the examples immitates only the structure of 
+real data, not the actual volume of it, and as such contains too few bootstrap iterations.
 
 ### with generic abundance estimates, without bootstraps
 
@@ -324,6 +233,9 @@ Please note that currently only one covariate is used in each run. therefore, an
 be encoded as a single column in `myslo$sample_to_covariates`, by modifying the table if necessary.
 
 
+***
+
+
 ## Quick results
 
 For your convenience, `rats` provides a couple of functions to give you a quick summary of your results.
@@ -356,6 +268,9 @@ print( ids[["dtu-genes"]] )
 ```
 
 The ID lists obtained with the method shown above are ordered by effect magnitude (`Dprop`).
+
+
+***
 
 
 ## Output structure
@@ -509,6 +424,9 @@ print( names(mydtu$ReplicateData) )
 2. `condB` - The averaged counts across bootstraps, for eash transcript and replicate in the other condition.
 
 
+***
+
+
 ## Example results
 
 Now that you know what all the fields are, let's see how they apply to our simulated data.
@@ -594,34 +512,38 @@ the other condition (division by 0), so they are not eligible for testing.
 
 
 
+***
+
+
 ## Visualisation of results
 
 
-The output object's tables provide a host of information. The `rats` package also includes some basic visualisation aids.
+The output object's tables provide a host of information. The `rats` package also includes some basic visualisation aides.
 
 ### Plot isoform abundance changes
 
 This function allows you to visualise what's going on in any particular gene. Both the absolute counts and the relative 
-proportions are plotted for each transcript. The data is shown as both a box plot and as points representing 
-each individual sample. 
+proportions are plotted for each transcript. 
+This is a very handy function for inspecting genes that have been called DTU. It enables quick visual evaluation of
+the dispersion of the measurements, the magnitude of the change and the presence of outliers that may skew the DTU call.
 
 ```{r}
 # Proportion and count changes for all the transcripts of the "MIX6" gene.
 # ! In our example dataset, there are only two replicates per condition and the dispersion is
 # ! very small, so the boxplots appear squashed.
 plot_gene(mydtu, "MIX6", style="lines")  # default
+```
+
+```{r eval=FALSE}
 plot_gene(mydtu, "MIX6", style="points")
 plot_gene(mydtu, "MIX6", style="rainbow")
 plot_gene(mydtu, "MIX6", style="merged")
 plot_gene(mydtu, "MIX6", style="dashed")
 ```
 
-Several styles of this plot are available, to allow you to pick the one that best suits your visualisation 
-preferences. The aim is to include information about transcript level DTU and replicate of origin, alongside the
-information of condition.
+Several styles of this plot are available. The recommended style is set as default. The other options represent older 
+styles that have been kept for consistency or demonstration purposes. 
 
-This is a very handy function for inspecting genes that have been called DTU. It enables quick visual evaluation of
-the dispersion of the measurements, the magnitude of the change and the presence of outliers that may skew the DTU call.
 
 ### Plots of overall run
 
@@ -696,7 +618,14 @@ This is what is looks like for the example data (remember that the example has v
 You will need to close down the app to return to your R terminal.
 
 
+***
+
+
 ## Advanced options
+
+In summary, `rats` works as follows:
+
+![RATs design](./fig/RATs_decisions.png)
 
 
 ### Thresholds
@@ -841,8 +770,8 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 
 ### Input structure flexibility
 
-`rats` needs to pull information from different fields of the sleuth object and the annotation. For flexibility you can 
-change the names of these fields.
+`rats` needs to pull information from different fields of the data and annotation. You can 
+override the names of these fields.
 
 ```{r}
 # Lets emulate some input with custom field names. 
@@ -879,6 +808,9 @@ print( names(mydtu$Transcripts) )
 * `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the sleuth object's bootstrap tables.
 
 
+***
+
+
 ## Annotation discrepancies
 
 The results sections mentioned the possibility that some transcripts/genes may be missing altogether from either the
@@ -894,6 +826,9 @@ will not show up in the output.
 * Any transcript/gene present in the annotation but missing from the count data will be padded with 
 zero counts throughout and will be included in the output.
 * If the samples appear to use different annotations from one another, `rats` will abort.
+
+
+***
 
 
 # Contact information
