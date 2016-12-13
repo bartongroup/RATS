@@ -155,3 +155,6 @@ Providing a *reproducible working example* that demonstrates your issue is stron
 to **read the vignette(s)**, and browse/search the support forum before posting a new issue, in case your question is already answered there.
 
 Enjoy!
+
+![](./fig/rats.png)
+
