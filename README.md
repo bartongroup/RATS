@@ -1,10 +1,13 @@
 # Relative Abundance of Transcripts (rats)
 
+
 ## Description
+
 
 #### Who it is for
 
 Anyone working in transcriptomics, analysing gene expression and transcript abundances.
+
 
 #### What it does
 
@@ -19,29 +22,34 @@ Detecting DTU is supplementary to the quantification of transcripts by tools lik
 [Sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) and [Kallisto](http://pachterlab.github.io/kallisto/) and the detection 
 of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pachterlab.github.io/sleuth/).
 
+![](./vignettes/fig/dge-dte-dtu.png)
+
+![](./vignettes/fig/RATs_place.png)
+
+
 #### What it needs
 
 This is an R source package, and will run on any platform with an R engine.
 
 As input, `rats` requires transcript abundance estimates with or without bootstrapping. For convenience, these can also be extracted directly
-from the output of [Sleuth](http://pachterlab.github.io/sleuth/). It also requires a look-up table matching transcript identifiers to 
-respective gene identifiers.  
+from the output of [Sleuth](http://pachterlab.github.io/sleuth/). 
+
+It also requires a look-up table matching transcript identifiers to respective gene identifiers. This can be obtained through various means,
+one if them being extracting this info from a GTF file.
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
 [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, as well as 
 [ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) and [shiny](https://cran.r-project.org/web/packages/shiny/shiny.pdf) for visualisations. All these are
 available from CRAN.
 
+***
 
-## How to use rats
+## How to use RATs
 
+The package comes with full documentation. The vignettes are available locally by calling `browseVignettes("rats")` after the package is installed.
 
-A full **tutorial vignette** is included in the package, explaining the input, output, commands and options. 
-The vignette should be available locally by calling:
+We recommend studying the vignettes before using `rats`.
 
-`browseVignettes("rats")`
-
-We recommend studying the vignette before using `rats`.
 
 ### Dependencies
 
@@ -60,27 +68,25 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
-Eventually, we aim to make `rats` available through **Bioconductor** as well.
-
 
 ### Differential Transcript Usage
 
-A typical command to call DTU looks like this:
+A typical command to call DTU given a Sleuth object looks like this:
 
 `results <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object,  name_A = "Condition-1", name_B = "Condition-2")`
 
 Mandatory parameters:
 
-* a data frame matching unique transcript identifiers to gene identifiers
+* a dataframe matching unique transcript identifiers to gene identifiers
 * a sleuth object
 * the names of two conditions recorded in the sleuth object
 
-`rats` also accepts data input in **generic format** that does not depend on Sleuth. A function for creating the IDs table from a GTF file
-is also provided. Please consult the vignette for syntax and formats specifications.
+`rats` also accepts data input in **generic formats** independ of Sleuth. Please consult the tutorial vignette for syntax and formats specifications.
 
-The output is a list containing two tables that list the final results as well as the intermediate calculations and decisions.
+The output is a list containing (among other items) two tables that list the final results as well as the intermediate calculations and decisions.
 For details on the parameters, input and output, please refer to the tutorial vignette.
 
+***
 
 ## Contact information
 
@@ -92,3 +98,7 @@ Providing a *reproducible working example* that demonstrates your issue is stron
 the support forum before posting a new issue, in case your question is already answered there.
 
 Enjoy!
+
+![](./vignettes/fig/rats.png)
+
+
