@@ -369,7 +369,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
       Genes[(elig), c("pvalAB", "pvalBA") := 
               as.data.frame( t( as.data.frame( lapply(Genes[(elig), parent_id], function(parent) {
                 # Extract all relevant data to avoid repeated look ups in the large table.
-                subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]
+                subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
                 pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
                 pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
                 return(c(pAB, pBA)) }) ))) ]
