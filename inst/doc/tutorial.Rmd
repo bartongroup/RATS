@@ -642,7 +642,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 2. `count_thresh` - At least one of the two conditions needs to exceed this number of fragments per sample for the transcript 
 to be considered. Low counts have high uncertainty and low significance. Removing such entries from the analysis when both 
 conditions are low-count improves the confidence in the predictions of the remaining transcripts, and reduces 
-computation time. the reason this threshold requires only one condition to meet it is that enforcing it on both conditions 
+computation time. The reason this threshold requires only one condition to meet it is that enforcing it on both conditions 
 would erroneously disqualify transcripts that may be silenced in one of the two conditions but highly expressed in the other.
 3. `dprop_thresh` - This is a proxy for biological significance. A transcript's proportion must change by at least this much 
 for it to be considered. The need for this is due to the fact that high counts will make even minute differences show up as 
