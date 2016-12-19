@@ -35,7 +35,7 @@ As input, `rats` requires transcript abundance estimates with or without bootstr
 from the output of [Sleuth](http://pachterlab.github.io/sleuth/). 
 
 It also requires a look-up table matching transcript identifiers to respective gene identifiers. This can be obtained through various means,
-one if them being extracting this info from a GTF file.
+one of them being extracting this info from a GTF file.
 
 The package makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
 [matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, as well as 
