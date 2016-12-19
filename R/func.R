@@ -247,7 +247,7 @@ alloc_out <- function(annot, full){
                        "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_,
                        "data_type"=NA_character_, "num_genes"=NA_integer_, "num_transc"=NA_integer_,
                        "description"=NA_character_,
-                       "rats_version"=packageVersion("rats"), "R_version"=R.Version())
+                       "rats_version"=packageVersion("rats"), "R_version"=R.Version()[c("platform", "version.string")])
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
                         "DTU"=NA, "transc_DTU"=NA, 
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
