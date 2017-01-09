@@ -86,8 +86,8 @@ plot_gene <- function(dtuo, pid, style="lines") {
                            )
     
     # Plot.
-    dtucol <- c("TRUE"="red", "FALSE"="steelblue3", "NA"="orange")
-    dtupnt <- c("TRUE"="darkred", "FALSE"="darkblue", "NA"="orange")
+    dtucol <- c("TRUE"="red", "FALSE"="steelblue3", "NA"="yellow")
+    dtupnt <- c("TRUE"="darkred", "FALSE"="darkblue", "NA"="yellow")
     cndcol <- c("darkgreen", "darkorange")
     shapes <- seq(0, 25)
     dtulin <- c("TRUE"="solid", "FALSE"="dashed", "NA"="dotted")
@@ -97,7 +97,7 @@ plot_gene <- function(dtuo, pid, style="lines") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
         facet_grid(type ~ condition, scales= "free") +
         geom_path(aes(colour= replicate, group= replicate)) +
-        geom_boxplot(aes(fill= DTU), alpha=0.3, outlier.shape= NA) +
+        geom_boxplot(aes(fill= DTU), alpha=0.2, outlier.shape= NA) +
         scale_fill_manual(values= dtucol)
     } else if (style=="points") {
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
@@ -141,12 +141,14 @@ plot_gene <- function(dtuo, pid, style="lines") {
       theme(title= element_text(size= rel(1.5)),
             axis.text.x= element_text(angle= 90, size= rel(1.5)),
             axis.text.y= element_text(size= rel(1.5)),
-            strip.text.y= element_text(size= rel(1.8)),
             strip.text.x= element_text(size= rel(1.8)),
-            strip.background= element_rect(fill= "grey85"),
-            panel.grid.major = element_line(colour = "grey95"),
-            panel.grid.minor = element_blank(),
-            panel.background = element_rect(fill = "grey90"))
+            strip.text.y= element_text(size= rel(1.8)),
+            strip.background= element_rect(fill= "grey95"),
+            panel.grid.major= element_line(colour = "grey95"),
+            panel.grid.minor= element_blank(),
+            panel.background= element_rect(fill = "grey98"),
+            legend.text= element_text(size= rel(1.2)),
+            legend.title= element_text(size= rel(1.1)) )
     
     return(result)
   })
@@ -181,7 +183,9 @@ plot_overview <- function(dtuo, type="volcano") {
         labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
              y ="-log10 (Pval)") +
         scale_color_manual(values=c("steelblue3", "red")) +
-        scale_x_continuous(breaks = seq(-1, 1, 0.2))
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        theme(panel.background= element_rect(fill= "grey98"),
+              panel.grid.major= element_line(colour= "grey95") )
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts)  # I don't want the intermediate calculations to modify the dtu object.
       tmp[, abma := abs(Dprop)]
