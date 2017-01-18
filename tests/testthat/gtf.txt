@@ -12,6 +12,7 @@
 Chr1	Araport11	5UTR	3631	3759	.	+	.	transcript_id "GENE5.1"; gene_id "GENE5";
 Chr1	Araport11	exon	3631	3913	.	+	.	transcript_id "GENE5.2"; gene_id "GENE5";
 Chr1	Araport11	start_codon	3760	3762	.	+	0	transcript_id "GENE5.3"; gene_id "GENE5";
+Chr1	Araport11	stop_codon	3760	3762	.	+	0	transcript_id "GENE5.3"; gene_id "GENE5";
 Chr1	Araport11	CDS	3760	3913	.	+	0	transcript_id "ORPHAN6.1";
 11	pseudogene	exon	75780	76143	.	+	.	 gene_id "GENE7"; transcript_id "GENE7.1"; exon_number "1"; gene_name "RP11-304M2.1"; transcript_name "RP11-304M2.1-001";
 11	processed_transcript	exon	86612	87605	.	-	.	 gene_id "GENE8"; transcript_id "TRANSCRIPT8.1"; exon_number "1"; gene_name "AC069287.4"; transcript_name "AC069287.4-002";
