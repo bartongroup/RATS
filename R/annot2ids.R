@@ -11,10 +11,10 @@
 #' 
 #' @export
 #'
-annot2ids <- function(annotfile, transc_header = "target_id", gene_header = "parent_id")
+annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_id")
 {
-  annot <- as.data.table(read.delim(annotfile, comment.char = "#", header = FALSE))
-  annot <- annot[grepl("transcript_id", annot[[9]]) & grepl("gene_id", annot[[9]]), ]
+  annot <- as.data.table(read.delim(annotfile, comment.char= "#", header= FALSE))
+  annot <- annot[(grepl("transcript_id", annot[[9]]) & grepl("gene_id", annot[[9]])), ]
   t2g <- data.table("transc_id" = gsub(".*transcript_id \"?(.+?)\"?;.*", "\\1", annot[[9]]),
                     "gene_id" = gsub(".*gene_id \"?(.+?)\"?;.*", "\\1", annot[[9]]) )
   # Clean up.
