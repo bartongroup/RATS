@@ -18,7 +18,6 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
   t2g <- data.table("transc_id" = gsub(".*transcript_id \"?(.+?)\"?;.*", "\\1", annot[[9]]),
                     "gene_id" = gsub(".*gene_id \"?(.+?)\"?;.*", "\\1", annot[[9]]) )
   # Clean up.
-  t2g <- na.omit(t2g)
   t2g <- unique(t2g)
   names(t2g) <- c(transc_header, gene_header)
   
