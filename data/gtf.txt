@@ -1,0 +1,19 @@
+#!genome-build MASHUP
+#!genome-version FIRST
+#!genome-date 2017-01
+#!genome-build-accession RATS_TEST
+#!genebuild-last-updated 2017-01
+1	havana	gene	11869	14409	.	+	.	gene_id "ORPHAN1"; gene_version "5"; gene_name "DDX11L1"; gene_source "havana"; gene_biotype "transcribed_unprocessed_pseudogene"; havana_gene "OTTHUMG00000000961"; havana_gene_version "2";
+1	havana	transcript	11869	14409	.	+	.	gene_id "GENE2"; gene_version "5"; transcript_id "GENE2.1"; transcript_version "2"; gene_name "DDX11L1"; gene_source "havana"; gene_biotype "transcribed_unprocessed_pseudogene"; havana_gene "OTTHUMG00000000961"; havana_gene_version "2"; transcript_name "DDX11L1-002"; transcript_source "havana"; transcript_biotype "processed_transcript"; havana_transcript "OTTHUMT00000362751"; havana_transcript_version "1"; tag "basic"; transcript_support_level "1";
+1	havana	exon	11869	12227	.	+	.	gene_id "GENE2"; gene_version "5"; transcript_id "GENE2.2"; transcript_version "2"; exon_number "1"; gene_name "DDX11L1"; gene_source "havana"; gene_biotype "transcribed_unprocessed_pseudogene"; havana_gene "OTTHUMG00000000961"; havana_gene_version "2"; transcript_name "DDX11L1-002"; transcript_source "havana"; transcript_biotype "processed_transcript"; havana_transcript "OTTHUMT00000362751"; havana_transcript_version "1"; exon_id "ENSE00002234944"; exon_version "1"; tag "basic"; transcript_support_level "1";
+1	protein_coding	exon	3631	3913	.	+	.	exon_number "1"; gene_id "GENE3"; gene_name "ANAC001"; p_id "P20332"; seqedit "false"; transcript_id "GENE3.1"; transcript_name "AT1G01010.1"; tss_id "TSS22545";
+1	protein_coding	CDS	3760	3913	.	+	0	exon_number "1"; gene_id "GENE3"; gene_name "ANAC001"; p_id "P20332"; protein_id "AT1G01010.1"; transcript_id "GENE3.2"; transcript_name "AT1G01010.1"; tss_id "TSS22545";
+1	protein_coding	start_codon	3760	3762	.	+	0	exon_number "1"; gene_id "GENE4"; gene_name "ANAC001"; p_id "P20332"; transcript_id "GENE4.1"; transcript_name "AT1G01010.1"; tss_id "TSS22545";
+Chr1	Araport11	5UTR	3631	3759	.	+	.	transcript_id "GENE5.1"; gene_id "GENE5";
+Chr1	Araport11	exon	3631	3913	.	+	.	transcript_id "GENE5.2"; gene_id "GENE5";
+Chr1	Araport11	start_codon	3760	3762	.	+	0	transcript_id "GENE5.3"; gene_id "GENE5";
+Chr1	Araport11	CDS	3760	3913	.	+	0	transcript_id "ORPHAN6.1";
+11	pseudogene	exon	75780	76143	.	+	.	 gene_id "GENE7"; transcript_id "GENE7.1"; exon_number "1"; gene_name "RP11-304M2.1"; transcript_name "RP11-304M2.1-001";
+11	processed_transcript	exon	86612	87605	.	-	.	 gene_id "GENE8"; transcript_id "TRANSCRIPT8.1"; exon_number "1"; gene_name "AC069287.4"; transcript_name "AC069287.4-002";
+11	protein_coding	start_codon	129386	129388	.	-	0	gene_id "GENE9"; transcript_id "GENE9.1"; exon_number "1"; gene_name "AC069287.3"; transcript_name "AC069287.3-201";
+11	protein_coding	exon	138956	139099	.	-	.	gene_id "GENE9"; transcript_id "TRANSCRIPT9.2"; exon_number "1"; gene_name "AC069287.3"; transcript_name "AC069287.3-203";
