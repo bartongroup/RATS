@@ -36,6 +36,7 @@
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
+#' @import parallel
 #' @import data.table
 #' @import matrixStats
 #' @export
@@ -200,7 +201,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
     #----- Iterations
     
-    bootres <- lapply(1:bootnum, function(b) {
+    bootres <- mclapply(1:bootnum, function(b) {
                   # Update progress.
                   if (verbose)
                     setTxtProgressBar(myprogress, b)
@@ -221,7 +222,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "pdtu" = Transcripts[, DTU],
                                 "gpab" = Genes[, pvalAB_corr],
                                 "gpba" = Genes[, pvalBA_corr],
-                                "gdtu" = Genes[, DTU] )) }) })
+                                "gdtu" = Genes[, DTU] )) }) 
+                },
+                mc.preschedule= TRUE, mc.cores= threads, mc.allow.recursive= FALSE)
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
