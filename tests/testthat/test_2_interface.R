@@ -23,7 +23,7 @@ test_that("The input checks work", {
   expect_silent(call_DTU(annot= sim2$annot, slo= sim2$slo, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, count_thresh= 10,
                          conf_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, boots= "genes",
                          bootnum= 100, COUNTS_COL= "counts", TARGET_COL= "target", 
-                         PARENT_COL= "parent", BS_TARGET_COL= "id", dbg= 1))
+                         PARENT_COL= "parent", BS_TARGET_COL= "id", threads= 2, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= data_B, verbose = FALSE, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= counts_B, boots= "none", verbose = FALSE, dbg= 1))
@@ -136,6 +136,15 @@ test_that("The input checks work", {
   expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, conf_thresh = 2, verbose = FALSE, dbg= 1),
                "Invalid confidence threshold", fixed= TRUE)
   
+  # Number of threads.
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, threads = 0, verbose= FALSE, dbg= 1),
+               "Invalid number of threads", fixed= TRUE)
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, threads = -4, verbose= FALSE, dbg= 1),
+               "Invalid number of threads", fixed= TRUE)
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=FALSE), verbose= FALSE, dbg= 1))
+  expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE), verbose= FALSE, dbg= 1))
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE) + 1, verbose= FALSE, dbg= 1),
+               "threads exceed", fixed= TRUE)
 })
 
 

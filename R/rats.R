@@ -31,7 +31,8 @@
 #' @param bootnum Number of bootstraps. (if 0, bootnum will be infered from the data)
 #' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
-#' @param dbg Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing.
+#' @param threads Number of threads to use (only on POSIX architectures). (Default 1)
+#' @param dbg Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing. (Default 0: do not interrupt)
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
@@ -43,7 +44,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, count_thresh= 10, dprop_thresh= 0.1, conf_thresh= 0.95, correction= "BH", 
                      testmode= "both", boots= "both", bootnum= 0L, 
-                     description=NA_character_, verbose= TRUE, dbg = 0)
+                     description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
   #---------- PREP
   
@@ -55,7 +56,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # Input checks.
   paramcheck <- parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
-                                boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh)
+                                boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh, threads)
   if (paramcheck$error) 
     stop(paramcheck$message)
   if (verbose)
@@ -67,7 +68,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   
   if (bootnum == 0 && boots != "none")   # Use smart default.
     bootnum = paramcheck$maxboots
-  bootnum <- as.integer(bootnum)
+  bootnum <- as.integer(bootnum)  # Can't be decimal.
+  threads <- as.integer(threads)  # Can't br decimal.
   test_transc <- any(testmode == c("transc", "both"))
   test_genes <- any(testmode == c("genes", "both"))
   boot_transc <- any(boots == c("transc", "both"))

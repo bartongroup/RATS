@@ -22,6 +22,7 @@
 #' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param conf_thresh Confidence threshold.
+#' @param threads Number of threads.
 #' 
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -34,7 +35,7 @@
 parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
                             count_thresh, testmode, boots, bootnum, dprop_thresh,
-                            count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh) {
+                            count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh, threads) {
   warnmsg <- list()
   
   # Input format.
@@ -69,6 +70,10 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
   if ((!is.numeric(conf_thresh)) || conf_thresh < 0 || conf_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid confidence threshold! Must be between 0 and 1."))
+  if ((!is.numeric(threads)) || threads <= 0)
+    return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
+  if (threads > parallel::detectCores(logical= TRUE))
+    return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
   
   # Sleuth
   if (!is.null(slo)) {
