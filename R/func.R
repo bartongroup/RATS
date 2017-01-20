@@ -366,7 +366,6 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     
     # Proportion test.
     if (test_transc) {
-      # Parallel implementation of the prop.test loop seems to offer no speed benefit over old implementation.
       Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
                                                     function(row) { prop.test(x = row[c(1, 2)],
                                                                                n = row[c(3, 4)],
@@ -374,10 +373,6 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
                                                     },
                                                     mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
                                           ) ]
-      # Transcripts[(elig), pval := as.vector(apply(Transcripts[(elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
-      #                                             FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
-      #                                                                             n = row[c("totalA", "totalB")], 
-      #                                                                             correct = TRUE)[["p.value"]] } )) ]
       Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
       Transcripts[(elig), sig := pval_corr < p_thresh]
       Transcripts[(elig), DTU := sig & elig_fx]
