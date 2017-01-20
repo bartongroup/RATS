@@ -211,6 +211,7 @@ group_samples <- function(covariates) {
 #' @param samples A numeric vector of samples to extract counts for.
 #' @param COUNTS_COL The name of the column with the counts.
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
+#' @param threads Number of threads.
 #' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
 #' NA replaced with 0. 
@@ -218,8 +219,10 @@ group_samples <- function(covariates) {
 #' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 #' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
-denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
-  lapply(samples, function(smpl) {
+#'@import parallel
+#'
+denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads= 1) {
+  mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
     dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
       roworder <- match(tx, boot[[BS_TARGET_COL]])
@@ -233,7 +236,8 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
     ll <- length(nn)
     # Return reordered so that IDs are in first column.
     return(dt[, c(nn[ll], nn[seq.int(1, ll-1)]), with=FALSE])
-  })
+  },
+  mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
 }
 
 
@@ -362,13 +366,18 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     
     # Proportion test.
     if (test_transc) {
+      # Parallel implementation of the prop.test loop seems to offer no speed benefit over old implementation.
       Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
-                                                    function(row) { prop.test(x = row[c(1, 2)], 
-                                                                               n = row[c(3, 4)], 
-                                                                               correct = TRUE)[["p.value"]] 
+                                                    function(row) { prop.test(x = row[c(1, 2)],
+                                                                               n = row[c(3, 4)],
+                                                                               correct = TRUE)[["p.value"]]
                                                     },
                                                     mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
                                           ) ]
+      # Transcripts[(elig), pval := as.vector(apply(Transcripts[(elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
+      #                                             FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
+      #                                                                             n = row[c("totalA", "totalB")], 
+      #                                                                             correct = TRUE)[["p.value"]] } )) ]
       Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
       Transcripts[(elig), sig := pval_corr < p_thresh]
       Transcripts[(elig), DTU := sig & elig_fx]

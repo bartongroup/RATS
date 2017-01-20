@@ -36,6 +36,7 @@
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
+#' @import parallel
 #' @import data.table
 #' @import matrixStats
 #' @export
@@ -195,15 +196,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       message("Bootstrapping...")
     
     # Bootstrapping can take long, so showing progress is nice.
-    if (verbose)
-      myprogress <- utils::txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
+    # if (verbose)
+    #   myprogress <- utils::txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     
     #----- Iterations
     
-    bootres <- lapply(1:bootnum, function(b) {
+    bootres <- mclapply(1:bootnum, function(b) {
                   # Update progress.
-                  if (verbose)
-                    setTxtProgressBar(myprogress, b)
+                  # if (verbose)
+                    # setTxtProgressBar(myprogress, b)
       
                   # Grab a bootstrap from each replicate. 
                   counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
@@ -214,7 +215,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads) )
+                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads=1) )
                   
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],
@@ -222,7 +223,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gpab" = Genes[, pvalAB_corr],
                                 "gpba" = Genes[, pvalBA_corr],
                                 "gdtu" = Genes[, DTU] )) }) 
-                })
+                },
+                mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
@@ -237,9 +239,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     with(resobj, {
       if (boot_transc) {
         # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
-        pd <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pdtu"]] })))
+        pd <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pdtu"]] }, mc.cores= threads)))
         Transcripts[(elig), boot_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / bootnum]
-        pp <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["pp"]] })))
+        pp <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pp"]] }, mc.cores= threads)))
         Transcripts[(elig), boot_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
@@ -252,9 +254,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       }
       if (boot_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
-        gabres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpab"]] })))
-        gbares <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gpba"]] })))
-        gdres <- as.matrix(as.data.table(lapply(bootres, function(b) { b[["gdtu"]] })))
+        gabres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gpab"]] }, mc.cores= threads)))
+        gbares <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gpba"]] }, mc.cores= threads)))
+        gdres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gdtu"]] }, mc.cores= threads)))
         Genes[(elig), boot_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / bootnum]
         Genes[(elig), boot_p_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_p_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
