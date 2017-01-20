@@ -108,8 +108,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       message("Restructuring and aggregating bootstraps...")
     # Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
     # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.  
-    boot_data_A <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL )
-    boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL )
+    boot_data_A <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, threads )
+    boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, threads )
   } else if (steps == 2) {    # From generic bootstrapped data  
     # Just re-order rows.
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
@@ -122,8 +122,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # ID columns are removed so I don't have to constantly subset.
   if (steps > 1) {    # Either Sleuth or generic bootstraps.
     # Calculate mean count across bootstraps.
-    count_data_A <- as.data.table(lapply(boot_data_A, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
-    count_data_B <- as.data.table(lapply(boot_data_B, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }))
+    count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }, 
+                                           mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
+    count_data_B <- as.data.table(mclapply(boot_data_B, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) }, 
+                                           mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
     # (data.tables don't have access to column ranges by index, so I have to go roundabout via their names).
     # (Also, the first column is the target_id, so I leave it out).
   } else {    # From generic unbootstrapped data.
@@ -196,15 +198,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       message("Bootstrapping...")
     
     # Bootstrapping can take long, so showing progress is nice.
-    # if (verbose)
-    #   myprogress <- utils::txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
+    if (verbose)
+      myprogress <- utils::txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     
     #----- Iterations
     
     bootres <- mclapply(1:bootnum, function(b) {
                   # Update progress.
-                  # if (verbose)
-                    # setTxtProgressBar(myprogress, b)
+                  if (verbose)
+                  setTxtProgressBar(myprogress, b)
       
                   # Grab a bootstrap from each replicate. 
                   counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
@@ -215,7 +217,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads=1) )
+                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads) )
                   
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],
@@ -224,7 +226,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gpba" = Genes[, pvalBA_corr],
                                 "gdtu" = Genes[, DTU] )) }) 
                 },
-                mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
+                mc.cores= 1, mc.allow.recursive= TRUE, mc.preschedule= TRUE)
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
