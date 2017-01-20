@@ -309,11 +309,13 @@ alloc_out <- function(annot, full){
 #' @param p_thresh The p-value threshold.
 #' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
+#' @param threads Number of threads (POSIX systems only).
 #' @return list
 #' 
+#' @import parallel
 #' @import data.table
 #' 
-calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction) {
+calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   
   #---------- PRE-ALLOCATE
   
@@ -360,10 +362,13 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     
     # Proportion test.
     if (test_transc) {
-      Transcripts[(elig), pval := as.vector(apply(Transcripts[(elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
-                                                  FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
-                                                                                  n = row[c("totalA", "totalB")], 
-                                                                                  correct = TRUE)[["p.value"]] } )) ]
+      Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
+                                                    function(row) { prop.test(x = row[c(1, 2)], 
+                                                                               n = row[c(3, 4)], 
+                                                                               correct = TRUE)[["p.value"]] 
+                                                    },
+                                                    mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
+                                          ) ]
       Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
       Transcripts[(elig), sig := pval_corr < p_thresh]
       Transcripts[(elig), DTU := sig & elig_fx]
@@ -372,12 +377,16 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     # G test.
     if (test_genes) {
       Genes[(elig), c("pvalAB", "pvalBA") := 
-              as.data.frame( t( as.data.frame( lapply(Genes[(elig), parent_id], function(parent) {
-                # Extract all relevant data to avoid repeated look ups in the large table.
-                subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
-                pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
-                pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
-                return(c(pAB, pBA)) }) ))) ]
+              t( as.data.frame( mclapply(Genes[(elig), parent_id], 
+                                        function(parent) {
+                                            # Extract all relevant data to avoid repeated look ups in the large table.
+                                            subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
+                                            pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
+                                            pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
+                                            return(c(pAB, pBA)) 
+                                        },
+                                        mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
+                )) ]
       Genes[(elig), pvalAB_corr := p.adjust(pvalAB, method=correction)]
       Genes[(elig), pvalBA_corr := p.adjust(pvalBA, method=correction)]
       Genes[(elig), sig := pvalAB_corr < p_thresh & pvalBA_corr < p_thresh]

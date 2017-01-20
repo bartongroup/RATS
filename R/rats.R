@@ -36,7 +36,6 @@
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
-#' @import parallel
 #' @import data.table
 #' @import matrixStats
 #' @export
@@ -143,7 +142,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Calculating significances...")
   suppressWarnings(
-    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction) )
+    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction, threads) )
   
   if (dbg == 5)
     return(resobj)
@@ -201,7 +200,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
     #----- Iterations
     
-    bootres <- mclapply(1:bootnum, function(b) {
+    bootres <- lapply(1:bootnum, function(b) {
                   # Update progress.
                   if (verbose)
                     setTxtProgressBar(myprogress, b)
@@ -215,7 +214,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction))
+                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads) )
                   
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],
@@ -223,8 +222,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gpab" = Genes[, pvalAB_corr],
                                 "gpba" = Genes[, pvalBA_corr],
                                 "gdtu" = Genes[, DTU] )) }) 
-                },
-                mc.preschedule= TRUE, mc.cores= threads, mc.allow.recursive= FALSE)
+                })
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
