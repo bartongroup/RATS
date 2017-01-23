@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   count_thresh = 10, dprop_thresh = 0.1, conf_thresh = 0.95,
   correction = "BH", testmode = "both", boots = "both", bootnum = 0L,
-  description = NA_character_, verbose = TRUE, dbg = 0)
+  description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
 \item{annot}{A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.}
@@ -60,7 +60,9 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{verbose}{Display progress updates and warnings. (Default \code{TRUE})}
 
-\item{dbg}{Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing.}
+\item{threads}{Number of threads to use (only on POSIX architectures). (Default 1)}
+
+\item{dbg}{Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing. (Default 0: do not interrupt)}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.
