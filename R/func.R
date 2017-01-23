@@ -22,6 +22,7 @@
 #' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param conf_thresh Confidence threshold.
+#' @param threads Number of threads.
 #' 
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -34,7 +35,7 @@
 parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
                             count_thresh, testmode, boots, bootnum, dprop_thresh,
-                            count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh) {
+                            count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh, threads) {
   warnmsg <- list()
   
   # Input format.
@@ -69,6 +70,10 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
   if ((!is.numeric(conf_thresh)) || conf_thresh < 0 || conf_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid confidence threshold! Must be between 0 and 1."))
+  if ((!is.numeric(threads)) || threads <= 0)
+    return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
+  if (threads > parallel::detectCores(logical= TRUE))
+    return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
   
   # Sleuth
   if (!is.null(slo)) {
@@ -206,6 +211,7 @@ group_samples <- function(covariates) {
 #' @param samples A numeric vector of samples to extract counts for.
 #' @param COUNTS_COL The name of the column with the counts.
 #' @param BS_TARGET_COL The name of the column with the transcript IDs.
+#' @param threads Number of threads.
 #' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
 #' NA replaced with 0. 
@@ -213,8 +219,10 @@ group_samples <- function(covariates) {
 #' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
 #' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
-denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
-  lapply(samples, function(smpl) {
+#'@import parallel
+#'
+denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads= 1) {
+  mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
     dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
       roworder <- match(tx, boot[[BS_TARGET_COL]])
@@ -228,7 +236,8 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL) {
     ll <- length(nn)
     # Return reordered so that IDs are in first column.
     return(dt[, c(nn[ll], nn[seq.int(1, ll-1)]), with=FALSE])
-  })
+  },
+  mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
 }
 
 
@@ -304,11 +313,13 @@ alloc_out <- function(annot, full){
 #' @param p_thresh The p-value threshold.
 #' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
+#' @param threads Number of threads (POSIX systems only).
 #' @return list
 #' 
+#' @import parallel
 #' @import data.table
 #' 
-calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction) {
+calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   
   #---------- PRE-ALLOCATE
   
@@ -355,10 +366,13 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     
     # Proportion test.
     if (test_transc) {
-      Transcripts[(elig), pval := as.vector(apply(Transcripts[(elig), .(sumA, sumB, totalA, totalB)], MARGIN = 1, 
-                                                  FUN = function(row) { prop.test(x = row[c("sumA", "sumB")], 
-                                                                                  n = row[c("totalA", "totalB")], 
-                                                                                  correct = TRUE)[["p.value"]] } )) ]
+      Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
+                                                    function(row) { prop.test(x = row[c(1, 2)],
+                                                                               n = row[c(3, 4)],
+                                                                               correct = TRUE)[["p.value"]]
+                                                    },
+                                                    mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
+                                          ) ]
       Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
       Transcripts[(elig), sig := pval_corr < p_thresh]
       Transcripts[(elig), DTU := sig & elig_fx]
@@ -367,12 +381,16 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     # G test.
     if (test_genes) {
       Genes[(elig), c("pvalAB", "pvalBA") := 
-              as.data.frame( t( as.data.frame( lapply(Genes[(elig), parent_id], function(parent) {
-                # Extract all relevant data to avoid repeated look ups in the large table.
-                subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
-                pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
-                pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
-                return(c(pAB, pBA)) }) ))) ]
+              t( as.data.frame( mclapply(Genes[(elig), parent_id], 
+                                        function(parent) {
+                                            # Extract all relevant data to avoid repeated look ups in the large table.
+                                            subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
+                                            pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
+                                            pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
+                                            return(c(pAB, pBA)) 
+                                        },
+                                        mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
+                )) ]
       Genes[(elig), pvalAB_corr := p.adjust(pvalAB, method=correction)]
       Genes[(elig), pvalBA_corr := p.adjust(pvalBA, method=correction)]
       Genes[(elig), sig := pvalAB_corr < p_thresh & pvalBA_corr < p_thresh]
