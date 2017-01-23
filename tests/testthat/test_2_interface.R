@@ -347,7 +347,7 @@ test_that("The result is consistent across input data formats", {
   data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
-  counts_B <- data_B[[1]]
+  counts_B <- data_B[[2]]
   
   mydtu <- list(call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", boots="none", verbose = FALSE),
                 call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, boots="none", verbose = FALSE),
