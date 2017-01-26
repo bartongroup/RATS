@@ -7,7 +7,7 @@
 sim_sleuth_data(varname = "condition", COUNTS_COL = "est_counts",
   TARGET_COL = "target_id", PARENT_COL = "parent_id",
   BS_TARGET_COL = "target_id", cnames = c("A", "B"),
-  errannot_inconsistent = FALSE)
+  errannot_inconsistent = FALSE, cv_dt = FALSE)
 }
 \arguments{
 \item{varname}{Name for the variables by which to compare.}
@@ -22,7 +22,9 @@ sim_sleuth_data(varname = "condition", COUNTS_COL = "est_counts",
 
 \item{cnames}{A vector of (two) name values for the comparison variable.}
 
-\item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks.}
+\item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)}
+
+\item{cv_dt}{Logical. Whether covariates table should be a data.table (FALSE).}
 }
 \value{
 A list with \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 

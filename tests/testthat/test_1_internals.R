@@ -55,9 +55,8 @@ context("DTU internal data munging")
 
 #==============================================================================
 test_that("Samples are grouped correctly", {
-  sim <- sim_sleuth_data()
-  r <- group_samples(sim$slo$sample_to_covariates)
-  
+  sim <- sim_sleuth_data(cv_dt=FALSE)
+  expect_silent(r <- group_samples(sim$slo$sample_to_covariates))
   # number of covariates
   expect_equal(length(r), length(sim$slo$sample_to_covariates))
   # names of covariates
@@ -68,6 +67,21 @@ test_that("Samples are grouped correctly", {
   # total number of samples
   expect_equal(sum(sapply(r[[1]],length)), length(sim$slo$sample_to_covariates[[1]]))
   expect_equal(sum(sapply(r[[2]],length)), length(sim$slo$sample_to_covariates[[2]]))
+  
+  # Repeat tests with data.table covariate
+  sim <- sim_sleuth_data(cv_dt=TRUE)
+  expect_silent(r <- group_samples(sim$slo$sample_to_covariates))
+  # number of covariates
+  expect_equal(length(r), length(sim$slo$sample_to_covariates))
+  # names of covariates
+  expect_named(r, names(sim$slo$sample_to_covariates))
+  # number of values of each covariate
+  expect_equal(length(r[[1]]), length(levels(as.factor(sim$slo$sample_to_covariates[[1]]))))
+  expect_equal(length(r[[2]]), length(levels(as.factor(sim$slo$sample_to_covariates[[2]]))))
+  # total number of samples
+  expect_equal(sum(sapply(r[[1]],length)), length(sim$slo$sample_to_covariates[[1]]))
+  expect_equal(sum(sapply(r[[2]],length)), length(sim$slo$sample_to_covariates[[2]]))
+  
 })
 
 

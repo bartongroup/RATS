@@ -193,10 +193,10 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
 group_samples <- function(covariates) {
   samplesByVariable <- list()
   for(varname in names(covariates)) {
-    categories <- levels(as.factor(covariates[, varname]))
+    categories <- unique(covariates[[varname]])
     samplesByVariable[[varname]] <- list()
     for (x in categories) {
-      samplesByVariable[[varname]][[x]] <- which(covariates[, varname] == x)
+      samplesByVariable[[varname]][[x]] <- which(covariates[[varname]] == x)
     }
   }
   return(samplesByVariable)

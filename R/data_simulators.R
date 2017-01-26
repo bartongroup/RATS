@@ -9,7 +9,8 @@
 #' @param PARENT_COL Name for annotation column containing respective gene identification.
 #' @param BS_TARGET_COL Name for bootstraps column containing transcript identification.
 #' @param cnames A vector of (two) name values for the comparison variable.
-#' @param errannot_inconsistent Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks.
+#' @param errannot_inconsistent Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)
+#' @param cv_dt Logical. Whether covariates table should be a data.table (FALSE).
 #' @return A list with \code{slo} a minimal sleuth-like object, \code{annot} a corresponding annotation data.frame, 
 #'         \code{isx} a vector of trancripts common between generated annotation and bootstraps (useful for code testing).
 #' 
@@ -17,11 +18,12 @@
 #' transcript id's among samples and bootstraps. These conditions are unlikely to occur in real data,
 #' but this allows testing that the code can handle it.
 #' 
+#' @import data.table
 #' @export
 #' 
 sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET_COL="target_id" , 
                             PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("A","B"), 
-                            errannot_inconsistent=FALSE)
+                            errannot_inconsistent=FALSE, cv_dt=FALSE)
 {
   # !!! Some of the tests of the package are tightly connected to the specifics of the object returned by this function.
   # !!! Entry additions are likely to be tolerated. Changes or removals of entries or structure will certainly cause failures.
@@ -31,8 +33,14 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
   names(tx) <- c(TARGET_COL, PARENT_COL)
   
   sl <- list()
-  sl[["sample_to_covariates"]] <- data.frame("foo"=c(cnames[1], cnames[2], cnames[1], cnames[2]), 
+  sl[["sample_to_covariates"]] <- NaN 
+  if (cv_dt) {
+    sl[["sample_to_covariates"]] <- data.table("foo"=c(cnames[1], cnames[2], cnames[1], cnames[2]), 
+                                               "bar"=c("ba", "ba", "bb", "bb"))
+  } else {
+    sl[["sample_to_covariates"]] <- data.frame("foo"=c(cnames[1], cnames[2], cnames[1], cnames[2]), 
                                              "bar"=c("ba", "ba", "bb", "bb"))
+  }
   names(sl[["sample_to_covariates"]]) <- c(varname, "batch")
   
   sl[["kal"]] <- list()
