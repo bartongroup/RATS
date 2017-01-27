@@ -21,7 +21,7 @@ simdat <- sim_count_data()
 # For convenience let's assign the contents of the list to separate variables.
 mycond_A <- simdat[[2]]          # Simulated abundances for one condition.
 mycond_B <- simdat[[3]]          # Simulated abundances for other condition.
-myannot <- simdat[[1]]   # Transcript and gene Identifiers for the above data.
+myannot <- simdat[[1]]   # Transcript and gene IDs for the above data.
 
 ## ------------------------------------------------------------------------
 # Find DTU between the simulated datasets.
@@ -33,7 +33,7 @@ mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B
                                `rats`.")
 
 ## ------------------------------------------------------------------------
-# Simulate some data.
+# Simulate some data. (Notice it is a different function than before.)
 simdat <- sim_boot_data()
 
 # For convenience let's assign the contents of the list to separate variables.
@@ -107,21 +107,7 @@ print( names(mydtu$Transcripts) )
 print( names(mydtu$ReplicateData) )
 
 ## ------------------------------------------------------------------------
-# Let's check the info and settings.
-print( mydtu$Parameters )
-
-## ------------------------------------------------------------------------
-# Gene-level calls.
-print( mydtu$Genes )
-
-## ------------------------------------------------------------------------
-# Transcript-level calls.
-print( mydtu$Transcripts )
-
-## ------------------------------------------------------------------------
 # Proportion and count changes for all the transcripts of the "MIX6" gene.
-# ! In our example dataset, there are only two replicates per condition and the dispersion is
-# ! very small, so the boxplots appear squashed.
 plot_gene(mydtu, "MIX6", style="lines")  # default
 
 ## ----eval=FALSE----------------------------------------------------------
@@ -202,6 +188,11 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "ba", name_B = "bb",
 #  # Bonferroni correction.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", correction = "bonferroni")
+
+## ----eval=FALSE----------------------------------------------------------
+#  # Using 8 threads/cores for parallel computing.
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", threads = 8)
 
 ## ------------------------------------------------------------------------
 # Lets emulate some input with custom field names. 
