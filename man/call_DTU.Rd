@@ -62,7 +62,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{threads}{Number of threads to use (only on POSIX architectures). (Default 1)}
 
-\item{dbg}{Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing. (Default 0: do not interrupt)}
+\item{dbg}{Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.

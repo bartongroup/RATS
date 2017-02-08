@@ -32,7 +32,7 @@
 #' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use (only on POSIX architectures). (Default 1)
-#' @param dbg Prematurely terminate execution at the specified stage. Used to speed up tests by avoiding unnecessary downstream processing. (Default 0: do not interrupt)
+#' @param dbg Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
@@ -191,22 +191,101 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (dbg == 6)
     return(resobj)
   
+  
+  #---------- INTER-REPLICATE VARIABILITY
+  
+  
+  if (verbose)
+    message("Inter-replicate variability...")
+  
+  pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
+  numpairs <- length(pairs)
+  
+  if (verbose)
+    myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
+  
+  repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU().
+                # Update progress.
+                if (verbose)
+                  setTxtProgressBar(myprogress, p)
+                
+                # Grab a replicate from each condition. 
+                counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] )
+                counts_B <- as.data.table( count_data_A[[ names(count_data_B)[pairs[[p]][2]] ]] )
+                
+                # Do the work.
+                # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
+                suppressWarnings(
+                  pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads) )
+                
+                with(pout, {
+                  return(list("pp" = Transcripts[, pval_corr],
+                              "pdtu" = Transcripts[, DTU],
+                              "gpab" = Genes[, pvalAB_corr],
+                              "gpba" = Genes[, pvalBA_corr],
+                              "gdtu" = Genes[, DTU] )) })
+              })
+  
+  if (verbose)  # Forcing a new line after the progress bar.
+    message("")
+  
+  if (dbg == 9)
+    return(pairres)
+  
+  #----- Stats
+  
+  if (verbose)
+    message("Summarising bootstraps...")
+  
+  with(resobj, {
+      pd <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pdtu"]] }, mc.cores= threads)))
+      Transcripts[(elig), rep_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / numpairs]
+      pp <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pp"]] }, mc.cores= threads)))
+      Transcripts[(elig), rep_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
+      Transcripts[(elig), rep_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
+      Transcripts[(elig), rep_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
+      Transcripts[(elig), rep_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
+      Transcripts[(elig), rep_na := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / numpairs]
+      Transcripts[(elig & DTU), rep_conf := (rep_dtu_freq >= conf_thresh)]
+      Transcripts[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-conf_thresh)]
+      Transcripts[(elig), conf := rep_conf]
+      
+      gabres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gpab"]] }, mc.cores= threads)))
+      gbares <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gpba"]] }, mc.cores= threads)))
+      gdres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gdtu"]] }, mc.cores= threads)))
+      Genes[(elig), rep_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / numpairs]
+      Genes[(elig), rep_p_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_stdevAB := rowSds(gabres[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_stdevBA := rowSds(gbares[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_minAB := rowMins(gabres[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_minBA := rowMins(gbares[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
+      Genes[(elig), rep_na := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+      Genes[(elig & DTU), rep_conf := (rep_dtu_freq >= conf_thresh)]
+      Genes[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-conf_thresh)]
+      Genes[(elig), conf := rep_conf]
+  })
+  
+  if (dbg == 10)
+    return(resobj)
+  
   #---------- BOOTSTRAP
   
   if (any(boot_transc, boot_genes)) {
-    if (verbose)
+    if (verbose) {
       message("Bootstrapping...")
-    
-    # Bootstrapping can take long, so showing progress is nice.
-    if (verbose)
+      # Bootstrapping can take long, so showing progress is nice.
       myprogress <- utils::txtProgressBar(min = 0, max = bootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
+    }
     
     #----- Iterations
     
-    bootres <- mclapply(1:bootnum, function(b) {
+    bootres <- lapply(1:bootnum, function(b) {  # Single-threaded. Forking happens within calculate_DTU().
                   # Update progress.
                   if (verbose)
-                  setTxtProgressBar(myprogress, b)
+                    setTxtProgressBar(myprogress, b)
       
                   # Grab a bootstrap from each replicate. 
                   counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
@@ -225,13 +304,12 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gpab" = Genes[, pvalAB_corr],
                                 "gpba" = Genes[, pvalBA_corr],
                                 "gdtu" = Genes[, DTU] )) }) 
-                },
-                mc.cores= 1, mc.allow.recursive= TRUE, mc.preschedule= TRUE)
+              })
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
     if (dbg == 7)
-      return(resobj)
+      return(bootres)
     
     #----- Stats
     
@@ -249,10 +327,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Transcripts[(elig), boot_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), boot_na := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / bootnum]
-        Transcripts[(elig & DTU), conf := (boot_dtu_freq >= conf_thresh)]
-        Transcripts[(elig & !DTU), conf := (boot_dtu_freq <= 1-conf_thresh)]
-        # Adjust DTU calls.
-        Transcripts[(elig), DTU := (DTU & conf)]
+        Transcripts[(elig & DTU), boot_conf := (boot_dtu_freq >= conf_thresh)]
+        Transcripts[(elig & !DTU), boot_conf := (boot_dtu_freq <= 1-conf_thresh)]
+        Transcripts[(elig), conf := boot_conf & rep_conf]
+        
       }
       if (boot_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
@@ -269,10 +347,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), boot_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), boot_na := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / bootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-        Genes[(elig & DTU), conf := (boot_dtu_freq >= conf_thresh)]
-        Genes[(elig & !DTU), conf := (boot_dtu_freq <= 1-conf_thresh)]
-        # Adjust DTU calls.
-        Genes[(elig), DTU := (DTU & conf)]
+        Genes[(elig & DTU), boot_conf := (boot_dtu_freq >= conf_thresh)]
+        Genes[(elig & !DTU), boot_conf := (boot_dtu_freq <= 1-conf_thresh)]
+        Genes[(elig), conf := boot_conf & rep_conf]
       }
     })
   }
@@ -280,10 +357,17 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (dbg == 8)
     return(resobj)
   
+  
   #---------- DONE
   
   if (verbose)
     message("Tidying up...")
+  
+  # Reject low-confidence DTU calls.
+  with(resobj, {
+    Transcripts[(elig), DTU := (DTU & conf)]
+    Genes[(elig), DTU := (DTU & conf)]
+  })
   
   # Store the replicate means adter re-adding the IDs.
   with(count_data_A, {

@@ -258,24 +258,28 @@ alloc_out <- function(annot, full){
                        "description"=NA_character_,
                        "rats_version"=packageVersion("rats"), "R_version"=R.Version()[c("platform", "version.string")])
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "DTU"=NA, "transc_DTU"=NA, 
-                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
-                        "elig"=NA, "elig_fx"=NA,
-                        "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, "sig"=NA, 
-                        "boot_dtu_freq"=NA_real_, "conf"=NA, "boot_p_meanAB"=NA_real_, "boot_p_meanBA"=NA_real_, 
-                        "boot_p_stdevAB"=NA_real_, "boot_p_stdevBA"=NA_real_, "boot_p_minAB"=NA_real_, "boot_p_minBA"=NA_real_, 
-                        "boot_p_maxAB"=NA_real_, "boot_p_maxBA"=NA_real_, "boot_na"=NA_real_)
+                        "elig"=NA, "sig"=NA, "conf"=NA, "elig_fx"=NA, "DTU"=NA, "transc_DTU"=NA,
+                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, 
+                        "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, 
+                        "rep_p_meanAB"=NA_real_, "rep_p_meanBA"=NA_real_, "rep_p_stdevAB"=NA_real_, "rep_p_stdevBA"=NA_real_, 
+                        "rep_p_minAB"=NA_real_, "rep_p_minBA"=NA_real_, "rep_p_maxAB"=NA_real_, "rep_p_maxBA"=NA_real_,
+                        "rep_na"=NA_real_, "rep_dtu_freq"=NA_real_, "rep_conf"=NA, 
+                        "boot_p_meanAB"=NA_real_, "boot_p_meanBA"=NA_real_, "boot_p_stdevAB"=NA_real_, "boot_p_stdevBA"=NA_real_, 
+                        "boot_p_minAB"=NA_real_, "boot_p_minBA"=NA_real_, "boot_p_maxAB"=NA_real_, "boot_p_maxBA"=NA_real_, 
+                        "boot_na"=NA_real_, "boot_dtu_freq"=NA_real_, "boot_conf"=NA)
+                        
+                        
+                        
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
-                              "DTU"=NA, "gene_DTU"=NA,
-                              "meanA"=NA_real_, "meanB"=NA_real_,  # mean across replicates of means across bootstraps
-                              "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
-                              "sumA"=NA_real_, "sumB"=NA_real_,  # sum across replicates of means across bootstraps
-                              "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
-                              "elig_xp"=NA, "elig"=NA,
-                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
-                              "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA, 
-                              "boot_dtu_freq"=NA_real_, "conf"=NA, "boot_p_mean"=NA_real_, "boot_p_stdev"=NA_real_, 
-                              "boot_p_min"=NA_real_,"boot_p_max"=NA_real_, "boot_na"=NA_real_)
+                              "elig_xp"=NA, "elig"=NA, "sig"=NA, "conf"=NA, "elig_fx"=NA, "DTU"=NA, "gene_DTU"=NA, 
+                              "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_, 
+                              "sumA"=NA_real_, "sumB"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
+                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, 
+                              "pval"=NA_real_, "pval_corr"=NA_real_, 
+                              "rep_p_mean"=NA_real_, "rep_p_stdev"=NA_real_, "rep_p_min"=NA_real_,"rep_p_max"=NA_real_, 
+                              "rep_na"=NA_real_, "rep_dtu_freq"=NA_real_, "rep_conf"=NA,
+                              "boot_p_mean"=NA_real_, "boot_p_stdev"=NA_real_, "boot_p_min"=NA_real_,"boot_p_max"=NA_real_, 
+                              "boot_na"=NA_real_, "boot_dtu_freq"=NA_real_, "boot_conf"=NA)
     ReplicateData <- list()
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
