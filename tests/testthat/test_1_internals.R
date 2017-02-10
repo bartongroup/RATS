@@ -17,33 +17,36 @@ test_that("The reporting structures are created correctly", {
   
   expect_type(full$Parameters, "list")
   expect_true(typeof(full$Parameters) == typeof(short$Parameters))
-  expect_length(full$Parameters, 18)
+  expect_length(full$Parameters, 19)
   expect_length(short$Parameters, 2)
   expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
-                                  "count_thresh", "dprop_thresh", "conf_thresh", "tests", "bootstrap", "bootnum",
-                                  "data_type", "num_genes", "num_transc", "description", 
-                                  "rats_version", "R_version"))
+                                  "count_thresh", "dprop_thresh", "conf_thresh", "tests", 
+                                  "smpl_boots", "quant_boots", "quant_bootnum", "data_type", 
+                                  "num_genes", "num_transc", "description", "rats_version", "R_version"))
   expect_named(short$Parameters, c("num_replic_A", "num_replic_B"))
   
   expect_true(is.data.frame(full$Genes))
   expect_true(is.data.frame(short$Genes))
-  expect_equal(dim(full$Genes)[2], 24)
+  expect_equal(dim(full$Genes)[2], 36)
   expect_equal(dim(short$Genes)[2], 10)
-  expect_named(full$Genes, c("parent_id", "DTU", "transc_DTU", "known_transc", "detect_transc", "elig_transc",  
-                             "elig", "elig_fx", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig", "boot_dtu_freq", 
-                             "conf", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB", "boot_p_stdevBA", "boot_p_minAB", "boot_p_minBA", 
-                             "boot_p_maxAB", "boot_p_maxBA", "boot_na"))
+  expect_named(full$Genes, c("parent_id", "elig", "sig", "elig_fx", "DTU", "conf", "transc_DTU",
+               "known_transc", "detect_transc", "elig_transc", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", 
+               "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", 
+               "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq", "rep_conf", 
+               "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB", "boot_p_stdevBA", 
+               "boot_p_minAB", "boot_p_minBA", "boot_p_maxAB", "boot_p_maxBA", "boot_na_freq", "boot_dtu_freq", "boot_conf"))
   expect_named(short$Genes, c("parent_id", "DTU", "elig_transc", "elig", "elig_fx", "pvalAB", 
                              "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig"))
   
   expect_true(is.data.frame(full$Transcripts))
   expect_true(is.data.frame(short$Transcripts))
-  expect_equal(dim(full$Transcripts)[2], 28)
+  expect_equal(dim(full$Transcripts)[2], 36)
   expect_equal(dim(short$Transcripts)[2], 16)
-  expect_named(full$Transcripts, c("target_id", "parent_id", "DTU", "gene_DTU", "meanA", "meanB", "stdevA", "stdevB",
-                                   "sumA", "sumB", "totalA", "totalB", "elig_xp", "elig", "propA", "propB", "Dprop", 
-                                   "elig_fx", "pval", "pval_corr", "sig", "boot_dtu_freq", "conf", "boot_p_mean", "boot_p_stdev", 
-                                   "boot_p_min", "boot_p_max", "boot_na"))
+  expect_named(full$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "DTU", "conf", "gene_DTU", 
+                                   "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB",
+                                   "propA", "propB", "Dprop", "pval", "pval_corr", 
+                                   "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq", "rep_conf",
+                                   "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na_freq", "boot_dtu_freq", "boot_conf"))
   expect_named(short$Transcripts, c("target_id", "parent_id", "DTU", "sumA", "sumB", "totalA", "totalB", "elig_xp", "elig",
                                    "propA", "propB", "Dprop", "elig_fx", "pval", "pval_corr", "sig"))
 })
@@ -134,7 +137,7 @@ test_that("Filters work correctly", {
   # !!! ensure correct response to specific scenarios.
   
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")
+  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, sboots=FALSE, qboots = FALSE)
   
   expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(1, 1, 0, FALSE, FALSE))
@@ -217,7 +220,7 @@ context("DTU reporting")
 
 test_that("DTU summary and ID extraction", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, boots = "none")
+  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, sboots = FALSE, qboots=FALSE)
   
   ids <- get_dtu_ids(mydtu)
   smry <- dtu_summary(mydtu)

@@ -7,40 +7,40 @@
 parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
   p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode,
   boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A,
-  boot_data_B, conf_thresh, threads)
+  boot_data_B, conf_thresh, threads, sboots)
 }
 \arguments{
-\item{slo}{sleuth object}
+\item{slo}{Sleuth object}
 
-\item{annot}{annotation dataframe}
+\item{annot}{Annotation dataframe.}
 
-\item{name_A}{condition name}
+\item{name_A}{Condition name.}
 
-\item{name_B}{condition name}
+\item{name_B}{Condition name.}
 
-\item{varname}{name of condition variable}
+\item{varname}{Name of condition variable.}
 
-\item{COUNTS_COL}{name of counts column in bootstrap}
+\item{COUNTS_COL}{Name of counts column in bootstrap.}
 
-\item{correction}{p-value correction method}
+\item{correction}{P-value correction method.}
 
-\item{p_thresh}{significance level}
+\item{p_thresh}{Significance level.}
 
-\item{TARGET_COL}{name of transcript id column in annotation}
+\item{TARGET_COL}{Name of transcript id column in annotation.}
 
-\item{PARENT_COL}{name of gene id column in annotation}
+\item{PARENT_COL}{Name of gene id column in annotation.}
 
-\item{BS_TARGET_COL}{name of transcript id column in bootstrap}
+\item{BS_TARGET_COL}{Name of transcript id column in bootstrap.}
 
-\item{count_thresh}{minimum frgments per transcript per sample}
+\item{count_thresh}{Minimum transcript abundance per sample.}
 
-\item{testmode}{which tests to run}
+\item{testmode}{Which test to run.}
 
-\item{boots}{which tests to bootstrap}
+\item{boots}{Whether to bootstrap against quantifications.}
 
-\item{bootnum}{number of bootstrap iterations}
+\item{bootnum}{Number of bootstrap iterations.}
 
-\item{dprop_thresh}{minimum change in proportion}
+\item{dprop_thresh}{Minimum change in proportion.}
 
 \item{count_data_A}{A dataframe of estimated counts.}
 
@@ -53,6 +53,8 @@ parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 \item{conf_thresh}{Confidence threshold.}
 
 \item{threads}{Number of threads.}
+
+\item{sboots}{Whether to bootstrap against samples.}
 }
 \value{
 List: \itemize{
