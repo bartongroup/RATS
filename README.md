@@ -68,6 +68,13 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
+For testing purposes (bug resolutions, new features), you can also install the ongoing developmental version:
+
+`devtools::install_github("bartongroup/rats")`
+
+Developmental versions are works in progress and will not be archived. **For reproducible/critical/publishable analyses, always use a release version, NOT a developmental version.**
+
+
 
 ### Differential Transcript Usage
 

@@ -24,12 +24,13 @@
 #' @param p_thresh The p-value threshold, default 0.05.
 #' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 10)
 #' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
-#' @param conf_thresh Confidence threshold. The fraction of bootstrap iterations agreeing on a result required to have confidence in that result. (Default 0.95) Ignored if no bootstraps.
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
-#' @param sboots Bootstrap the DTU robustness against the samples. Does all 1vs1 combinations. (Default \code{TRUE})
+#' @param rboots Bootstrap the DTU robustness against the replicates. Does ALL 1vs1 combinations. (Default \code{TRUE})
+#' @param rconf_thresh Confidence threshold for replicate bootsrapping. The minimum required fraction of bootstrap iterations agreeing on a result so as to have confidence in that result. (Default 0.85)
 #' @param qboots Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE})
 #' @param qbootnum Number of bootstraps for \code{qboots}. (if 0, a suitable value will be infered from the data if qboots is TRUE) (Default 0)
+#' @param rconf_thresh Confidence threshold for quantification bootsrapping. The minimum required fraction of bootstrap iterations agreeing on a result so as to have confidence in that result. (Default 0.95)
 #' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use (only on POSIX architectures). (Default 1)
@@ -44,8 +45,8 @@
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
-                     p_thresh= 0.05, count_thresh= 10, dprop_thresh= 0.1, conf_thresh= 0.95, correction= "BH", 
-                     testmode= "both", sboots=TRUE, qboots= TRUE, qbootnum= 0L, 
+                     p_thresh= 0.05, count_thresh= 10, dprop_thresh= 0.1, correction= "BH", 
+                     testmode= "both", rboots=TRUE, rconf_thresh= 0.85, qboots= TRUE, qbootnum= 0L, qconf_thresh= 0.95,
                      description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
   #---------- PREP
@@ -58,7 +59,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # Input checks.
   paramcheck <- parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
-                                qboots, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh, threads, sboots)
+                                qboots, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, qconf_thresh, threads, rboots, rconf_thresh)
   if (paramcheck$error) 
     stop(paramcheck$message)
   if (verbose)
@@ -181,11 +182,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters["p_thresh"] <- p_thresh 
   resobj$Parameters["count_thresh"] <- count_thresh
   resobj$Parameters["dprop_thresh"] <- dprop_thresh
-  resobj$Parameters["conf_thresh"] <- conf_thresh
   resobj$Parameters["tests"] <- testmode
-  resobj$Parameters["smpl_boots"] <- sboots
+  resobj$Parameters["rep_boots"] <- rboots
   resobj$Parameters["quant_boots"] <- qboots
-  resobj$Parameters["quant_bootnum"] <- qbootnum
   if (steps==3) { 
     resobj$Parameters["data_type"] <- "sleuth" 
   } else if (steps==2) {
@@ -204,13 +203,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   #---------- INTER-REPLICATE VARIABILITY
   
   
-  if (sboots) {
+  if (rboots) {
     if (verbose)
       message("Bootstrapping samples...")
   
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
-    
+    resobj$Parameters["rep_bootnum"] <- numpairs
+    resobj$Parameters["rep_conf_thresh"] <- rconf_thresh
+      
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
     
@@ -257,8 +258,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Transcripts[(elig), rep_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), rep_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), rep_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / numpairs]
-        Transcripts[(elig & DTU), rep_conf := (rep_dtu_freq >= conf_thresh)]
-        Transcripts[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-conf_thresh)]
+        Transcripts[(elig & DTU), rep_conf := (rep_dtu_freq >= rconf_thresh)]
+        Transcripts[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-rconf_thresh)]
       }
       
       if (test_genes) {
@@ -275,8 +276,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), rep_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), rep_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), rep_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-        Genes[(elig & DTU), rep_conf := (rep_dtu_freq >= conf_thresh)]
-        Genes[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-conf_thresh)]
+        Genes[(elig & DTU), rep_conf := (rep_dtu_freq >= rconf_thresh)]
+        Genes[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-rconf_thresh)]
       }
     })
     
@@ -295,6 +296,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     }
     
+    resobj$Parameters["quant_conf_thresh"] <- qconf_thresh
+    resobj$Parameters["quant_bootnum"] <- qbootnum
+  
     #----- Iterations
     
     bootres <- lapply(1:qbootnum, function(b) {  # Single-threaded. Forking happens within calculate_DTU().
@@ -335,33 +339,33 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       if (test_transc) {
         # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
         pd <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pdtu"]] }, mc.cores= threads)))
-        Transcripts[(elig), boot_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / qbootnum]
+        Transcripts[(elig), quant_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / qbootnum]
         pp <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pp"]] }, mc.cores= threads)))
-        Transcripts[(elig), boot_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), boot_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), boot_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), boot_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), boot_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
-        Transcripts[(elig & DTU), boot_conf := (boot_dtu_freq >= conf_thresh)]
-        Transcripts[(elig & !DTU), boot_conf := (boot_dtu_freq <= 1-conf_thresh)]
+        Transcripts[(elig), quant_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
+        Transcripts[(elig & DTU), quant_conf := (quant_dtu_freq >= qconf_thresh)]
+        Transcripts[(elig & !DTU), quant_conf := (quant_dtu_freq <= 1-qconf_thresh)]
       }
       if (test_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
         gabres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gpab"]] }, mc.cores= threads)))
         gbares <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gpba"]] }, mc.cores= threads)))
         gdres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gdtu"]] }, mc.cores= threads)))
-        Genes[(elig), boot_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / qbootnum]
-        Genes[(elig), boot_p_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_stdevAB := rowSds(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_stdevBA := rowSds(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_minAB := rowMins(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_minBA := rowMins(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), boot_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-        Genes[(elig & DTU), boot_conf := (boot_dtu_freq >= conf_thresh)]
-        Genes[(elig & !DTU), boot_conf := (boot_dtu_freq <= 1-conf_thresh)]
+        Genes[(elig), quant_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / qbootnum]
+        Genes[(elig), quant_p_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_stdevAB := rowSds(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_stdevBA := rowSds(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_minAB := rowMins(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_minBA := rowMins(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+        Genes[(elig & DTU), quant_conf := (quant_dtu_freq >= qconf_thresh)]
+        Genes[(elig & !DTU), quant_conf := (quant_dtu_freq <= 1-qconf_thresh)]
       }
     })
   }
@@ -376,22 +380,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Tidying up...")
   
+  # Reject low-confidence DTU calls.
   with(resobj, {
-    # Aggregate confidences.
-    if (sboots && qboots){
-      Transcripts[(elig), conf := boot_conf & rep_conf]
-      Genes[(elig), conf := boot_conf & rep_conf]
-    } else if (sboots) {
-      Transcripts[(elig), conf := rep_conf]
-      Genes[(elig), conf := rep_conf]
-    } else if (qboots) {
-      Transcripts[(elig), conf := boot_conf]
-      Genes[(elig), conf := boot_conf]
-    }
-  
-    # Reject low-confidence DTU calls.
-    Transcripts[(elig), DTU := (DTU & conf)]
-    Genes[(elig), DTU := (DTU & conf)]
+    Transcripts[(elig), DTU := (DTU & quant_conf)]
+    Genes[(elig), DTU := (DTU & quant_conf)]
   })
   
   # Store the replicate means adter re-adding the IDs.
@@ -416,13 +408,13 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
     # Drop the bootstrap columns, if unused.
     if (!qboots || !test_transc)
-        Transcripts[, c("boot_dtu_freq", "boot_p_mean", "boot_p_stdev", "boot_p_min", "boot_p_max", "boot_na_freq", "boot_conf") := NULL]
+        Transcripts[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_conf") := NULL]
     if(!qboots || !test_genes)
-      Genes[, c("boot_dtu_freq", "boot_p_meanAB", "boot_p_meanBA", "boot_p_stdevAB", "boot_p_stdevBA", "boot_p_minAB",
-              "boot_p_minBA", "boot_p_maxAB", "boot_p_maxBA", "boot_na_freq", "boot_conf") := NULL]
-    if (!sboots || !test_transc)
+      Genes[, c("quant_dtu_freq", "quant_p_meanAB", "quant_p_meanBA", "quant_p_stdevAB", "quant_p_stdevBA", "quant_p_minAB",
+              "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_conf") := NULL]
+    if (!rboots || !test_transc)
       Transcripts[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_conf") := NULL]
-    if(!sboots || !test_genes)
+    if(!rboots || !test_genes)
       Genes[, c("rep_dtu_freq", "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", "rep_p_minAB",
                  "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_conf") := NULL]
   })
