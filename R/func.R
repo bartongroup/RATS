@@ -258,10 +258,10 @@ alloc_out <- function(annot, full){
                        "p_thresh"=NA_real_, "count_thresh"=NA_real_, "dprop_thresh"=NA_real_, "conf_thresh"=NA_real_,
                        "tests"=NA_character_, "smpl_boots"=NA, "quant_boots"=NA, "quant_bootnum"=NA_integer_,
                        "data_type"=NA_character_, "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "description"=NA_character_,
+                       "description"=NA_character_, "time"=date(),
                        "rats_version"=packageVersion("rats"), "R_version"=R.Version()[c("platform", "version.string")])
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
-                        "elig"=NA, "sig"=NA, "elig_fx"=NA, "DTU"=NA, "conf"=NA, "transc_DTU"=NA,
+                        "elig"=NA, "sig"=NA, "elig_fx"=NA, "conf"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, 
                         "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, 
                         "rep_p_meanAB"=NA_real_, "rep_p_meanBA"=NA_real_, "rep_p_stdevAB"=NA_real_, "rep_p_stdevBA"=NA_real_, 
@@ -271,7 +271,7 @@ alloc_out <- function(annot, full){
                         "boot_p_minAB"=NA_real_, "boot_p_minBA"=NA_real_, "boot_p_maxAB"=NA_real_, "boot_p_maxBA"=NA_real_, 
                         "boot_na_freq"=NA_real_, "boot_dtu_freq"=NA_real_, "boot_conf"=NA)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
-                              "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "DTU"=NA, "conf"=NA, "gene_DTU"=NA, 
+                              "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "conf"=NA, "DTU"=NA, "gene_DTU"=NA, 
                               "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_, 
                               "sumA"=NA_real_, "sumB"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, 

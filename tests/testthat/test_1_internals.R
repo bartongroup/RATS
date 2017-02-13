@@ -17,19 +17,19 @@ test_that("The reporting structures are created correctly", {
   
   expect_type(full$Parameters, "list")
   expect_true(typeof(full$Parameters) == typeof(short$Parameters))
-  expect_length(full$Parameters, 19)
+  expect_length(full$Parameters, 20)
   expect_length(short$Parameters, 2)
   expect_named(full$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
                                   "count_thresh", "dprop_thresh", "conf_thresh", "tests", 
                                   "smpl_boots", "quant_boots", "quant_bootnum", "data_type", 
-                                  "num_genes", "num_transc", "description", "rats_version", "R_version"))
+                                  "num_genes", "num_transc", "description", "time", "rats_version", "R_version"))
   expect_named(short$Parameters, c("num_replic_A", "num_replic_B"))
   
   expect_true(is.data.frame(full$Genes))
   expect_true(is.data.frame(short$Genes))
   expect_equal(dim(full$Genes)[2], 36)
   expect_equal(dim(short$Genes)[2], 10)
-  expect_named(full$Genes, c("parent_id", "elig", "sig", "elig_fx", "DTU", "conf", "transc_DTU",
+  expect_named(full$Genes, c("parent_id", "elig", "sig", "elig_fx",  "conf","DTU", "transc_DTU",
                "known_transc", "detect_transc", "elig_transc", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", 
                "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", 
                "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq", "rep_conf", 
@@ -42,7 +42,7 @@ test_that("The reporting structures are created correctly", {
   expect_true(is.data.frame(short$Transcripts))
   expect_equal(dim(full$Transcripts)[2], 36)
   expect_equal(dim(short$Transcripts)[2], 16)
-  expect_named(full$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "DTU", "conf", "gene_DTU", 
+  expect_named(full$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "conf", "DTU", "gene_DTU", 
                                    "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB",
                                    "propA", "propB", "Dprop", "pval", "pval_corr", 
                                    "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq", "rep_conf",

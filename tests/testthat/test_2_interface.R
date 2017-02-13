@@ -162,15 +162,15 @@ test_that("The output structure is correct", {
   expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "ReplicateData"))
   
   expect_type(mydtu$Parameters, "list")
-  expect_length(mydtu$Parameters, 19)
+  expect_length(mydtu$Parameters, 20)
   expect_named(mydtu$Parameters, c("var_name", "cond_A", "cond_B", "num_replic_A", "num_replic_B", "p_thresh", 
                                    "count_thresh", "dprop_thresh", "conf_thresh", "tests", 
                                    "smpl_boots", "quant_boots", "quant_bootnum", "data_type", 
-                                   "num_genes", "num_transc", "description", "rats_version", "R_version"))
+                                   "num_genes", "num_transc", "description", "time", "rats_version", "R_version"))
   
   expect_true(is.data.frame(mydtu$Genes))
   expect_equal(dim(mydtu$Genes)[2], 36)
-  expect_named(mydtu$Genes, c("parent_id", "elig", "sig", "elig_fx", "DTU", "conf", "transc_DTU",
+  expect_named(mydtu$Genes, c("parent_id", "elig", "sig", "elig_fx","conf", "DTU", "transc_DTU",
                               "known_transc", "detect_transc", "elig_transc", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", 
                               "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", 
                               "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq", "rep_conf", 
@@ -213,7 +213,7 @@ test_that("The output structure is correct", {
   
   expect_true(is.data.frame(mydtu$Transcripts))
   expect_equal(dim(mydtu$Transcripts)[2], 36)
-  expect_named(mydtu$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "DTU", "conf", "gene_DTU", 
+  expect_named(mydtu$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "conf", "DTU", "gene_DTU", 
                                     "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB",
                                     "propA", "propB", "Dprop", "pval", "pval_corr", 
                                     "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq", "rep_conf",
@@ -285,9 +285,9 @@ test_that("The output content is complete", {
   counts_A <- data_A[[1]]
   counts_B <- data_B[[2]]
   
-  mydtu <- list(call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", sboots=TRUE, qboots=TRUE, qbootnum=2, verbose = FALSE),
-                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, sboots=TRUE, qboots=TRUE, qbootnum=2, verbose = FALSE),
-                call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, sboots=FALSE, qboots=FALSE, verbose = FALSE))
+  mydtu <- list(call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", sboots=TRUE, qboots=TRUE, qbootnum=2, verbose = FALSE, description="test"),
+                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, sboots=TRUE, qboots=TRUE, qbootnum=2, verbose = FALSE, description="test"),
+                call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, sboots=FALSE, qboots=FALSE, verbose = FALSE, description="test"))
   
   for (x in length(mydtu)) {
     # Parameters.
@@ -309,6 +309,8 @@ test_that("The output content is complete", {
     expect_false(is.na(mydtu[[x]]$Parameters$"num_transc"))
     expect_false(is.na(mydtu[[x]]$Parameters$"rats_version"))
     expect_false(any(is.na(mydtu[[x]]$Parameters$"R_version")))
+    expect_false(is.na(mydtu[[x]]$Parameters$"description"))
+    expect_false(is.na(mydtu[[x]]$Parameters$"time"))
     # Genes.
     expect_false(all(is.na(mydtu[[x]]$Genes[["parent_id"]])))
     expect_false(all(is.na(mydtu[[x]]$Genes[["known_transc"]])))

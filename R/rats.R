@@ -259,7 +259,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Transcripts[(elig), rep_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / numpairs]
         Transcripts[(elig & DTU), rep_conf := (rep_dtu_freq >= conf_thresh)]
         Transcripts[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-conf_thresh)]
-        Transcripts[(elig), conf := rep_conf]
       }
       
       if (test_genes) {
@@ -278,7 +277,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), rep_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
         Genes[(elig & DTU), rep_conf := (rep_dtu_freq >= conf_thresh)]
         Genes[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-conf_thresh)]
-        Genes[(elig), conf := rep_conf]
       }
     })
     
@@ -346,8 +344,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Transcripts[(elig), boot_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
         Transcripts[(elig & DTU), boot_conf := (boot_dtu_freq >= conf_thresh)]
         Transcripts[(elig & !DTU), boot_conf := (boot_dtu_freq <= 1-conf_thresh)]
-        Transcripts[(elig), conf := boot_conf & rep_conf]
-        
       }
       if (test_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
@@ -366,7 +362,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), boot_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
         Genes[(elig & DTU), boot_conf := (boot_dtu_freq >= conf_thresh)]
         Genes[(elig & !DTU), boot_conf := (boot_dtu_freq <= 1-conf_thresh)]
-        Genes[(elig), conf := boot_conf & rep_conf]
       }
     })
   }
@@ -381,11 +376,23 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Tidying up...")
   
-  # Reject low-confidence DTU calls.
-  # with(resobj, {
-  #   Transcripts[(elig), DTU := (DTU & conf)]
-  #   Genes[(elig), DTU := (DTU & conf)]
-  # })
+  with(resobj, {
+    # Aggregate confidences.
+    if (sboots && qboots){
+      Transcripts[(elig), conf := boot_conf & rep_conf]
+      Genes[(elig), conf := boot_conf & rep_conf]
+    } else if (sboots) {
+      Transcripts[(elig), conf := rep_conf]
+      Genes[(elig), conf := rep_conf]
+    } else if (qboots) {
+      Transcripts[(elig), conf := boot_conf]
+      Genes[(elig), conf := boot_conf]
+    }
+  
+    # Reject low-confidence DTU calls.
+    Transcripts[(elig), DTU := (DTU & conf)]
+    Genes[(elig), DTU := (DTU & conf)]
+  })
   
   # Store the replicate means adter re-adding the IDs.
   with(count_data_A, {
