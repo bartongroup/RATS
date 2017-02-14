@@ -8,33 +8,34 @@
 #'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
 #' }
 #' 
-#' @param annot A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.
-#' @param TARGET_COL The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})
-#' @param PARENT_COL The name of the parent identifier column in the \code{annot} object. (Default \code{"parent_id"})
+#' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
+#' @param TARGET_COL The name of the column for the transcript identifiersthe \code{annot} object. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in the \code{annot} object. (Default \code{"parent_id"})
 #' @param slo A Sleuth object.
 #' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
-#' @param COUNTS_COL The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
-#' @param BS_TARGET_COL The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})
+#' @param COUNTS_COL For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
+#' @param BS_TARGET_COL For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})
 #' @param count_data_A A data.table of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
 #' @param count_data_B A data.table of estimated counts for condition B. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
 #' @param boot_data_A A list of data.tables, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param boot_data_B A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
-#' @param p_thresh The p-value threshold, default 0.05.
-#' @param count_thresh Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 10)
-#' @param dprop_thresh Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)
+#' @param p_thresh The p-value threshold. (Default 0.05)
+#' @param abund_thresh Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 10)
+#' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.10)
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
-#' @param rboots Bootstrap the DTU robustness against the replicates. Does ALL 1vs1 combinations. (Default \code{TRUE})
-#' @param rconf_thresh Confidence threshold for replicate bootsrapping. The minimum required fraction of bootstrap iterations agreeing on a result so as to have confidence in that result. (Default 0.85)
-#' @param qboots Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE})
-#' @param qbootnum Number of bootstraps for \code{qboots}. (if 0, a suitable value will be infered from the data if qboots is TRUE) (Default 0)
-#' @param rconf_thresh Confidence threshold for quantification bootsrapping. The minimum required fraction of bootstrap iterations agreeing on a result so as to have confidence in that result. (Default 0.95)
-#' @param description Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.
+#' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code(count_data).
+#' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
+#' @param qrep_thresh Reproducibility threshold for quantification bootsrapping. (Default 0.95)
+#' @param rboot Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})
+#' @param rrep_thresh Reproducibility threshold for replicate bootsrapping. (Default 0.85)
+#' @param conservative Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)
+#' @param description Free-text description of the run. You can use this to add metadata to the results object.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
-#' @param threads Number of threads to use (only on POSIX architectures). (Default 1)
-#' @param dbg Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
+#' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
+#' @param dbg Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
 #' @return List of data tables, with gene-level and transcript-level information.
 #'
 #' @import utils
@@ -45,8 +46,8 @@
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
-                     p_thresh= 0.05, count_thresh= 10, dprop_thresh= 0.1, correction= "BH", 
-                     testmode= "both", rboots=TRUE, rconf_thresh= 0.85, qboots= TRUE, qbootnum= 0L, qconf_thresh= 0.95,
+                     p_thresh= 0.05, abund_thresh= 10, dprop_thresh= 0.1, correction= "BH", 
+                     testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85, conservative= FALSE,
                      description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
   #---------- PREP
@@ -58,8 +59,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   }
   # Input checks.
   paramcheck <- parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
-                                correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode, 
-                                qboots, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, qconf_thresh, threads, rboots, rconf_thresh)
+                                correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, abund_thresh, testmode, 
+                                qboot, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, 
+                                qrep_thresh, threads, rboot, rrep_thresh, conservative)
   if (paramcheck$error) 
     stop(paramcheck$message)
   if (verbose)
@@ -71,7 +73,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   
   threads <- as.integer(threads)  # Can't be decimal.
   
-  if (qbootnum == 0 && qboots)   # Use smart default.
+  if (qbootnum == 0 && qboot)   # Use smart default.
     qbootnum = paramcheck$maxboots
   qbootnum <- as.integer(qbootnum)  # Can't be decimal.
   test_transc <- any(testmode == c("transc", "both"))
@@ -85,7 +87,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     steps <- 3  # Sleuth object. Most steps. Requires both extraction and averaging.
   }
   if (steps == 1)
-    qboots <- FALSE  # No quantification bootstraps data.
+    qboot <- FALSE  # No quantification bootstraps data.
     
   if (dbg == 1)
     return(steps)
@@ -154,7 +156,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Calculating significances...")
   suppressWarnings(
-    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", count_thresh, p_thresh, dprop_thresh, correction, threads) )
+    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", abund_thresh, p_thresh, dprop_thresh, correction, threads) )
   
   if (dbg == 5)
     return(resobj)
@@ -180,11 +182,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters["cond_A"] <- name_A
   resobj$Parameters["cond_B"] <- name_B
   resobj$Parameters["p_thresh"] <- p_thresh 
-  resobj$Parameters["count_thresh"] <- count_thresh
+  resobj$Parameters["abund_thresh"] <- abund_thresh
   resobj$Parameters["dprop_thresh"] <- dprop_thresh
   resobj$Parameters["tests"] <- testmode
-  resobj$Parameters["rep_boots"] <- rboots
-  resobj$Parameters["quant_boots"] <- qboots
+  resobj$Parameters["rep_boot"] <- rboot
+  resobj$Parameters["quant_boot"] <- qboot
   if (steps==3) { 
     resobj$Parameters["data_type"] <- "sleuth" 
   } else if (steps==2) {
@@ -203,14 +205,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   #---------- INTER-REPLICATE VARIABILITY
   
   
-  if (rboots) {
+  if (rboot) {
     if (verbose)
-      message("Bootstrapping samples...")
+      message("Bootstrapping replicates...")
   
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
     resobj$Parameters["rep_bootnum"] <- numpairs
-    resobj$Parameters["rep_conf_thresh"] <- rconf_thresh
+    resobj$Parameters["rep_reprod_thresh"] <- rrep_thresh
+    resobj$Parameters["conservative"] <- conservative
       
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
@@ -227,7 +230,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
-                    pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads) )
+                    pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads) )
                   
                   with(pout, {
                     return(list("pp" = Transcripts[, pval_corr],
@@ -258,8 +261,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Transcripts[(elig), rep_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), rep_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), rep_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / numpairs]
-        Transcripts[(elig & DTU), rep_conf := (rep_dtu_freq >= rconf_thresh)]
-        Transcripts[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-rconf_thresh)]
+        Transcripts[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
+        Transcripts[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
       
       if (test_genes) {
@@ -276,8 +279,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), rep_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), rep_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), rep_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-        Genes[(elig & DTU), rep_conf := (rep_dtu_freq >= rconf_thresh)]
-        Genes[(elig & !DTU), rep_conf := (rep_dtu_freq <= 1-rconf_thresh)]
+        Genes[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
+        Genes[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
     })
     
@@ -289,14 +292,14 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   #---------- BOOTSTRAP
   
   
-  if (qboots) {
+  if (qboot) {
     if (verbose) {
       message("Bootstrapping quantifications...")
       # Bootstrapping can take long, so showing progress is nice.
       myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     }
     
-    resobj$Parameters["quant_conf_thresh"] <- qconf_thresh
+    resobj$Parameters["quant_reprod_thresh"] <- qrep_thresh
     resobj$Parameters["quant_bootnum"] <- qbootnum
   
     #----- Iterations
@@ -315,7 +318,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
                   suppressWarnings(
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", count_thresh, p_thresh, dprop_thresh, correction, threads) )
+                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads) )
                   
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],
@@ -346,8 +349,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Transcripts[(elig), quant_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), quant_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), quant_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
-        Transcripts[(elig & DTU), quant_conf := (quant_dtu_freq >= qconf_thresh)]
-        Transcripts[(elig & !DTU), quant_conf := (quant_dtu_freq <= 1-qconf_thresh)]
+        Transcripts[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
+        Transcripts[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
       if (test_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
@@ -364,8 +367,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), quant_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), quant_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), quant_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
-        Genes[(elig & DTU), quant_conf := (quant_dtu_freq >= qconf_thresh)]
-        Genes[(elig & !DTU), quant_conf := (quant_dtu_freq <= 1-qconf_thresh)]
+        Genes[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
+        Genes[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
     })
   }
@@ -380,12 +383,18 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (verbose)
     message("Tidying up...")
   
-  # Reject low-confidence DTU calls.
+  # Reject low-reproducibility DTU calls.
   with(resobj, {
-    Transcripts[(elig), DTU := (DTU & quant_conf)]
-    Genes[(elig), DTU := (DTU & quant_conf)]
+    if (qboot) {
+      Transcripts[(elig), DTU := (DTU & quant_reprod)]
+      Genes[(elig), DTU := (DTU & quant_reprod)]
+    }
+    if (conservative & rboot) {
+      Transcripts[(elig), DTU := (DTU & rep_reprod)]
+      Genes[(elig), DTU := (DTU & rep_reprod)]
+    }
   })
-  
+    
   # Store the replicate means adter re-adding the IDs.
   with(count_data_A, {
     count_data_A[,  target_id := tx_filter$target_id]
@@ -397,7 +406,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_B[,  parent_id := tx_filter$parent_id]
     setkey(count_data_B, parent_id)
   })
-  resobj$ReplicateData <- list("condA"= count_data_A, "condB"= count_data_B)
+  resobj$CountData <- list("condA"= count_data_A, "condB"= count_data_B)
   
   with(resobj, {
     # Cross-display the DTU calls.
@@ -407,16 +416,16 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
     
     # Drop the bootstrap columns, if unused.
-    if (!qboots || !test_transc)
-        Transcripts[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_conf") := NULL]
-    if(!qboots || !test_genes)
+    if (!qboot || !test_transc)
+        Transcripts[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
+    if(!qboot || !test_genes)
       Genes[, c("quant_dtu_freq", "quant_p_meanAB", "quant_p_meanBA", "quant_p_stdevAB", "quant_p_stdevBA", "quant_p_minAB",
-              "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_conf") := NULL]
-    if (!rboots || !test_transc)
-      Transcripts[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_conf") := NULL]
-    if(!rboots || !test_genes)
+              "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_reprod") := NULL]
+    if (!rboot || !test_transc)
+      Transcripts[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
+    if(!rboot || !test_genes)
       Genes[, c("rep_dtu_freq", "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", "rep_p_minAB",
-                 "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_conf") := NULL]
+                 "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_reprod") := NULL]
   })
   
   if(verbose) {
