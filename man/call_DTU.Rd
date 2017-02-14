@@ -9,17 +9,17 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   varname = "condition", COUNTS_COL = "est_counts",
   BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
-  count_thresh = 10, dprop_thresh = 0.1, conf_thresh = 0.95,
-  correction = "BH", testmode = "both", sboots = TRUE, qboots = TRUE,
-  qbootnum = 0L, description = NA_character_, verbose = TRUE,
-  threads = 1L, dbg = 0)
+  abund_thresh = 10, dprop_thresh = 0.1, correction = "BH",
+  testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
+  rboot = TRUE, rrep_thresh = 0.85, conservative = FALSE,
+  description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
-\item{annot}{A data.frame matching the transcript identifiers to their corresponding gene identifiers. Any additional columns are allowed but ignored.}
+\item{annot}{A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
 
-\item{TARGET_COL}{The name of the transcript identifier column in the \code{annot} object. (Default \code{"target_id"})}
+\item{TARGET_COL}{The name of the column for the transcript identifiersthe \code{annot} object. (Default \code{"target_id"})}
 
-\item{PARENT_COL}{The name of the parent identifier column in the \code{annot} object. (Default \code{"parent_id"})}
+\item{PARENT_COL}{The name of the column for the gene identifiers in the \code{annot} object. (Default \code{"parent_id"})}
 
 \item{slo}{A Sleuth object.}
 
@@ -29,9 +29,9 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).}
 
-\item{COUNTS_COL}{The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})}
+\item{COUNTS_COL}{For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})}
 
-\item{BS_TARGET_COL}{The name of the transcript identifier column in the sleuth bootstrap tables. (Default \code{"target_id"})}
+\item{BS_TARGET_COL}{For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})}
 
 \item{count_data_A}{A data.table of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.}
 
@@ -41,31 +41,35 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{boot_data_B}{A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.}
 
-\item{p_thresh}{The p-value threshold, default 0.05.}
+\item{p_thresh}{The p-value threshold. (Default 0.05)}
 
-\item{count_thresh}{Minimum count of fragments per sample, in at least one of the conditions, for transcripts to be eligible for testing. (Default 10)}
+\item{abund_thresh}{Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 10)}
 
-\item{dprop_thresh}{Minimum change in proportion (effect size) of a transcript for it to be eligible to be significant. (Default 0.1)}
-
-\item{conf_thresh}{Confidence threshold. The fraction of bootstrap iterations agreeing on a result required to have confidence in that result. (Default 0.95) Ignored if no bootstraps.}
+\item{dprop_thresh}{Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.10)}
 
 \item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})}
 
 \item{testmode}{One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.}
 
-\item{sboots}{Bootstrap the DTU robustness against the samples. Does all 1vs1 combinations. (Default \code{TRUE})}
+\item{qboot}{Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code(count_data).}
 
-\item{qboots}{Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE})}
+\item{qbootnum}{Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.}
 
-\item{qbootnum}{Number of bootstraps for \code{qboots}. (if 0, a suitable value will be infered from the data if qboots is TRUE) (Default 0)}
+\item{qrep_thresh}{Reproducibility threshold for quantification bootsrapping. (Default 0.95)}
 
-\item{description}{Free-text description of the run. You can use this to add metadata to the results object. The results' description field can also be filled in after the run.}
+\item{rboot}{Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})}
+
+\item{rrep_thresh}{Reproducibility threshold for replicate bootsrapping. (Default 0.85)}
+
+\item{conservative}{Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)}
+
+\item{description}{Free-text description of the run. You can use this to add metadata to the results object.}
 
 \item{verbose}{Display progress updates and warnings. (Default \code{TRUE})}
 
-\item{threads}{Number of threads to use (only on POSIX architectures). (Default 1)}
+\item{threads}{Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.}
 
-\item{dbg}{Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
+\item{dbg}{Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
 }
 \value{
 List of data tables, with gene-level and transcript-level information.
