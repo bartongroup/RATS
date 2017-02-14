@@ -1,24 +1,25 @@
 ---
-title: "RATs Quick Start guide"
+title: "RATs: Quick Start"
 author: "Kimon Froussios"
-date: "23 JAN 2017"
+date: "14 FEB 2017"
 output: 
   html_document: 
     fig_caption: no
     keep_md: yes
     theme: readable
     toc: yes
-abstract: >
-  The [rats](http://github.com/bartongroup/Rats) package is aimed at people analysing **gene expression** and **transcript abundance**, 
-  particularly with **RNA-Seq** type of data in mind. This vignette gives installation instructions and a very brief overview of usage.
 vignette: >
-  %\VignetteIndexEntry{RATs Quick Start}
+  %\VignetteIndexEntry{RATs Quick start}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 
+***
 
 # Introduction
 
@@ -32,14 +33,9 @@ subset of those that show DTE. The figure below shows the relationship between D
 ![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.png)
 
 
-RATs differs from the other tools that call DTU, because it is tailored to alignment-free quantifications. It operates solely on
-numerical abundances, leaving the details of quantification accuracy to the quantification tool. This makes it independent of the 
-quantification method, although it was originally meant to be used in workflows that use [Kallisto](http://pachterlab.github.io/kallisto/), 
-[Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) as isoform quantification tools, 
-followed by DTE by [Sleuth](http://pachterlab.github.io/sleuth).
-
-![Workflows](./fig/RATs_place.png)
-
+**RATs is workflow-agnostic**. The concern over quantification accuracy is left to the quantification tool and RATs uses only the
+transcript abundances. This makes it *suitable for use with alignment-free quantification tools* like [Kallisto](http://pachterlab.github.io/kallisto/)
+or [Salmon](https://github.com/COMBINE-lab/salmon). It is also compatible with DTE output from [Sleuth](http://pachterlab.github.io/sleuth).
 
 Additionally, RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. This bootstrapped
 data is used by `RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
@@ -51,7 +47,7 @@ and thus provide a measure of confidence in the DTU calls.
 
 # Installation and loading
 
-### Install dependencies first
+## Install dependencies first
 
 `install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
 
@@ -59,11 +55,11 @@ If you have trouble installing these dependencies, your system could be missing 
 which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
 
 
-### Install Rats
+## Install Rats
 
 #### from Github
 
-Available as R source package form from the project's [releases section](https://github.com/bartongroup/Rats/releases) on Github.
+RATs is available as R source package from the project's [releases section](https://github.com/bartongroup/Rats/releases) on Github.
 Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
@@ -74,8 +70,7 @@ Release snapshots are labelled with even-ending versions numbers (x.x.0/2/4/6/8)
 
 Not available yet.
 
-
-### Install current developmental version of Rats
+#### developmental version
 
 The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
@@ -117,8 +112,8 @@ plot_overview(mydtu)
 # no DTU, Not Applicable):
 myids <- get_dtu_ids(mydtu)
 
-# 6. Plot isoform changes for the top DTU gene returned by the previous step.
-plot_gene(mydtu, myids[["dtu-genes"]][1])
+# 6. Plot isoform changes for a given gene.
+plot_gene(mydtu, "my_awesome_gene_ID")
 ```
 
 The input and output structures and the command options are discussed in more detail in the tutorial vignette.
@@ -128,9 +123,9 @@ The input and output structures and the command options are discussed in more de
 
 Optimal threshold values will depend on the quantity, quality and biology of your data, so some trial and error 
 may be required on your part. The current default values for the various threshold parameters 
-are quite permissive. This means you are likely to get an inflated number of positive calls.
+are rather arbitrary and probably quite permissive. This means you are likely to get an inflated number of positive calls.
 
-For explanations of the available thresholds, refer to the tutorial vignette.
+For explanations of the available thresholds and other settings, refer to the Input & Parameters vignette.
 
 
 ***
