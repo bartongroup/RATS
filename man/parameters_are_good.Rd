@@ -6,8 +6,8 @@
 \usage{
 parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
   p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode,
-  boots, bootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A,
-  boot_data_B, conf_thresh, threads, sboots)
+  qboot, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A,
+  boot_data_B, qrep_thresh, threads, rboot, rrep_thresh, conservative)
 }
 \arguments{
 \item{slo}{Sleuth object}
@@ -36,9 +36,9 @@ parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 
 \item{testmode}{Which test to run.}
 
-\item{boots}{Whether to bootstrap against quantifications.}
+\item{qboot}{Whether to bootstrap against quantifications.}
 
-\item{bootnum}{Number of bootstrap iterations.}
+\item{qbootnum}{Number of bootstrap iterations.}
 
 \item{dprop_thresh}{Minimum change in proportion.}
 
@@ -50,11 +50,15 @@ parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 
 \item{boot_data_B}{A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.}
 
-\item{conf_thresh}{Confidence threshold.}
+\item{qrep_thresh}{Confidence threshold.}
 
 \item{threads}{Number of threads.}
 
-\item{sboots}{Whether to bootstrap against samples.}
+\item{rboot}{Whether to bootstrap against samples.}
+
+\item{rrep_thresh}{Confidence threshold.}
+
+\item{conservative}{Whether to use rrep as a DTU criterion.}
 }
 \value{
 List: \itemize{
