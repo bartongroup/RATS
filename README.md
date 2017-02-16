@@ -11,27 +11,23 @@ Anyone working in transcriptomics, analysing gene expression and transcript abun
 
 #### What it does
 
-It provides a method to detect changes in the relative abundance of the alternative transcripts (isoforms) of genes. 
-This is called **Differential Transcript Usage (DTU)**.  
+It provides a method to detect changes in the abundance ratios of transcript isoforms of a gene.
+This is called **Differential Transcript Usage (DTU)**.
 
-`Rats` differs from the other tools that call DTU, because it is tailored to alignment-free quantifications. It operates solely on
-numerical abundances. This makes it independent of the quantification method, although it is originally meant to be used in workflows that use [Kallisto](http://pachterlab.github.io/kallisto/), [Sailfish](http://github.com/kingsfordgroup/sailfish) or [Salmon](https://github.com/COMBINE-lab/salmon) 
-as isoform quantification tools, as output from these quantifiers is not compatible with the existing alignment-based DTU callers.
+**RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
+transcript abundances. This makes it *suitable for use with alignment-free quantification tools* like [Kallisto](http://pachterlab.github.io/kallisto/)
+or [Salmon](https://github.com/COMBINE-lab/salmon). It is also compatible with DTE output from [Sleuth](http://pachterlab.github.io/sleuth).
 
-Detecting DTU is supplementary to the quantification of transcripts by tools like [Salmon](http://combine-lab.github.io/salmon/), 
-[Sailfish](http://www.cs.cmu.edu/~ckingsf/software/sailfish/) and [Kallisto](http://pachterlab.github.io/kallisto/) and the detection 
-of Differential Transcript Expression (DTE) by tools such as [Sleuth](http://pachterlab.github.io/sleuth/).
-
-![](./vignettes/fig/dge-dte-dtu.png)
-
-![](./vignettes/fig/RATs_place.png)
+Additionally, RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. These bootstrapped
+data are used by `RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
+and thus provide a measure of confidence in the DTU calls. 
 
 
 #### What it needs
 
-This is an R source package, and will run on any platform with an R engine.
+This is an R source package, and will run on any platform with a reasonably up-to-date R environment.
 
-As input, `rats` requires transcript abundance estimates with or without bootstrapping. For convenience, these can also be extracted directly
+As input, RATs requires transcript abundance estimates with or without bootstrapping. For convenience, these can also be extracted directly
 from the output of [Sleuth](http://pachterlab.github.io/sleuth/). 
 
 It also requires a look-up table matching transcript identifiers to respective gene identifiers. This can be obtained through various means,
@@ -48,7 +44,7 @@ available from CRAN.
 
 The package comes with full documentation. The vignettes are available locally by calling `browseVignettes("rats")` after the package is installed.
 
-We recommend studying the vignettes before using `rats`.
+We recommend studying the vignettes before using RATs.
 
 
 ### Dependencies
@@ -68,7 +64,7 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
-For testing purposes (bug resolutions, new features), you can also install the ongoing developmental version:
+For testing purposes (bug resolutions, new features), you can also install the ongoing developmental version (you will also neeed the `devtools` package):
 
 `devtools::install_github("bartongroup/rats")`
 
@@ -82,16 +78,10 @@ A typical command to call DTU given a Sleuth object looks like this:
 
 `results <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object,  name_A = "Condition-1", name_B = "Condition-2")`
 
-Mandatory parameters:
-
-* a dataframe matching unique transcript identifiers to gene identifiers
-* a sleuth object
-* the names of two conditions recorded in the sleuth object
-
-`rats` also accepts data input in **generic formats** independ of Sleuth. Please consult the tutorial vignette for syntax and formats specifications.
+RATs also accepts data input in **generic formats** independ of Sleuth. Please consult the vignettes for syntax details and format specifications.
 
 The output is a list containing (among other items) two tables that list the final results as well as the intermediate calculations and decisions.
-For details on the parameters, input and output, please refer to the tutorial vignette.
+Details on the output structure and visualisation options are provided in the vignettes.
 
 ***
 
@@ -100,7 +90,7 @@ For details on the parameters, input and output, please refer to the tutorial vi
 The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
-To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
+To **report problems** or ask for **assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
 the support forum before posting a new issue, in case your question is already answered there.
 
