@@ -54,6 +54,9 @@ and thus provide a measure of confidence in the DTU calls.
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
 which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
 
+Strictly speaking, only `data.table` and `matrixStats` are needed for DTU calculations. `ggplot2` is needed only for plotting. We think plotting is very useful,
+so we recommend installing it. `shiny` is needed only for a particular visualisation feature. Unless you plan to use that feature, `shiny` is not a required package. 
+
 
 ## Install the rats package
 

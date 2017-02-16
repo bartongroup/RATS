@@ -272,8 +272,8 @@ plot_gene(mydtu, "MIX6", style="dashed")
 
 ## Plots of overall run
 
-Our simulated dataset is too small to properly demonstrate what these plots typically would look like.
-So each one is accompanied by an image of the same plot created with a real and much larger dataset.
+Our simulated dataset is too small to properly demonstrate what these plots typically look like.
+So each one is accompanied by a static image of the same plot created with a real and much larger dataset.
 
 Several of these plots are **likely to display warnings** about missing or non-finite values. These are due to the 
 presence of `NA` in the tables, where entries did not pass the thresholds, and can be ignored.
@@ -282,7 +282,7 @@ Possibly the most common plot in differential expression is the volcano plot, wh
 the statistical significance. As it is difficult to define a single p-value and a single effect size at the gene level,
 the volcano can only be plotted at the transcript level.
 
-```{r eval=FALSE}
+```{r}
 # Proportion change VS significance.
 plot_overview(mydtu, type="volcano")
 ```
@@ -294,7 +294,7 @@ The next command plots the largest change in proportion seen within each gene, a
 such change. This is a way to inspect what effect sizes are present in the data. As an additional layer of information,
 they are colour-coded by their DTU call.
 
-```{r eval=FALSE}
+```{r}
 # Distribution of maximum proportion change.
 plot_overview(mydtu, type="maxdprop")
 ```
@@ -312,7 +312,7 @@ a `shiny` app, that brings up the relevant abundance changes plot for any point 
 2. Clicking will pull up information on the effect size, significance and confidence of the point(s), as well as 
 the respective isoform abundance changes plot for the point nearest to the click.
 
-```{r eval=FALSE}
+```{r, eval=FALSE}
 # Start the interactive volcano plot.
 plot_shiny_volcano(mydtu)
 ```
@@ -337,7 +337,7 @@ myplot <- plot_overview(mydtu, "volcano")
 myplot  # display
 
 # Change title. 
-myplot2 <- myplot + ggtitle("My epic title")
+myplot2 <- myplot + ggtitle("MY EPIC TITLE")
 myplot2
 ```
 

@@ -60,15 +60,15 @@ plot_gene(mydtu, "MIX6", style="lines")  # default
 #  plot_gene(mydtu, "MIX6", style="merged")
 #  plot_gene(mydtu, "MIX6", style="dashed")
 
-## ----eval=FALSE----------------------------------------------------------
-#  # Proportion change VS significance.
-#  plot_overview(mydtu, type="volcano")
+## ------------------------------------------------------------------------
+# Proportion change VS significance.
+plot_overview(mydtu, type="volcano")
 
-## ----eval=FALSE----------------------------------------------------------
-#  # Distribution of maximum proportion change.
-#  plot_overview(mydtu, type="maxdprop")
+## ------------------------------------------------------------------------
+# Distribution of maximum proportion change.
+plot_overview(mydtu, type="maxdprop")
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  # Start the interactive volcano plot.
 #  plot_shiny_volcano(mydtu)
 
@@ -79,6 +79,6 @@ myplot <- plot_overview(mydtu, "volcano")
 myplot  # display
 
 # Change title. 
-myplot2 <- myplot + ggtitle("My epic title")
+myplot2 <- myplot + ggtitle("MY EPIC TITLE")
 myplot2
 
