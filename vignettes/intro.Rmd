@@ -1,7 +1,7 @@
 ---
 title: "RATs: Quick Start"
 author: "Kimon Froussios"
-date: "14 FEB 2017"
+date: "15 FEB 2017"
 output: 
   html_document: 
     fig_caption: no
@@ -33,19 +33,19 @@ subset of those that show DTE. The figure below shows the relationship between D
 ![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.png)
 
 
-**RATs is workflow-agnostic**. The concern over quantification accuracy is left to the quantification tool and RATs uses only the
+**RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
 transcript abundances. This makes it *suitable for use with alignment-free quantification tools* like [Kallisto](http://pachterlab.github.io/kallisto/)
 or [Salmon](https://github.com/COMBINE-lab/salmon). It is also compatible with DTE output from [Sleuth](http://pachterlab.github.io/sleuth).
 
-Additionally, RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. This bootstrapped
-data is used by `RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
+Additionally, RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. These bootstrapped
+data are used by `RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
 and thus provide a measure of confidence in the DTU calls. 
 
 
 ***
 
 
-# Installation and loading
+# Install RATs
 
 ## Install dependencies first
 
@@ -55,7 +55,7 @@ If you have trouble installing these dependencies, your system could be missing 
 which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
 
 
-## Install Rats
+## Install the rats package
 
 #### from Github
 
@@ -64,7 +64,7 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
 
-Release snapshots are labelled with even-ending versions numbers (x.x.0/2/4/6/8).
+Release snapshots are labelled with even-ending version numbers (x.x.0/2/4/6/8).
 
 #### through Bioconductor
 
@@ -72,7 +72,8 @@ Not available yet.
 
 #### developmental version
 
-The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
+The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package 
+(which you will need to install first):
 
 `devtools::install_github("bartongroup/rats")`
 
@@ -85,8 +86,11 @@ Developmental versions are labelled with odd-ending version numbers (x.x.1/3/5/7
 ***
 
 
-# Use RATs.
+# Use RATs
 
+RATs uses as input tables of transcript abundances with or without quantification bootstraps. For convenience, RATs can also
+extract the transcript abundances from a Sleuth object. The latter option is shown below. For more details and settings, consult
+the *Input & Parameters* vignette.
 
 ```{r eval=FALSE}
 # 1. Load into R session.
@@ -116,16 +120,14 @@ myids <- get_dtu_ids(mydtu)
 plot_gene(mydtu, "my_awesome_gene_ID")
 ```
 
-The input and output structures and the command options are discussed in more detail in the tutorial vignette.
 
 
 ### Defaults
 
-Optimal threshold values will depend on the quantity, quality and biology of your data, so some trial and error 
-may be required on your part. The current default values for the various threshold parameters 
-are rather arbitrary and probably quite permissive. This means you are likely to get an inflated number of positive calls.
-
-For explanations of the available thresholds and other settings, refer to the Input & Parameters vignette.
+RATs provides default values for all its settings, however optimal threshold values will depend on the quantity, 
+quality and biology of your data, so some trial and error may be required on your part. The current default values 
+for the various threshold parameters are rather arbitrary and probably quite permissive. This means you are likely 
+to get an inflated number of positive calls. The available thresholds and settings are discussed in the *Input & Parameters* vignette.
 
 
 ***
@@ -133,7 +135,7 @@ For explanations of the available thresholds and other settings, refer to the In
 
 # Contact information
 
-The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
+The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).

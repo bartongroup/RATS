@@ -1,7 +1,7 @@
 ---
 title: "RATs: Input and Parameters"
 author: "Kimon Froussios"
-date: "14 FEB 2017"
+date: "15 FEB 2017"
 output: 
   html_document: 
     fig_caption: no
@@ -19,6 +19,8 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+***
+
 ```{r}
 library(rats)
 ```
@@ -35,7 +37,8 @@ RATs can work with any of three input types:
 2. Bootstrapped abundance estimates.
 3. Abundance estimates.
 
--> [Sleuth](http://pachterlab.github.io/sleuth/) objects contain their input data, so RATs can extract the bootstrapped abundance estimates directly from there, for simplicity.
+-> [Sleuth](http://pachterlab.github.io/sleuth/) objects contain their input data, so RATs can extract the bootstrapped abundance estimates directly from there, 
+for your convenience if Sleuth is in your workflow already.
 
 -> Bootstrapped abundance estimates can be input directly as `list`s of `data.table`s. Two lists are needed, one per condition.
 Each datatable should contain the transcript identifiers in the first column, followed by columns containing the estimates from the bootstrap iterations:
@@ -59,7 +62,7 @@ head(sim_count_data()[[1]])
 ```
 
 A function is provided to create this table, given a GTF file.
-**Note:** GFF3 is **not** supported, as the specification is too relaxed.
+(**Note:** GFF3 is **not** supported, as the specification is too relaxed.)
 
 ```{r eval=FALSE}
 # Extract transcript ID to gene ID index from a GTF annotation.
@@ -74,7 +77,7 @@ myannot <- annot2ids("my_annotation_file.gtf")
 
 To bypass the complexity of running third-party tools in this tutorial, we will instead use **emulated data**. RATs comes
 with data emulators, intended to be used for testing the code. However, they are also convenient to use for showcasing
-how RATs works. If you happen to have real data available, go ahead and use that instead if you wish.
+how RATs works. If you happen to have real data available, you can use that instead if you wish.
 
 By default, RATs reports on its progress and produces a summary report.
 The progress messages and summary can be suppressed by adding the `verbose = FALSE` parameter to the call. 
@@ -207,7 +210,7 @@ In summary, `rats` works as follows:
 
 ## Thresholds
 
-The following thresholds are available in RATs:
+The following three main thresholds are used in RATs:
 
 ```{r eval=FALSE}
 # Calling DTU with custom thresholds.
@@ -216,11 +219,12 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 ```
 
 1. `p_thresh` - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter.
-2. `abund_thresh` - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. higher threshold values are stricter.
-3. `dprop_thresh` - Efect size threshold. Transcripts whose proportion changes by less than the threshold between conditions, are considered non-DTU, regardless of their statistical significance.
+2. `abund_thresh` - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter.
+3. `dprop_thresh` - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance.
 Higher threshold values are stricter.
 
 The default values for these thresholds are quite permissive. You may want to consider setting them to stricter values.
+Depending on the settings, *additional thresholds* are available and will be discussed in their respective sections below.
 
 
 ## Bootstrapping 
@@ -247,17 +251,16 @@ Three parameters control bootstrapping of DTU calls on the abundance estimates:
 2. `qbootnum` - How many bootstrap iterations to do. Preferably at least 100. If 0, RATs will try to infer a value from the data.
 3. `qrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter.
 
-In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. This will be repeated `qbootnum`. Because the
+In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. This will be repeated `qbootnum` times. Because the
 number of replicates remains the same, the statistical power is not compromised. Therefore, the reproducibility will be **used as a criterion** in calling DTU, along with
 statistical significance and effect size. The process is **stochastic**; the quantifications are randomly sampled, so runs on the same data may yield slight differences in DTU. 
-Using higher `qbootnum` improves reproducibility between runs on the same dataset. 
+Using higher `qbootnum` improves reproducibility between runs on the same dataset.
 
-Low reproducibility indicates that the quantification tool found it hard to distinguish these transcripts. This can be caused by high similarity of isoforms, genes with high
-number of isoforms, and/or poor read coverage in the regions differentiating the isoforms from one another. In these cases skepticism is required over the quantifications
-and any potential differential expression regarding these transcripts.
+Low reproducibility indicates that the quantification tool found it hard to distinguish these transcripts. This can be caused by high similarity of the isoforms, genes with a large
+number of isoforms, and/or poor read coverage in the regions differentiating the isoforms from one another. In these cases, skepticism is required about the quantifications and any 
+potential differential expression regarding these transcripts.
 
-Warnings will be generated if `qbootnum` is below 100 or higher than the number of iterations in your input data, but RATs will proceed with the analysis. The warnings
-will not be shown if `verbose =  FALSE`.
+Warnings will be generated if `qbootnum` is too low or too high, but in most cases RATs will continue with the analysis. The warnings will not be shown if `verbose = FALSE`.
 
 ```{r eval=FALSE}
 # Bootstrap (default). Do 100 iterations.
@@ -269,6 +272,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
                   name_B = "patients", qboot = FALSE)
 ```
 
+
 ### Replicate bootstraping
 
 Three parameters control bootstrapping of DTU calls agaisnt the samples:
@@ -278,9 +282,11 @@ Three parameters control bootstrapping of DTU calls agaisnt the samples:
 3. `conservative` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU.
 
 Unlike bootstrapping the quantifications, bootstrapping the replicates is currently **not stochastic**. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition.
+This behaviour assumes that most usage cases will have a relatively small number of replicates.
+
 Because only one replicate is used each time, this process has reduced statistical power and only the strongest results will persist. Due to this, the sample-wise reproducibility
 is **not used as a criterion** in calling DTU, unless explicitly required by setting the `conservative` flag. For low replication levels in particular, the reproducibility may
-be easily underestimated or overestimated, so we recommend not using the conservative mode in these cases. Instead use this reproducibility as additional information.
+be easily underestimated or overestimated.
 
 ```{r eval=FALSE}
 # Bootstrap (default). 
@@ -297,7 +303,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 
 ## Multi-threading
 
-RATs runtime depends on the number of expressed annotated transcripts. Single-threaded, RATs can take a few minutes per iteration for large annotations.
+RATs completion time depends on the number of expressed annotated transcripts. Single-threaded, RATs can take up to a few minutes per iteration for large annotations.
 Fortunately, the task is highly parallelisable:
 
 ```{r eval=FALSE}
@@ -307,7 +313,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 ```
 
 Due to core R implementation limitations, multi-threading works only in POSIX-compliant systems. In other systems, the option will be ignored and R will run serially.
-Most Linux distros, Unix versions, and recent OSX versions are supposedly compatible, and there are environments that can be installed on Windows.
+Most Linux distros, Unix versions, and recent OSX versions are supposedly compatible, and there are environments that can be installed on Windows that might circumvent the issue.
 
 
 ## Test selection
@@ -343,10 +349,6 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 RATs needs to pull information from different fields of the data and annotation and it does so based on the names of the columns. 
 You can override the default names of these fields.
 
-### Sleuth field names
-
-Although we expect Sleuth field names to be consistent, with the exception of covariate names, RATs allows overriding the
-expected names.
 
 ```{r}
 # Lets emulate some input with custom field names. 
@@ -356,32 +358,75 @@ sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"),
 myslo <- sim$slo
 myannot <- sim$annot
 
+# Sleuth covariates table.
 print( sim$slo$sample_to_covariates )
+# Sleuth bootstrapped quantifications.
 print( head(sim$slo$kal[[1]]$bootstrap[[1]]) )
+# Annotation.
 print( head(sim$annot) )
 ```
 
-With the field names changed, we need to tell RATs where to find the data:
 
-```{r}
+### Sleuth field names
+
+Although we expect Sleuth field names to be constant, with the exception of covariate names, RATs allows overriding the
+expected names:
+
+```{r, eval=FALSE}
 # Call DTU on data with custom field names.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
-                  varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", 
-                  COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
+                  varname="mouse", COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
+
+#! In our example data here, the annotation fields have been modified as well, so this command 
+#! will NOT run as it is shown. You will also need the parameters shown in teh section below.
 ```
 
 * `varname` - The field name in `myslo$sample_to_covariates` where the desired condition names are listed.
+* `COUNTS_COL` - The name of the field holding the estimated counts in the Sleuth object's bootstrap tables.
+* `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the Sleuth object's bootstrap tables.
+
+
+### Annotation field names
+
+Although it is easy to rename the columns of a table to comply with the expected names, this may sometimes be undesireable, so RATs
+allows you to change the expected names instead.
+
+```{r, eval=FALSE}
+# Call DTU using annotation with custom field names.
+mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
+                  varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", verbose = FALSE)
+
+#! In our example data here, the Sleuth fields have been modified as well, so this command 
+#! will NOT run as it is shown. You will also need the parameters shown in the section above.
+```
+
 * `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame.
 * `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame.
-* `COUNTS_COL` - The name of the field holding the estimated counts in the sleuth object's bootstrap tables.
-* `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the sleuth object's bootstrap tables.
 
 
 ***
 
+
+# Annotation discrepancies
+
+Different annotation versions often preserve transcript IDs, despite altering the details of the transcript models,
+such as UTRs. It is important to use the same annotation throught the workflow, especially for the quantifications.
+Otherwise, the data is not comparable.
+
+All internal operations and the output of RATs will be based on the annotation provided:
+
+* Any transcripts present in the data but missing from the annotation will be ignored completely and 
+will not show up in the output, as there is no reliable way to match them to gene IDs.
+* Any transcript/gene present in the annotation but missing from the data will be included in the output as zero expression.
+* If the samples appear to use different annotations from one another, RATs will abort.
+
+
+***
+
+
 # Contact information
 
-The rats R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
+The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
