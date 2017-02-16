@@ -1,9 +1,10 @@
 Type: Package
 Package: rats
 Version: 0.3.9
-Date: 2017-01-27
+Date: 2017-02-16
 Title: Relative Abundance of Transcripts
-Authors@R: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
+Encoding: UTF-8
+Authors: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
              person("Kira Mourão", role=c("aut"), email="k.mourao@dundee.ac.uk"),
              person("Nick J. Schurch", role=c("cre"), email="n.schurch@dundee.ac.uk"))
 Author: Kimon Froussios [aut], Kira Mourão [aut], Nick Schurch [cre]
@@ -13,17 +14,19 @@ Description: Given a Sleuth output object and a transcript-to-gene index of
     occurs.
 License: MIT + file LICENSE
 VignetteBuilder: knitr
+Depends:
+    matrixStats,
+    data.table,
+    ggplot2
+Imports:
+    utils,
+    stats,
+    parallel,
+    shiny
 Suggests:
     testthat,
     knitr,
     rmarkdown
-Imports:
-    matrixStats,
-    data.table,
-    ggplot2,
-    utils,
-    parallel,
-    shiny
 URL: https://github.com/bartongroup/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/bartongroup/Rats
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
