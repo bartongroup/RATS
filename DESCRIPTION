@@ -16,12 +16,12 @@ License: MIT + file LICENSE
 VignetteBuilder: knitr
 Depends:
     matrixStats,
-    data.table,
-    ggplot2
+    data.table
 Imports:
     utils,
     stats,
     parallel,
+    ggplot2,
     shiny
 Suggests:
     testthat,

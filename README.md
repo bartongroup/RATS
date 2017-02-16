@@ -54,12 +54,9 @@ We recommend studying the vignettes before using RATs.
 The package depends on a few third-party packages, which you may need to install first, 
 if they are not present already:
 
-`install.packages(c("data.table", "matrixStats", "ggplot2"), dependencies=TRUE)`
-
-You may also need to install the `shiny` package, which is required by some of the visualisation options offered by RATs.
-It is not required for the main functionality of RATs.
-
-`install.packages("shiny", dependencies=TRUE)`
+1. Packages needed for computation (mandatory): `install.packages(c("data.table", "matrixStats"), dependencies=TRUE)`
+2. Package needed only for plotting (recommended): `install.packages("ggplot2", dependencies=TRUE)`
+3. Package need only for interactive visualisation feature (optional): `install.packages("shiny", dependencies=TRUE)`
 
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
 which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual for help.
