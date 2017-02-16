@@ -16,4 +16,3 @@ A list of vectors.
 Get the IDs for DTU/nonDTU/NA genes and transcripts.
 The IDs will be ordered by effect size.
 }
-

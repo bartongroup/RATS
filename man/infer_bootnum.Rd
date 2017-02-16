@@ -19,4 +19,3 @@ The least number of iterations seen in the input.
 \description{
 Rule-of-thumb number of iterations.
 }
-

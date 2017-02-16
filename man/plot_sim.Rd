@@ -14,4 +14,3 @@ plot_sim(data, type = "AvBvM")
 \description{
 Plot relationship of parameters.
 }
-

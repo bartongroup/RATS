@@ -17,4 +17,3 @@ Row number corresponds to sample number.
 \description{
 Group sample numbers by factor.
 }
-

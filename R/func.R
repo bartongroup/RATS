@@ -1,27 +1,30 @@
 #================================================================================
 #' Check input parameters.
 #' 
-#' @param slo sleuth object 
-#' @param annot annotation dataframe
-#' @param name_A condition name
-#' @param name_B condition name
-#' @param varname name of condition variable
-#' @param COUNTS_COL name of counts column in bootstrap
-#' @param correction p-value correction method
-#' @param p_thresh significance level
-#' @param TARGET_COL name of transcript id column in annotation
-#' @param PARENT_COL name of gene id column in annotation
-#' @param BS_TARGET_COL name of transcript id column in bootstrap
-#' @param count_thresh minimum frgments per transcript per sample
-#' @param testmode which tests to run
-#' @param boots which tests to bootstrap
-#' @param bootnum number of bootstrap iterations
-#' @param dprop_thresh minimum change in proportion
+#' @param slo Sleuth object 
+#' @param annot Annotation dataframe.
+#' @param name_A Condition name.
+#' @param name_B Condition name.
+#' @param varname Name of condition variable.
+#' @param COUNTS_COL Name of counts column in bootstrap.
+#' @param correction P-value correction method.
+#' @param p_thresh Significance level.
+#' @param TARGET_COL Name of transcript id column in annotation.
+#' @param PARENT_COL Name of gene id column in annotation.
+#' @param BS_TARGET_COL Name of transcript id column in bootstrap.
+#' @param count_thresh Minimum transcript abundance per sample.
+#' @param testmode Which test to run.
+#' @param qboot Whether to bootstrap against quantifications.
+#' @param qbootnum Number of bootstrap iterations.
+#' @param qrep_thresh Confidence threshold.
+#' @param dprop_thresh Minimum change in proportion.
 #' @param count_data_A A dataframe of estimated counts.
 #' @param count_data_B A dataframe of estimated counts.
 #' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
-#' @param conf_thresh Confidence threshold.
+#' @param rboot Whether to bootstrap against samples.
+#' @param rrep_thresh Confidence threshold.
+#' @param conservative Whether to use rrep as a DTU criterion.
 #' @param threads Number of threads.
 #' 
 #' @return List: \itemize{
@@ -34,8 +37,9 @@
 #'
 parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
-                            count_thresh, testmode, boots, bootnum, dprop_thresh,
-                            count_data_A, count_data_B, boot_data_A, boot_data_B, conf_thresh, threads) {
+                            count_thresh, testmode, qboot, qbootnum, dprop_thresh,
+                            count_data_A, count_data_B, boot_data_A, boot_data_B, qrep_thresh, 
+                            threads, rboot, rrep_thresh, conservative) {
   warnmsg <- list()
   
   # Input format.
@@ -63,17 +67,23 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   if ((!is.numeric(dprop_thresh)) || dprop_thresh < 0 || dprop_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
   if ((!is.numeric(count_thresh)) || count_thresh < 0)
-    return(list("error"=TRUE, "message"="Invalid read-count threshold! Must be between 0 and 1."))
-  if ((!is.numeric(bootnum)) || bootnum < 0)
+    return(list("error"=TRUE, "message"="Invalid abundance threshold! Must be between 0 and 1."))
+  if ((!is.numeric(qbootnum)) || qbootnum < 0)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive integer number."))
-  if (!boots %in% c("genes", "transc", "both", "none"))
-    return(list("error"=TRUE, "message"="Unrecognized value for boots!"))
-  if ((!is.numeric(conf_thresh)) || conf_thresh < 0 || conf_thresh > 1)
-    return(list("error"=TRUE, "message"="Invalid confidence threshold! Must be between 0 and 1."))
+  if (!is.logical(qboot))
+    return(list("error"=TRUE, "message"="Unrecognized value for qboot! Must be TRUE/FALSE."))
+  if (!is.logical(rboot))
+    return(list("error"=TRUE, "message"="Unrecognized value for rboot! Must be TRUE/FALSE."))
+  if ((!is.numeric(qrep_thresh)) || qrep_thresh < 0 || qrep_thresh > 1)
+    return(list("error"=TRUE, "message"="Invalid reproducibility threshold! Must be between 0 and 1."))
+  if ((!is.numeric(rrep_thresh)) || rrep_thresh < 0 || rrep_thresh > 1)
+    return(list("error"=TRUE, "message"="Invalid reproducibility threshold! Must be between 0 and 1."))
   if ((!is.numeric(threads)) || threads <= 0)
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
+  if (!is.logical(conservative))
+    return(list("error"=TRUE, "message"="Unrecognized value for conservative! Must be TRUE/FALSE."))
   
   # Sleuth
   if (!is.null(slo)) {
@@ -113,7 +123,7 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   
   # Bootstrap.
   minboots <- NA_integer_
-  if (boots != "none") {
+  if (qboot) {
     # Consistency,
     if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
       # Direct data.
@@ -134,17 +144,19 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
           return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
       }
     } else {
-      return(list("error"=TRUE, "message"="No bootstrapped estimates were provided!"))
+      warnmsg["noboots"] <- "qboot is TRUE but no bootstrapped estimates were provided! Continuing without bootstrapping."
     }
     
     # Number of iterations.
     minboots <- infer_bootnum(slo, boot_data_A, boot_data_B)
-    if (is.na(minboots) || minboots == 0)
-      return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
-    if (bootnum > minboots)
-      warnmsg["toomanyboots"] <- "You are requesting more RATs bootstrap iterations than available in your quantification data! Are you sure about this?"
-    if (100 > minboots)
-      warnmsg["toofewboots"] <- "You are requesting fairly few bootstrap iterations, which reduces reproducibility of the calls. Are you sure about this?"
+    if (!is.na(minboots)) {
+      if (minboots <= 1)
+        return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
+      if (qbootnum > minboots)
+        warnmsg["toomanyboots"] <- "You requested more RATs bootstrap iterations than available in your quantification data, which increases the chance of duplicate iterations."
+      if (100 > minboots)
+        warnmsg["toofewboots"] <- "You requested fairly few bootstrap iterations, which reduces reproducibility of the calls."
+    } # else it is probably count data and qboot will be auto-set to FALSE
   } 
   
   return(list("error"=FALSE, "message"="All good!", "maxboots"=minboots, "warn"=(length(warnmsg) > 0), "warnings"= warnmsg))
@@ -176,8 +188,7 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
     for (k in 2:length(slo$kal)) {
       minboot <- min(minboot, length(slo$kal[[k]]$bootstrap))
     }
-  }
-  
+  } 
   return(minboot)
 } 
 
@@ -250,33 +261,35 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, thr
 #' 
 alloc_out <- function(annot, full){
   if (full == "full") {
-    Parameters <- list("var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
-                       "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
-                       "p_thresh"=NA_real_, "count_thresh"=NA_real_, "dprop_thresh"=NA_real_, "conf_thresh"=NA_real_,
-                       "tests"=NA_character_, "bootstrap"=NA_character_, "bootnum"=NA_integer_,
-                       "data_type"=NA_character_, "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "description"=NA_character_,
-                       "rats_version"=packageVersion("rats"), "R_version"=R.Version()[c("platform", "version.string")])
-    Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "DTU"=NA, "transc_DTU"=NA, 
-                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
-                        "elig"=NA, "elig_fx"=NA,
-                        "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, "sig"=NA, 
-                        "boot_dtu_freq"=NA_real_, "conf"=NA, "boot_p_meanAB"=NA_real_, "boot_p_meanBA"=NA_real_, 
-                        "boot_p_stdevAB"=NA_real_, "boot_p_stdevBA"=NA_real_, "boot_p_minAB"=NA_real_, "boot_p_minBA"=NA_real_, 
-                        "boot_p_maxAB"=NA_real_, "boot_p_maxBA"=NA_real_, "boot_na"=NA_real_)
+    Parameters <- list("description"=NA_character_, "time"=date(), 
+                       "rats_version"=packageVersion("rats"), "R_version"=R.Version()[c("platform", "version.string")],
+                       "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
+                       "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
+                       "num_genes"=NA_integer_, "num_transc"=NA_integer_,
+                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_,
+                       "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
+                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "conservative"=NA)
+    Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
+                        "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
+                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, 
+                        "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, 
+                        "quant_p_meanAB"=NA_real_, "quant_p_meanBA"=NA_real_, "quant_p_stdevAB"=NA_real_, "quant_p_stdevBA"=NA_real_, 
+                        "quant_p_minAB"=NA_real_, "quant_p_minBA"=NA_real_, "quant_p_maxAB"=NA_real_, "quant_p_maxBA"=NA_real_, 
+                        "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
+                        "rep_p_meanAB"=NA_real_, "rep_p_meanBA"=NA_real_, "rep_p_stdevAB"=NA_real_, "rep_p_stdevBA"=NA_real_, 
+                        "rep_p_minAB"=NA_real_, "rep_p_minBA"=NA_real_, "rep_p_maxAB"=NA_real_, "rep_p_maxBA"=NA_real_,
+                        "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
-                              "DTU"=NA, "gene_DTU"=NA,
-                              "meanA"=NA_real_, "meanB"=NA_real_,  # mean across replicates of means across bootstraps
-                              "stdevA"=NA_real_, "stdevB"=NA_real_,  # standard deviation across replicates of means across bootstraps
-                              "sumA"=NA_real_, "sumB"=NA_real_,  # sum across replicates of means across bootstraps
-                              "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
-                              "elig_xp"=NA, "elig"=NA,
-                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
-                              "pval"=NA_real_,  "pval_corr"=NA_real_, "sig"=NA, 
-                              "boot_dtu_freq"=NA_real_, "conf"=NA, "boot_p_mean"=NA_real_, "boot_p_stdev"=NA_real_, 
-                              "boot_p_min"=NA_real_,"boot_p_max"=NA_real_, "boot_na"=NA_real_)
-    ReplicateData <- list()
+                              "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "gene_DTU"=NA, 
+                              "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_, 
+                              "sumA"=NA_real_, "sumB"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
+                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, 
+                              "pval"=NA_real_, "pval_corr"=NA_real_, 
+                              "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_,"quant_p_max"=NA_real_, 
+                              "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
+                              "rep_p_mean"=NA_real_, "rep_p_stdev"=NA_real_, "rep_p_min"=NA_real_,"rep_p_max"=NA_real_, 
+                              "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
+    CountData <- list()
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)), "DTU"=NA, 
@@ -289,14 +302,14 @@ alloc_out <- function(annot, full){
                               "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
-    ReplicateData <- NULL
+    CountData <- NULL
   }
   with(Genes,
        setkey(Genes, parent_id) )
   with(Transcripts, 
        setkey(Transcripts, parent_id, target_id) )
   
-  return(list("Parameters"= Parameters, "Genes"= Genes, "Transcripts"= Transcripts, "ReplicateData"= ReplicateData))
+  return(list("Parameters"= Parameters, "Genes"= Genes, "Transcripts"= Transcripts, "Abundances"= CountData))
 }
 
 
@@ -318,6 +331,7 @@ alloc_out <- function(annot, full){
 #' 
 #' @import parallel
 #' @import data.table
+#' @import stats
 #' 
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   
@@ -353,7 +367,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
-    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off, changes in proportion cannot be defined.
+    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off in one condition, changes in proportion cannot be defined.
     # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
     Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]
@@ -380,8 +394,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     
     # G test.
     if (test_genes) {
-      Genes[(elig), c("pvalAB", "pvalBA") := 
-              t( as.data.frame( mclapply(Genes[(elig), parent_id], 
+      Genes[(elig), c("pvalAB", "pvalBA") := t( as.data.frame( mclapply(Genes[(elig), parent_id], 
                                         function(parent) {
                                             # Extract all relevant data to avoid repeated look ups in the large table.
                                             subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
@@ -411,6 +424,8 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca
 #' http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
 #'
+#' @import stats
+#' 
 g.test <- function(x, p = rep(1/length(x), length(x)))
 {
   n <- sum(x)

@@ -12,8 +12,10 @@ plot_overview(dtuo, type = "volcano")
 \item{type}{Type of plot. \itemize{
   \item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
   \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.}
-  \item{"transc_conf"}{Transcript-level confidence threshold VS. number of DTU positive calls.}
-  \item{"gene_conf"}{Gene-level confidence threshold VS. number of DTU positive calls.}
+  \item{"transc_quant"}{Transcript-level quantification reproducibility threshold VS. number of DTU positive calls.}
+  \item{"gene_quant"}{Gene-level quantification reproducibility threshold VS. number of DTU positive calls.}
+  \item{"transc_rep"}{Transcript-level replication reproducibility threshold VS. number of DTU positive calls.}
+  \item{"gene_rep"}{Gene-level replication reproducibility threshold VS. number of DTU positive calls.}
 }}
 }
 \value{
@@ -24,4 +26,3 @@ Generally uses the results of the transcript-level proportion tests.
 \description{
 Plot DTU results from the proportions test.
 }
-

@@ -15,4 +15,3 @@ A named numerical vector giving a tally of the results
 \description{
 Summary of DTU calling.
 }
-

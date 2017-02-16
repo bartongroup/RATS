@@ -1,3 +1,6 @@
+## ----setup, include=FALSE------------------------------------------------
+knitr::opts_chunk$set(echo = TRUE)
+
 ## ----eval=FALSE----------------------------------------------------------
 #  # 1. Load into R session.
 #  library{rats}
@@ -13,7 +16,7 @@
 #                    boot_data_B= my_list_data_tables_A)
 #  # 3c. Call DTU on generic abundance estimates:
 #  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A,
-#                    count_data_B= my_data_table_B, boots= "none")
+#                    count_data_B= my_data_table_B, qboots= FALSE)
 #  
 #  # 4. Plot significance VS effect size:
 #  plot_overview(mydtu)
@@ -22,6 +25,6 @@
 #  # no DTU, Not Applicable):
 #  myids <- get_dtu_ids(mydtu)
 #  
-#  # 6. Plot isoform changes for the top DTU gene returned in previous step.
-#  plot_gene(mydtu, myids[["dtu-genes"]][1], style = "lines"")
+#  # 6. Plot isoform changes for a given gene.
+#  plot_gene(mydtu, "my_awesome_gene_ID")
 

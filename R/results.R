@@ -65,8 +65,8 @@ plot_gene <- function(dtuo, pid, style="lines") {
   with(dtuo, {
     trdat <- dtuo$Transcripts[pid, .(target_id, as.character(DTU))]  # transformed DTU will appear as V2
     trdat[is.na(V2), V2 := "NA"]
-    repdatA <- dtuo$ReplicateData[["condA"]][pid, -"parent_id", with=FALSE]
-    repdatB <- dtuo$ReplicateData[["condB"]][pid, -"parent_id", with=FALSE]
+    repdatA <- dtuo$Abundances[["condA"]][pid, -"parent_id", with=FALSE]
+    repdatB <- dtuo$Abundances[["condB"]][pid, -"parent_id", with=FALSE]
     
     # Restructure
     trnum <- dim(trdat)[1]
@@ -162,8 +162,11 @@ plot_gene <- function(dtuo, pid, style="lines") {
 #' @param type Type of plot. \itemize{
 #'   \item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
 #'   \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.}
-#'   \item{"transc_conf"}{Transcript-level confidence threshold VS. number of DTU positive calls.}
-#'   \item{"gene_conf"}{Gene-level confidence threshold VS. number of DTU positive calls.}
+#'   \item{"transc_quant"}{Transcript-level quantification reproducibility threshold VS. number of DTU positive calls.}
+#'   \item{"gene_quant"}{Gene-level quantification reproducibility threshold VS. number of DTU positive calls.}
+#'   \item{"transc_rep"}{Transcript-level replication reproducibility threshold VS. number of DTU positive calls.}
+#'   \item{"gene_rep"}{Gene-level replication reproducibility threshold VS. number of DTU positive calls.}
+
 #' }
 #' @return a ggplot2 object. Simply display it or you can also customize it.
 #' 
@@ -202,24 +205,44 @@ plot_overview <- function(dtuo, type="volcano") {
         scale_fill_manual(values=c("steelblue3", "red")) +
         scale_x_continuous(breaks = seq(0, 1, 0.1)) +
         scale_y_continuous(trans="sqrt")
-    } else if (type == "transc_conf") {
+    } else if (type == "transc_quant") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
                            "count"= sapply(seq(0, 1, 0.01), function(x) {
-                                           sum(Transcripts[(boot_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
+                                           sum(Transcripts[(quant_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
-        ggtitle("Confidence VS DTU transcripts") +
-        labs(x="DTU call frequency threshold",
+        ggtitle("Quantification reproducibility VS DTU transcripts") +
+        labs(x="Reproducibility threshold",
              y="Number of transcripts") +
         scale_x_continuous(breaks = seq(0, 1, 0.1))
-    } else if (type == "gene_conf") {
+    } else if (type == "gene_quant") {
       mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
                            "count"= sapply(seq(0, 1, 0.01), function(x) {
-                                           sum(Genes[(boot_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
+                                           sum(Genes[(quant_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
       result <- ggplot(data = mydata, aes(thresh, count)) +
         geom_freqpoly(stat= "identity", size= 1.5) +
-        ggtitle("Confidence VS DTU genes") +
-        labs(x="DTU call frequency threshold",
+        ggtitle("Quantification reproducibility VS DTU genes") +
+        labs(x="Reproducibility threshold",
+             y="Number of genes") +
+        scale_x_continuous(breaks = seq(0, 1, 0.1))
+    } else if (type == "transc_rep") {
+      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
+                           "count"= sapply(seq(0, 1, 0.01), function(x) {
+                             sum(Transcripts[(rep_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
+      result <- ggplot(data = mydata, aes(thresh, count)) +
+        geom_freqpoly(stat= "identity", size= 1.5) +
+        ggtitle("Replication reproducibility VS DTU transcripts") +
+        labs(x="Reproducibility threshold",
+             y="Number of transcripts") +
+        scale_x_continuous(breaks = seq(0, 1, 0.1))
+    } else if (type == "gene_rep") {
+      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
+                           "count"= sapply(seq(0, 1, 0.01), function(x) {
+                             sum(Genes[(rep_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
+      result <- ggplot(data = mydata, aes(thresh, count)) +
+        geom_freqpoly(stat= "identity", size= 1.5) +
+        ggtitle("Replication reproducibility VS DTU genes") +
+        labs(x="Reproducibility threshold",
              y="Number of genes") +
         scale_x_continuous(breaks = seq(0, 1, 0.1))
     } else {
@@ -276,8 +299,14 @@ plot_shiny_volcano <- function(dtuo) {
       
       # Set up data
       mydata <- NULL
-      if ("boot_dtu_freq" %in% names(dtuo$Transcripts)) {
-        mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), boot_dtu_freq, DTU)]
+      if ("quant_dtu_freq" %in% names(dtuo$Transcripts)) {
+        if ("rep_dtu_freq" %in% names(dtuo$Transcripts)) {
+          mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), quant_dtu_freq, rep_dtu_freq, DTU)]
+        } else {
+          mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), quant_dtu_freq, DTU)]
+        }
+      } else if ("rep_dtu_freq" %in% names(dtuo$Transcripts)) {
+        mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), rep_dtu_freq, DTU)]
       } else {
         mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), DTU)]
       }
@@ -289,7 +318,7 @@ plot_shiny_volcano <- function(dtuo) {
         plot_overview(dtuo, "gene_volcano")
       })
     
-      # Assign mouse hover action to corresponding output space.
+      # Assign mouse hover action to hoveri info output space.
       output$hover_info <- renderPrint({
         cat("Hover info: \n")
         myhover <- input$plot_hover
@@ -298,17 +327,17 @@ plot_shiny_volcano <- function(dtuo) {
           noquote(points[, target_id])
       })
     
-      # Assign mouse click action to corresponding output space.
+      # Assign mouse click action to click info output space.
       output$click_info <- renderPrint({
         cat("Click info: \n")
         myclick <- input$plot_click
         points <- nearPoints(mydata, myclick, threshold= 5)
         suppressWarnings({ points[, pval_corr := 10 ^ (0-neglogP)] })
         if(dim(points)[1] != 0)
-          points[, .(target_id, parent_id, DTU, Dprop, pval_corr, boot_dtu_freq)]
+          points[, .(target_id, parent_id, DTU, Dprop, pval_corr, quant_dtu_freq, rep_dtu_freq)]
       })
       
-      # Assign mouse double click action to corresponding output space.
+      # Assign mouse click action to gene plot output space.
       output$plot2 <- renderPlot({
         myclick <- input$plot_click
         points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)

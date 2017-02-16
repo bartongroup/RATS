@@ -12,4 +12,3 @@ plot_shiny_volcano(dtuo)
 \description{
 Interactive volcano plot, using shiny.
 }
-
