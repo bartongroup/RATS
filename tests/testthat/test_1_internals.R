@@ -12,7 +12,7 @@ test_that("The reporting structures are created correctly", {
   expect_type(short, "list")
   expect_equal(length(full), 4)
   expect_equal(length(full), length(short))
-  expect_named(full, c("Parameters", "Genes", "Transcripts", "CountData"))
+  expect_named(full, c("Parameters", "Genes", "Transcripts", "Abundances"))
   expect_true(all(names(full) == names(short)))
   
   expect_type(full$Parameters, "list")
@@ -32,12 +32,12 @@ test_that("The reporting structures are created correctly", {
   expect_equal(dim(short$Genes)[2], 10)
   expect_named(full$Genes, c("parent_id", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "transc_DTU",
                              "known_transc", "detect_transc", "elig_transc", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", 
-                             "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", 
-                             "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq",
                              "quant_p_meanAB", "quant_p_meanBA", "quant_p_stdevAB", "quant_p_stdevBA", 
-                             "quant_p_minAB", "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_dtu_freq"))
+                             "quant_p_minAB", "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_dtu_freq",
+                             "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA",
+                             "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq") )
   expect_named(short$Genes, c("parent_id", "DTU", "elig_transc", "elig", "elig_fx", "pvalAB", 
-                             "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig"))
+                             "pvalBA", "pvalAB_corr", "pvalBA_corr", "sig") )
   
   expect_true(is.data.frame(full$Transcripts))
   expect_true(is.data.frame(short$Transcripts))
@@ -45,10 +45,10 @@ test_that("The reporting structures are created correctly", {
   expect_equal(dim(short$Transcripts)[2], 16)
   expect_named(full$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "gene_DTU", 
                                    "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
-                                   "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq",
-                                   "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq"))
+                                   "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq",
+                                   "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   
-  expect_type(full$CountData, "list")
+  expect_type(full$Abundances, "list")
 })
 
 

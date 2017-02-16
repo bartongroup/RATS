@@ -167,7 +167,7 @@ test_that("The output structure is correct", {
   
   expect_type(mydtu, "list")
   expect_equal(length(mydtu), 4)
-  expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "CountData"))
+  expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "Abundances"))
   
   expect_type(mydtu$Parameters, "list")
   expect_length(mydtu$Parameters, 23)
@@ -181,10 +181,10 @@ test_that("The output structure is correct", {
   expect_equal(dim(mydtu$Genes)[2], 35)
   expect_named(mydtu$Genes, c("parent_id", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "transc_DTU",
                               "known_transc", "detect_transc", "elig_transc", "pvalAB", "pvalBA", "pvalAB_corr", "pvalBA_corr", 
-                              "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", 
-                              "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq",
                               "quant_p_meanAB", "quant_p_meanBA", "quant_p_stdevAB", "quant_p_stdevBA", 
-                              "quant_p_minAB", "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_dtu_freq"))
+                              "quant_p_minAB", "quant_p_minBA", "quant_p_maxAB", "quant_p_maxBA", "quant_na_freq", "quant_dtu_freq",
+                              "rep_p_meanAB", "rep_p_meanBA", "rep_p_stdevAB", "rep_p_stdevBA", 
+                              "rep_p_minAB", "rep_p_minBA", "rep_p_maxAB", "rep_p_maxBA", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.numeric(mydtu$Genes[["known_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["detect_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["pvalAB"]]))
@@ -223,8 +223,8 @@ test_that("The output structure is correct", {
   expect_equal(dim(mydtu$Transcripts)[2], 35)
   expect_named(mydtu$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "gene_DTU", 
                                     "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
-                                    "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq",
-                                    "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq"))
+                                    "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq",
+                                    "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.logical(mydtu$Transcripts[["elig_xp"]]))
   expect_true(is.logical(mydtu$Transcripts[["elig"]]))
   expect_true(is.logical(mydtu$Transcripts[["elig_fx"]]))
@@ -257,9 +257,9 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["rep_na_freq"]]))
   expect_true(is.logical(mydtu$Transcripts[["rep_reprod"]]))
   
-  expect_true(is.list(mydtu$CountData))
-  expect_true(is.data.frame(mydtu$CountData[[1]]))
-  expect_true(is.data.frame(mydtu$CountData[[2]]))
+  expect_true(is.list(mydtu$Abundances))
+  expect_true(is.data.frame(mydtu$Abundances[[1]]))
+  expect_true(is.data.frame(mydtu$Abundances[[2]]))
   
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, qboot = FALSE)  
   expect_false(any(c("quant_dtu_freq", "quant_p_meanAB", "quant_p_meanBA", "quant_p_stdevAB",  "quant_p_stdevBA", 
@@ -430,6 +430,12 @@ test_that("The result is consistent across input data formats", {
   expect_equal(mydtu[[1]][[3]][, seq(1,4), with=FALSE], mydtu[[3]][[3]][, seq(1,4), with=FALSE])
 })
 
+
+
+#==============================================================================
+#==============================================================================
+context("DTU Reports")
+
 #==============================================================================
 test_that("The summaries work", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
@@ -446,4 +452,18 @@ test_that("The summaries work", {
   for (v in ids) {
     expect_false(any(is.na(v)))
   }
+})
+
+#==============================================================================
+test_that("The plotting commands work", {
+  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
+  
+  expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="lines"))
+  expect_silent(plot_overview(mydtu))
+  expect_silent(plot_overview(dtuo=mydtu, type="maxdprop"))
+  expect_silent(plot_overview(mydtu, "transc_quant"))
+  expect_silent(plot_overview(mydtu, "gene_quant"))
+  expect_silent(plot_overview(mydtu, "transc_rep"))
+  expect_silent(plot_overview(mydtu, "gene_rep"))
 })
