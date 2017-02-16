@@ -273,22 +273,22 @@ alloc_out <- function(annot, full){
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, 
                         "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, 
-                        "rep_p_meanAB"=NA_real_, "rep_p_meanBA"=NA_real_, "rep_p_stdevAB"=NA_real_, "rep_p_stdevBA"=NA_real_, 
-                        "rep_p_minAB"=NA_real_, "rep_p_minBA"=NA_real_, "rep_p_maxAB"=NA_real_, "rep_p_maxBA"=NA_real_,
-                        "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_,
                         "quant_p_meanAB"=NA_real_, "quant_p_meanBA"=NA_real_, "quant_p_stdevAB"=NA_real_, "quant_p_stdevBA"=NA_real_, 
                         "quant_p_minAB"=NA_real_, "quant_p_minBA"=NA_real_, "quant_p_maxAB"=NA_real_, "quant_p_maxBA"=NA_real_, 
-                        "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_)
+                        "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
+                        "rep_p_meanAB"=NA_real_, "rep_p_meanBA"=NA_real_, "rep_p_stdevAB"=NA_real_, "rep_p_stdevBA"=NA_real_, 
+                        "rep_p_minAB"=NA_real_, "rep_p_minBA"=NA_real_, "rep_p_maxAB"=NA_real_, "rep_p_maxBA"=NA_real_,
+                        "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "gene_DTU"=NA, 
                               "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_, 
                               "sumA"=NA_real_, "sumB"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, 
                               "pval"=NA_real_, "pval_corr"=NA_real_, 
-                              "rep_p_mean"=NA_real_, "rep_p_stdev"=NA_real_, "rep_p_min"=NA_real_,"rep_p_max"=NA_real_, 
-                              "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_,
                               "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_,"quant_p_max"=NA_real_, 
-                              "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_)
+                              "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
+                              "rep_p_mean"=NA_real_, "rep_p_stdev"=NA_real_, "rep_p_min"=NA_real_,"rep_p_max"=NA_real_, 
+                              "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
     CountData <- list()
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
@@ -309,7 +309,7 @@ alloc_out <- function(annot, full){
   with(Transcripts, 
        setkey(Transcripts, parent_id, target_id) )
   
-  return(list("Parameters"= Parameters, "Genes"= Genes, "Transcripts"= Transcripts, "CountData"= CountData))
+  return(list("Parameters"= Parameters, "Genes"= Genes, "Transcripts"= Transcripts, "Abundances"= CountData))
 }
 
 
@@ -331,6 +331,7 @@ alloc_out <- function(annot, full){
 #' 
 #' @import parallel
 #' @import data.table
+#' @import stats
 #' 
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   
@@ -366,7 +367,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)] 
-    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off, changes in proportion cannot be defined.
+    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off in one condition, changes in proportion cannot be defined.
     # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
     Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]
@@ -423,6 +424,8 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca
 #' http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
 #'
+#' @import stats
+#' 
 g.test <- function(x, p = rep(1/length(x), length(x)))
 {
   n <- sum(x)
