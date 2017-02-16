@@ -80,7 +80,7 @@ A typical command to call DTU given a Sleuth object looks like this:
 
 `results <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object,  name_A = "Condition-1", name_B = "Condition-2")`
 
-RATs also accepts data input in **generic formats**. Please consult the vignettes for syntax details and format specifications.
+RATs also accepts data input in **generic formats**. Please consult the vignettes for syntax details, format specifications and additional settings.
 
 The output is a list containing (among other items) two tables that list the final results as well as the intermediate calculations and decisions.
 Details on the output structure and visualisation options are provided in the vignettes.
