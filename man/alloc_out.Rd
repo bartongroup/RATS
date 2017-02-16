@@ -17,4 +17,3 @@ A list.
 \description{
 Create output structure.
 }
-

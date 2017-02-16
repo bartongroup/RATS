@@ -51,7 +51,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{testmode}{One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.}
 
-\item{qboot}{Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code(count_data).}
+\item{qboot}{Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.}
 
 \item{qbootnum}{Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.}
 
@@ -72,7 +72,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 \item{dbg}{Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
 }
 \value{
-List of data tables, with gene-level and transcript-level information.
+List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 }
 \description{
 There are three options for input:
@@ -82,4 +82,3 @@ There are three options for input:
  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
 }
 }
-

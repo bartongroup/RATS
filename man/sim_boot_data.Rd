@@ -15,4 +15,3 @@ A list with 3 elements. First a data.frame with the corresponding annotation. Th
 \description{
 Based on sim_sleuth_data().
 }
-

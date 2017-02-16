@@ -37,4 +37,3 @@ but this allows testing that the code can handle it.
 \description{
 The default values here should match the default values expected by calculate_DTU().
 }
-

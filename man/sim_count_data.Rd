@@ -16,4 +16,3 @@ Then, 2 data.tables, one per condition. Each data table contains the abundance e
 \description{
 Based on sim_sleuth_data().
 }
-

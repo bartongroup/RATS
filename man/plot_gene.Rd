@@ -19,4 +19,3 @@ a ggplot2 object. Simply display it or you can also customize it.
 \description{
 Plot count and proportion changes for all transcripts of a specified gene.
 }
-

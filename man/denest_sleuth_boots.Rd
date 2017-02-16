@@ -30,4 +30,3 @@ Transcripts in \code{tx} that are missing from \code{slo} are automatically padd
 \description{
 Extract bootstrap counts into a less nested structure.
 }
-

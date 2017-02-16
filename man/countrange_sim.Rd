@@ -24,4 +24,3 @@ generated for condition B as possible new states. Therefore the number of transc
 generated is 2 * N^2 * M, where 2 is the number of gene isoforms per paramater combination, 
 N is the number of proportion levels and M the number of magnitude levels.
 }
-

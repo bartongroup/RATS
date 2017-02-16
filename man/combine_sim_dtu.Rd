@@ -17,4 +17,3 @@ dataframe
 \description{
 Combine simulatation details with DTU calls, in preparation for plotting.
 }
-

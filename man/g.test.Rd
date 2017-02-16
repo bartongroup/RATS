@@ -18,4 +18,3 @@ http://www.psych.ualberta.ca/~phurd/cruft/g.test.r}
 \description{
 Log-likelihood test of goodness of fit.
 }
-
