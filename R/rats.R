@@ -26,7 +26,7 @@
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.10)
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
-#' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code(count_data).
+#' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
 #' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
 #' @param qrep_thresh Reproducibility threshold for quantification bootsrapping. (Default 0.95)
 #' @param rboot Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})
@@ -36,7 +36,7 @@
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
 #' @param dbg Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
-#' @return List of data tables, with gene-level and transcript-level information.
+#' @return List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 #'
 #' @import utils
 #' @import parallel
@@ -244,7 +244,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       message("")
     
     if (dbg == 9)
-      return(pairres)
+      return(repres)
     
     #----- Stats
     
@@ -406,7 +406,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_B[,  parent_id := tx_filter$parent_id]
     setkey(count_data_B, parent_id)
   })
-  resobj$CountData <- list("condA"= count_data_A, "condB"= count_data_B)
+  resobj$Abundances <- list("condA"= count_data_A, "condB"= count_data_B)
   
   with(resobj, {
     # Cross-display the DTU calls.
