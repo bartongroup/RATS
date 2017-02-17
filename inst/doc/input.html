@@ -212,17 +212,25 @@ myannot &lt;- simdat[[1]]        # Transcript and gene IDs for the above data.</
 <p>Now we can call DTU:</p>
 <pre class="r"><code># Find DTU between the simulated datasets.
 mydtu &lt;- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
-                  qboot=FALSE, verbose= FALSE,
+                  verbose= FALSE,
                   name_A= &quot;healthy&quot;, name_B= &quot;patients&quot;, varname= &quot;My phenotype&quot;,
                   description=&quot;Comparison of two simulated counts datasets for the
                     tutorial. Simulated using built-in functionality of RATs.&quot;)</code></pre>
-<p><code>call_DTU()</code> takes 4 mandatory arguments for this input format:</p>
+<div id="mandatory-arguents" class="section level4">
+<h4>Mandatory arguents:</h4>
 <ol style="list-style-type: decimal">
-<li>An annotation data frame, as described in the <em>Input formats</em> section.</li>
-<li><code>qboot</code> must only take the value <code>FALSE</code> in this case, as no bootstrapped quantification data is available.</li>
-<li><code>count_data_A</code> and <code>count_data_B</code> are each a <code>data.table</code> of transcript abundances as described in the Input section.</li>
+<li><code>annot</code> - An annotation data frame, as described in the <em>Input formats</em> section.</li>
+<li><code>count_data_A</code> and <code>count_data_B</code> - are each a <code>data.table</code> of transcript abundances as described in the Input section.</li>
 </ol>
-<p><code>name_A</code>, <code>name_B</code>, <code>varname</code> and <code>description</code> are optional meta-data that will be recorded in the results object.</p>
+</div>
+<div id="optional-arguments" class="section level4">
+<h4>Optional arguments:</h4>
+<ul>
+<li><code>name_A</code>, <code>name_B</code> - A name for each conditon. (Default <code>NA</code>)</li>
+<li><code>varname</code> - The name of the variable/condition. (Default <code>NA</code>)</li>
+<li><code>description</code> - Free-text description. You can note experiment details, annotation source, anything you might find useful later. (Default <code>NA</code>)</li>
+</ul>
+</div>
 </div>
 <div id="from-bootstrapped-abundance-estimates" class="section level3">
 <h3>from bootstrapped abundance estimates</h3>
@@ -242,12 +250,21 @@ mydtu &lt;- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_
                   description=&quot;Comparison of two simulated datasets of bootstrapped 
                     counts for the tutorial. Simulated using built-in functionality 
                     of RATs.&quot;)</code></pre>
-<p><code>call_DTU()</code> takes 3 mandatory arguments for this input format:</p>
+<div id="mandatory-arguents-1" class="section level4">
+<h4>Mandatory arguents:</h4>
 <ol style="list-style-type: decimal">
-<li>An annotation data frame, as described in the <em>Input formats</em> section.</li>
-<li><code>boot_data_A</code> and <code>boot_data_B</code> are each a list of <code>data.table</code> objects, as described in the Input section.</li>
+<li><code>annot</code> - An annotation data frame, as described in the <em>Input formats</em> section.</li>
+<li><code>boot_data_A</code> and <code>boot_data_B</code> - are each a list of <code>data.table</code> objects, as described in the Input section.</li>
 </ol>
-<p><code>name_A</code>, <code>name_B</code>, <code>varname</code> and <code>description</code> are optional meta-data that will be recorded in the results object.</p>
+</div>
+<div id="optional-arguments-1" class="section level4">
+<h4>Optional arguments:</h4>
+<ul>
+<li><code>name_A</code>, <code>name_B</code> - A name for each conditon. (Default <code>NA</code>)</li>
+<li><code>varname</code> - The name of the variable/condition. (Default <code>NA</code>)</li>
+<li><code>description</code> - Free-text description. You can note experiment details, annotation source, anything you might find useful later. (Default <code>NA</code>)</li>
+</ul>
+</div>
 </div>
 <div id="with-a-sleuth-object" class="section level3">
 <h3>with a sleuth object</h3>
@@ -266,16 +283,23 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
                   description=&quot;Comparison of two conditions using a simulated sleuth object 
                     for the purposes of the tutorial. Simulated using built-in functionality 
                     of RATs.&quot;)</code></pre>
-<p><code>call_DTU()</code> takes 5 mandatory arguments for this input format:</p>
+<div id="mandatory-arguents-2" class="section level4">
+<h4>Mandatory arguents:</h4>
 <ol style="list-style-type: decimal">
-<li>an annotation data frame, as described in the <em>Input formats</em> section.</li>
-<li>a Sleuth object.</li>
-<li><code>name_A</code> and <code>name_B</code> are restricted to values available in <code>myslo$sample_to_covariates</code>. The values must both exist in the column specified by <code>varname</code>.</li>
-<li><code>varname</code> must be an existing column header in <code>myslo$sample_to_covariates</code>.</li>
+<li><code>annot</code> - an annotation data frame, as described in the <em>Input formats</em> section.</li>
+<li><code>slo</code> - a Sleuth object.</li>
+<li><code>name_A</code> and <code>name_B</code> - the two groups of samples to compare. These are restricted to values available in <code>myslo$sample_to_covariates</code>. The values must both exist in the column specified by <code>varname</code>.</li>
+<li><code>varname</code> - the variable for which samples are compared. must be an existing column header in <code>myslo$sample_to_covariates</code>.</li>
 </ol>
-<p><code>description</code> is optional meta-data that will be recorded in the results object.</p>
+</div>
+<div id="optional-arguments-2" class="section level4">
+<h4>Optional arguments:</h4>
+<ul>
+<li><code>description</code> - Free-text description. You can note experiment details, annotation source, anything you might find useful later. (Default <code>NA</code>)</li>
+</ul>
 <p>Please note that, unlike the other two usage cases, <code>name_A</code>, <code>name_B</code> and <code>varname</code> are <strong>not optional</strong>, as they specify how data is extracted from the Sleuth object.</p>
 <hr />
+</div>
 </div>
 </div>
 <div id="additional-parameters-and-settings" class="section level1">
@@ -289,9 +313,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, name_B = &quot;patients&quot;, 
                   p_thresh = 0.01, abund_thresh = 10, dprop_thresh = 0.25)</code></pre>
 <ol style="list-style-type: decimal">
-<li><code>p_thresh</code> - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter.</li>
-<li><code>abund_thresh</code> - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter.</li>
-<li><code>dprop_thresh</code> - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter.</li>
+<li><code>p_thresh</code> - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter. (Default 0.05)</li>
+<li><code>abund_thresh</code> - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter. (Default 10)</li>
+<li><code>dprop_thresh</code> - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter. (Default 0.10)</li>
 </ol>
 <p>The default values for these thresholds are quite permissive. You may want to consider setting them to stricter values. Depending on the settings, <em>additional thresholds</em> are available and will be discussed in their respective sections below.</p>
 </div>
@@ -309,9 +333,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <h3>Quantification bootstraping</h3>
 <p>Three parameters control bootstrapping of DTU calls on the abundance estimates:</p>
 <ol style="list-style-type: decimal">
-<li><code>qboot</code> - Whether to bootstrap the quantifications or not.</li>
-<li><code>qbootnum</code> - How many bootstrap iterations to do. Preferably at least 100. If 0, RATs will try to infer a value from the data.</li>
-<li><code>qrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter.</li>
+<li><code>qboot</code> - Whether to bootstrap the quantifications or not. (Default TRUE)</li>
+<li><code>qbootnum</code> - How many bootstrap iterations to do. Preferably at least 100. If 0, RATs will try to infer a value from the data. (Default 0)</li>
+<li><code>qrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.95)</li>
 </ol>
 <p>In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. This will be repeated <code>qbootnum</code> times. Because the number of replicates remains the same, the statistical power is not compromised. Therefore, the reproducibility will be <strong>used as a criterion</strong> in calling DTU, along with statistical significance and effect size. The process is <strong>stochastic</strong>; the quantifications are randomly sampled, so runs on the same data may yield slight differences in DTU. Using higher <code>qbootnum</code> improves reproducibility between runs on the same dataset.</p>
 <p>Low reproducibility indicates that the quantification tool found it hard to distinguish these transcripts. This can be caused by high similarity of the isoforms, genes with a large number of isoforms, and/or poor read coverage in the regions differentiating the isoforms from one another. In these cases, skepticism is required about the quantifications and any potential differential expression regarding these transcripts.</p>
@@ -328,9 +352,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <h3>Replicate bootstraping</h3>
 <p>Three parameters control bootstrapping of DTU calls agaisnt the samples:</p>
 <ol style="list-style-type: decimal">
-<li><code>rboot</code> - Whether to bootstrap the replicates or not.</li>
-<li><code>rrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter.</li>
-<li><code>conservative</code> - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU.</li>
+<li><code>rboot</code> - Whether to bootstrap the replicates or not. (Default TRUE)</li>
+<li><code>rrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.85)</li>
+<li><code>conservative</code> - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default FALSE)</li>
 </ol>
 <p>Unlike bootstrapping the quantifications, bootstrapping the replicates is currently <strong>not stochastic</strong>. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition. This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.</p>
 <p>Because only one replicate is used each time, this process has reduced statistical power and only the strongest results will persist. Due to this, the sample-wise reproducibility is <strong>not used as a criterion</strong> in calling DTU, unless explicitly required by setting the <code>conservative</code> flag. For low replication levels in particular, the reproducibility may be easily underestimated or overestimated.</p>
@@ -351,6 +375,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <pre class="r"><code># Using 8 threads/cores for parallel computing.
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, 
                   name_B = &quot;patients&quot;, threads = 8)</code></pre>
+<ol style="list-style-type: decimal">
+<li><code>threads</code> - The number of threads to use. (Default 1)</li>
+</ol>
 <p>Due to core R implementation limitations, multi-threading works only in POSIX-compliant systems. In other systems, the option will be ignored and R will run serially. Most Linux distros, Unix versions, and recent OSX versions are supposedly compatible, and there are environments that can be installed on Windows that might circumvent the issue.</p>
 </div>
 <div id="test-selection" class="section level2">
@@ -362,6 +389,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 # Genes only.
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, 
                   name_B = &quot;patients&quot;, testmode=&quot;genes&quot;)</code></pre>
+<ol style="list-style-type: decimal">
+<li><code>testmode</code> - Which test(s) to run {“transc”, “genes”, “both”“}. (Default”both“)</li>
+</ol>
 </div>
 <div id="correction-for-multiple-testing" class="section level2">
 <h2>Correction for multiple testing</h2>
@@ -369,6 +399,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <pre class="r"><code># Bonferroni correction.
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, 
                   name_B = &quot;patients&quot;, correction = &quot;bonferroni&quot;)</code></pre>
+<ol style="list-style-type: decimal">
+<li><code>correction</code> - Type of multiple testing correction. (Default “BH”)</li>
+</ol>
 </div>
 <div id="input-field-names" class="section level2">
 <h2>Input field names</h2>
@@ -414,11 +447,11 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;
 
 #! In our example data here, the annotation fields have been modified as well, so this command 
 #! will NOT run as it is shown. You will also need the parameters shown in teh section below.</code></pre>
-<ul>
-<li><code>varname</code> - The field name in <code>myslo$sample_to_covariates</code> where the desired condition names are listed.</li>
-<li><code>COUNTS_COL</code> - The name of the field holding the estimated counts in the Sleuth object’s bootstrap tables.</li>
-<li><code>BS_TARGET_COL</code> - The name of the field holding the transcript identifiers in the Sleuth object’s bootstrap tables.</li>
-</ul>
+<ol style="list-style-type: decimal">
+<li><code>varname</code> - The field name in <code>myslo$sample_to_covariates</code> where the desired condition names are listed. (Default “condition”)</li>
+<li><code>COUNTS_COL</code> - The name of the field holding the estimated counts in the Sleuth object’s bootstrap tables. (Default “est-counts”)</li>
+<li><code>BS_TARGET_COL</code> - The name of the field holding the transcript identifiers in the Sleuth object’s bootstrap tables. (Default “target_id”)</li>
+</ol>
 </div>
 <div id="annotation-field-names" class="section level3">
 <h3>Annotation field names</h3>
@@ -429,10 +462,10 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;
 
 #! In our example data here, the Sleuth fields have been modified as well, so this command 
 #! will NOT run as it is shown. You will also need the parameters shown in the section above.</code></pre>
-<ul>
-<li><code>TARGET_COL</code> - The name of the field holding the transcript identifiers in the annotation data frame.</li>
-<li><code>PARENT_COL</code> - The name of the field holding the respective gene identifiers in the annotation data frame.</li>
-</ul>
+<ol style="list-style-type: decimal">
+<li><code>TARGET_COL</code> - The name of the field holding the transcript identifiers in the annotation data frame. (Default “target_id”)</li>
+<li><code>PARENT_COL</code> - The name of the field holding the respective gene identifiers in the annotation data frame. (Default “parent_id”)</li>
+</ol>
 <hr />
 </div>
 </div>

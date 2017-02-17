@@ -110,19 +110,22 @@ Now we can call DTU:
 ```{r}
 # Find DTU between the simulated datasets.
 mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
-                  qboot=FALSE, verbose= FALSE,
+                  verbose= FALSE,
                   name_A= "healthy", name_B= "patients", varname= "My phenotype",
                   description="Comparison of two simulated counts datasets for the
                     tutorial. Simulated using built-in functionality of RATs.")
 ```
 
-`call_DTU()` takes 4 mandatory arguments for this input format:
+#### Mandatory arguents:
 
-1. An annotation data frame, as described in the *Input formats* section.
-2. `qboot` must only take the value `FALSE` in this case, as no bootstrapped quantification data is available.
-3. `count_data_A` and `count_data_B` are each a `data.table` of transcript abundances as described in the Input section.
+1. `annot` - An annotation data frame, as described in the *Input formats* section.
+2. `count_data_A` and `count_data_B` - are each a `data.table` of transcript abundances as described in the Input section.
 
-`name_A`, `name_B`, `varname` and `description` are optional meta-data that will be recorded in the results object.
+#### Optional arguments:
+
+* `name_A`, `name_B` - A name for each conditon. (Default `NA`)
+* `varname` - The name of the variable/condition. (Default `NA`)
+* `description` - Free-text description. You can note experiment details, annotation source, anything you might find useful later. (Default `NA`)
 
 
 ### from bootstrapped abundance estimates
@@ -151,12 +154,16 @@ mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B,
                     of RATs.")
 ```
 
-`call_DTU()` takes 3 mandatory arguments for this input format:
+#### Mandatory arguents:
 
-1. An annotation data frame, as described in the *Input formats* section.
-2. `boot_data_A` and `boot_data_B` are each a list of `data.table` objects, as described in the Input section.
+1. `annot` - An annotation data frame, as described in the *Input formats* section.
+2. `boot_data_A` and `boot_data_B` - are each a list of `data.table` objects, as described in the Input section.
 
-`name_A`, `name_B`, `varname` and `description` are optional meta-data that will be recorded in the results object.
+#### Optional arguments:
+
+* `name_A`, `name_B` - A name for each conditon. (Default `NA`)
+* `varname` - The name of the variable/condition. (Default `NA`)
+* `description` - Free-text description. You can note experiment details, annotation source, anything you might find useful later. (Default `NA`)
 
 
 ### with a sleuth object
@@ -185,14 +192,16 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
                     of RATs.")
 ```
 
-`call_DTU()` takes 5 mandatory arguments for this input format: 
+#### Mandatory arguents:
 
-1. an annotation data frame, as described in the *Input formats* section.
-2. a Sleuth object.
-3. `name_A` and `name_B` are restricted to values available in `myslo$sample_to_covariates`. The values must both exist in the column specified by `varname`.
-4. `varname` must be an existing column header in `myslo$sample_to_covariates`.
+1. `annot` - an annotation data frame, as described in the *Input formats* section.
+2. `slo` - a Sleuth object.
+3. `name_A` and `name_B` - the two groups of samples to compare. These are restricted to values available in `myslo$sample_to_covariates`. The values must both exist in the column specified by `varname`.
+4. `varname` - the variable for which samples are compared. must be an existing column header in `myslo$sample_to_covariates`.
 
-`description` is optional meta-data that will be recorded in the results object.
+#### Optional arguments:
+
+* `description` - Free-text description. You can note experiment details, annotation source, anything you might find useful later. (Default `NA`)
 
 Please note that, unlike the other two usage cases, `name_A`, `name_B` and `varname` are **not optional**, as they specify how data is extracted from the Sleuth object.
 
@@ -218,10 +227,10 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
                   p_thresh = 0.01, abund_thresh = 10, dprop_thresh = 0.25)
 ```
 
-1. `p_thresh` - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter.
-2. `abund_thresh` - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter.
+1. `p_thresh` - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter. (Default 0.05)
+2. `abund_thresh` - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter. (Default 10)
 3. `dprop_thresh` - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance.
-Higher threshold values are stricter.
+Higher threshold values are stricter. (Default 0.10)
 
 The default values for these thresholds are quite permissive. You may want to consider setting them to stricter values.
 Depending on the settings, *additional thresholds* are available and will be discussed in their respective sections below.
@@ -247,9 +256,9 @@ If bootstrapping is switched off, the respective output fields will not be inclu
 
 Three parameters control bootstrapping of DTU calls on the abundance estimates:
 
-1. `qboot` - Whether to bootstrap the quantifications or not.
-2. `qbootnum` - How many bootstrap iterations to do. Preferably at least 100. If 0, RATs will try to infer a value from the data.
-3. `qrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter.
+1. `qboot` - Whether to bootstrap the quantifications or not. (Default TRUE)
+2. `qbootnum` - How many bootstrap iterations to do. Preferably at least 100. If 0, RATs will try to infer a value from the data. (Default 0)
+3. `qrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.95)
 
 In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. This will be repeated `qbootnum` times. Because the
 number of replicates remains the same, the statistical power is not compromised. Therefore, the reproducibility will be **used as a criterion** in calling DTU, along with
@@ -277,9 +286,9 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 
 Three parameters control bootstrapping of DTU calls agaisnt the samples:
 
-1. `rboot` - Whether to bootstrap the replicates or not.
-2. `rrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter.
-3. `conservative` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU.
+1. `rboot` - Whether to bootstrap the replicates or not. (Default TRUE)
+2. `rrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.85)
+3. `conservative` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default FALSE)
 
 Unlike bootstrapping the quantifications, bootstrapping the replicates is currently **not stochastic**. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition.
 This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.
@@ -312,6 +321,8 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
                   name_B = "patients", threads = 8)
 ```
 
+1. `threads` - The number of threads to use. (Default 1)
+
 Due to core R implementation limitations, multi-threading works only in POSIX-compliant systems. In other systems, the option will be ignored and R will run serially.
 Most Linux distros, Unix versions, and recent OSX versions are supposedly compatible, and there are environments that can be installed on Windows that might circumvent the issue.
 
@@ -330,12 +341,13 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
                   name_B = "patients", testmode="genes")
 ```
 
+1. `testmode` - Which test(s) to run {"transc", "genes", "both""}. (Default "both")
 
 ## Correction for multiple testing
 
 Testing multiple null hypotheses increases the chance of one being falsely rejected. To keep the overall false rate at the 
-desired level, the raw p-values must be adjusted. The default adjustment 
-method is `BH` (Benjamini-Hochberg). A full list of options is listed in R's `p.adjust.methods`.
+desired level, the raw p-values must be adjusted. The default adjustment method is `BH` (Benjamini-Hochberg). A full list of 
+options is listed in R's `p.adjust.methods`.
 
 ```{r eval=FALSE}
 # Bonferroni correction.
@@ -343,6 +355,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
                   name_B = "patients", correction = "bonferroni")
 ```
 
+1. `correction` - Type of multiple testing correction. (Default "BH")
 
 ## Input field names
 
@@ -381,9 +394,9 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
 #! will NOT run as it is shown. You will also need the parameters shown in teh section below.
 ```
 
-* `varname` - The field name in `myslo$sample_to_covariates` where the desired condition names are listed.
-* `COUNTS_COL` - The name of the field holding the estimated counts in the Sleuth object's bootstrap tables.
-* `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the Sleuth object's bootstrap tables.
+1. `varname` - The field name in `myslo$sample_to_covariates` where the desired condition names are listed. (Default "condition")
+2. `COUNTS_COL` - The name of the field holding the estimated counts in the Sleuth object's bootstrap tables. (Default "est-counts")
+3. `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the Sleuth object's bootstrap tables. (Default "target_id")
 
 
 ### Annotation field names
@@ -400,8 +413,8 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
 #! will NOT run as it is shown. You will also need the parameters shown in the section above.
 ```
 
-* `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame.
-* `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame.
+1. `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame. (Default "target_id")
+2. `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame. (Default "parent_id")
 
 
 ***

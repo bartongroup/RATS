@@ -28,7 +28,7 @@ myannot <- simdat[[1]]        # Transcript and gene IDs for the above data.
 ## ------------------------------------------------------------------------
 # Find DTU between the simulated datasets.
 mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
-                  qboot=FALSE, verbose= FALSE,
+                  verbose= FALSE,
                   name_A= "healthy", name_B= "patients", varname= "My phenotype",
                   description="Comparison of two simulated counts datasets for the
                     tutorial. Simulated using built-in functionality of RATs.")
