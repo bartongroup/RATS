@@ -282,7 +282,7 @@ Three parameters control bootstrapping of DTU calls agaisnt the samples:
 3. `conservative` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU.
 
 Unlike bootstrapping the quantifications, bootstrapping the replicates is currently **not stochastic**. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition.
-This behaviour assumes that most usage cases will have a relatively small number of replicates.
+This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.
 
 Because only one replicate is used each time, this process has reduced statistical power and only the strongest results will persist. Due to this, the sample-wise reproducibility
 is **not used as a criterion** in calling DTU, unless explicitly required by setting the `conservative` flag. For low replication levels in particular, the reproducibility may

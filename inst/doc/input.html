@@ -332,7 +332,7 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <li><code>rrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter.</li>
 <li><code>conservative</code> - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU.</li>
 </ol>
-<p>Unlike bootstrapping the quantifications, bootstrapping the replicates is currently <strong>not stochastic</strong>. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition. This behaviour assumes that most usage cases will have a relatively small number of replicates.</p>
+<p>Unlike bootstrapping the quantifications, bootstrapping the replicates is currently <strong>not stochastic</strong>. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition. This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.</p>
 <p>Because only one replicate is used each time, this process has reduced statistical power and only the strongest results will persist. Due to this, the sample-wise reproducibility is <strong>not used as a criterion</strong> in calling DTU, unless explicitly required by setting the <code>conservative</code> flag. For low replication levels in particular, the reproducibility may be easily underestimated or overestimated.</p>
 <pre class="r"><code># Bootstrap (default). 
 # NOTE: The number of iterations for 3 samples per condition is 3*3=9. 

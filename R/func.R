@@ -123,6 +123,9 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   
   # Bootstrap.
   minboots <- NA_integer_
+  samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
+  numsamples <- length(samples_by_condition[[1]]) + length(samples_by_condition[[2]])
+  maxmatrix <- 2^31 - 1
   if (qboot) {
     # Consistency,
     if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
@@ -152,12 +155,21 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     if (!is.na(minboots)) {
       if (minboots <= 1)
         return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
-      if (qbootnum > minboots)
-        warnmsg["toomanyboots"] <- "You requested more RATs bootstrap iterations than available in your quantification data, which increases the chance of duplicate iterations."
-      if (100 > minboots)
-        warnmsg["toofewboots"] <- "You requested fairly few bootstrap iterations, which reduces reproducibility of the calls."
+      if (minboots < 100) {
+        warnmsg["toofewboots"] <- "Your quantifications have fairly few bootstrap iterations, which reduces reproducibility of the calls."
+      }
+      if (qbootnum < 100) {
+        warnmsg["toolowbootnum"] <- "You requested fairly few bootstrap iterations, which reduces reproducibility of the calls."
+      }
+      bootcombos <- minboots^numsamples  # Conservative estimate.
+      if (qbootnum >= bootcombos/100)
+        warnmsg["toomanyboots"] <- "The requested number of quantification bootstraps is very high, relative to the supplied data. Over 1% chance of duplicate iterations."
+      if (qbootnum >= maxmatrix/dim(annot)[1])
+        return(list("error"=TRUE,"message"="The requested number of quantification bootstraps would exceed the maximum capacity of an R matrix."))
     } # else it is probably count data and qboot will be auto-set to FALSE
   } 
+  if (rboot & (length(samples_by_condition[[1]]) * length(samples_by_condition[[2]]) > maxmatrix/dim(annot)[1]) )
+    warnmsg["toomanyreplicates"] <- "The number of replicates is too high. Exhaustive 1vs1 would exceed maximum capacity of an R matrix."
   
   return(list("error"=FALSE, "message"="All good!", "maxboots"=minboots, "warn"=(length(warnmsg) > 0), "warnings"= warnmsg))
 }
