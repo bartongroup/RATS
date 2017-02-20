@@ -74,10 +74,12 @@ test_that("The input checks work", {
   expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, COUNTS_COL= wrong_name, verbose = FALSE, dbg= 1),
                "counts field name does not exist", fixed= TRUE)
   # Number of bootstraps.
+  expect_warning(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = TRUE, dbg= 1),
+                 "few bootstrap iterations", fixed= TRUE)
   expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, qbootnum = -5, verbose = FALSE, dbg= 1),
                "Invalid number of bootstraps", fixed= TRUE)
   expect_warning(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, qbootnum = 5, verbose = TRUE, dbg= 1),
-                 "few bootstrap iterations", fixed= TRUE)
+                 "qbootnum is low", fixed= TRUE)
   expect_warning(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, qbootnum = 5000, verbose = TRUE, dbg= 1),
                  "number of quantification bootstraps is very high", fixed= TRUE)
   expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, qbootnum = 5000000000000, verbose = FALSE, dbg= 1),

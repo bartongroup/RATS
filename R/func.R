@@ -158,10 +158,10 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
       if (minboots <= 1)
         return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
       if (minboots < 100) {
-        warnmsg["toofewboots"] <- "Your quantifications have fairly few bootstrap iterations, which reduces reproducibility of the calls."
+        warnmsg["toofewboots"] <- "Your quantifications have few bootstrap iterations, which reduces reproducibility of the calls."
       }
       if (qbootnum < 100) {
-        warnmsg["toolowbootnum"] <- "You requested fairly few bootstrap iterations, which reduces reproducibility of the calls."
+        warnmsg["toolowbootnum"] <- "The requested qbootnum is low, which reduces reproducibility of the calls."
       }
       bootcombos <- minboots^numsamples  # Conservative estimate.
       if (qbootnum >= bootcombos/100)
