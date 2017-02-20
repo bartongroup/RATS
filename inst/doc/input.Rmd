@@ -1,5 +1,5 @@
 ---
-title: "RATs: Input and Parameters"
+title: "RATs: Input and Settings"
 author: "Kimon Froussios"
 date: "15 FEB 2017"
 output: 
@@ -9,7 +9,7 @@ output:
     theme: readable
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs Input & Parameters}
+  %\VignetteIndexEntry{RATs Input & Settings}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 
