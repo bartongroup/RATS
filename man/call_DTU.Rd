@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   abund_thresh = 10, dprop_thresh = 0.1, correction = "BH",
   testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
-  rboot = TRUE, rrep_thresh = 0.85, conservative = FALSE,
+  rboot = TRUE, rrep_thresh = 0.85, rrep_as_crit = FALSE,
   description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
@@ -61,7 +61,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{rrep_thresh}{Reproducibility threshold for replicate bootsrapping. (Default 0.85)}
 
-\item{conservative}{Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)}
+\item{rrep_as_crit}{Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)}
 
 \item{description}{Free-text description of the run. You can use this to add metadata to the results object.}
 

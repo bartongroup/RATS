@@ -119,7 +119,7 @@ print( names(mydtu$Parameters) )
 18. `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter.
 19. `rep_boots` - (bool) The value passed to the `rboot` parameter.
 20. `rep_bootnum` - (int) The number of replicate bootstrapping iterations (usually  M*N, where M and N are the number of samples in the two conditions).
-21. `conservative` - (bool) The value passed to the `conservative` parameter.
+21. `rep_reprod_as_crit` - (bool) The value passed to the `rrep_as_crit` parameter.
 
 **Note:** If bootstraps are disabled, the bootstrap-related fields may have `NA` values despite any values that were passed to their respective parameters.
 
@@ -150,7 +150,7 @@ Pseudo-code formulas are shown to help understand how the different fields inter
 For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for non-DTU `= (quant_dtu_freq <= 1 - Parameters$quant_reprod_thresh)`
 6. `rep_reprod` - (bool) Replication reproducible.
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`
-7. `DTU` - (bool) Differential Transcript Usage. `= (sig & elig_fx & quant_reprod)`, or if `conservative==TRUE`, then `= (sig & elig_fx & quant_reprod & rep_reprod)`
+7. `DTU` - (bool) Differential Transcript Usage. `= (sig & elig_fx & quant_reprod)`, or if `rrep_as_crit==TRUE`, then `= (sig & elig_fx & quant_reprod & rep_reprod)`
 8. `transc_DTU` - (bool) Aggregated from `Transcripts$DTU`: At least one isoform was individually reported as DTU. `= any(Transcript[parent_id, DTU])`
 9. `known_transc` - (int) Number of known trascripts for this gene according to the given annotation.
 10. `detect_trancs` - (int) Number of detected (expressed) transcripts in the given dataset.

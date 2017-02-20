@@ -23,7 +23,7 @@ test_that("The reporting structures are created correctly", {
                                   "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
                                   "tests", "p_thresh", "abund_thresh", "dprop_thresh",
                                   "quant_reprod_thresh", "quant_boot", "quant_bootnum",
-                                  "rep_reprod_thresh", "rep_boot", "rep_bootnum", "conservative"))
+                                  "rep_reprod_thresh", "rep_boot", "rep_bootnum", "rep_reprod_as_crit"))
   expect_named(short$Parameters, c("num_replic_A", "num_replic_B"))
   
   expect_true(is.data.frame(full$Genes))

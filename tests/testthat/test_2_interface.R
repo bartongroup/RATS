@@ -23,7 +23,7 @@ test_that("The input checks work", {
   expect_silent(call_DTU(annot= sim2$annot, slo= sim2$slo, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, abund_thresh= 10,
                          rrep_thresh = 0.6, qrep_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, rboot= FALSE, qboot=TRUE,
                          qbootnum= 100, COUNTS_COL= "counts", TARGET_COL= "target", 
-                         PARENT_COL= "parent", BS_TARGET_COL= "id", threads= 2, conservative=TRUE, dbg= 1))
+                         PARENT_COL= "parent", BS_TARGET_COL= "id", threads= 2, rrep_as_crit=TRUE, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, boot_data_A= data_A, boot_data_B= data_B, verbose = FALSE, dbg= 1))
   expect_silent(call_DTU(annot= sim1$annot, count_data_A= counts_A, count_data_B= counts_B, rboot=FALSE, qboot= FALSE, verbose = FALSE, dbg= 1))
@@ -143,7 +143,7 @@ test_that("The input checks work", {
                "Invalid reproducibility threshold", fixed= TRUE)
   
   # Conservative flag.
-  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, conservative = "nope", verbose = FALSE, dbg= 1),
+  expect_error(call_DTU(annot= sim1$annot, slo= sim1$slo, name_A= name_A, name_B= name_B, rrep_as_crit = "nope", verbose = FALSE, dbg= 1),
                "Unrecognized value", fixed= TRUE)
   
   # Number of threads.
@@ -177,7 +177,7 @@ test_that("The output structure is correct", {
                                    "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
                                    "tests", "p_thresh", "abund_thresh", "dprop_thresh",
                                    "quant_reprod_thresh", "quant_boot", "quant_bootnum",
-                                   "rep_reprod_thresh", "rep_boot", "rep_bootnum", "conservative"))
+                                   "rep_reprod_thresh", "rep_boot", "rep_bootnum", "rep_reprod_as_crit"))
   
   expect_true(is.data.frame(mydtu$Genes))
   expect_equal(dim(mydtu$Genes)[2], 35)
@@ -328,7 +328,7 @@ test_that("The output content is complete", {
     expect_false(is.na(mydtu[[x]]$Parameters$"quant_boot"))
     if (x<3) {
       expect_false(is.na(mydtu[[x]]$Parameters$"rep_bootnum"))
-      expect_false(is.na(mydtu[[x]]$Parameters$"conservative"))
+      expect_false(is.na(mydtu[[x]]$Parameters$"rep_reprod_as_crit"))
       expect_false(is.na(mydtu[[x]]$Parameters$"quant_bootnum"))
       expect_false(is.na(mydtu[[x]]$Parameters$"rep_reprod_thresh"))
       expect_false(is.na(mydtu[[x]]$Parameters$"quant_reprod_thresh"))

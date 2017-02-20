@@ -24,7 +24,7 @@
 #' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param rboot Whether to bootstrap against samples.
 #' @param rrep_thresh Confidence threshold.
-#' @param conservative Whether to use rrep as a DTU criterion.
+#' @param rrep_as_crit Whether to use rrep as a DTU criterion.
 #' @param threads Number of threads.
 #' 
 #' @return List: \itemize{
@@ -41,7 +41,7 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, 
                             count_thresh, testmode, qboot, qbootnum, dprop_thresh,
                             count_data_A, count_data_B, boot_data_A, boot_data_B, qrep_thresh, 
-                            threads, rboot, rrep_thresh, conservative) {
+                            threads, rboot, rrep_thresh, rrep_as_crit) {
   warnmsg <- list()
   
   # Input format.
@@ -84,8 +84,8 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
-  if (!is.logical(conservative))
-    return(list("error"=TRUE, "message"="Unrecognized value for conservative! Must be TRUE/FALSE."))
+  if (!is.logical(rrep_as_crit))
+    return(list("error"=TRUE, "message"="Unrecognized value for rrep_as_crit! Must be TRUE/FALSE."))
   
   # Sleuth
   if (!is.null(slo)) {
@@ -288,7 +288,7 @@ alloc_out <- function(annot, full){
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
                        "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_,
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
-                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "conservative"=NA)
+                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "rep_reprod_as_crit"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, 

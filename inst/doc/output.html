@@ -205,7 +205,7 @@ print( names(mydtu$Parameters) )</code></pre>
 ## [13] &quot;tests&quot;               &quot;p_thresh&quot;            &quot;abund_thresh&quot;       
 ## [16] &quot;dprop_thresh&quot;        &quot;quant_reprod_thresh&quot; &quot;quant_boot&quot;         
 ## [19] &quot;quant_bootnum&quot;       &quot;rep_reprod_thresh&quot;   &quot;rep_boot&quot;           
-## [22] &quot;rep_bootnum&quot;         &quot;conservative&quot;</code></pre>
+## [22] &quot;rep_bootnum&quot;         &quot;rep_reprod_as_crit&quot;</code></pre>
 <ol style="list-style-type: decimal">
 <li><code>description</code> - (str) Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters…</li>
 <li><code>time</code> - (str) Date and time for the run. This does not represent the exact time the run started.</li>
@@ -227,7 +227,7 @@ print( names(mydtu$Parameters) )</code></pre>
 <li><code>rep_reprod_thresh</code> - (num) The value passed to the <code>rrep_thresh</code> parameter.</li>
 <li><code>rep_boots</code> - (bool) The value passed to the <code>rboot</code> parameter.</li>
 <li><code>rep_bootnum</code> - (int) The number of replicate bootstrapping iterations (usually M*N, where M and N are the number of samples in the two conditions).</li>
-<li><code>conservative</code> - (bool) The value passed to the <code>conservative</code> parameter.</li>
+<li><code>rep_reprod_as_crit</code> - (bool) The value passed to the <code>rrep_as_crit</code> parameter.</li>
 </ol>
 <p><strong>Note:</strong> If bootstraps are disabled, the bootstrap-related fields may have <code>NA</code> values despite any values that were passed to their respective parameters.</p>
 </div>
@@ -257,7 +257,7 @@ print( names(mydtu$Genes) )</code></pre>
 <li><code>elig_fx</code> - (bool) Eligible effect size. Whether at least one of the isoforms meets the effect size criterion. <code>= any(Transcript[parent_id, elig_fx])</code></li>
 <li><code>quant_reprod</code> - (bool) Quantification reproducible. For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code></li>
 <li><code>rep_reprod</code> - (bool) Replication reproducible. For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</code>, for non-DTU <code>= (rep_dtu_freq &lt;= 1 - Parameters$rep_reprod_thresh)</code></li>
-<li><code>DTU</code> - (bool) Differential Transcript Usage. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>conservative==TRUE</code>, then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code></li>
+<li><code>DTU</code> - (bool) Differential Transcript Usage. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>rrep_as_crit==TRUE</code>, then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code></li>
 <li><code>transc_DTU</code> - (bool) Aggregated from <code>Transcripts$DTU</code>: At least one isoform was individually reported as DTU. <code>= any(Transcript[parent_id, DTU])</code></li>
 <li><code>known_transc</code> - (int) Number of known trascripts for this gene according to the given annotation.</li>
 <li><code>detect_trancs</code> - (int) Number of detected (expressed) transcripts in the given dataset.</li>

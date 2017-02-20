@@ -31,7 +31,7 @@
 #' @param qrep_thresh Reproducibility threshold for quantification bootsrapping. (Default 0.95)
 #' @param rboot Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})
 #' @param rrep_thresh Reproducibility threshold for replicate bootsrapping. (Default 0.85)
-#' @param conservative Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)
+#' @param rrep_as_crit Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)
 #' @param description Free-text description of the run. You can use this to add metadata to the results object.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
@@ -47,7 +47,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, abund_thresh= 10, dprop_thresh= 0.1, correction= "BH", 
-                     testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85, conservative= FALSE,
+                     testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85, rrep_as_crit= FALSE,
                      description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
   #---------- PREP
@@ -61,7 +61,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   paramcheck <- parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, abund_thresh, testmode, 
                                 qboot, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B, 
-                                qrep_thresh, threads, rboot, rrep_thresh, conservative)
+                                qrep_thresh, threads, rboot, rrep_thresh, rrep_as_crit)
   if (paramcheck$error) 
     stop(paramcheck$message)
   if (verbose)
@@ -215,7 +215,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     numpairs <- length(pairs)
     resobj$Parameters["rep_bootnum"] <- numpairs
     resobj$Parameters["rep_reprod_thresh"] <- rrep_thresh
-    resobj$Parameters["conservative"] <- conservative
+    resobj$Parameters["rep_reprod_as_crit"] <- rrep_as_crit
       
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
@@ -391,7 +391,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       Transcripts[(elig), DTU := (DTU & quant_reprod)]
       Genes[(elig), DTU := (DTU & quant_reprod)]
     }
-    if (conservative & rboot) {
+    if (rrep_as_crit & rboot) {
       Transcripts[(elig), DTU := (DTU & rep_reprod)]
       Genes[(elig), DTU := (DTU & rep_reprod)]
     }
