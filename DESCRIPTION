@@ -9,9 +9,8 @@ Authors: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac
              person("Nick J. Schurch", role=c("cre"), email="n.schurch@dundee.ac.uk"))
 Author: Kimon Froussios [aut], Kira Mourão [aut], Nick Schurch [cre]
 Maintainer: Kimon Froussios <k.froussios@dundee.ac.uk>
-Description: Given a Sleuth output object and a transcript-to-gene index of
-    identifiers, this package identifies genes where differential transcript usage
-    occurs.
+Description: Given a set of transript abundances or a Sleuth output object, and a transcript-to-gene index of
+    identifiers, this package identifies genes where differential transcript usage occurs.
 License: MIT + file LICENSE
 VignetteBuilder: knitr
 Depends:
