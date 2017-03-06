@@ -1,7 +1,7 @@
 ---
 title: "RATs: Output and Plots"
 author: "Kimon Froussios"
-date: "16/02/2017"
+date: "16 FEB 2017"
 output: 
   html_document: 
     fig_caption: no
@@ -10,7 +10,7 @@ output:
     toc: yes
 vignette: >
   %\VignetteIndexEntry{RATs Output and Plots}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 
 ---

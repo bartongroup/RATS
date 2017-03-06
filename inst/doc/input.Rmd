@@ -10,7 +10,7 @@ output:
     toc: yes
 vignette: >
   %\VignetteIndexEntry{RATs Input & Settings}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 
 ---
