@@ -214,6 +214,8 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
 #' @return list of lists (per covariate) of vectors (per factor level).
 #'
 #' Row number corresponds to sample number.
+#' 
+#' @export
 #'
 group_samples <- function(covariates) {
   samplesByVariable <- list()
@@ -246,6 +248,7 @@ group_samples <- function(covariates) {
 #'
 #' @import parallel
 #' @import data.table
+#' @export
 #'
 denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads= 1) {
   if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
@@ -445,6 +448,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
 #'
 #' @import stats
+#' @export
 #' 
 g.test <- function(x, p = rep(1/length(x), length(x)))
 {
