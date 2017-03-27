@@ -255,32 +255,34 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     with(resobj, {
       if (test_transc) {
+        eltr <- Transcripts[, elig]
         pd <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-        Transcripts[(elig), rep_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / numpairs]
+        Transcripts[(elig), rep_dtu_freq := rowCounts(pd[eltr, ], value = TRUE, na.rm=TRUE) / numpairs]
         pp <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-        Transcripts[(elig), rep_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), rep_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), rep_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), rep_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), rep_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / numpairs]
+        Transcripts[(elig), rep_p_mean := rowMeans(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_p_stdev := rowSds(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_p_min := rowMins(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_p_max := rowMaxs(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_na_freq := rowCounts(pp[eltr, ], value = NA, na.rm=FALSE) / numpairs]
         Transcripts[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
         Transcripts[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
 
       if (test_genes) {
+        elge <- Genes[, elig]
         gabres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gpab"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         gbares <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gpba"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         gdres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-        Genes[(elig), rep_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / numpairs]
-        Genes[(elig), rep_p_meanAB := rowMeans(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_meanBA := rowMeans(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_stdevAB := rowSds(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_stdevBA := rowSds(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_minAB := rowMins(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_minBA := rowMins(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_maxAB := rowMaxs(gabres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_p_maxBA := rowMaxs(gbares[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), rep_na_freq := rowCounts(gabres[Genes[, elig], ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+        Genes[(elig), rep_dtu_freq := rowCounts(gdres[elge, ], value = TRUE, na.rm = TRUE) / numpairs]
+        Genes[(elig), rep_p_meanAB := rowMeans(gabres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_meanBA := rowMeans(gbares[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_stdevAB := rowSds(gabres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_stdevBA := rowSds(gbares[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_minAB := rowMins(gabres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_minBA := rowMins(gbares[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_maxAB := rowMaxs(gabres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_maxBA := rowMaxs(gbares[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_na_freq := rowCounts(gabres[elge, ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
         Genes[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
         Genes[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
