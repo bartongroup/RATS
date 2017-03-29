@@ -9,7 +9,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   varname = "condition", COUNTS_COL = "est_counts",
   BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
-  abund_thresh = 10, dprop_thresh = 0.1, correction = "BH",
+  abund_thresh = 5, dprop_thresh = 0.2, correction = "BH",
   testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
   rboot = TRUE, rrep_thresh = 0.85, rrep_as_crit = FALSE,
   description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
@@ -43,9 +43,9 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{p_thresh}{The p-value threshold. (Default 0.05)}
 
-\item{abund_thresh}{Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 10)}
+\item{abund_thresh}{Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 5)}
 
-\item{dprop_thresh}{Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.10)}
+\item{dprop_thresh}{Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)}
 
 \item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})}
 

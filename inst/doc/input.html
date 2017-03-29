@@ -414,12 +414,11 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 
 <ol>
 <li><code>p_thresh</code> - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter. (Default 0.05)</li>
-<li><code>abund_thresh</code> - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter. (Default 10)</li>
-<li><code>dprop_thresh</code> - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance.
-Higher threshold values are stricter. (Default 0.10)</li>
+<li><code>abund_thresh</code> - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter. (Default 5, assumes use of estimated counts similar to those reported by <a href="https://github.com/COMBINE-lab/salmon">Salmon</a>)</li>
+<li><code>dprop_thresh</code> - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter. (Default 0.20)</li>
 </ol>
 
-<p>The default values for these thresholds are quite permissive. You may want to consider setting them to stricter values.
+<p>The default values for these thresholds have been chosen such that they achieve a <em>median</em> FPR &lt;5% for a high quality eukaryotic dataset even with only 3 replicates per condition. Your mileage may vary and you should give some consideration to selecting appropriate values.
 Depending on the settings, <em>additional thresholds</em> are available and will be discussed in their respective sections below.</p>
 
 <h2>Bootstrapping</h2>

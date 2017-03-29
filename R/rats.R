@@ -22,8 +22,8 @@
 #' @param boot_data_A A list of data.tables, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param boot_data_B A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param p_thresh The p-value threshold. (Default 0.05)
-#' @param abund_thresh Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 10)
-#' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.10)
+#' @param abund_thresh Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 5)
+#' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
 #' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
@@ -46,7 +46,7 @@
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
-                     p_thresh= 0.05, abund_thresh= 10, dprop_thresh= 0.1, correction= "BH",
+                     p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH",
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85, rrep_as_crit= FALSE,
                      description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
