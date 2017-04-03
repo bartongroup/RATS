@@ -447,12 +447,18 @@ test_that("The summaries work", {
   
   expect_silent(tally <- dtu_summary(mydtu))
   expect_true(is.numeric(tally))
-  expect_named(tally, c("DTU genes", "non-DTU genes", "NA genes", "DTU transcripts", "non-DTU transcripts", "NA transcripts"))
+  expect_named(tally, c("DTU genes (gene test)", "non-DTU genes (gene test)", "NA genes (gene test)", 
+                        "DTU genes (transc. test)", "non-DTU genes (transc. test)", "NA genes (transc. test)", 
+                        "DTU genes (both tests)", "non-DTU genes (both tests)", "NA genes (both tests)", 
+                        "DTU transcripts", "non-DTU transcripts", "NA transcripts"))
   expect_false(any(is.na(tally)))
   
   ids <- get_dtu_ids(mydtu)
   expect_type(ids, "list")
-  expect_named(ids, c("dtu-genes", "dtu-transc", "ndtu-genes", "ndtu-transc", "na-genes", "na-transc"))
+  expect_named(ids, c("DTU genes (gene test)", "non-DTU genes (gene test)", "NA genes (gene test)", 
+                      "DTU genes (transc. test)", "non-DTU genes (transc. test)", "NA genes (transc. test)", 
+                      "DTU genes (both tests)", "non-DTU genes (both tests)", "NA genes (both tests)", 
+                      "DTU transcripts", "non-DTU transcripts", "NA transcripts"))
   for (v in ids) {
     expect_false(any(is.na(v)))
   }

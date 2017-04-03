@@ -28,8 +28,9 @@ ids <- get_dtu_ids(mydtu)
 # Contents
 print( names(ids) )
 
-# DTU positive genes.
-print( ids[["dtu-genes"]] )
+# DTU positive genes according to the transcript-level test.
+print( ids[[4]] )
+
 
 ## ------------------------------------------------------------------------
 print( names(mydtu) )

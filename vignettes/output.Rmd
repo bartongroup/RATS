@@ -61,8 +61,14 @@ print( dtu_summary(mydtu) )
 * non-DTU:  No significant change.
 * NA:  Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one transcript.
 
+Notice that **three types of results are given for genes**. That's because RATs uses *two* separate methods of identifying DTU:
+The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually
+and then aggregates the isoform results to form a gene-level result. Therefore, as of `v.0.4.2`, `dtu_summury()`
+will display the DTU genes according to either method as well as the intersection of the two.
+
+
 The `get_dtu_ids()` function lists the actual identifiers per category, instead of the numbers in each category.
-The categories are the same as those in `dtu_summary()` above.
+As of `v0.4.2` it uses the same category names as `dtu_summury()` for consistency and clarity.
 
 ```{r}
 # Gene and transcript IDs corresponding to the tally above.
@@ -71,8 +77,9 @@ ids <- get_dtu_ids(mydtu)
 # Contents
 print( names(ids) )
 
-# DTU positive genes.
-print( ids[["dtu-genes"]] )
+# DTU positive genes according to the transcript-level test.
+print( ids[[4]] )
+
 ```
 
 The ID lists obtained with `get_dtu_ids()` are *ordered by effect size* (`Dprop`).

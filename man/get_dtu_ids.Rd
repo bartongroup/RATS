@@ -10,7 +10,7 @@ get_dtu_ids(dtuo)
 \item{dtuo}{A DTU object.}
 }
 \value{
-A list of vectors.
+A named list of character vectors.
 }
 \description{
 Get the IDs for DTU/nonDTU/NA genes and transcripts.

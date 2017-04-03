@@ -6,9 +6,15 @@
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  result <- c("DTU genes" = sum(dtuo$Genes[["DTU"]], na.rm=TRUE), 
-              "non-DTU genes" = sum(!dtuo$Genes[["DTU"]], na.rm=TRUE), 
-              "NA genes" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
+  result <- c("DTU genes (gene test)" = sum(dtuo$Genes[["DTU"]], na.rm=TRUE),
+              "non-DTU genes (gene test)" = sum(!dtuo$Genes[["DTU"]], na.rm=TRUE),
+              "NA genes (gene test)" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
+              "DTU genes (transc. test)" = sum(dtuo$Genes[["transc_DTU"]], na.rm=TRUE), 
+              "non-DTU genes (transc. test)" = sum(!dtuo$Genes[["transc_DTU"]], na.rm=TRUE), 
+              "NA genes (transc. test)" = sum(ifelse(is.na(dtuo$Genes[["transc_DTU"]]), 1, 0)),
+              "DTU genes (both tests)" = sum(dtuo$Genes[["transc_DTU"]] & dtuo$Genes[["DTU"]], na.rm=TRUE), 
+              "non-DTU genes (both tests)" = sum(!dtuo$Genes[["transc_DTU"]] & !dtuo$Genes[["DTU"]], na.rm=TRUE), 
+              "NA genes (both tests)" = sum(ifelse(is.na(dtuo$Genes[["transc_DTU"]]) & is.na(dtuo$Genes[["DTU"]]), 1, 0)),
               "DTU transcripts" = sum(dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
               "non-DTU transcripts" = sum(!dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
               "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
@@ -23,27 +29,36 @@ dtu_summary <- function(dtuo) {
 #' The IDs will be ordered by effect size.
 #' 
 #' @param dtuo A DTU object.
-#' @return A list of vectors.
+#' @return A named list of character vectors.
 #'
+#'@import data.table
 #'@export
 get_dtu_ids <- function(dtuo) {
-  with(dtuo, {
-    # Sort transcripts.
-    myt <- copy(dtuo$Transcripts)
+  # Sort transcripts.
+  myt <- copy(dtuo$Transcripts[, c("DTU", "parent_id", "target_id", "Dprop")])
+  with(myt, {
     myt[, adp := abs(Dprop)]
     setorder(myt, -adp, na.last=TRUE)
     # Sort genes.
-    pid <- unique(myt[, parent_id])
-    po <- match(Genes[, parent_id], pid)
-    myp <- copy(Genes[order(po), ])
-    
+  })
+  pid <- unique(myt[, "parent_id", with=FALSE])
+  po <- match(dtuo$Genes[, "parent_id", with=FALSE], pid)
+  myp <- copy(dtuo$Genes[order(po), ])
+  
+  with(myp, {
     # Extract.
-    return(list("dtu-genes" = as.vector(myp[(DTU), parent_id]),
-               "dtu-transc" = as.vector(myt[(DTU), target_id]),
-               "ndtu-genes" = as.vector(myp[DTU==FALSE, parent_id]),
-               "ndtu-transc" = as.vector(myt[DTU==FALSE, target_id]),
-               "na-genes" = as.vector(myp[is.na(DTU), parent_id]),
-               "na-transc" = as.vector(myt[is.na(DTU), target_id])
+    return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
+               "non-DTU genes (gene test)" = as.vector( myp[DTU==FALSE, parent_id] ),
+               "NA genes (gene test)" = as.vector( myp[is.na(DTU), parent_id] ),
+               "DTU genes (transc. test)" = as.vector( myp[(transc_DTU), parent_id] ),
+               "non-DTU genes (transc. test)" = as.vector( myp[transc_DTU==FALSE, parent_id] ),
+               "NA genes (transc. test)" = as.vector( myp[is.na(transc_DTU), parent_id] ),
+               "DTU genes (both tests)" = as.vector( myp[(DTU & transc_DTU), parent_id] ),
+               "non-DTU genes (both tests)" = as.vector( myp[DTU==FALSE & transc_DTU==FALSE, parent_id] ),
+               "NA genes (both tests)" = as.vector( myp[is.na(DTU) & is.na(transc_DTU), parent_id] ),
+               "DTU transcripts" = as.vector(myt[(DTU), target_id]),
+               "non-DTU transcripts" = as.vector(myt[DTU==FALSE, target_id]),
+               "NA transcripts" = as.vector(myt[is.na(DTU), target_id])
     ))
   })
 }

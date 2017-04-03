@@ -214,21 +214,3 @@ test_that("The number of iterations is detected correctly", {
   expect_equal(infer_bootnum(NULL,sim$boots_A, sim$boots_B), 2)
 })
 
-#==============================================================================
-#==============================================================================
-context("DTU reporting")
-
-test_that("DTU summary and ID extraction", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, rboot = FALSE, qboot=FALSE)
-  
-  ids <- get_dtu_ids(mydtu)
-  smry <- dtu_summary(mydtu)
-  
-  expect_equal(length(ids[["dtu-genes"]]), smry[["DTU genes"]])
-  expect_equal(length(ids[["ndtu-genes"]]), smry[["non-DTU genes"]])
-  expect_equal(length(ids[["na-genes"]]), smry[["NA genes"]])
-  expect_equal(length(ids[["dtu-transc"]]), smry[["DTU transcripts"]])
-  expect_equal(length(ids[["ndtu-transc"]]), smry[["non-DTU transcripts"]])
-  expect_equal(length(ids[["na-transc"]]), smry[["NA transcripts"]])
-})
