@@ -2,20 +2,66 @@
 % Please edit documentation in R/results.R
 \name{plot_gene}
 \alias{plot_gene}
-\title{Plot count and proportion changes for all transcripts of a specified gene.}
+\title{Plot abundances for all isoforms of a specified gene.}
 \usage{
-plot_gene(dtuo, pid, style = "lines")
+plot_gene(dtuo, pid, style = "lines", fillby = NA_character_,
+  colourby = NA_character_, shapeby = NA_character_, isofcolvec = c("red",
+  "blue", "forestgreen", "purple", "hotpink", "gold3"), dtucolvec = c(`TRUE` =
+  "firebrick1", `FALSE` = "dodgerblue", `NA` = "gold"),
+  condcolvec = c("grey20", "white"), replcolvec = c("orange", "darkgreen",
+  "purple"), nonecol = "grey50")
 }
 \arguments{
 \item{dtuo}{A DTU object.}
 
 \item{pid}{A \code{parent_id} to make the plot for.}
 
-\item{style}{Different themes: "lines", "points", "rainbow", "merged", "dashed".}
+\item{style}{Different themes: \itemize{
+\item{"plain" - Grouped by condition.},
+\item{"paired" - Grouped by isoform.},
+\item{"points" - Grouped by condition. Show individual measurements as points.},
+\item{"pairedpnt" - Grouped by isoform. Show individual measurements as points.},
+\item{"lines" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
+\item{"linesonly" - Grouped by condition. Connect replicate measurements as colour-coded lines. Hide the boxplots.}
+}}
+
+\item{fillby}{Applies to the boxplots. Not all options will work with all styles. 
+\itemize{
+ \item{"isoform" - Colour fill by isoform.},
+ \item{"condition" - Colour fill by condition.},
+ \item{"DTU" - Colour fill by transcript-level DTU result.},
+ \item{"none" - Uniform fill.} }}
+
+\item{colourby}{Applies to boxplot outline and points. Not all options will work with all styles.
+\itemize{
+ \item{"isoform" - Colour lines by isoform.},
+ \item{"condition" - Colour lines by condition.},
+ \item{"DTU" - Colour lines by transcript-level DTU result.},
+ \item{"none" - Uniform colour.} }}
+
+\item{shapeby}{Applies to points.
+\itemize{
+ \item{"repliate" - Point shape by replicate.},
+ \item{"isoform" - Point shape by isoform.},
+ \item{"condition" - Point shape by condition.},
+ \item{"DTU" - Point shape by transcript-level DTU result.},
+ \item{"none" - Uniform shape.} }}
+
+\item{isofcolvec}{Colour vector for isoform highlighting. Used to build a colorRampPalette.}
+
+\item{dtucolvec}{Colour vector for DTU highlighting.}
+
+\item{condcolvec}{Colour vector for condition highlighting.}
+
+\item{replcolvec}{Colour vector for replicate highlighting. Used to build a colorRampPalette.}
+
+\item{nonecol}{Colour to use when no colour coding is wanted.}
 }
 \value{
-a ggplot2 object. Simply display it or you can also customize it.
+A ggplot2 object. Simply display/print it or you can also customize it.
 }
 \description{
-Plot count and proportion changes for all transcripts of a specified gene.
+Boxplot of absolute and relative abundances for the isoforms of a given gene.
+The style option allows grouping by condition or by isoform, and provides the option to
+include the individual measuremnts from each replicate.
 }

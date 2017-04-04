@@ -65,17 +65,63 @@ get_dtu_ids <- function(dtuo) {
 
 
 #================================================================================
-#' Plot count and proportion changes for all transcripts of a specified gene.
+#' Plot abundances for all isoforms of a specified gene.
 #'
+#' Boxplot of absolute and relative abundances for the isoforms of a given gene.
+#' The style option allows grouping by condition or by isoform, and provides the option to
+#' include the individual measuremnts from each replicate.
+#' 
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
-#' @param style Different themes: "lines", "points", "rainbow", "merged", "dashed".
-#' @return a ggplot2 object. Simply display it or you can also customize it.
+#' @param style Different themes: \itemize{
+#'  \item{"plain" - Grouped by condition.},
+#'  \item{"paired" - Grouped by isoform.},
+#'  \item{"points" - Grouped by condition. Show individual measurements as points.},
+#'  \item{"pairedpnt" - Grouped by isoform. Show individual measurements as points.},
+#'  \item{"lines" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
+#'  \item{"linesonly" - Grouped by condition. Connect replicate measurements as colour-coded lines. Hide the boxplots.}
+#'  } 
+#' @param fillby Applies to the boxplots. Not all options will work with all styles. 
+#' \itemize{
+#'  \item{"isoform" - Colour fill by isoform.},
+#'  \item{"condition" - Colour fill by condition.},
+#'  \item{"DTU" - Colour fill by transcript-level DTU result.},
+#'  \item{"none" - Uniform fill.} }
+#' @param colourby Applies to boxplot outline and points. Not all options will work with all styles.
+#' \itemize{
+#'  \item{"isoform" - Colour lines by isoform.},
+#'  \item{"condition" - Colour lines by condition.},
+#'  \item{"DTU" - Colour lines by transcript-level DTU result.},
+#'  \item{"none" - Uniform colour.} }
+#' @param shapeby Applies to points.
+#' \itemize{
+#'  \item{"repliate" - Point shape by replicate.},
+#'  \item{"isoform" - Point shape by isoform.},
+#'  \item{"condition" - Point shape by condition.},
+#'  \item{"DTU" - Point shape by transcript-level DTU result.},
+#'  \item{"none" - Uniform shape.} }
+#' @param isofcolvec Colour vector for isoform highlighting. Used to build a colorRampPalette.
+#' @param dtucolvec Colour vector for DTU highlighting.
+#' @param condcolvec Colour vector for condition highlighting.
+#' @param replcolvec Colour vector for replicate highlighting. Used to build a colorRampPalette.
+#' @param nonecol Colour to use when no colour coding is wanted.
+#' @return A ggplot2 object. Simply display/print it or you can also customize it.
 #'
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_gene <- function(dtuo, pid, style="lines") {
+plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=NA_character_, shapeby=NA_character_,
+                      isofcolvec=c("red",  "blue", "forestgreen", "purple", "hotpink", "gold3"),
+                      dtucolvec= c("TRUE"="firebrick1", "FALSE"="dodgerblue", "NA"="gold"),
+                      condcolvec=c("grey20", "white"), 
+                      replcolvec=c("orange", "darkgreen", "purple"),
+                      nonecol="grey50")
+{
+  if( any(!is.na(fillby) && all(fillby != c("isoform", "condition", "DTU", "none")),
+          !is.na(colourby) && all(colourby != c("isoform", "condition", "DTU", "none", "replicate")),
+          !is.na(shapeby) && all(shapeby != c("isoform", "condition", "DTU", "none", "replicate")) ))
+    stop("Invalid fillby, colourby or shapeby value!")
+  
   # Slice the data to get just the relevant transcripts.
   with(dtuo, {
     trdat <- dtuo$Transcripts[pid, .(target_id, as.character(DTU))]  # transformed DTU will appear as V2
@@ -91,79 +137,162 @@ plot_gene <- function(dtuo, pid, style="lines") {
     sB <- colSums(repdatB[, -"target_id", with= FALSE])
     pA <- sweep(repdatA[, -"target_id", with= FALSE], 2, sA, "/")
     pB <- sweep(repdatB[, -"target_id", with= FALSE], 2, sB, "/")
-    vis_data <- data.table("vals"=             c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
+    vis_data <- data.table("vals"=              c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
                            "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum), rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
-                           "isoform"=   unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
-                           "DTU"=                 unlist(list( with(trdat, rep.int(V2, anum)),             with(trdat, rep.int(V2, bnum)),          with(trdat, rep.int(V2, anum)),          with(trdat, rep.int(V2, bnum)) )),
-                           "type"=                          c( rep.int("Counts", trnum * anum),             rep.int("Counts", trnum * bnum),     rep.int("Proportions", trnum * anum),      rep.int("Proportions", trnum * bnum) ),
-                           "replicate"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1, bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(1, bnum), each=trnum) ) )
-                           # "sample"=               as.factor(c( rep(seq(1, anum), each= trnum),     rep(seq(1+anum, anum+bnum), each=trnum),           rep(seq(1, anum), each= trnum),   rep(seq(anum+1, anum+bnum), each=trnum) ) )
+                           "isoform"=     unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
+                           "DTU"=                  unlist(list( with(trdat, rep.int(V2, anum)),              with(trdat, rep.int(V2, bnum)),           with(trdat, rep.int(V2, anum)),           with(trdat, rep.int(V2, bnum)) )),
+                           "type"=                          c( rep.int("Count", trnum * anum),             rep.int("Count", trnum * bnum),     rep.int("Proportion", trnum * anum),     rep.int("Proportion", trnum * bnum)  ),
+                           "replicate"=            as.factor(c( rep(seq(1, anum), each= trnum),               rep(seq(1, bnum), each=trnum),           rep(seq(1, anum), each= trnum),            rep(seq(1, bnum), each=trnum) )),
+                           "none"= as.factor(c(1))
                            )
     
-    # Plot.
-    dtucol <- c("TRUE"="red", "FALSE"="steelblue3", "NA"="yellow")
-    dtupnt <- c("TRUE"="darkred", "FALSE"="darkblue", "NA"="yellow")
-    cndcol <- c("darkgreen", "darkorange")
-    shapes <- seq(0, 25)
-    dtulin <- c("TRUE"="solid", "FALSE"="dashed", "NA"="dotted")
-    result <- NULL
+    # Colour and shape palettes.
+    colplt <- list("DTU"= dtucolvec, 
+                   "condition"= condcolvec, 
+                   "isoform"= colorRampPalette(isofcolvec)(length(unique(vis_data$isoform))),
+                   "replicate"= colorRampPalette(c(replcolvec))(length(unique(vis_data$replicate))),
+                   "none"= nonecol)
+    shaplt <- list("DTU"= c("TRUE"=16, "FALSE"=0, "NA"=4),
+                   "condition"= c(19,21),
+                   "isoform"= seq.int(0, 24, 1),
+                   "replicate" =seq.int(0, 24, 1),
+                   "none"= 20)
     
-    if (style=="lines") {
-      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-        facet_grid(type ~ condition, scales= "free") +
-        geom_path(aes(colour= replicate, group= replicate)) +
-        geom_boxplot(aes(fill= DTU), alpha=0.2, outlier.shape= NA) +
-        scale_fill_manual(values= dtucol)
+    # Plot.
+    result <- NULL
+    ###
+    if (style=="plain") {
+      if (is.na(fillby))
+        fillby <- "condition"
+      if (is.na(colourby))
+        colourby <- "DTU"
+      if (colourby=="replicate")  
+        stop("This style cannot be coloured by replicate!")
+      shapeby="none"
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]], colour=vis_data[[colourby]])) +
+                  facet_grid(type ~ condition, scales= "free") +
+                  geom_boxplot(alpha=0.5, outlier.shape= NA) +
+                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
+                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
+    ###
+    } else if ( style == "paired" ) {
+      if(is.na(fillby)) {
+        if (is.na(colourby) || colourby != "condition") {
+          fillby <- "condition"
+        } else {
+          fillby <- "DTU"
+        }
+      } else if (fillby != "condition"){
+        if (!is.na(colourby) && colourby != "condition") {
+            stop("This style requires either fillby or colourby to be set to \"condition\".")
+        } else {
+          colourby <- "condition"
+        }
+      }
+      if(is.na(colourby))
+        colourby <- "DTU"
+      if (colourby=="replicate")
+        stop("This style cannot be coloured by replicate!")
+      shapeby="none"
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]], colour=vis_data[[colourby]])) +
+                  facet_grid(type ~ ., scales= "free") +
+                  geom_boxplot(alpha=0.5, outlier.shape= NA, width=0.5) +
+                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
+                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
+    ###
     } else if (style=="points") {
+      if (is.na(fillby))
+        fillby <- "condition"
+      if (is.na(colourby))
+        colourby <- "DTU"
+      if (is.na(shapeby)) {
+        if (all("DTU" != c(fillby, colourby))) {
+          shapeby <- "DTU"
+        } else {
+          shapeby <- "none"
+        }
+      }
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-        facet_grid(type ~ condition, scales= "free") +
-        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
-        geom_boxplot(aes(colour= DTU, fill= DTU), alpha=0.3, outlier.shape= NA) +
-        scale_shape_manual(values= shapes) +
-        scale_colour_manual(values= dtupnt) +
-        scale_fill_manual(values= dtucol)
-    } else if (style=="rainbow") {
+                  facet_grid(type ~ condition, scales= "free") +
+                  geom_point(aes(colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position= position_jitterdodge(), stroke= rel(0.8)) +
+                  geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.2, outlier.shape= NA) +
+                  scale_shape_manual(values=shaplt[[shapeby]], name=shapeby) +
+                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
+                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
+    ###
+    } else if ( style == "pairedpnt" ) {
+      if(is.na(fillby)) {
+        if (is.na(colourby) || colourby != "condition") {
+          fillby <- "condition"
+        } else {
+          fillby <- "DTU"
+        }
+      } else if (fillby != "condition"){
+        if (!is.na(colourby) && colourby != "condition") {
+          stop("This style requires either fillby or colourby to be set to \"condition\".")
+        } else {
+          colourby <- "condition"
+        }
+      }
+      if(is.na(colourby))
+        colourby <- "DTU"
+      if (colourby=="replicate")
+        stop("This style cannot be coloured by replicate!")
+      if (is.na(shapeby)) {
+        if (all("DTU" != c(fillby, colourby))) {
+          shapeby <- "DTU"
+        } else {
+          shapeby <- "none"
+        }
+      }
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-        facet_grid(type ~ condition, scales= "free") +
-        geom_point(aes(colour= DTU, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
-        geom_boxplot(aes(colour= DTU, fill= isoform), alpha=0.3, outlier.shape= NA) +
-        scale_colour_manual(values= dtucol) +
-        scale_shape_manual(values= shapes)
-    } else if (style=="merged") {
-      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-        facet_grid(type ~ ., scales= "free") +
-        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
-        geom_boxplot(aes(fill= condition), alpha=0.3, outlier.shape= NA) +
-        scale_colour_manual(values= cndcol) +
-        scale_fill_manual(values= cndcol) +
-        scale_shape_manual(values= shapes)
-    } else if (style=="dashed") {
-      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-        facet_grid(type ~ ., scales= "free") +
-        geom_point(aes(colour= condition, shape= replicate), position= position_jitterdodge(), size= rel(1), stroke= rel(1)) +
-        geom_boxplot(aes(fill= condition, linetype= DTU), alpha=0.3, outlier.shape= NA) +
-        scale_shape_manual(values= shapes) +
-        scale_colour_manual(values= cndcol) +
-        scale_fill_manual(values= cndcol) +
-        scale_linetype_manual(values= dtulin)
+                  facet_grid(type ~ ., scales= "free") +
+                  geom_jitter(aes(colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position=position_dodge(width=0.5), stroke= rel(0.8)) +
+                  geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.2, outlier.shape= NA) +
+                  scale_shape_manual(values= shaplt[[shapeby]], name=shapeby) +
+                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
+                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
+    ###
+    } else if (style=="lines") {
+      if (is.na(fillby))
+        fillby <- "DTU"
+      if (is.na(colourby))
+        colourby <- "replicate"
+      shapeby="none"
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]])) +
+                  facet_grid(type ~ condition, scales= "free") +
+                  geom_path(aes(colour= replicate, group= replicate)) +
+                  geom_boxplot(alpha=0.2, outlier.shape= NA) +
+                  scale_fill_manual(values= colplt[[fillby]], name=fillby)
+    ###
+    } else if (style=="linesonly") {
+      if (is.na(fillby))
+        fillby <- "none"
+      if (is.na(colourby))
+        colourby <- "replicate"
+      shapeby="none"
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
+                  facet_grid(type ~ condition, scales= "free") +
+                  geom_path(aes(group= replicate))
+    ###
     } else {
       stop("Unknown plot style.")
     }
     result <- result +
-      scale_y_continuous(limits= c(0, NA)) +
-      guides(colour="legend", fill="legend", shape="legend", linetype="legend") +
-      labs(title= paste("gene:", pid), y= NULL, x= NULL) +
-      theme(title= element_text(size= rel(1.5)),
-            axis.text.x= element_text(angle= 90, size= rel(1.5)),
-            axis.text.y= element_text(size= rel(1.5)),
-            strip.text.x= element_text(size= rel(1.8)),
-            strip.text.y= element_text(size= rel(1.8)),
-            strip.background= element_rect(fill= "grey95"),
-            panel.grid.major= element_line(colour = "grey95"),
-            panel.grid.minor= element_blank(),
-            panel.background= element_rect(fill = "grey98"),
-            legend.text= element_text(size= rel(1.2)),
-            legend.title= element_text(size= rel(1.1)) )
+                scale_y_continuous(limits= c(0, NA)) +
+                guides(shape="legend") +
+                labs(title= paste("gene:", pid), y= "Abundance (Relative & Absolute)", x= "Isoform") +
+                theme(axis.text.x= element_text(angle= 90),
+                      strip.background= element_rect(fill= "grey95"),
+                      panel.grid.major= element_line(colour = "grey95"),
+                      panel.grid.minor= element_blank(),
+                      panel.background= element_rect(fill = "grey98") )
+    if (fillby == "none")
+      result <- result + guides(fill="none")
+    if (colourby == "none")
+      result <- result + guides(colour="none")
+    if (shapeby == "none")
+      result <- result + guides(shape="none")
     
     return(result)
   })
