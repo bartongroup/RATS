@@ -245,6 +245,10 @@ Download the latest release and then install it using:</p>
 
 <p><code>install.packages(&quot;&lt;path/to/dowloaded/package&gt;&quot;, repos = NULL, type=&quot;source&quot;)</code></p>
 
+<p>Or install directly with the help of the <a href="https://www.rstudio.com/products/rpackages/devtools/">devtools</a> package:</p>
+
+<p><code>devtools::install_github(&quot;bartongroup/rats&quot;, ref=&quot;master&quot;)</code></p>
+
 <p>Release snapshots are labelled with even-ending version numbers (x.x.0/2/4/6/8).</p>
 
 <h4>through Bioconductor</h4>
@@ -253,10 +257,9 @@ Download the latest release and then install it using:</p>
 
 <h4>developmental version</h4>
 
-<p>The most current developmental version of <code>rats</code> can be installed directly from the working copy on Github, using the <a href="https://www.rstudio.com/products/rpackages/devtools/">devtools</a> package 
-(which you will need to install first):</p>
+<p>The most current developmental version of <code>rats</code> can be installed directly from the working copy on Github, using <code>devtools</code>:</p>
 
-<p><code>devtools::install_github(&quot;bartongroup/rats&quot;)</code></p>
+<p><code>devtools::install_github(&quot;bartongroup/rats&quot;, ref=&quot;development&quot;)</code></p>
 
 <p>As this version represents active development, it can change at any moment. Features may be added, removed or changed without notice. 
 <strong>Do not rely on this version for reproducible analysis of important data!</strong>
