@@ -9,7 +9,7 @@ output:
     theme: readable
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs Input & Settings}
+  %\VignetteIndexEntry{RATs 2: Input & Settings}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 

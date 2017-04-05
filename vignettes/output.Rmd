@@ -9,7 +9,7 @@ output:
     theme: readable
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs Output and Plots}
+  %\VignetteIndexEntry{RATs 3: Raw Output}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 
@@ -75,7 +75,7 @@ As of `v0.4.2` it uses the same category names as `dtu_summury()` for consistenc
 ids <- get_dtu_ids(mydtu)
 
 # Contents
-print( names(ids) )
+print( ids )
 
 # DTU positive genes according to the transcript-level test.
 print( ids[[4]] )
@@ -244,6 +244,10 @@ print( names(mydtu$Abundances) )
 1. `condA` - (num) The transcript abundances in the first condition.
 2. `condB` - (num) The transcript abundances in the second condition.
 
+```{r}
+# Abundance table for first condition.
+print( head(mydtu$Abundances[[1]]) )
+```
 
 ***
 

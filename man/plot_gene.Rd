@@ -17,11 +17,8 @@ plot_gene(dtuo, pid, style = "lines", fillby = NA_character_,
 \item{pid}{A \code{parent_id} to make the plot for.}
 
 \item{style}{Different themes: \itemize{
-\item{"plain" - Grouped by condition.},
-\item{"paired" - Grouped by isoform.},
-\item{"points" - Grouped by condition. Show individual measurements as points.},
-\item{"pairedpnt" - Grouped by isoform. Show individual measurements as points.},
-\item{"lines" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
+\item{"byisoform" - Grouped by isoform. Show individual measurements as points.},
+\item{"bycondition" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
 \item{"linesonly" - Grouped by condition. Connect replicate measurements as colour-coded lines. Hide the boxplots.}
 }}
 

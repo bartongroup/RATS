@@ -18,43 +18,30 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
                     of RATs.")
 
 ## ------------------------------------------------------------------------
-# Split by condition for easier view of the overall gene profile.
-plot_gene(mydtu, "MIX6", style="plain")
+# Grouping by condition (DEAFULT):
+#   plot_gene(mydtu, "MIX6")
+plot_gene(mydtu, "MIX6", style="bycondition")
 
 ## ------------------------------------------------------------------------
-# Isoforms paired up for easier individual comparisons.
-plot_gene(mydtu, "MIX6", style="paired")
-
-## ------------------------------------------------------------------------
-# Split by condition.
-plot_gene(mydtu, "MIX6", style="points")
-
-## ------------------------------------------------------------------------
-# Paired by isoform.
-plot_gene(mydtu, "MIX6", style="pairedpnt")
-
-## ------------------------------------------------------------------------
-# Split by condition.
-# This is the DEFAULT view if the style is omitted, as it is the most informative.
-plot_gene(mydtu, "MIX6", style="lines")
-
-## ------------------------------------------------------------------------
-# A cleaner version, although it no longer shows which isoforms are DTU.
+# Grouping by condition (minimalist):
 plot_gene(mydtu, "MIX6", style="linesonly")
 
 ## ------------------------------------------------------------------------
-# You can change the information that is colour-coded.
-plot_gene(mydtu, "MIX6", style="plain", fillby="DTU")
-plot_gene(mydtu, "MIX6", style="points", fillby="isoform", colourby="replicate")
-plot_gene(mydtu, "MIX6", style="pairedpnt", colourby="isoform", shapeby="replicate")
-
-# For a less colourful look, the layered information can be disabled.
-plot_gene(mydtu, "MIX6", style="points", fillby="none", colourby="none", shapeby="none")
+# Grouping by isoform:
+plot_gene(mydtu, "MIX6", style="byisoform")
 
 ## ------------------------------------------------------------------------
-# You can also customise the colours used by specifying new values for
+# Change the encoded information.
+plot_gene(mydtu, "MIX6", style="bycondition", fillby="isoform")
+plot_gene(mydtu, "MIX6", style="byisoform", colourby="DTU", shapeby="replicate")
+
+# For a less busy look, any of the information layers can be disabled.
+plot_gene(mydtu, "MIX6", style="byisoform", colourby="none", shapeby="none")
+
+## ------------------------------------------------------------------------
+# Colour codes can be customised by specifying new values for
 # condcolvec, replcolvec, isofcolvec, dtucolvec and nonecol.
-plot_gene(mydtu, "MIX6", style="lines", fillby="condition", condcolvec=c("magenta", "cyan"))
+plot_gene(mydtu, "MIX6", style="bycondition", fillby="condition", condcolvec=c("magenta", "cyan"))
 
 ## ------------------------------------------------------------------------
 # Proportion change VS significance.

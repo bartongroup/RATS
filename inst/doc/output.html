@@ -267,22 +267,53 @@ As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()
 ids &lt;- get_dtu_ids(mydtu)
 
 # Contents
-print( names(ids) )
+print( ids )
 </code></pre>
 
-<pre><code>##  [1] &quot;DTU genes (gene test)&quot;        &quot;non-DTU genes (gene test)&quot;   
-##  [3] &quot;NA genes (gene test)&quot;         &quot;DTU genes (transc. test)&quot;    
-##  [5] &quot;non-DTU genes (transc. test)&quot; &quot;NA genes (transc. test)&quot;     
-##  [7] &quot;DTU genes (both tests)&quot;       &quot;non-DTU genes (both tests)&quot;  
-##  [9] &quot;NA genes (both tests)&quot;        &quot;DTU transcripts&quot;             
-## [11] &quot;non-DTU transcripts&quot;          &quot;NA transcripts&quot;
+<pre><code>## $`DTU genes (gene test)`
+## [1] &quot;MIX6&quot;
+## 
+## $`non-DTU genes (gene test)`
+## [1] &quot;CC&quot; &quot;NN&quot;
+## 
+## $`NA genes (gene test)`
+## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
+## 
+## $`DTU genes (transc. test)`
+## [1] &quot;MIX6&quot;
+## 
+## $`non-DTU genes (transc. test)`
+## [1] &quot;LC&quot;   &quot;CC&quot;   &quot;NN&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
+## 
+## $`NA genes (transc. test)`
+## character(0)
+## 
+## $`DTU genes (both tests)`
+## [1] &quot;MIX6&quot;
+## 
+## $`non-DTU genes (both tests)`
+## [1] &quot;CC&quot; &quot;NN&quot;
+## 
+## $`NA genes (both tests)`
+## character(0)
+## 
+## $`DTU transcripts`
+## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot;
+## 
+## $`non-DTU transcripts`
+## [1] &quot;MIX6.c4&quot; &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;    
+## [8] &quot;MIX6.nc&quot;
+## 
+## $`NA transcripts`
+##  [1] &quot;LC1&quot;      &quot;1A1N-2&quot;   &quot;1B1C.1&quot;   &quot;1B1C.2&quot;   &quot;1D1C:one&quot; &quot;1D1C:two&quot;
+##  [7] &quot;MIX6.d&quot;   &quot;ALLA1&quot;    &quot;ALLB1&quot;    &quot;ALLB2&quot;    &quot;NIB.1&quot;
 </code></pre>
 
 <pre><code class="r"># DTU positive genes according to the transcript-level test.
 print( ids[[4]] )
 </code></pre>
 
-<pre><code>## character(0)
+<pre><code>## [1] &quot;MIX6&quot;
 </code></pre>
 
 <p>The ID lists obtained with <code>get_dtu_ids()</code> are <em>ordered by effect size</em> (<code>Dprop</code>).</p>
@@ -483,6 +514,19 @@ print( names(mydtu$Abundances) )
 <li><code>condA</code> - (num) The transcript abundances in the first condition.</li>
 <li><code>condB</code> - (num) The transcript abundances in the second condition.</li>
 </ol>
+
+<pre><code class="r"># Abundance table for first condition.
+print( head(mydtu$Abundances[[1]]) )
+</code></pre>
+
+<pre><code>##          V1   V2 target_id parent_id
+## 1: 19.66667 20.5    1A1N-2      1A1N
+## 2:  0.00000  0.0    1B1C.1      1B1C
+## 3: 52.33333 53.5    1B1C.2      1B1C
+## 4:  0.00000  0.0  1D1C:one      1D1C
+## 5: 76.00000 78.0  1D1C:two      1D1C
+## 6: 50.00000 45.0     ALLA1      ALLA
+</code></pre>
 
 <hr/>
 

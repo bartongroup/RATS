@@ -26,7 +26,7 @@ print( dtu_summary(mydtu) )
 ids <- get_dtu_ids(mydtu)
 
 # Contents
-print( names(ids) )
+print( ids )
 
 # DTU positive genes according to the transcript-level test.
 print( ids[[4]] )
@@ -50,4 +50,8 @@ print( names(mydtu$Transcripts) )
 ## ------------------------------------------------------------------------
 # Elements of ReplicateData
 print( names(mydtu$Abundances) )
+
+## ------------------------------------------------------------------------
+# Abundance table for first condition.
+print( head(mydtu$Abundances[[1]]) )
 

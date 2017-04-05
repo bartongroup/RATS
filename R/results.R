@@ -41,8 +41,8 @@ get_dtu_ids <- function(dtuo) {
     setorder(myt, -adp, na.last=TRUE)
     # Sort genes.
   })
-  pid <- unique(myt[, "parent_id", with=FALSE])
-  po <- match(dtuo$Genes[, "parent_id", with=FALSE], pid)
+  pid <- unique(myt$parent_id)
+  po <- match(dtuo$Genes$parent_id, pid)
   myp <- copy(dtuo$Genes[order(po), ])
   
   with(myp, {
@@ -74,11 +74,8 @@ get_dtu_ids <- function(dtuo) {
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
 #' @param style Different themes: \itemize{
-#'  \item{"plain" - Grouped by condition.},
-#'  \item{"paired" - Grouped by isoform.},
-#'  \item{"points" - Grouped by condition. Show individual measurements as points.},
-#'  \item{"pairedpnt" - Grouped by isoform. Show individual measurements as points.},
-#'  \item{"lines" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
+#'  \item{"byisoform" - Grouped by isoform. Show individual measurements as points.},
+#'  \item{"bycondition" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
 #'  \item{"linesonly" - Grouped by condition. Connect replicate measurements as colour-coded lines. Hide the boxplots.}
 #'  } 
 #' @param fillby Applies to the boxplots. Not all options will work with all styles. 
@@ -160,72 +157,14 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
     
     # Plot.
     result <- NULL
-    ###
-    if (style=="plain") {
-      if (is.na(fillby))
-        fillby <- "condition"
-      if (is.na(colourby))
-        colourby <- "DTU"
-      if (colourby=="replicate")  
-        stop("This style cannot be coloured by replicate!")
-      shapeby="none"
-      result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]], colour=vis_data[[colourby]])) +
-                  facet_grid(type ~ condition, scales= "free") +
-                  geom_boxplot(alpha=0.5, outlier.shape= NA) +
-                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
-                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
-    ###
-    } else if ( style == "paired" ) {
+    
+    ### BY ISOFORM.
+    if (any(style==c("byisoform", "merged"))) {
       if(is.na(fillby)) {
-        if (is.na(colourby) || colourby != "condition") {
+        if (is.na(colourby) || colourby != "condition" ) {
           fillby <- "condition"
-        } else {
-          fillby <- "DTU"
-        }
-      } else if (fillby != "condition"){
-        if (!is.na(colourby) && colourby != "condition") {
-            stop("This style requires either fillby or colourby to be set to \"condition\".")
-        } else {
-          colourby <- "condition"
-        }
-      }
-      if(is.na(colourby))
-        colourby <- "DTU"
-      if (colourby=="replicate")
-        stop("This style cannot be coloured by replicate!")
-      shapeby="none"
-      result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]], colour=vis_data[[colourby]])) +
-                  facet_grid(type ~ ., scales= "free") +
-                  geom_boxplot(alpha=0.5, outlier.shape= NA, width=0.5) +
-                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
-                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
-    ###
-    } else if (style=="points") {
-      if (is.na(fillby))
-        fillby <- "condition"
-      if (is.na(colourby))
-        colourby <- "DTU"
-      if (is.na(shapeby)) {
-        if (all("DTU" != c(fillby, colourby))) {
-          shapeby <- "DTU"
-        } else {
-          shapeby <- "none"
-        }
-      }
-      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-                  facet_grid(type ~ condition, scales= "free") +
-                  geom_point(aes(colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position= position_jitterdodge(), stroke= rel(0.8)) +
-                  geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.2, outlier.shape= NA) +
-                  scale_shape_manual(values=shaplt[[shapeby]], name=shapeby) +
-                  scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
-                  scale_colour_manual(values= colplt[[colourby]], name=colourby)
-    ###
-    } else if ( style == "pairedpnt" ) {
-      if(is.na(fillby)) {
-        if (is.na(colourby) || colourby != "condition") {
-          fillby <- "condition"
-        } else {
-          fillby <- "DTU"
+        } else { 
+          fillby <- "isoform"
         }
       } else if (fillby != "condition"){
         if (!is.na(colourby) && colourby != "condition") {
@@ -234,47 +173,47 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
           colourby <- "condition"
         }
       }
-      if(is.na(colourby))
-        colourby <- "DTU"
-      if (colourby=="replicate")
-        stop("This style cannot be coloured by replicate!")
+      if(is.na(colourby)) {
+        colourby <- "isoform"
+      } else if (colourby=="replicate") {
+        colourby="none"
+      }
       if (is.na(shapeby)) {
         if (all("DTU" != c(fillby, colourby))) {
           shapeby <- "DTU"
+        } else if (all("isoform" != c(fillby, colourby))) {
+          shapeby <- "isoform"
         } else {
           shapeby <- "none"
         }
       }
-      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= vis_data[[colourby]], fill= vis_data[[fillby]])) +
                   facet_grid(type ~ ., scales= "free") +
-                  geom_jitter(aes(colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position=position_dodge(width=0.5), stroke= rel(0.8)) +
-                  geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.2, outlier.shape= NA) +
+                  geom_jitter(aes(shape=vis_data[[shapeby]]), position=position_jitterdodge(), stroke= rel(0.8)) +
+                  geom_boxplot(position=position_dodge(), alpha=0.3, outlier.shape= NA) +
                   scale_shape_manual(values= shaplt[[shapeby]], name=shapeby) +
                   scale_fill_manual(values= colplt[[fillby]], name=fillby) + 
                   scale_colour_manual(values= colplt[[colourby]], name=colourby)
-    ###
-    } else if (style=="lines") {
+    ### BY CONDITION.
+    } else if (any(style==c("bycondition", "lines"))) {
       if (is.na(fillby))
         fillby <- "DTU"
-      if (is.na(colourby))
-        colourby <- "replicate"
+      colourby <- "replicate"
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]])) +
                   facet_grid(type ~ condition, scales= "free") +
                   geom_path(aes(colour= replicate, group= replicate)) +
-                  geom_boxplot(alpha=0.2, outlier.shape= NA) +
+                  geom_boxplot(alpha=0.3, outlier.shape= NA) +
                   scale_fill_manual(values= colplt[[fillby]], name=fillby)
-    ###
+    ### BY CONDITION LINESONLY.
     } else if (style=="linesonly") {
-      if (is.na(fillby))
-        fillby <- "none"
-      if (is.na(colourby))
-        colourby <- "replicate"
+      fillby <- "none"
+      colourby <- "replicate"
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
                   facet_grid(type ~ condition, scales= "free") +
                   geom_path(aes(group= replicate))
-    ###
+    ### ERROR
     } else {
       stop("Unknown plot style.")
     }
@@ -293,7 +232,6 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       result <- result + guides(colour="none")
     if (shapeby == "none")
       result <- result + guides(shape="none")
-    
     return(result)
   })
 }
@@ -305,14 +243,8 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
 #' @param dtuo A DTU object.
 #' @param type Type of plot. \itemize{
 #'   \item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
-#'   \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.}
-#'   \item{"transc_quant"}{Transcript-level quantification reproducibility threshold VS. number of DTU positive calls.}
-#'   \item{"gene_quant"}{Gene-level quantification reproducibility threshold VS. number of DTU positive calls.}
-#'   \item{"transc_rep"}{Transcript-level replication reproducibility threshold VS. number of DTU positive calls.}
-#'   \item{"gene_rep"}{Gene-level replication reproducibility threshold VS. number of DTU positive calls.}
-
-#' }
-#' @return a ggplot2 object. Simply display it or you can also customize it.
+#'   \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.} }
+#' @return A ggplot2 object. Simply display it or you can also customize it.
 #' 
 #' Generally uses the results of the transcript-level proportion tests.
 #' 
@@ -321,18 +253,20 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
 #' @export
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
+    ### VOLCANO
     if (any(type == c("gene_volcano", "volcano"))) {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot(data = mydata, aes(Dprop, neglogP, colour = DTU)) +
-        geom_point(alpha = 0.3) +
-        ggtitle("Proportion change VS significance") +
-        labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
-             y ="-log10 (Pval)") +
-        scale_color_manual(values=c("steelblue3", "red")) +
-        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
-        theme(panel.background= element_rect(fill= "grey98"),
-              panel.grid.major= element_line(colour= "grey95") )
+      result <- ggplot(data = na.omit(mydata), aes(Dprop, neglogP, colour = DTU)) +
+                  geom_point(alpha = 0.3) +
+                  ggtitle("Isoform proportion change VS significance") +
+                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                       y ="-log10 (Pval)") +
+                  scale_color_manual(values=c("steelblue3", "red")) +
+                  scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95") )
+    ### MAXDPROP
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts)  # I don't want the intermediate calculations to modify the dtu object.
       tmp[, abma := abs(Dprop)]
@@ -342,53 +276,13 @@ plot_overview <- function(dtuo, type="volcano") {
       tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
       # ok, plotting time
       result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
-        geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-        ggtitle("Distribution of largest proportion change per gene") +
-        labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
-             y ="Number of genes") +
-        scale_fill_manual(values=c("steelblue3", "red")) +
-        scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-        scale_y_continuous(trans="sqrt")
-    } else if (type == "transc_quant") {
-      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
-                           "count"= sapply(seq(0, 1, 0.01), function(x) {
-                                           sum(Transcripts[(quant_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
-      result <- ggplot(data = mydata, aes(thresh, count)) +
-        geom_freqpoly(stat= "identity", size= 1.5) +
-        ggtitle("Quantification reproducibility VS DTU transcripts") +
-        labs(x="Reproducibility threshold",
-             y="Number of transcripts") +
-        scale_x_continuous(breaks = seq(0, 1, 0.1))
-    } else if (type == "gene_quant") {
-      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
-                           "count"= sapply(seq(0, 1, 0.01), function(x) {
-                                           sum(Genes[(quant_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
-      result <- ggplot(data = mydata, aes(thresh, count)) +
-        geom_freqpoly(stat= "identity", size= 1.5) +
-        ggtitle("Quantification reproducibility VS DTU genes") +
-        labs(x="Reproducibility threshold",
-             y="Number of genes") +
-        scale_x_continuous(breaks = seq(0, 1, 0.1))
-    } else if (type == "transc_rep") {
-      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
-                           "count"= sapply(seq(0, 1, 0.01), function(x) {
-                             sum(Transcripts[(rep_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
-      result <- ggplot(data = mydata, aes(thresh, count)) +
-        geom_freqpoly(stat= "identity", size= 1.5) +
-        ggtitle("Replication reproducibility VS DTU transcripts") +
-        labs(x="Reproducibility threshold",
-             y="Number of transcripts") +
-        scale_x_continuous(breaks = seq(0, 1, 0.1))
-    } else if (type == "gene_rep") {
-      mydata <- data.frame("thresh"=seq(0, 1, 0.01), 
-                           "count"= sapply(seq(0, 1, 0.01), function(x) {
-                             sum(Genes[(rep_dtu_freq >= x), elig_fx & sig], na.rm=TRUE) }))
-      result <- ggplot(data = mydata, aes(thresh, count)) +
-        geom_freqpoly(stat= "identity", size= 1.5) +
-        ggtitle("Replication reproducibility VS DTU genes") +
-        labs(x="Reproducibility threshold",
-             y="Number of genes") +
-        scale_x_continuous(breaks = seq(0, 1, 0.1))
+                  geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
+                  ggtitle("Distribution of largest isoform proportion change per gene") +
+                  labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
+                       y ="Number of genes") +
+                  scale_fill_manual(values=c("steelblue3", "red")) +
+                  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+                  scale_y_continuous(trans="sqrt")
     } else {
       stop("Unrecognized plot type!")
     }

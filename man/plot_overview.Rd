@@ -10,16 +10,11 @@ plot_overview(dtuo, type = "volcano")
 \item{dtuo}{A DTU object.}
 
 \item{type}{Type of plot. \itemize{
-  \item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
-  \item{"maxdprop"}{Distribution of biggest change in proportion in each gene.}
-  \item{"transc_quant"}{Transcript-level quantification reproducibility threshold VS. number of DTU positive calls.}
-  \item{"gene_quant"}{Gene-level quantification reproducibility threshold VS. number of DTU positive calls.}
-  \item{"transc_rep"}{Transcript-level replication reproducibility threshold VS. number of DTU positive calls.}
-  \item{"gene_rep"}{Gene-level replication reproducibility threshold VS. number of DTU positive calls.}
-}}
+\item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
+\item{"maxdprop"}{Distribution of biggest change in proportion in each gene.} }}
 }
 \value{
-a ggplot2 object. Simply display it or you can also customize it.
+A ggplot2 object. Simply display it or you can also customize it.
 
 Generally uses the results of the transcript-level proportion tests.
 }

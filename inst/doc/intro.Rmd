@@ -9,7 +9,7 @@ output:
     theme: readable
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs Quick start}
+  %\VignetteIndexEntry{RATs 1: Quick start}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 ---

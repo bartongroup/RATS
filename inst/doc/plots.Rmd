@@ -9,7 +9,7 @@ output:
     theme: readable
     toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs Output and Plots}
+  %\VignetteIndexEntry{RATs 4: Plots}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 
@@ -47,7 +47,8 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 # Visualisation of results
 
 
-The output object's tables provide a host of information. But a good plot is worth a thousand numbers.
+The RATs output object provides a host of information and we encourage users to familiarize themselves with it. 
+But a good plot is worth a thousand numbers.
 
 
 ## Isoform abundances for a given gene
@@ -55,81 +56,71 @@ The output object's tables provide a host of information. But a good plot is wor
 This function allows you to visualise what's going on in any particular gene. Both the absolute counts and the relative 
 proportions are plotted for each transcript. This is a very useful function for inspecting a gene of interest. It enables 
 quick visual evaluation of the dispersion of the replicate measurements, the magnitude of the proportion change, the 
-presence of outliers, and the consistency among the replicates. There are several styles for this plot, depending on your preferences.
+presence of outliers, and the consistency among the replicates.
 
-The simplest option is to represent the measurements from your replicates as boxplots:
+By default, these plots can be quite colourful (and possibly ugly) as their aim is to highlight which isoforms are predicted to be DTU. 
+Options are provided to change which information layers are encoded and what colours are used.
+
+There are several styles for this plot, depending on your preferences. The default plot format includes the most information:
 
 ```{r}
-# Split by condition for easier view of the overall gene profile.
-plot_gene(mydtu, "MIX6", style="plain")
+# Grouping by condition (DEAFULT):
+#   plot_gene(mydtu, "MIX6")
+plot_gene(mydtu, "MIX6", style="bycondition")
 ```
 
-```{r}
-# Isoforms paired up for easier individual comparisons.
-plot_gene(mydtu, "MIX6", style="paired")
-```
+The top two facets show the absolute abundances (counts) of the isoforms, the bottom two show the relative abundances (proportions).
+The left two facets refer to one condition, the right two ones to the other condition. The boxplots describe the abundance measurements
+of each isoform across replicates. As the proportions of isoforms are inter-dependent and add up to 100%, the coloured lines connect
+the isoform abundances measured in each replicate. By default, the boxes' fill-colour encodes the transcript level DTU prediction for
+each isoform: In this example, isoforms `.c1` and `.c2` change significantly, isoforms `.c3`, `.c4` and `.nc` do not change significantly 
+and isoform `.d` could not be tested (for very narrow boxes, the fill colour is difficult to see).
 
-Boxplots, however, can hide the real distribution of your data, which could be multi-modal. Adding the actual measurements
-resolves that:
-
-```{r}
-# Split by condition.
-plot_gene(mydtu, "MIX6", style="points")
-```
+This structure is great for seeing changes in the isoform distribution profile of a gene. A cleaner versions of the plot can also be obtained:
 
 ```{r}
-# Paired by isoform.
-plot_gene(mydtu, "MIX6", style="pairedpnt")
-```
-
-Finally, relative abundance measurements are not independent. The measurements from each replicate are tied together.
-Connecting the measurements of each replicate reveals the level of consistency of the relative abundances across the replicates.
-
-```{r}
-# Split by condition.
-# This is the DEFAULT view if the style is omitted, as it is the most informative.
-plot_gene(mydtu, "MIX6", style="lines")
-```
-
-```{r}
-# A cleaner version, although it no longer shows which isoforms are DTU.
+# Grouping by condition (minimalist):
 plot_gene(mydtu, "MIX6", style="linesonly")
+```
+
+When there are many lines or many isoforms, it may be preferable to group abundances by isoform, making individual comparisons easier:
+
+```{r}
+# Grouping by isoform:
+plot_gene(mydtu, "MIX6", style="byisoform")
 ```
 
 
 ### Customisation of the gene plot
 
-There are options to change the colour coding of the gene plot. Bear in mind that, some
-of the options are not available for all styles. If neither `fillby` and `colourby` is
-set to `"DTU"`, and `shapeby` is undefined, the role of encoding DTU is automatically 
-assigned to `shapeby`.
+#### Change information layers
+
+The `fillby`, `colourby` and `shapeby` parameters can be respectively used to control which information layers
+are encoded as fill, line/point colour, and point shape. Possible values are `c("isoform", "condition", "DTU", "none", "replicate")`.
+Not all options are available in all styles, in which case they will be silently ignored.
 
 ```{r}
-# You can change the information that is colour-coded.
-plot_gene(mydtu, "MIX6", style="plain", fillby="DTU")
-plot_gene(mydtu, "MIX6", style="points", fillby="isoform", colourby="replicate")
-plot_gene(mydtu, "MIX6", style="pairedpnt", colourby="isoform", shapeby="replicate")
+# Change the encoded information.
+plot_gene(mydtu, "MIX6", style="bycondition", fillby="isoform")
+plot_gene(mydtu, "MIX6", style="byisoform", colourby="DTU", shapeby="replicate")
 
-# For a less colourful look, the layered information can be disabled.
-plot_gene(mydtu, "MIX6", style="points", fillby="none", colourby="none", shapeby="none")
+# For a less busy look, any of the information layers can be disabled.
+plot_gene(mydtu, "MIX6", style="byisoform", colourby="none", shapeby="none")
 ```
 
+#### Change colour code
+
 ```{r}
-# You can also customise the colours used by specifying new values for
+# Colour codes can be customised by specifying new values for
 # condcolvec, replcolvec, isofcolvec, dtucolvec and nonecol.
-plot_gene(mydtu, "MIX6", style="lines", fillby="condition", condcolvec=c("magenta", "cyan"))
+plot_gene(mydtu, "MIX6", style="bycondition", fillby="condition", condcolvec=c("magenta", "cyan"))
 ```
-
-
 
 
 ## Plots of overall run
 
 Our simulated dataset is too small to properly demonstrate what these plots typically look like.
 So each one is accompanied by a static image of the same plot created with a real and much larger dataset.
-
-Several of these plots are **likely to display warnings** about missing or non-finite values. These are due to the 
-presence of `NA` in the tables, where entries did not pass the thresholds, and can be ignored.
 
 Possibly the most common plot in differential expression is the volcano plot, which plots the effect size against 
 the statistical significance. As it is difficult to define a single p-value and a single effect size at the gene level,
@@ -141,7 +132,7 @@ plot_overview(mydtu, type="volcano")
 ```
 
 This is what it looks like on a larger dataset:
-![Dprop VS sig](./fig/volcano.jpg)
+![Dprop VS sig](./fig/volcano.png)
 
 The next command plots the largest change in proportion seen within each gene, against the number of genes showing 
 such change. This is a way to inspect what effect sizes are present in the data. As an additional layer of information,
@@ -153,7 +144,7 @@ plot_overview(mydtu, type="maxdprop")
 ```
 
 This is what it looks like on a larger dataset:
-![Max Dprop](./fig/maxdprop.jpg)
+![Max Dprop](./fig/maxdprop.png)
 
 
 ### Interactive plots
