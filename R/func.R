@@ -166,12 +166,12 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
       if (minboots < 100) {
         warnmsg["toofewboots"] <- "Your quantifications have few bootstrap iterations, which reduces reproducibility of the calls."
       }
-      if (qbootnum < 100) {
+      if (qbootnum < 100 && qbootnum != 0) {
         warnmsg["toolowbootnum"] <- "The requested qbootnum is low, which reduces reproducibility of the calls."
       }
       bootcombos <- minboots^numsamples  # Conservative estimate.
       if (qbootnum >= bootcombos/100)
-        warnmsg["toomanyboots"] <- "The requested number of quantification bootstraps is very high, relative to the supplied data. Over 1% chance of duplicate iterations."
+        warnmsg["toomanyboots"] <- "The requested number of quantification bootstraps is very high, relatively to the supplied data. Over 1% chance of duplicate iterations."
       if (qbootnum >= maxmatrix/dim(annot)[1])
         return(list("error"=TRUE,"message"="The requested number of quantification bootstraps would exceed the maximum capacity of an R matrix."))
     } # else it is probably count data and qboot will be auto-set to FALSE
