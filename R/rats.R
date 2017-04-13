@@ -434,11 +434,17 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   if(verbose) {
     message("All done!")
+    message("Summary of DTU results:")
     dtusum <- dtu_summary(resobj)
     print(dtusum[c(1,2,3)])
     print(dtusum[c(4,5,6)])
     print(dtusum[c(7,8,9)])
     print(dtusum[c(10,11,12)])
+    message("Isoform-switching subset of DTU:")
+    switchsum <- dtu_switch_summary(resobj)
+    print(switchsum[c(1,2,3)])
+    print(switchsum[c(4,5,6)])
+    print(switchsum[c(7,8,9)])
   }
 
   return(resobj)
