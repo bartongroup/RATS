@@ -6,19 +6,7 @@
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  result <- c("DTU genes (gene test)" = sum(dtuo$Genes[["DTU"]], na.rm=TRUE),
-              "non-DTU genes (gene test)" = sum(!dtuo$Genes[["DTU"]], na.rm=TRUE),
-              "NA genes (gene test)" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU genes (transc. test)" = sum(dtuo$Genes[["transc_DTU"]], na.rm=TRUE), 
-              "non-DTU genes (transc. test)" = sum(!dtuo$Genes[["transc_DTU"]], na.rm=TRUE), 
-              "NA genes (transc. test)" = sum(ifelse(is.na(dtuo$Genes[["transc_DTU"]]), 1, 0)),
-              "DTU genes (both tests)" = sum(dtuo$Genes[["transc_DTU"]] & dtuo$Genes[["DTU"]], na.rm=TRUE), 
-              "non-DTU genes (both tests)" = sum(!dtuo$Genes[["transc_DTU"]] & !dtuo$Genes[["DTU"]], na.rm=TRUE), 
-              "NA genes (both tests)" = sum(ifelse(is.na(dtuo$Genes[["transc_DTU"]]) & is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU transcripts" = sum(dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
-              "non-DTU transcripts" = sum(!dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
-              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
-  return(result)
+ return( sapply(get_dtu_ids(dtuo), length) )
 }
 
 
