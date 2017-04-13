@@ -102,6 +102,17 @@ get_switch_ids <- function(dtuo) {
 }
 
 
+#================================================================================
+#' Summary of isoform switching events.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results
+#'
+#'@export
+dtu_switch_summary <- function(dtuo) {
+  return( sapply(get_switch_ids(dtuo), length) )
+}
+
 
 #================================================================================
 #' Plot abundances for all isoforms of a specified gene.
