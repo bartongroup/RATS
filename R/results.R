@@ -65,6 +65,57 @@ get_dtu_ids <- function(dtuo) {
 
 
 #================================================================================
+#' List of genes that switch isoform ranks.
+#' 
+#' Get the IDs of DTU genes where isoform rank switching occurs.
+#' Switches of primary and non-primary isoforms are listed separately. 
+#' 
+#' @param dtuo A DTU object.
+#' @return A named list of character vectors.
+#' 
+#' @import data.table
+#' @export
+get_switch_ids <- function(dtuo) {
+  # Get all the transcripts from DTU genes.
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU), c("parent_id")], c("parent_id", "target_id", "sumA", "sumB")])
+  result <- list()
+  with(myt, {
+    # Primary isoform(s) by condition. I've seen cases of joint first place...
+    myt[, primA := .SD[sumA==max(sumA), target_id], by=parent_id]
+    myt[, primB := .SD[sumB==max(sumB), target_id], by=parent_id]
+    myt[, psw := primA != primB]
+  })
+  result[["Primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw==TRUE])
+  result[["Non-primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw==FALSE])
+  
+  # Get all the transcripts from genes with at least one DTU transcript.
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "sumA", "sumB")])
+  with(myt, {
+    # Primary isoform(s) by condition. I've seen cases of joint first place...
+    myt[, primA := .SD[sumA==max(sumA), target_id], by=parent_id]
+    myt[, primB := .SD[sumB==max(sumB), target_id], by=parent_id]
+    myt[, psw := primA != primB]
+  })
+  result[["Primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw==TRUE])
+  result[["Non-primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw==FALSE])
+  
+  # Get all the transcripts from DTU genes with at least one DTU isoform.
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU & dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "sumA", "sumB")])
+  with(myt, {
+    # Primary isoform(s) by condition. I've seen cases of joint first place...
+    myt[, primA := .SD[sumA==max(sumA), target_id], by=parent_id]
+    myt[, primB := .SD[sumB==max(sumB), target_id], by=parent_id]
+    myt[, psw := primA != primB]
+  })
+  result[["Primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw==TRUE])
+  result[["Non-primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw==FALSE])
+  
+  return(result)
+}
+
+
+
+#================================================================================
 #' Plot abundances for all isoforms of a specified gene.
 #'
 #' Boxplot of absolute and relative abundances for the isoforms of a given gene.
