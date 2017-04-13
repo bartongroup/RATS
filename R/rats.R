@@ -442,9 +442,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     print(dtusum[c(10,11,12)])
     message("Isoform-switching subset of DTU:")
     switchsum <- dtu_switch_summary(resobj)
-    print(switchsum[c(1,2,3)])
-    print(switchsum[c(4,5,6)])
-    print(switchsum[c(7,8,9)])
+    print(switchsum[c(1,2)])
+    print(switchsum[c(3,4)])
+    print(switchsum[c(5,6)])
   }
 
   return(resobj)
