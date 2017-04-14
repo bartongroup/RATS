@@ -65,38 +65,59 @@ get_dtu_ids <- function(dtuo) {
 #' @export
 get_switch_ids <- function(dtuo) {
   # Get all the transcripts from DTU genes.
-  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU), c("parent_id")], c("parent_id", "target_id", "sumA", "sumB")])
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
   result <- list()
-  with(myt, {
-    # Primary isoform(s) by condition. I've seen cases of joint first place...
-    myt[, primA := .SD[sumA==max(sumA), target_id], by=parent_id]
-    myt[, primB := .SD[sumB==max(sumB), target_id], by=parent_id]
-    myt[, psw := primA != primB]
-  })
-  result[["Primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw==TRUE])
-  result[["Non-primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw==FALSE])
+  if (nrow(myt)==0) {
+    result[["Primary switch (gene test)"]] <- NA_character_
+    result[["Non-primary switch (gene test)"]] <- NA_character_
+  } else {
+    with(myt, {
+      myt[, rankA := frank(propA), by=parent_id]
+      myt[, rankB := frank(propB), by=parent_id]
+      myt[, sw := (rankA!=rankB)]
+      myt[, mrA := max(rankA), by=parent_id]
+      myt[, mrB := max(rankB), by=parent_id]
+      myt[, psw := sw & (rankA==mrA | rankB==mrB)]
+    })
+    result[["Primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw])
+    result[["Non-primary switch (gene test)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
+  }
   
   # Get all the transcripts from genes with at least one DTU transcript.
-  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "sumA", "sumB")])
-  with(myt, {
-    # Primary isoform(s) by condition. I've seen cases of joint first place...
-    myt[, primA := .SD[sumA==max(sumA), target_id], by=parent_id]
-    myt[, primB := .SD[sumB==max(sumB), target_id], by=parent_id]
-    myt[, psw := primA != primB]
-  })
-  result[["Primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw==TRUE])
-  result[["Non-primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw==FALSE])
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
+  if (nrow(myt)==0) {
+    result[["Primary switch (transc. test)"]] <- NA_character_
+    result[["Non-primary switch (transc. test)"]] <- NA_character_
+  } else {
+    with(myt, {
+      myt[, rankA := frank(propA), by=parent_id]
+      myt[, rankB := frank(propB), by=parent_id]
+      myt[, sw := (rankA!=rankB)]
+      myt[, mrA := max(rankA), by=parent_id]
+      myt[, mrB := max(rankB), by=parent_id]
+      myt[, psw := sw & (rankA==mrA | rankB==mrB)]
+    })
+    result[["Primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw])
+    result[["Non-primary switch (transc. test)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
+  }
   
   # Get all the transcripts from DTU genes with at least one DTU isoform.
-  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU & dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "sumA", "sumB")])
-  with(myt, {
-    # Primary isoform(s) by condition. I've seen cases of joint first place...
-    myt[, primA := .SD[sumA==max(sumA), target_id], by=parent_id]
-    myt[, primB := .SD[sumB==max(sumB), target_id], by=parent_id]
-    myt[, psw := primA != primB]
-  })
-  result[["Primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw==TRUE])
-  result[["Non-primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw==FALSE])
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU & dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
+  if (nrow(myt)==0) {
+    result[["Primary switch (both tests)"]] <- NA_character_
+    result[["Non-primary switch (both tests)"]] <- NA_character_
+  } else {
+    with(myt, {
+      myt[, rankA := frank(propA), by=parent_id]
+      myt[, rankB := frank(propB), by=parent_id]
+      myt[, sw := (rankA!=rankB)]
+      myt[, mrA := max(rankA), by=parent_id]
+      myt[, mrB := max(rankB), by=parent_id]
+      myt[, psw := sw & (rankA==mrA | rankB==mrB)]
+    })
+    result[["Primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw])
+    result[["Non-primary switch (both tests)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
+  }
   
   return(result)
 }
