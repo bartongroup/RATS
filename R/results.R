@@ -2,7 +2,7 @@
 #' Summary of DTU calling.
 #' 
 #' @param dtuo A DTU object.
-#' @return A named numerical vector giving a tally of the results
+#' @return A named numerical vector giving a tally of the results.
 #'
 #'@export
 dtu_summary <- function(dtuo) {
@@ -127,12 +127,48 @@ get_switch_ids <- function(dtuo) {
 #' Summary of isoform switching events.
 #' 
 #' @param dtuo A DTU object.
-#' @return A named numerical vector giving a tally of the results
+#' @return A named numerical vector giving a tally of the results.
 #'
 #'@export
 dtu_switch_summary <- function(dtuo) {
   return( sapply(get_switch_ids(dtuo), length) )
 }
+
+
+#================================================================================
+#' Summary of DTU plurality.
+#' 
+#' Get the IDs of DTU genes organised by the number of isoforms affected. This
+#' is possible only based on the transcript-level results.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results.
+#'
+#'@export
+get_plurality_ids <- function(dtuo){
+  with(dtuo, {
+    plurality <- dtuo$Transcripts[(DTU), length(target_id), by=parent_id]
+    categories <- unique(plurality$V1)
+    result <- lapply(categories, function (x) {
+      return(plurality[(V1==x), parent_id])
+    })
+    names(result) <- as.character(categories)
+    
+    return(result)
+  })
+}
+
+#================================================================================
+#' Summary of DTU plurality.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results.
+#'
+#'@export
+dtu_plurality_summary <- function(dtuo) {
+  return( sapply(get_plurality_ids(dtuo), length) )
+}
+
 
 
 #================================================================================
