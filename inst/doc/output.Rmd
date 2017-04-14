@@ -34,56 +34,84 @@ myannot <- simdat$annot
 
 # Call DTU
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  varname= "condition", verbose= FALSE,
+                  varname= "condition", verbose= FALSE, dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
                   description="Comparison of two conditions using a simulated sleuth object 
                     for the purposes of the tutorial. Simulated using built-in functionality 
                     of RATs.")
 ```
 
+We lowered `dprop_thresh` and bypassed the bootstrapping to increase the number of DTU positive 
+classifications, to better illustrate the summary fucntions below for the given artificial data.
 
 ***
 
 
 # Quick results
 
-For your convenience, RATs provides a couple of functions to give you a quick summary of your results.
+For your convenience, RATs provides a few functions to give you a quick summary of your results.
 However, we do recommend you become familiar with the actual results structure and content, so that you
 can judge the quality of the DTU calls and trace the reasons behind the classification of each gene or transcript.
 
+## Summary of DTU
+
 The `dtu_summary()` function lists the total number of genes and transcripts for each of 3 categories:
+
+* DTU:  There is significant change in isoform ratios.
+* non-DTU:  No significant change.
+* NA:  Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one transcript.
 
 ```{r}
 # A really simple tally of the outcome.
 print( dtu_summary(mydtu) )
 ```
 
-* DTU:  There is significant change in isoform ratios.
-* non-DTU:  No significant change.
-* NA:  Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one transcript.
-
 Notice that **three types of results are given for genes**. That's because RATs uses *two* separate methods of identifying DTU:
 The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually
 and then aggregates the isoform results to form a gene-level result. Therefore, as of `v.0.4.2`, `dtu_summury()`
 will display the DTU genes according to either method as well as the intersection of the two.
-
 
 The `get_dtu_ids()` function lists the actual identifiers per category, instead of the numbers in each category.
 As of `v0.4.2` it uses the same category names as `dtu_summury()` for consistency and clarity.
 
 ```{r}
 # Gene and transcript IDs corresponding to the tally above.
-ids <- get_dtu_ids(mydtu)
-
-# Contents
-print( ids )
-
-# DTU positive genes according to the transcript-level test.
-print( ids[[4]] )
-
+print( get_dtu_ids(mydtu) )
 ```
 
 The ID lists obtained with `get_dtu_ids()` are *ordered by effect size* (`Dprop`).
 
+
+## Summary of isoform switching
+
+Isoform switching is a subset of DTU. Primary isoform switching is often considered the most likely 
+type of DTU to have an effect. The following two functions summarise the extent of isoform switching 
+in the results:
+
+```{r}
+# A tally of genes switching isoform ranks.
+print( dtu_switch_summary(mydtu) )
+
+# The gene IDs displaying isoform switching.
+print( get_switch_ids(mydtu) )
+```
+
+Again, three versions of the gene results are shown, covering the respective DTU methods in RATs.
+`MIX6` is demonstrating a switch in both primary and non-primary isoforms.
+
+## Summary of DTU plurality
+
+In case you want to know how many isoforms are affected per gene.
+
+```{r}
+# A tally of genes switching isoform ranks.
+print( dtu_plurality_summary(mydtu) )
+
+# The gene IDs displaying isoform switching.
+print( get_plurality_ids(mydtu) )
+```
+
+The categories are named by the number of isoforms affected. There is one gene (`MIX6`) that has
+`3` isoforms affected.
 
 ***
 

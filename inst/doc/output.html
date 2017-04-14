@@ -215,45 +215,50 @@ myannot &lt;- simdat$annot
 
 # Call DTU
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, name_B = &quot;patients&quot;, 
-                  varname= &quot;condition&quot;, verbose= FALSE,
+                  varname= &quot;condition&quot;, verbose= FALSE, dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
                   description=&quot;Comparison of two conditions using a simulated sleuth object 
                     for the purposes of the tutorial. Simulated using built-in functionality 
                     of RATs.&quot;)
 </code></pre>
 
+<p>We lowered <code>dprop_thresh</code> and bypassed the bootstrapping to increase the number of DTU positive 
+classifications, to better illustrate the summary fucntions below for the given artificial data.</p>
+
 <hr/>
 
 <h1>Quick results</h1>
 
-<p>For your convenience, RATs provides a couple of functions to give you a quick summary of your results.
+<p>For your convenience, RATs provides a few functions to give you a quick summary of your results.
 However, we do recommend you become familiar with the actual results structure and content, so that you
 can judge the quality of the DTU calls and trace the reasons behind the classification of each gene or transcript.</p>
 
+<h2>Summary of DTU</h2>
+
 <p>The <code>dtu_summary()</code> function lists the total number of genes and transcripts for each of 3 categories:</p>
-
-<pre><code class="r"># A really simple tally of the outcome.
-print( dtu_summary(mydtu) )
-</code></pre>
-
-<pre><code>##        DTU genes (gene test)    non-DTU genes (gene test) 
-##                            1                            2 
-##         NA genes (gene test)     DTU genes (transc. test) 
-##                            7                            1 
-## non-DTU genes (transc. test)      NA genes (transc. test) 
-##                            9                            0 
-##       DTU genes (both tests)   non-DTU genes (both tests) 
-##                            1                            2 
-##        NA genes (both tests)              DTU transcripts 
-##                            0                            2 
-##          non-DTU transcripts               NA transcripts 
-##                            8                           11
-</code></pre>
 
 <ul>
 <li>DTU:  There is significant change in isoform ratios.</li>
 <li>non-DTU:  No significant change.</li>
 <li>NA:  Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one transcript.</li>
 </ul>
+
+<pre><code class="r"># A really simple tally of the outcome.
+print( dtu_summary(mydtu) )
+</code></pre>
+
+<pre><code>##        DTU genes (gene test)    non-DTU genes (gene test) 
+##                            2                            1 
+##         NA genes (gene test)     DTU genes (transc. test) 
+##                            7                            2 
+## non-DTU genes (transc. test)      NA genes (transc. test) 
+##                            8                            0 
+##       DTU genes (both tests)   non-DTU genes (both tests) 
+##                            2                            1 
+##        NA genes (both tests)              DTU transcripts 
+##                            0                            5 
+##          non-DTU transcripts               NA transcripts 
+##                            5                           11
+</code></pre>
 
 <p>Notice that <strong>three types of results are given for genes</strong>. That&#39;s because RATs uses <em>two</em> separate methods of identifying DTU:
 The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually
@@ -264,59 +269,126 @@ will display the DTU genes according to either method as well as the intersectio
 As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
 
 <pre><code class="r"># Gene and transcript IDs corresponding to the tally above.
-ids &lt;- get_dtu_ids(mydtu)
-
-# Contents
-print( ids )
+print( get_dtu_ids(mydtu) )
 </code></pre>
 
 <pre><code>## $`DTU genes (gene test)`
-## [1] &quot;MIX6&quot;
+## [1] &quot;MIX6&quot; &quot;CC&quot;  
 ## 
 ## $`non-DTU genes (gene test)`
-## [1] &quot;CC&quot; &quot;NN&quot;
+## [1] &quot;NN&quot;
 ## 
 ## $`NA genes (gene test)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (transc. test)`
-## [1] &quot;MIX6&quot;
+## [1] &quot;MIX6&quot; &quot;CC&quot;  
 ## 
 ## $`non-DTU genes (transc. test)`
-## [1] &quot;LC&quot;   &quot;CC&quot;   &quot;NN&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
+## [1] &quot;LC&quot;   &quot;NN&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`NA genes (transc. test)`
 ## character(0)
 ## 
 ## $`DTU genes (both tests)`
-## [1] &quot;MIX6&quot;
+## [1] &quot;MIX6&quot; &quot;CC&quot;  
 ## 
 ## $`non-DTU genes (both tests)`
-## [1] &quot;CC&quot; &quot;NN&quot;
+## [1] &quot;NN&quot;
 ## 
 ## $`NA genes (both tests)`
 ## character(0)
 ## 
 ## $`DTU transcripts`
-## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot;
+## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot; &quot;CC_a&quot;    &quot;CC_b&quot;   
 ## 
 ## $`non-DTU transcripts`
-## [1] &quot;MIX6.c4&quot; &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;    
-## [8] &quot;MIX6.nc&quot;
+## [1] &quot;LC2&quot;     &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
 ## 
 ## $`NA transcripts`
 ##  [1] &quot;LC1&quot;      &quot;1A1N-2&quot;   &quot;1B1C.1&quot;   &quot;1B1C.2&quot;   &quot;1D1C:one&quot; &quot;1D1C:two&quot;
 ##  [7] &quot;MIX6.d&quot;   &quot;ALLA1&quot;    &quot;ALLB1&quot;    &quot;ALLB2&quot;    &quot;NIB.1&quot;
 </code></pre>
 
-<pre><code class="r"># DTU positive genes according to the transcript-level test.
-print( ids[[4]] )
-</code></pre>
-
-<pre><code>## [1] &quot;MIX6&quot;
-</code></pre>
-
 <p>The ID lists obtained with <code>get_dtu_ids()</code> are <em>ordered by effect size</em> (<code>Dprop</code>).</p>
+
+<h2>Summary of isoform switching</h2>
+
+<p>Isoform switching is a subset of DTU. Primary isoform switching is often considered the most likely 
+type of DTU to have an effect. The following two functions summarise the extent of isoform switching 
+in the results:</p>
+
+<pre><code class="r"># A tally of genes switching isoform ranks.
+print( dtu_switch_summary(mydtu) )
+</code></pre>
+
+<pre><code>##        Primary switch (gene test)    Non-primary switch (gene test) 
+##                                 1                                 1 
+##     Primary switch (transc. test) Non-primary switch (transc. test) 
+##                                 1                                 1 
+##       Primary switch (both tests)   Non-primary switch (both tests) 
+##                                 1                                 1
+</code></pre>
+
+<pre><code class="r"># The gene IDs displaying isoform switching.
+print( get_switch_ids(mydtu) )
+</code></pre>
+
+<pre><code>## $`Primary switch (gene test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Non-primary switch (gene test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Primary switch (transc. test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Non-primary switch (transc. test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Primary switch (both tests)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Non-primary switch (both tests)`
+## [1] MIX6
+## Levels: CC MIX6
+</code></pre>
+
+<p>Again, three versions of the gene results are shown, covering the respective DTU methods in RATs.
+<code>MIX6</code> is demonstrating a switch in both primary and non-primary isoforms.</p>
+
+<h2>Summary of DTU plurality</h2>
+
+<p>In case you want to know how many isoforms are affected per gene.</p>
+
+<pre><code class="r"># A tally of genes switching isoform ranks.
+print( dtu_plurality_summary(mydtu) )
+</code></pre>
+
+<pre><code>## 2 3 
+## 1 1
+</code></pre>
+
+<pre><code class="r"># The gene IDs displaying isoform switching.
+print( get_plurality_ids(mydtu) )
+</code></pre>
+
+<pre><code>## $`2`
+## [1] CC
+## Levels: 1A1N 1B1C 1D1C ALLA ALLB CC LC MIX6 NIB NN
+## 
+## $`3`
+## [1] MIX6
+## Levels: 1A1N 1B1C 1D1C ALLA ALLB CC LC MIX6 NIB NN
+</code></pre>
+
+<p>The categories are named by the number of isoforms affected. There is one gene (<code>MIX6</code>) that has
+<code>3</code> isoforms affected.</p>
 
 <hr/>
 
@@ -388,18 +460,10 @@ are predicted as DTU-negative, as the G test takes into account more information
 print( names(mydtu$Genes) )
 </code></pre>
 
-<pre><code>##  [1] &quot;parent_id&quot;       &quot;elig&quot;            &quot;sig&quot;            
-##  [4] &quot;elig_fx&quot;         &quot;quant_reprod&quot;    &quot;rep_reprod&quot;     
-##  [7] &quot;DTU&quot;             &quot;transc_DTU&quot;      &quot;known_transc&quot;   
-## [10] &quot;detect_transc&quot;   &quot;elig_transc&quot;     &quot;pvalAB&quot;         
-## [13] &quot;pvalBA&quot;          &quot;pvalAB_corr&quot;     &quot;pvalBA_corr&quot;    
-## [16] &quot;quant_p_meanAB&quot;  &quot;quant_p_meanBA&quot;  &quot;quant_p_stdevAB&quot;
-## [19] &quot;quant_p_stdevBA&quot; &quot;quant_p_minAB&quot;   &quot;quant_p_minBA&quot;  
-## [22] &quot;quant_p_maxAB&quot;   &quot;quant_p_maxBA&quot;   &quot;quant_na_freq&quot;  
-## [25] &quot;quant_dtu_freq&quot;  &quot;rep_p_meanAB&quot;    &quot;rep_p_meanBA&quot;   
-## [28] &quot;rep_p_stdevAB&quot;   &quot;rep_p_stdevBA&quot;   &quot;rep_p_minAB&quot;    
-## [31] &quot;rep_p_minBA&quot;     &quot;rep_p_maxAB&quot;     &quot;rep_p_maxBA&quot;    
-## [34] &quot;rep_na_freq&quot;     &quot;rep_dtu_freq&quot;
+<pre><code>##  [1] &quot;parent_id&quot;     &quot;elig&quot;          &quot;sig&quot;           &quot;elig_fx&quot;      
+##  [5] &quot;DTU&quot;           &quot;transc_DTU&quot;    &quot;known_transc&quot;  &quot;detect_transc&quot;
+##  [9] &quot;elig_transc&quot;   &quot;pvalAB&quot;        &quot;pvalBA&quot;        &quot;pvalAB_corr&quot;  
+## [13] &quot;pvalBA_corr&quot;
 </code></pre>
 
 <p>The first few columns show the result of each decision step. The remaining columns list the values based on which the decisions were made.
@@ -449,15 +513,11 @@ but, as it uses less information, the test has a higher detection threshold and 
 print( names(mydtu$Transcripts) )
 </code></pre>
 
-<pre><code>##  [1] &quot;target_id&quot;      &quot;parent_id&quot;      &quot;elig_xp&quot;        &quot;elig&quot;          
-##  [5] &quot;sig&quot;            &quot;elig_fx&quot;        &quot;quant_reprod&quot;   &quot;rep_reprod&quot;    
-##  [9] &quot;DTU&quot;            &quot;gene_DTU&quot;       &quot;meanA&quot;          &quot;meanB&quot;         
-## [13] &quot;stdevA&quot;         &quot;stdevB&quot;         &quot;sumA&quot;           &quot;sumB&quot;          
-## [17] &quot;totalA&quot;         &quot;totalB&quot;         &quot;propA&quot;          &quot;propB&quot;         
-## [21] &quot;Dprop&quot;          &quot;pval&quot;           &quot;pval_corr&quot;      &quot;quant_p_mean&quot;  
-## [25] &quot;quant_p_stdev&quot;  &quot;quant_p_min&quot;    &quot;quant_p_max&quot;    &quot;quant_na_freq&quot; 
-## [29] &quot;quant_dtu_freq&quot; &quot;rep_p_mean&quot;     &quot;rep_p_stdev&quot;    &quot;rep_p_min&quot;     
-## [33] &quot;rep_p_max&quot;      &quot;rep_na_freq&quot;    &quot;rep_dtu_freq&quot;
+<pre><code>##  [1] &quot;target_id&quot; &quot;parent_id&quot; &quot;elig_xp&quot;   &quot;elig&quot;      &quot;sig&quot;      
+##  [6] &quot;elig_fx&quot;   &quot;DTU&quot;       &quot;gene_DTU&quot;  &quot;meanA&quot;     &quot;meanB&quot;    
+## [11] &quot;stdevA&quot;    &quot;stdevB&quot;    &quot;sumA&quot;      &quot;sumB&quot;      &quot;totalA&quot;   
+## [16] &quot;totalB&quot;    &quot;propA&quot;     &quot;propB&quot;     &quot;Dprop&quot;     &quot;pval&quot;     
+## [21] &quot;pval_corr&quot;
 </code></pre>
 
 <ol>
