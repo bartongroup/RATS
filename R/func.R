@@ -302,12 +302,10 @@ alloc_out <- function(annot, full){
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
-                        "pvalAB"=NA_real_, "pvalBA"=NA_real_, "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_,
-                        "quant_p_meanAB"=NA_real_, "quant_p_meanBA"=NA_real_, "quant_p_stdevAB"=NA_real_, "quant_p_stdevBA"=NA_real_,
-                        "quant_p_minAB"=NA_real_, "quant_p_minBA"=NA_real_, "quant_p_maxAB"=NA_real_, "quant_p_maxBA"=NA_real_,
+                        "pval"=NA_real_, "pval_corr"=NA_real_,
+                        "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_, 
                         "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
-                        "rep_p_meanAB"=NA_real_, "rep_p_meanBA"=NA_real_, "rep_p_stdevAB"=NA_real_, "rep_p_stdevBA"=NA_real_,
-                        "rep_p_minAB"=NA_real_, "rep_p_minBA"=NA_real_, "rep_p_maxAB"=NA_real_, "rep_p_maxBA"=NA_real_,
+                        "rep_p_mean"=NA_real_, "rep_p_stdev"=NA_real_, "rep_p_min"=NA_real_, "rep_p_max"=NA_real_,
                         "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "gene_DTU"=NA,
@@ -324,8 +322,7 @@ alloc_out <- function(annot, full){
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)), "DTU"=NA,
                         "elig_transc"=NA_integer_, "elig"=NA, "elig_fx"=NA,
-                        "pvalAB"=NA_real_, "pvalBA"=NA_real_,
-                        "pvalAB_corr"=NA_real_, "pvalBA_corr"=NA_real_, "sig"=NA)
+                        "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA,
                               "sumA"=NA_real_, "sumB"=NA_real_,  # sum across replicates of means across bootstraps
                               "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
@@ -410,12 +407,11 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 
     #---------- TESTS
 
-    # Proportion test.
+    # Transcript-level test.
     if (test_transc) {
       Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
-                                                    function(row) { prop.test(x = row[c(1, 2)],
-                                                                               n = row[c(3, 4)],
-                                                                               correct = TRUE)[["p.value"]]
+                                                    function(row) {
+                                                      p <- g.test.2(obsx= c(sumA, totalA-sumA), obsy= c(sumB, totalB-sumB))
                                                     }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
                                           ) ]
       Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
@@ -423,20 +419,18 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
       Transcripts[(elig), DTU := sig & elig_fx]
     }
 
-    # G test.
+    # Gene-level test.
     if (test_genes) {
-      Genes[(elig), c("pvalAB", "pvalBA") := t( as.data.frame( mclapply(Genes[(elig), parent_id],
+      Genes[(elig), pval := t( as.data.frame( mclapply(Genes[(elig), parent_id],
                                         function(parent) {
                                             # Extract all relevant data to avoid repeated look ups in the large table.
-                                            subdt <- Transcripts[parent, .(sumA, sumB, propA, propB)]  # All isoforms, including not detected ones.
-                                            pAB <- g.test(x = subdt[, sumA], p = subdt[, propB])
-                                            pBA <- g.test(x = subdt[, sumB], p = subdt[, propA])
-                                            return(c(pAB, pBA))
+                                            subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
+                                            p <- g.test.2(obsx= subdt$sumA, obsy= subdt$sumB)
+                                            return(p)
                                         }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
                 )) ]
-      Genes[(elig), pvalAB_corr := p.adjust(pvalAB, method=correction)]
-      Genes[(elig), pvalBA_corr := p.adjust(pvalBA, method=correction)]
-      Genes[(elig), sig := pvalAB_corr < p_thresh & pvalBA_corr < p_thresh]
+      Genes[(elig), pval_corr := p.adjust(pval, method=correction)]
+      Genes[(elig), sig := pval_corr < p_thresh]
       Genes[(elig), DTU := sig & elig_fx]
     }
   })
@@ -444,31 +438,91 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 }
 
 
+
 #================================================================================
 #' Log-likelihood test of goodness of fit.
 #'
-#' @param x	a numeric vector of positive numbers, with at least one non-zero value.
-#' @param p	a vector of probabilities of the same length of x.
+#' @param obsx	a numeric vector of finite positive counts, with at least one non-zero value.
+#' @param px	a vector of probabilities of the same length as xobs. ( sum(px) <= 1 )
 #'
-#' Sourced and adapted from from:
-#' V3.3 Pete Hurd Sept 29 2001. phurd@ualberta.ca
-#' http://www.psych.ualberta.ca/~phurd/cruft/g.test.r
+#' The order of values in the two vectors should be the same.
+#' If any value of xp is zero and the corresponding xobs is not, g.test.1 will always reject the hypothesis.
+#' No corrections are applied. 
+#' No input checks are applied, as RATs needs to run this millions of times.
+#' 
+#' @import stats
+#' @export
+#
+g.test.1 <- function(obsx, px) {
+  n = length(obsx)
+  sx <- sum(obsx)
+  ex <- sx * px  # expected values
+  G <- 2 * sum( sapply (seq.int(1, n, 1), 
+                        function (i) { if (obsx[i] != 0) { return(obsx[i] * log(obsx[i]/ex[i])) } else { return(0) } }) )
+  return( pchisq(G, df= n - 1, lower.tail= FALSE) )
+}
+
+#================================================================================
+#' Log-likelihood test of independence.
+#'
+#' For two sets of observations.
+#'
+#' @param obsx	a numeric vector of positive counts, with at least one non-zero value.
+#' @param obsy	a numeric vector of positive counts of same length as obsx, with at least one non-zero value.
+#'
+#' The order of values in the two vectors should be the same.
+#' No corrections are applied. 
+#' No input checks are applied, as RATs needs to run this millions of times. 
 #'
 #' @import stats
 #' @export
-#'
-g.test <- function(x, p = rep(1/length(x), length(x)))
-{
-  n <- sum(x)
-  E <- n * p
-  names(E) <- names(x)
-  g <- 0
-  for (i in 1:length(x)){
-    if (x[i] != 0) g <- g + x[i] * log(x[i]/E[i])
-  }
-  q <- 1
-  STATISTIC <- G <- 2*g/q
-  PARAMETER <- length(x) - 1
-  PVAL <- pchisq(STATISTIC, PARAMETER, lower.tail = FALSE)
+#
+g.test.2 <- function(obsx, obsy) {
+  n = length(obsx)
+  # Row and column sums.
+  sx <- sum(obsx)
+  sy <- sum(obsy)
+  sv <- obsx + obsy
+  st <- sx + sy
+  # Marginal probabilities.
+  mpx <- sx / st
+  mpy <- sy / st
+  mpv <- sapply(sv, function(v) {v/st})
+  # Expected values.
+  ex <- mpx * mpv * st
+  ey <- mpy * mpv * st
+  # Statistic.
+  G <- 2 * sum( sum( sapply (seq.int(1, n, 1), 
+                             function (i) { if (obsx[i] != 0) { return(obsx[i] * log(obsx[i]/ex[i])) } else { return(0) } }) ),
+                sum( sapply (seq.int(1, n, 1), 
+                             function (i) { if (obsy[i] != 0) { return(obsy[i] * log(obsy[i]/ey[i])) } else { return(0) } }) )
+              )
+  return( pchisq(G, df= n - 1, lower.tail= FALSE) )
 }
 
+#================================================================================
+#' Log-likelihood test of independence.
+#'
+#' For any number of sets of observations.
+#'
+#' @param repx	a numeric matrix of positive counts, r x c (replicates by categories), with at least one non-zero value.
+#' @param repy	a numeric matrix of positive counts, r x c (replicates by categories), with at least one non-zero value.
+#'
+#' The number and order of categories (columns) should be the same in both matrices.
+#' No corrections are applied. 
+#' No input checks are applied, as RATs needs to run this millions of times. 
+#'
+#' @import stats
+#' @export
+#
+g.test.n <- function(repx, repy) {
+  rx <- nrow(repx)
+  ry <- nrow(repy)
+  col <- ncol(repx)
+  nt = rx * col + ry * col
+  
+  #TODO
+  
+  stop("Not implemented")
+  return(pval)
+}
