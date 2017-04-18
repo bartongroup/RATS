@@ -356,9 +356,9 @@ alloc_out <- function(annot, full){
 #' @param threads Number of threads (POSIX systems only).
 #' @return list
 #'
+#' @import utils
 #' @import parallel
 #' @import data.table
-#' @import stats
 #'
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
@@ -411,7 +411,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     if (test_transc) {
       Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
                                                     function(row) {
-                                                      p <- g.test.2(obsx= c(sumA, totalA-sumA), obsy= c(sumB, totalB-sumB))
+                                                      return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )
                                                     }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
                                           ) ]
       Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
@@ -425,8 +425,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
                                         function(parent) {
                                             # Extract all relevant data to avoid repeated look ups in the large table.
                                             subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
-                                            p <- g.test.2(obsx= subdt$sumA, obsy= subdt$sumB)
-                                            return(p)
+                                            return( g.test.2(obsx= subdt$sumA, obsy= subdt$sumB) )
                                         }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
                 )) ]
       Genes[(elig), pval_corr := p.adjust(pval, method=correction)]
