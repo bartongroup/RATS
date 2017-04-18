@@ -110,8 +110,8 @@ print( dtu_plurality_summary(mydtu) )
 print( get_plurality_ids(mydtu) )
 ```
 
-The categories are named by the number of isoforms affected. There is one gene (`MIX6`) that has
-`3` isoforms affected.
+The categories are named by the number of isoforms affected. There is one gene (`CC`) that has `2` isoforms affected
+and one gene (`MIX6`) that has `3` isoforms affected.
 
 ***
 
@@ -162,12 +162,10 @@ print( names(mydtu$Parameters) )
 ## Genes
 
 `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the gene level.
+results at the gene level.  For your convenience, the respective aggragated transcript-level DTU calls are 
+also included here (defined as at least one isoform being DTU).
 
-The G-test is used for gene-level calls. The G-test is designed to compare a set of counts against a set of ratios. To use it with two sets of
-counts, we do the comparison both ways, using each condition in turn for each role. Thus, the table contains two sets of results,
-marked with the `AB` and `BA` suffixes. It is possible to get a DTU-positive result here, even when all the individual transcripts
-are predicted as DTU-negative, as the G test takes into account more information than the individual transcript proportion equality tests.
+The maximum likelihood-based G-test of independence is used to compare the set of isoform ratios between the two conditions. 
 
 ```{r}
 # Genes table's fields.
@@ -190,18 +188,18 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 9. `known_transc` - (int) Number of known trascripts for this gene according to the given annotation.
 10. `detect_trancs` - (int) Number of detected (expressed) transcripts in the given dataset.
 11. `elig_transc` - (int) Number of eligible transcripts, aggregated from `Transcripts$elig`.
-12. `pvalAB` & `pvalBA` - (num) G test p-value using in turn each condition as the reference ratios.
-13. `pvalAB_corr` & `pvalBA_corr` - (num) Multiple testing corrected p-value. `pvalAB_corr= p.adjust(pvalAB, Parameters$correction)`
-14. `quant_p_meanAB` & `quant_p_meanBA` - (num) Mean p-value across quantification bootstraps.
-15. `quant_p_stdevAB` & `quant_p_stdevBA` - (num) Standard deviation of p-values across quantification bootstraps.
-16. `quant_p_minAB` & `quant_p_minBA` - (num) Minimum observed p-value across quantification bootstraps.
-17. `quant_p_maxAB` & `quant_p_maxBA` - (num) Maximum observed p-value across quantification bootstraps.
+12. `pval` - (num) G test of independence p-value for the isoform ratios.
+13. `pval_corr` - (num) Multiple testing corrected p-value. `pval_corr= p.adjust(pval, Parameters$correction)`
+14. `quant_p_mean` - (num) Mean p-value across quantification bootstraps.
+15. `quant_p_stdev` - (num) Standard deviation of p-values across quantification bootstraps.
+16. `quant_p_min` - (num) Minimum observed p-value across quantification bootstraps.
+17. `quant_p_max` - (num) Maximum observed p-value across quantification bootstraps.
 18. `quant_na_freq` - (num) Fraction of quantification iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 19. `quant_dtu_freq` - (num) Fraction of replicate iterations that support a positive `DTU` classification.
-20. `rep_p_meanAB` & `rep_p_meanBA` - (num) Mean p-value across replication bootstraps.
-21. `rep_p_stdevAB` & `rep_p_stdevBA` - (num) Standard deviation of p-values across replication bootstraps.
-22. `rep_p_minAB` & `rep_p_minBA` - (num) Minimum observed p-value across replication bootstraps.
-23. `rep_p_maxAB` & `rep_p_maxBA` - (num) Maximum observed p-value across replication bootstraps.
+20. `rep_p_mean` - (num) Mean p-value across replication bootstraps.
+21. `rep_p_stdev` - (num) Standard deviation of p-values across replication bootstraps.
+22. `rep_p_min` - (num) Minimum observed p-value across replication bootstraps.
+23. `rep_p_max` - (num) Maximum observed p-value across replication bootstraps.
 24. `rep_na_freq` - (num) Fraction of replication iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 25. `rep_dtu_freq` - (num) Fraction of replication iterations that support a positive `DTU` classification.
 
@@ -211,10 +209,9 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 ## Transcripts
 
 `Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the transcript level. For your convenience, the gene-level DTU calls are also included here.
+results at the transcript level. For your convenience, the respective gene-level DTU calls are also included here.
 
-The proportions test is used for the transcript-level calls. Changes can be attributed to specific transcripts,
-but, as it uses less information, the test has a higher detection threshold and requires larger changes than the gene-level test.
+The maximum likelihood-based G-test of independence is used to compare each given isoform's proportions in the two conditions.
 
 ```{r}
 # Transcripts table's fields.

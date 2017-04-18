@@ -498,30 +498,3 @@ g.test.2 <- function(obsx, obsy) {
               )
   return( pchisq(G, df= n - 1, lower.tail= FALSE) )
 }
-
-#================================================================================
-#' Log-likelihood test of independence.
-#'
-#' For any number of sets of observations.
-#'
-#' @param repx	a numeric matrix of positive counts, r x c (replicates by categories), with at least one non-zero value.
-#' @param repy	a numeric matrix of positive counts, r x c (replicates by categories), with at least one non-zero value.
-#'
-#' The number and order of categories (columns) should be the same in both matrices.
-#' No corrections are applied. 
-#' No input checks are applied, as RATs needs to run this millions of times. 
-#'
-#' @import stats
-#' @export
-#
-g.test.n <- function(repx, repy) {
-  rx <- nrow(repx)
-  ry <- nrow(repy)
-  col <- ncol(repx)
-  nt = rx * col + ry * col
-  
-  #TODO
-  
-  stop("Not implemented")
-  return(pval)
-}

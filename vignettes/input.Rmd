@@ -285,7 +285,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 
 Three parameters control bootstrapping of DTU calls agaisnt the samples:
 
-1. `rboot` - Whether to bootstrap the replicates or not. (Default TRUE)
+1. `rboot` - Whether to bootstrap the replicates or not. (Default FALSE)
 2. `rrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.85)
 3. `rrep_as_crit` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default FALSE)
 
