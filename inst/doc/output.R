@@ -12,7 +12,7 @@ myannot <- simdat$annot
 
 # Call DTU
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  varname= "condition", verbose= FALSE,
+                  varname= "condition", verbose= FALSE, dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
                   description="Comparison of two conditions using a simulated sleuth object 
                     for the purposes of the tutorial. Simulated using built-in functionality 
                     of RATs.")
@@ -24,13 +24,23 @@ print( dtu_summary(mydtu) )
 ## ------------------------------------------------------------------------
 # Gene and transcript IDs corresponding to the tally above.
 ids <- get_dtu_ids(mydtu)
-
-# Contents
 print( ids )
 
-# DTU positive genes according to the transcript-level test.
-print( ids[[4]] )
+## ------------------------------------------------------------------------
+# A tally of genes switching isoform ranks.
+print( dtu_switch_summary(mydtu) )
 
+# The gene IDs displaying isoform switching.
+ids <- get_switch_ids(mydtu)
+print( ids )
+
+## ------------------------------------------------------------------------
+# A tally of genes switching isoform ranks.
+print( dtu_plurality_summary(mydtu) )
+
+# The gene IDs displaying isoform switching.
+ids <- get_plurality_ids(mydtu)
+print( ids )
 
 ## ------------------------------------------------------------------------
 print( names(mydtu) )

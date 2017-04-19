@@ -415,10 +415,10 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <ol>
 <li><code>p_thresh</code> - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter. (Default 0.05)</li>
 <li><code>abund_thresh</code> - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter. (Default 5, assumes use of estimated counts similar to those reported by <a href="https://github.com/COMBINE-lab/salmon">Salmon</a>)</li>
-<li><code>dprop_thresh</code> - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter. (Default 0.20)</li>
+<li><code>dprop_thresh</code> - Effect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter. (Default 0.20)</li>
 </ol>
 
-<p>The default values for these thresholds have been chosen such that they achieve a <em>median</em> FPR &lt;5% for a high quality eukaryotic dataset even with only 3 replicates per condition. Your mileage may vary and you should give some consideration to selecting appropriate values.
+<p>The default values for these thresholds have been chosen such that they achieve a <em>median</em> FPR &lt;5% for a high quality dataset from <em>Arabidopsis thaliana</em>, even with only 3 replicates per condition. Your mileage may vary and you should give some consideration to selecting appropriate values.
 Depending on the settings, <em>additional thresholds</em> are available and will be discussed in their respective sections below.</p>
 
 <h2>Bootstrapping</h2>
@@ -473,7 +473,7 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <p>Three parameters control bootstrapping of DTU calls agaisnt the samples:</p>
 
 <ol>
-<li><code>rboot</code> - Whether to bootstrap the replicates or not. (Default TRUE)</li>
+<li><code>rboot</code> - Whether to bootstrap the replicates or not. (Default FALSE)</li>
 <li><code>rrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.85)</li>
 <li><code>rrep_as_crit</code> - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default FALSE)</li>
 </ol>
@@ -596,7 +596,7 @@ print( head(sim$annot) )
 
 <h3>Sleuth field names</h3>
 
-<p>Although we expect Sleuth field names to be constant, with the exception of covariate names, RATs allows overriding the
+<p>Although we expect Sleuth field names to be constant with the exception of covariate names, RATs allows overriding the
 expected names:</p>
 
 <pre><code class="r"># Call DTU on data with custom field names.
@@ -636,7 +636,7 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;
 <h1>Annotation discrepancies</h1>
 
 <p>Different annotation versions often preserve transcript IDs, despite altering the details of the transcript models,
-such as UTRs. It is important to use the same annotation throught the workflow, especially for the quantifications.
+such as UTRs. It is important to use the same annotation throughout the workflow, especially for the quantifications.
 Otherwise, the data is not comparable.</p>
 
 <p>All internal operations and the output of RATs will be based on the annotation provided:</p>

@@ -2,23 +2,11 @@
 #' Summary of DTU calling.
 #' 
 #' @param dtuo A DTU object.
-#' @return A named numerical vector giving a tally of the results
+#' @return A named numerical vector giving a tally of the results.
 #'
 #'@export
 dtu_summary <- function(dtuo) {
-  result <- c("DTU genes (gene test)" = sum(dtuo$Genes[["DTU"]], na.rm=TRUE),
-              "non-DTU genes (gene test)" = sum(!dtuo$Genes[["DTU"]], na.rm=TRUE),
-              "NA genes (gene test)" = sum(ifelse(is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU genes (transc. test)" = sum(dtuo$Genes[["transc_DTU"]], na.rm=TRUE), 
-              "non-DTU genes (transc. test)" = sum(!dtuo$Genes[["transc_DTU"]], na.rm=TRUE), 
-              "NA genes (transc. test)" = sum(ifelse(is.na(dtuo$Genes[["transc_DTU"]]), 1, 0)),
-              "DTU genes (both tests)" = sum(dtuo$Genes[["transc_DTU"]] & dtuo$Genes[["DTU"]], na.rm=TRUE), 
-              "non-DTU genes (both tests)" = sum(!dtuo$Genes[["transc_DTU"]] & !dtuo$Genes[["DTU"]], na.rm=TRUE), 
-              "NA genes (both tests)" = sum(ifelse(is.na(dtuo$Genes[["transc_DTU"]]) & is.na(dtuo$Genes[["DTU"]]), 1, 0)),
-              "DTU transcripts" = sum(dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
-              "non-DTU transcripts" = sum(!dtuo$Transcripts[["DTU"]], na.rm=TRUE), 
-              "NA transcripts" = sum(ifelse(is.na(dtuo$Transcripts[["DTU"]]), 1, 0)) )
-  return(result)
+ return( sapply(get_dtu_ids(dtuo), length) )
 }
 
 
@@ -62,6 +50,125 @@ get_dtu_ids <- function(dtuo) {
     ))
   })
 }
+
+
+#================================================================================
+#' List of genes that switch isoform ranks.
+#' 
+#' Get the IDs of DTU genes where isoform rank switching occurs.
+#' Switches of primary and non-primary isoforms are listed separately. 
+#' 
+#' @param dtuo A DTU object.
+#' @return A named list of character vectors.
+#' 
+#' @import data.table
+#' @export
+get_switch_ids <- function(dtuo) {
+  # Get all the transcripts from DTU genes.
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
+  result <- list()
+  if (nrow(myt)==0) {
+    result[["Primary switch (gene test)"]] <- NA_character_
+    result[["Non-primary switch (gene test)"]] <- NA_character_
+  } else {
+    with(myt, {
+      myt[, rankA := frank(propA), by=parent_id]
+      myt[, rankB := frank(propB), by=parent_id]
+      myt[, sw := (rankA!=rankB)]
+      myt[, mrA := max(rankA), by=parent_id]
+      myt[, mrB := max(rankB), by=parent_id]
+      myt[, psw := sw & (rankA==mrA | rankB==mrB)]
+    })
+    result[["Primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw])
+    result[["Non-primary switch (gene test)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
+  }
+  
+  # Get all the transcripts from genes with at least one DTU transcript.
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
+  if (nrow(myt)==0) {
+    result[["Primary switch (transc. test)"]] <- NA_character_
+    result[["Non-primary switch (transc. test)"]] <- NA_character_
+  } else {
+    with(myt, {
+      myt[, rankA := frank(propA), by=parent_id]
+      myt[, rankB := frank(propB), by=parent_id]
+      myt[, sw := (rankA!=rankB)]
+      myt[, mrA := max(rankA), by=parent_id]
+      myt[, mrB := max(rankB), by=parent_id]
+      myt[, psw := sw & (rankA==mrA | rankB==mrB)]
+    })
+    result[["Primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw])
+    result[["Non-primary switch (transc. test)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
+  }
+  
+  # Get all the transcripts from DTU genes with at least one DTU isoform.
+  myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU & dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
+  if (nrow(myt)==0) {
+    result[["Primary switch (both tests)"]] <- NA_character_
+    result[["Non-primary switch (both tests)"]] <- NA_character_
+  } else {
+    with(myt, {
+      myt[, rankA := frank(propA), by=parent_id]
+      myt[, rankB := frank(propB), by=parent_id]
+      myt[, sw := (rankA!=rankB)]
+      myt[, mrA := max(rankA), by=parent_id]
+      myt[, mrB := max(rankB), by=parent_id]
+      myt[, psw := sw & (rankA==mrA | rankB==mrB)]
+    })
+    result[["Primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw])
+    result[["Non-primary switch (both tests)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
+  }
+  
+  return(result)
+}
+
+
+#================================================================================
+#' Summary of isoform switching events.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results.
+#'
+#'@export
+dtu_switch_summary <- function(dtuo) {
+  return( sapply(get_switch_ids(dtuo), length) )
+}
+
+
+#================================================================================
+#' Summary of DTU plurality.
+#' 
+#' Get the IDs of DTU genes organised by the number of isoforms affected. This
+#' is possible only based on the transcript-level results.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results.
+#'
+#'@export
+get_plurality_ids <- function(dtuo){
+  with(dtuo, {
+    plurality <- dtuo$Transcripts[(DTU), length(target_id), by=parent_id]
+    categories <- unique(plurality$V1)
+    result <- lapply(categories, function (x) {
+      return(plurality[(V1==x), parent_id])
+    })
+    names(result) <- as.character(categories)
+    
+    return(result)
+  })
+}
+
+#================================================================================
+#' Summary of DTU plurality.
+#' 
+#' @param dtuo A DTU object.
+#' @return A named numerical vector giving a tally of the results.
+#'
+#'@export
+dtu_plurality_summary <- function(dtuo) {
+  return( sapply(get_plurality_ids(dtuo), length) )
+}
+
 
 
 #================================================================================

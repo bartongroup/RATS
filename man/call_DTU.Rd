@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   abund_thresh = 5, dprop_thresh = 0.2, correction = "BH",
   testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
-  rboot = TRUE, rrep_thresh = 0.85, rrep_as_crit = FALSE,
+  rboot = FALSE, rrep_thresh = 0.85, rrep_as_crit = FALSE,
   description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
@@ -57,7 +57,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{qrep_thresh}{Reproducibility threshold for quantification bootsrapping. (Default 0.95)}
 
-\item{rboot}{Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})}
+\item{rboot}{Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{FALSE})}
 
 \item{rrep_thresh}{Reproducibility threshold for replicate bootsrapping. (Default 0.85)}
 

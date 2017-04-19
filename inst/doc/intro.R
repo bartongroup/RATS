@@ -21,9 +21,12 @@ knitr::opts_chunk$set(echo = TRUE)
 #  # 4. Plot significance VS effect size:
 #  plot_overview(mydtu)
 #  
-#  # 5. Get all gene and transcript identifiers per category (significant DTU,
-#  # no DTU, Not Applicable):
+#  # 5a. Get all gene and transcript identifiers per category
+#  # (significant DTU, no DTU, Not Applicable):
 #  myids <- get_dtu_ids(mydtu)
+#  
+#  # 5b. Get all gene and transcript identifiers implicated in isoform switching:
+#  myids <- get_switch_ids(mydtu)
 #  
 #  # 6. Plot isoform changes for a given gene.
 #  plot_gene(mydtu, "my_awesome_gene_ID")
