@@ -67,10 +67,6 @@ Download the latest release and then install it using:
 
 `install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
 
-Or install directly with the help of the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
-
-`devtools::install_github("bartongroup/rats", ref="master")`
-
 Release snapshots are labelled with even-ending version numbers (x.x.0/2/4/6/8).
 
 #### through Bioconductor
@@ -79,9 +75,10 @@ Not available yet.
 
 #### developmental version
 
-The most current developmental version of `rats` can be installed directly from the working copy on Github, using `devtools`:
+The most current developmental version of `rats` can be installed directly from the working copy on Github, using the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package 
+(which you will need to install first):
 
-`devtools::install_github("bartongroup/rats", ref="development")`
+`devtools::install_github("bartongroup/rats")`
 
 As this version represents active development, it can change at any moment. Features may be added, removed or changed without notice. 
 **Do not rely on this version for reproducible analysis of important data!**
