@@ -23,21 +23,24 @@ print( dtu_summary(mydtu) )
 
 ## ------------------------------------------------------------------------
 # Gene and transcript IDs corresponding to the tally above.
-print( get_dtu_ids(mydtu) )
+ids <- get_dtu_ids(mydtu)
+print( ids )
 
 ## ------------------------------------------------------------------------
 # A tally of genes switching isoform ranks.
 print( dtu_switch_summary(mydtu) )
 
 # The gene IDs displaying isoform switching.
-print( get_switch_ids(mydtu) )
+ids <- get_switch_ids(mydtu)
+print( ids )
 
 ## ------------------------------------------------------------------------
 # A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )
 
 # The gene IDs displaying isoform switching.
-print( get_plurality_ids(mydtu) )
+ids <- get_plurality_ids(mydtu)
+print( ids )
 
 ## ------------------------------------------------------------------------
 print( names(mydtu) )

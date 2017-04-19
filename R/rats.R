@@ -203,7 +203,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     return(resobj)
 
 
-  #---------- INTER-REPLICATE VARIABILITY
+  #---------- INTER-REPLICATE VARIABILITY BOOTSTRAP
 
 
   if (rboot) {
@@ -284,7 +284,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   }
 
 
-  #---------- BOOTSTRAP
+  #---------- QUANTIFICATION BOOTSTRAP
 
 
   if (qboot) {
@@ -312,8 +312,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
                   # Do the work.
                   # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
-                  suppressWarnings(
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads) )
+                  bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
 
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],

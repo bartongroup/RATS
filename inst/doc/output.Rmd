@@ -1,7 +1,7 @@
 ---
 title: "RATs: Raw Output"
 author: "Kimon Froussios"
-date: "04 APR 2017"
+date: "19 APR 2017"
 output: 
   html_document: 
     fig_caption: no
@@ -75,7 +75,8 @@ As of `v0.4.2` it uses the same category names as `dtu_summury()` for consistenc
 
 ```{r}
 # Gene and transcript IDs corresponding to the tally above.
-print( get_dtu_ids(mydtu) )
+ids <- get_dtu_ids(mydtu)
+print( ids )
 ```
 
 The ID lists obtained with `get_dtu_ids()` are *ordered by effect size* (`Dprop`).
@@ -92,11 +93,12 @@ in the results:
 print( dtu_switch_summary(mydtu) )
 
 # The gene IDs displaying isoform switching.
-print( get_switch_ids(mydtu) )
+ids <- get_switch_ids(mydtu)
+print( ids )
 ```
 
 Again, three versions of the gene results are shown, covering the respective DTU methods in RATs.
-`MIX6` is demonstrating a switch in both primary and non-primary isoforms.
+`MIX6` is demonstrating a switch in both primary and tertiary isoforms.
 
 ## Summary of DTU plurality
 
@@ -107,7 +109,8 @@ In case you want to know how many isoforms are affected per gene.
 print( dtu_plurality_summary(mydtu) )
 
 # The gene IDs displaying isoform switching.
-print( get_plurality_ids(mydtu) )
+ids <- get_plurality_ids(mydtu)
+print( ids )
 ```
 
 The categories are named by the number of isoforms affected. There is one gene (`CC`) that has `2` isoforms affected
@@ -162,8 +165,8 @@ print( names(mydtu$Parameters) )
 ## Genes
 
 `Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the gene level.  For your convenience, the respective aggragated transcript-level DTU calls are 
-also included here (defined as at least one isoform being DTU).
+results at the gene level.  For your convenience, the respective aggregated transcript-level DTU calls are 
+also included here (defined as at least one isoform being called DTU individually).
 
 The maximum likelihood-based G-test of independence is used to compare the set of isoform ratios between the two conditions. 
 
@@ -251,7 +254,7 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 29. `rep_na_freq` - (num) Fraction of replication iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 30. `rep_dtu_freq` - (num) Fraction of replication iterations that support a positive `DTU` classification.
 
-**Note** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
+**Note:** The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.
 
 
 ## Abundances

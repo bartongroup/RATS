@@ -269,7 +269,8 @@ will display the DTU genes according to either method as well as the intersectio
 As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
 
 <pre><code class="r"># Gene and transcript IDs corresponding to the tally above.
-print( get_dtu_ids(mydtu) )
+ids &lt;- get_dtu_ids(mydtu)
+print( ids )
 </code></pre>
 
 <pre><code>## $`DTU genes (gene test)`
@@ -331,7 +332,8 @@ print( dtu_switch_summary(mydtu) )
 </code></pre>
 
 <pre><code class="r"># The gene IDs displaying isoform switching.
-print( get_switch_ids(mydtu) )
+ids &lt;- get_switch_ids(mydtu)
+print( ids )
 </code></pre>
 
 <pre><code>## $`Primary switch (gene test)`
@@ -360,7 +362,7 @@ print( get_switch_ids(mydtu) )
 </code></pre>
 
 <p>Again, three versions of the gene results are shown, covering the respective DTU methods in RATs.
-<code>MIX6</code> is demonstrating a switch in both primary and non-primary isoforms.</p>
+<code>MIX6</code> is demonstrating a switch in both primary and tertiary isoforms.</p>
 
 <h2>Summary of DTU plurality</h2>
 
@@ -375,7 +377,8 @@ print( dtu_plurality_summary(mydtu) )
 </code></pre>
 
 <pre><code class="r"># The gene IDs displaying isoform switching.
-print( get_plurality_ids(mydtu) )
+ids &lt;- get_plurality_ids(mydtu)
+print( ids )
 </code></pre>
 
 <pre><code>## $`2`
@@ -449,8 +452,8 @@ print( names(mydtu$Parameters) )
 <h2>Genes</h2>
 
 <p><code>Genes</code> is a <a href="https://cran.r-project.org/web/packages/data.table/">data.table</a> with many fields, listing 
-results at the gene level.  For your convenience, the respective aggragated transcript-level DTU calls are 
-also included here (defined as at least one isoform being DTU).</p>
+results at the gene level.  For your convenience, the respective aggregated transcript-level DTU calls are 
+also included here (defined as at least one isoform being called DTU individually).</p>
 
 <p>The maximum likelihood-based G-test of independence is used to compare the set of isoform ratios between the two conditions. </p>
 
@@ -551,7 +554,7 @@ For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</cod
 <li><code>rep_dtu_freq</code> - (num) Fraction of replication iterations that support a positive <code>DTU</code> classification.</li>
 </ol>
 
-<p><strong>Note</strong> The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.</p>
+<p><strong>Note:</strong> The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.</p>
 
 <h2>Abundances</h2>
 

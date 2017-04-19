@@ -1,7 +1,7 @@
 ---
 title: "RATs: Input and Settings"
 author: "Kimon Froussios"
-date: "29 MAR 2017"
+date: "19 APR 2017"
 output: 
   html_document: 
     fig_caption: no
@@ -229,9 +229,9 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 
 1. `p_thresh` - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter. (Default 0.05)
 2. `abund_thresh` - Noise threshold. Transcripts with abundance below that value in both conditions are ignored. Higher threshold values are stricter. (Default 5, assumes use of estimated counts similar to those reported by [Salmon](https://github.com/COMBINE-lab/salmon))
-3. `dprop_thresh` - Efect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter. (Default 0.20)
+3. `dprop_thresh` - Effect size threshold. Transcripts whose proportion changes between conditions by less than the threshold are considered non-DTU, regardless of their statistical significance. Higher threshold values are stricter. (Default 0.20)
 
-The default values for these thresholds have been chosen such that they achieve a *median* FPR <5% for a high quality eukaryotic dataset even with only 3 replicates per condition. Your mileage may vary and you should give some consideration to selecting appropriate values.
+The default values for these thresholds have been chosen such that they achieve a *median* FPR <5% for a high quality dataset from *Arabidopsis thaliana*, even with only 3 replicates per condition. Your mileage may vary and you should give some consideration to selecting appropriate values.
 Depending on the settings, *additional thresholds* are available and will be discussed in their respective sections below.
 
 
@@ -381,7 +381,7 @@ print( head(sim$annot) )
 
 ### Sleuth field names
 
-Although we expect Sleuth field names to be constant, with the exception of covariate names, RATs allows overriding the
+Although we expect Sleuth field names to be constant with the exception of covariate names, RATs allows overriding the
 expected names:
 
 ```{r, eval=FALSE}
@@ -422,7 +422,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
 # Annotation discrepancies
 
 Different annotation versions often preserve transcript IDs, despite altering the details of the transcript models,
-such as UTRs. It is important to use the same annotation throught the workflow, especially for the quantifications.
+such as UTRs. It is important to use the same annotation throughout the workflow, especially for the quantifications.
 Otherwise, the data is not comparable.
 
 All internal operations and the output of RATs will be based on the annotation provided:

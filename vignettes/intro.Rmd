@@ -1,7 +1,7 @@
 ---
 title: "RATs: Quick Start"
 author: "Kimon Froussios"
-date: "15 FEB 2017"
+date: "19 APR 2017"
 output: 
   html_document: 
     fig_caption: no
@@ -38,8 +38,8 @@ transcript abundances. This makes it *suitable for use with alignment-free quant
 or [Salmon](https://github.com/COMBINE-lab/salmon). It is also compatible with DTE output from [Sleuth](http://pachterlab.github.io/sleuth).
 
 Additionally, RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. These bootstrapped
-data are used by `RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
-and thus provide a measure of confidence in the DTU calls. 
+data are used by RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage.
+This provides a measure of confidence in the DTU calls. 
 
 
 ***
@@ -71,7 +71,7 @@ Or install directly with the help of the [devtools](https://www.rstudio.com/prod
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
-Release snapshots are labelled with even-ending version numbers (x.x.0/2/4/6/8).
+Release snapshots are labelled with even-ending version numbers (x.x.x0/2/4/6/8).
 
 #### through Bioconductor
 
@@ -83,10 +83,10 @@ The most current developmental version of `rats` can be installed directly from 
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-As this version represents active development, it can change at any moment. Features may be added, removed or changed without notice. 
-**Do not rely on this version for reproducible analysis of important data!**
+As this version represents active development, it can change at any moment. Features may be added, removed or changed without notice, and it
+may even temporarily not work at all. **Do not rely on this version for reproducible analysis of important data!**
 A main reason to use the developmental version would be to test the resolution of bugs, or to give us feedback on the changes as they happen.
-Developmental versions are labelled with odd-ending version numbers (x.x.1/3/5/7/9).
+Developmental versions are labelled with odd-ending version numbers (x.x.x1/3/5/7/9).
 
 
 ***
@@ -94,9 +94,9 @@ Developmental versions are labelled with odd-ending version numbers (x.x.1/3/5/7
 
 # Use RATs
 
-RATs uses as input tables of transcript abundances with or without quantification bootstraps. For convenience, RATs can also
+RATs uses, as input, tables of transcript abundances with or without quantification bootstraps. For convenience, RATs can also
 extract the transcript abundances from a Sleuth object. The latter option is shown below. For more details and settings, consult
-the *Input & Parameters* vignette.
+the *Input & Settings* vignette.
 
 ```{r eval=FALSE}
 # 1. Load into R session.
@@ -118,9 +118,12 @@ mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A,
 # 4. Plot significance VS effect size:
 plot_overview(mydtu)
 
-# 5. Get all gene and transcript identifiers per category (significant DTU, 
-# no DTU, Not Applicable):
+# 5a. Get all gene and transcript identifiers per category 
+# (significant DTU, no DTU, Not Applicable):
 myids <- get_dtu_ids(mydtu)
+
+# 5b. Get all gene and transcript identifiers implicated in isoform switching:
+myids <- get_switch_ids(mydtu)
 
 # 6. Plot isoform changes for a given gene.
 plot_gene(mydtu, "my_awesome_gene_ID")
@@ -132,8 +135,8 @@ plot_gene(mydtu, "my_awesome_gene_ID")
 
 RATs provides default values for all its settings, however optimal threshold values will depend on the quantity, 
 quality and biology of your data, so some trial and error may be required on your part. The current default values 
-for the various threshold parameters are rather arbitrary and probably quite permissive. This means you are likely 
-to get an inflated number of positive calls. The available thresholds and settings are discussed in the *Input & Parameters* vignette.
+were optimised to control False Discovery Rate at the 5% level on *Arabidopsis thaliana* data.
+The available thresholds and settings are discussed in the *Input & Settings* vignette.
 
 
 ***
