@@ -2,7 +2,7 @@
 % Please edit documentation in R/results.R
 \name{plot_overview}
 \alias{plot_overview}
-\title{Plot DTU results from the proportions test.}
+\title{Plot DTU results overview.}
 \usage{
 plot_overview(dtuo, type = "volcano")
 }
@@ -10,14 +10,17 @@ plot_overview(dtuo, type = "volcano")
 \item{dtuo}{A DTU object.}
 
 \item{type}{Type of plot. \itemize{
-\item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
-\item{"maxdprop"}{Distribution of biggest change in proportion in each gene.} }}
+\item{"volcano" - Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
+\item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
+\item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
+\item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} }}
 }
 \value{
 A ggplot2 object. Simply display it or you can also customize it.
 
-Generally uses the results of the transcript-level proportion tests.
+These overviews rely on the results of the transcript-level proportion tests. If your DTU
+object was created without the transcript-level tests, this function will not work.
 }
 \description{
-Plot DTU results from the proportions test.
+Plot DTU results overview.
 }

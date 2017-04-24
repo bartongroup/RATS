@@ -50,9 +50,9 @@ test_that("The output structure is correct", {
   expect_true(is.logical(mydtu$Genes[["transc_DTU"]]))
   
   expect_true(is.data.frame(mydtu$Transcripts))
-  expect_equal(dim(mydtu$Transcripts)[2], 35)
+  expect_equal(dim(mydtu$Transcripts)[2], 36)
   expect_named(mydtu$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "gene_DTU", 
-                                    "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
+                                    "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "FC", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
                                     "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq",
                                     "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.logical(mydtu$Transcripts[["elig_xp"]]))
@@ -66,6 +66,7 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["Dprop"]]))
   expect_true(is.numeric(mydtu$Transcripts[["sumA"]]))
   expect_true(is.numeric(mydtu$Transcripts[["sumB"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["FC"]]))
   expect_true(is.numeric(mydtu$Transcripts[["meanA"]]))
   expect_true(is.numeric(mydtu$Transcripts[["meanB"]]))
   expect_true(is.numeric(mydtu$Transcripts[["stdevA"]]))
