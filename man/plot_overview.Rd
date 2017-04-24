@@ -13,7 +13,8 @@ plot_overview(dtuo, type = "volcano")
 \item{"volcano" - Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
 \item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
 \item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
-\item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} }}
+\item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} 
+\item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}}
 }
 \value{
 A ggplot2 object. Simply display it or you can also customize it.

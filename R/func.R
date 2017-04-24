@@ -310,7 +310,7 @@ alloc_out <- function(annot, full){
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "gene_DTU"=NA,
                               "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_,
-                              "sumA"=NA_real_, "sumB"=NA_real_, "FC"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
+                              "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
                               "pval"=NA_real_, "pval_corr"=NA_real_,
                               "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_,"quant_p_max"=NA_real_,
@@ -324,7 +324,7 @@ alloc_out <- function(annot, full){
                         "elig_transc"=NA_integer_, "elig"=NA, "elig_fx"=NA,
                         "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA,
-                              "sumA"=NA_real_, "sumB"=NA_real_, "FC"=NA_real_,
+                              "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_,  #log2FC currently not used in decision making and bootstrapping, but maybe in the future.
                               "totalA"=NA_real_, "totalB"=NA_real_,
                               "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
@@ -389,8 +389,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
     Transcripts[(is.nan(propB)), propB := NA_real_]
     Transcripts[, Dprop := propB - propA]
-    Transcripts[, FC := sumB / sumA]
-
+    
     #---------- FILTER
 
     # Filter transcripts and genes to reduce number of tests:

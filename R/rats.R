@@ -172,10 +172,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
     Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns type double.
     Genes[(is.na(detect_transc)), detect_transc := 0]
-    Transcripts[, meanA :=  rowMeans(count_data_A) ]
-    Transcripts[, meanB :=  rowMeans(count_data_B) ]
-    Transcripts[, stdevA :=  rowSds(as.matrix(count_data_A)) ]
-    Transcripts[, stdevB :=  rowSds(as.matrix(count_data_B)) ]
+    Transcripts[, meanA := rowMeans(count_data_A) ]
+    Transcripts[, meanB := rowMeans(count_data_B) ]
+    Transcripts[, stdevA := rowSds(as.matrix(count_data_A)) ]
+    Transcripts[, stdevB := rowSds(as.matrix(count_data_B)) ]
+    Transcripts[, log2FC := log2(sumB / sumA)]
   })
 
   # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)

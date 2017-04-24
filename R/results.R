@@ -352,8 +352,12 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
 #'   \item{"volcano" - Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
 #'   \item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
 #'   \item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
-#'   \item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} }
+#'   \item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} 
+#'   \item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}
 #' @return A ggplot2 object. Simply display it or you can also customize it.
+#' 
+#' CAUTION: RATs does NOT normalise the input abundances for fold-change calclulations. RATs
+#' is NOT intended for study of DTE.
 #' 
 #' These overviews rely on the results of the transcript-level proportion tests. If your DTU
 #' object was created without the transcript-level tests, this function will not work.
@@ -371,24 +375,23 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_point(alpha = 0.3) +
                   ggtitle("Isoform proportion change VS significance") +
                   labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
-                       y ="-log10 (Pval)") +
+                       y = "-log10 (Pval)") +
                   scale_color_manual(values=c("steelblue3", "red")) +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   theme(panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95") )
     ### TRADITIONAL VOLCANO
     } else if (any(type == "tradvolcano")) {
-      mydata = Transcripts[, .(target_id, log2(FC), -log10(pval_corr), DTU)]
-      names(mydata)[2] <- "logFC"
+      mydata = Transcripts[, .(target_id, log2FC, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot(data = na.omit(mydata), aes(logFC, neglogP, colour = DTU)) +
-        geom_point(alpha = 0.3) +
-        ggtitle("Isoform abundance fold-change VS significance") +
-        labs(x = "log2 (FC)", 
-             y ="-log10 (Pval)") +
-        scale_color_manual(values=c("steelblue3", "red")) +
-        theme(panel.background= element_rect(fill= "grey98"),
-              panel.grid.major= element_line(colour= "grey95") )
+      result <- ggplot(data = na.omit(mydata), aes(log2FC, neglogP, colour = DTU)) +
+                  geom_point(alpha = 0.3) +
+                  ggtitle("Isoform abundance fold-change VS significance") +
+                  labs(x = "log2 (FC)", 
+                       y = "-log10 (Pval)") +
+                  scale_color_manual(values=c("steelblue3", "red")) +
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95") )
     ### MAXDPROP
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
@@ -402,26 +405,38 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
                   ggtitle("Distribution of largest isoform proportion change per gene") +
                   labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
-                       y ="Number of genes") +
+                       y = "Number of genes") +
                   scale_fill_manual(values=c("steelblue3", "red")) +
                   scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-                  scale_y_continuous(trans="sqrt")
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95") )
     ### MAXFC
     } else if (type == "maxfc") {
-      tmp <- copy(Transcripts[, .(parent_id, FC)])  # I don't want the intermediate calculations to modify the dtu object.
-      tmp[, abma := abs(log2(FC))]
+      tmp <- copy(Transcripts[, .(parent_id, log2FC)])  # I don't want the intermediate calculations to modify the dtu object.
+      tmp[, abma := abs(log2FC)]
       tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
       # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
       setkey(tmp, Group.1)
       tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
       # ok, plotting time
       result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
-        geom_histogram(binwidth = 0.1, position="identity", alpha = 0.5) +
-        ggtitle("Distribution of largest isoform abundance fold-change per gene") +
-        labs(x = "abs( log2 (FC) )", 
-             y ="Number of genes") +
-        scale_fill_manual(values=c("steelblue3", "red")) +
-        scale_y_continuous(trans="sqrt")
+                  geom_histogram(binwidth = 0.1, position="identity", alpha = 0.5) +
+                  ggtitle("Distribution of largest isoform abundance fold-change per gene") +
+                  labs(x = "abs( log2 (FC) )", 
+                       y = "Number of genes") +
+                  scale_fill_manual(values=c("steelblue3", "red")) +
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95") )
+    ### FC vs DPROP
+    } else if (type == "fcVSdprop") {
+      result <- ggplot(data = na.omit(Transcripts[, .(log2FC, Dprop, DTU)]), aes(x=Dprop, y=log2FC, colour=DTU)) +
+                  geom_point(alpha = 0.3) +
+                  ggtitle("Transcript abundance fold-change VS isoform proportion change") +
+                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                       y = "log2 (FC)") +
+                  scale_fill_manual(values=c("steelblue3", "red")) +
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95") )
     } else {
       stop("Unrecognized plot type!")
     }
