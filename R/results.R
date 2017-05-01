@@ -295,7 +295,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
         }
       }
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= vis_data[[colourby]], fill= vis_data[[fillby]])) +
-                  facet_grid(type ~ ., scales= "free") +
+                  facet_grid(type ~ ., scales= "free", switch="y") +
                   geom_jitter(aes(shape=vis_data[[shapeby]]), position=position_jitterdodge(), stroke= rel(0.8)) +
                   geom_boxplot(position=position_dodge(), alpha=0.3, outlier.shape= NA) +
                   scale_shape_manual(values= shaplt[[shapeby]], name=shapeby) +
@@ -308,7 +308,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       colourby <- "replicate"
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]])) +
-                  facet_grid(type ~ condition, scales= "free") +
+                  facet_grid(type ~ condition, scales= "free", switch="y") +
                   geom_path(aes(colour= replicate, group= replicate)) +
                   geom_boxplot(alpha=0.3, outlier.shape= NA) +
                   scale_fill_manual(values= colplt[[fillby]], name=fillby)
@@ -318,26 +318,30 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       colourby <- "replicate"
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
-                  facet_grid(type ~ condition, scales= "free") +
+                  facet_grid(type ~ condition, scales= "free", switch="y") +
                   geom_path(aes(group= replicate))
     ### ERROR
     } else {
       stop("Unknown plot style.")
     }
     result <- result +
-                scale_y_continuous(limits= c(0, NA)) +
+                scale_y_continuous(limits= c(0, NA), sec.axis=dup_axis(), expand=c(0,0)) +
+                # geom_hline(yintercept=0, size=rel(1.1)) +
                 guides(shape="legend") +
-                labs(title= paste("gene:", pid), y= "Abundance (Relative & Absolute)", x= "Isoform") +
+                labs(title= paste("gene:", pid), y= NULL, x= NULL) +
                 theme(axis.text.x= element_text(angle= 90),
+                      # axis.line.x= element_line(),
                       strip.background= element_rect(fill= "grey95"),
+                      strip.text.y= element_text(size= rel(1.2)),
+                      strip.text.x= element_text(size= rel(1.1)),
                       panel.grid.major= element_line(colour = "grey95"),
                       panel.grid.minor= element_blank(),
                       panel.background= element_rect(fill = "grey98") )
-    if (fillby == "none")
+    if ( any(fillby == c("none", "isoform")) )
       result <- result + guides(fill="none")
-    if (colourby == "none")
+    if ( any(colourby == c("none", "isoform")) )
       result <- result + guides(colour="none")
-    if (shapeby == "none")
+    if ( any(shapeby == c("none", "isoform")) )
       result <- result + guides(shape="none")
     return(result)
   })

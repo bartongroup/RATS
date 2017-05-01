@@ -19,6 +19,9 @@ plot_overview(dtuo, type = "volcano")
 \value{
 A ggplot2 object. Simply display it or you can also customize it.
 
+CAUTION: RATs does NOT normalise the input abundances for fold-change calclulations. RATs
+is NOT intended for study of DTE.
+
 These overviews rely on the results of the transcript-level proportion tests. If your DTU
 object was created without the transcript-level tests, this function will not work.
 }
