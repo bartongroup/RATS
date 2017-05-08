@@ -325,7 +325,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       stop("Unknown plot style.")
     }
     result <- result +
-                scale_y_continuous(limits= c(0, NA), sec.axis=dup_axis(), expand=c(0,0)) +
+                scale_y_continuous(limits= c(0, NA), sec.axis=dup_axis()) +
                 # geom_hline(yintercept=0, size=rel(1.1)) +
                 guides(shape="legend") +
                 labs(title= paste("gene:", pid), y= NULL, x= NULL) +

@@ -258,7 +258,8 @@ group_samples <- function(covariates) {
 #' @export
 #'
 denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads= 1) {
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
   mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
@@ -288,7 +289,8 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, thr
 #' @import data.table
 #'
 alloc_out <- function(annot, full){
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(1)
   if (full == "full") {
     Parameters <- list("description"=NA_character_, "time"=date(),
@@ -361,7 +363,8 @@ alloc_out <- function(annot, full){
 #' @import data.table
 #'
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
 
   #---------- PRE-ALLOCATE

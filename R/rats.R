@@ -72,7 +72,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       }
 
   threads <- as.integer(threads)  # Can't be decimal.
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
 
   if (qbootnum == 0 && qboot)   # Use smart default.
