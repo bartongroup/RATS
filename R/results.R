@@ -376,17 +376,18 @@ plot_overview <- function(dtuo, type="volcano") {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
       result <- ggplot() +
-                  geom_point(aes(x=mydata[DTU==FALSE, Dprop], y=mydata[DTU==FALSE,neglogP]), alpha = 0.25, colour="steelblue3", shape=16) +
-                  geom_point(aes(x=mydata[DTU==TRUE, Dprop], y=mydata[DTU==TRUE,neglogP]), alpha = 0.25, colour="red", shape=16) +
+                  geom_point(aes(x=mydata[DTU==FALSE, Dprop], y=mydata[DTU==FALSE,neglogP], colour=mydata[DTU==FALSE, DTU]), alpha = 0.25, shape=16) +
+                  geom_point(aes(x=mydata[DTU==TRUE, Dprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.25, shape=16) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey65") +
                   ggtitle("Isoform proportion change VS significance") +
                   labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
                        y = "-log10 (Pval)") +
-                  scale_color_manual(values=c("steelblue3", "red")) +
+                  scale_color_manual(values=c("FALSE"="steelblue3", "TRUE"="red")) +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0)) +
+                  guides(colour=guide_legend("DTU")) +
                   theme(panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95") )
     ### TRADITIONAL VOLCANO
