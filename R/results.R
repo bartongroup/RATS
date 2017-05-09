@@ -375,13 +375,18 @@ plot_overview <- function(dtuo, type="volcano") {
     if (any(type == c("gene_volcano", "volcano"))) {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot(data = na.omit(mydata), aes(Dprop, neglogP, colour = DTU)) +
-                  geom_point(alpha = 0.3) +
+      result <- ggplot() +
+                  geom_point(aes(x=mydata[DTU==FALSE, Dprop], y=mydata[DTU==FALSE,neglogP]), alpha = 0.25, colour="steelblue3", shape=16) +
+                  geom_point(aes(x=mydata[DTU==TRUE, Dprop], y=mydata[DTU==TRUE,neglogP]), alpha = 0.25, colour="red", shape=16) +
+                  geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_hline(yintercept= -Parameters$p_thresh, colour="grey65") +
                   ggtitle("Isoform proportion change VS significance") +
                   labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
                        y = "-log10 (Pval)") +
                   scale_color_manual(values=c("steelblue3", "red")) +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+                  scale_y_continuous(expand=c(0,0)) +
                   theme(panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95") )
     ### TRADITIONAL VOLCANO
@@ -407,13 +412,21 @@ plot_overview <- function(dtuo, type="volcano") {
       # ok, plotting time
       result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
                   geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
+                  geom_vline(xintercept=Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
                   ggtitle("Distribution of largest isoform proportion change per gene") +
                   labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
                        y = "Number of genes") +
                   scale_fill_manual(values=c("steelblue3", "red")) +
-                  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
-                  theme(panel.background= element_rect(fill= "grey98"),
-                        panel.grid.major= element_line(colour= "grey95") )
+                  scale_x_continuous(limits=c(0, 1), breaks = seq(0, 1, 0.2), expand=c(0, 0)) +
+                  theme(axis.line=element_line(),
+                        panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95", size=rel(1)),
+                        panel.grid.minor.y= element_line(colour= "grey95", size=rel(1.5)) )
+      maxy <- max(ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
+      maxy <- maxy + maxy * 0.05
+      result <- result +
+                    scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
+                                       breaks=pretty(c(0, maxy), n=5))
     ### MAXFC
     } else if (type == "maxfc") {
       tmp <- copy(Transcripts[, .(parent_id, log2FC)])  # I don't want the intermediate calculations to modify the dtu object.
