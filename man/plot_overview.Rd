@@ -10,10 +10,13 @@ plot_overview(dtuo, type = "volcano")
 \item{dtuo}{A DTU object.}
 
 \item{type}{Type of plot. \itemize{
-\item{"volcano" - Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
-\item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
+\item{"tvolcano" - Change in proportion VS. transcript-level statistical significance. (Default)}
+\item{"gvolcano" - Largest change in proportion per gene VS. gene-leel statistical significance.}
 \item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
-\item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} 
+\item{"dprop" - Distribution of effect size.}
+\item{"reprod" - Distribution of gene-level DTU reproducibility.}
+\item{"reprodVSdprop" - Transcript-level DTU reproducibility VS effect size.}
+\item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
 \item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}}
 }
 \value{

@@ -353,10 +353,14 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
 #' 
 #' @param dtuo A DTU object.
 #' @param type Type of plot. \itemize{
-#'   \item{"volcano" - Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
-#'   \item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
+#'   \item{"tvolcano" - Change in proportion VS. transcript-level statistical significance. (Default)}
+#'   \item{"gvolcano" - Largest change in proportion per gene VS. gene-leel statistical significance.}
 #'   \item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
-#'   \item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.} 
+#'   \item{"dprop" - Distribution of effect size.}
+#'   \item{"reprod" - Distribution of gene-level DTU reproducibility.}
+#'   \item{"reprodVSdprop" - Transcript-level DTU reproducibility VS effect size.}
+#'   \item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
+  # \item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.}
 #'   \item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}
 #' @return A ggplot2 object. Simply display it or you can also customize it.
 #' 
@@ -372,7 +376,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
     ### VOLCANO
-    if (any(type == c("gene_volcano", "volcano"))) {
+    if (any(type == c("transc_volcano", "tvolcano", "volcano"))) {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
       result <- ggplot() +
@@ -380,9 +384,10 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_point(aes(x=mydata[DTU==TRUE, Dprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.25, shape=16) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
-                  geom_hline(yintercept= -Parameters$p_thresh, colour="grey65") +
-                  ggtitle("Isoform proportion change VS significance") +
-                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  geom_hline(yintercept= -Parameters$p_thresh, colour="grey85") +
+                  ggtitle("Effect size VS significance (transcript level)") +
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                       x= "Isoform propotion difference",
                        y = "-log10 (Pval)") +
                   scale_color_manual(values=c("FALSE"="steelblue3", "TRUE"="red")) +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
@@ -390,36 +395,106 @@ plot_overview <- function(dtuo, type="volcano") {
                   guides(colour=guide_legend("DTU")) +
                   theme(panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95") )
+    ### GENE VOLCANO
+    } else if (any(type == c("gene_volcano", "gvolcano"))) {
+      tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
+      tmp <- with(tmp, data.table(aggregate(Dprop, by=list(parent_id), FUN = maxabs)) )
+      # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
+      setkey(tmp, Group.1)
+      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
+      tmp[, nlp := Genes[match(tmp$Group.1, Genes[, parent_id]), -log10(Genes$pval_corr)] ]
+      # ok, plotting time
+      result <- ggplot() +
+                  geom_point(aes(x=unlist(tmp[dtu==FALSE, x]), y=unlist(tmp[dtu==FALSE, nlp]), colour=unlist(tmp[dtu==FALSE, dtu])), alpha = 0.25, shape=16) +
+                  geom_point(aes(x=unlist(tmp[dtu==TRUE, x]), y=unlist(tmp[dtu==TRUE, nlp]), colour=unlist(tmp[dtu==TRUE, dtu])), alpha = 0.25, shape=16) +
+                  geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_hline(yintercept= -Parameters$p_thresh, colour="grey85") +
+                  ggtitle("Effect size VS significance (gene level)") +
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                       x = "Largest isoform proportion difference per gene",
+                       y = "-log10 (Pval)") +
+                  scale_color_manual(values=c("FALSE"="steelblue3", "TRUE"="red")) +
+                  scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+                  scale_y_continuous(expand=c(0,0)) +
+                  guides(colour=guide_legend("DTU")) +
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95") )
+    ### GENE VOLCANO 2
+    } else if (any(type == c("gtvolcano"))) {
+      tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
+      tmp <- with(tmp, data.table(aggregate(Dprop, by=list(parent_id), FUN = maxabs)) )
+      # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
+      setkey(tmp, Group.1)
+      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$transc_DTU] ]
+      tmp[, nlp := Genes[match(tmp$Group.1, Genes[, parent_id]), -log10(Genes$pval_corr)] ]
+      # ok, plotting time
+      result <- ggplot() +
+        geom_point(aes(x=unlist(tmp[dtu==FALSE, x]), y=unlist(tmp[dtu==FALSE, nlp]), colour=unlist(tmp[dtu==FALSE, dtu])), alpha = 0.25, shape=16) +
+        geom_point(aes(x=unlist(tmp[dtu==TRUE, x]), y=unlist(tmp[dtu==TRUE, nlp]), colour=unlist(tmp[dtu==TRUE, dtu])), alpha = 0.25, shape=16) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+        geom_hline(yintercept= -Parameters$p_thresh, colour="grey85") +
+        ggtitle("Largest isoform proportion change VS transcript-level significance") +
+        labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+             y = "-log10 (Pval)") +
+        scale_color_manual(values=c("FALSE"="steelblue3", "TRUE"="red")) +
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        scale_y_continuous(expand=c(0,0)) +
+        guides(colour=guide_legend("DTU")) +
+        theme(panel.background= element_rect(fill= "grey98"),
+              panel.grid.major= element_line(colour= "grey95") )
     ### TRADITIONAL VOLCANO
     } else if (any(type == "tradvolcano")) {
       mydata = Transcripts[, .(target_id, log2FC, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
       result <- ggplot(data = na.omit(mydata), aes(log2FC, neglogP, colour = DTU)) +
-                  geom_point(alpha = 0.3) +
+                  geom_point(shape=16, alpha = 0.3) +
                   ggtitle("Isoform abundance fold-change VS significance") +
                   labs(x = "log2 (FC)", 
                        y = "-log10 (Pval)") +
                   scale_color_manual(values=c("steelblue3", "red")) +
                   theme(panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95") )
+    ### EFFECT SIZE
+    } else if (type == "dprop") {
+      result <- ggplot(data= Transcripts[(elig), .(Dprop, DTU)], aes(x=Dprop, fill=DTU)) + 
+        geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+        scale_fill_manual(values=c("steelblue3", "red")) +
+        ggtitle("Effect size (transcript level)") +
+        labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+             x = "Isoform proportion difference",
+             y = "Number of Transcripts") +
+        theme(panel.background= element_rect(fill= "grey98"),
+              panel.grid.major= element_line(colour= "grey95", size=rel(1)),
+              panel.grid.minor.x= element_blank(),
+              axis.line.x = element_line() )
+      maxy <- max(ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
+      maxy <- maxy + maxy * 0.05
+      result <- result +
+        scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
+                           breaks=c(100, 500, 1000, pretty(c(0, maxy), n=4)))
     ### MAXDPROP
     } else if (type == "maxdprop") {
       tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
-      tmp[, abma := abs(Dprop)]
-      tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
+      tmp <- with(tmp, data.table(aggregate(Dprop, by=list(parent_id), FUN = maxabs)) )
       # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
       setkey(tmp, Group.1)
       tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
       # ok, plotting time
-      result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
-                  geom_histogram(binwidth = 0.01, position="identity", alpha = 0.5) +
-                  geom_vline(xintercept=Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
-                  ggtitle("Distribution of largest isoform proportion change per gene") +
-                  labs(x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
+      result <- ggplot(data = na.omit(tmp), aes(x=x, fill=dtu)) +
+                  geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
+                  geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  ggtitle("Effect size (gene level") +
+                  labs(# x = paste("max( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
+                       x = "Largest isoform proportion difference per gene",
                        y = "Number of genes") +
                   scale_fill_manual(values=c("steelblue3", "red")) +
-                  scale_x_continuous(limits=c(0, 1), breaks = seq(0, 1, 0.2), expand=c(0, 0)) +
-                  theme(axis.line=element_line(),
+                  scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
+                  theme(axis.line.x=element_line(),
                         panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95", size=rel(1)),
                         panel.grid.minor.y= element_line(colour= "grey95", size=rel(1.5)) )
@@ -428,33 +503,69 @@ plot_overview <- function(dtuo, type="volcano") {
       result <- result +
                     scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
                                        breaks=pretty(c(0, maxy), n=5))
-    ### MAXFC
-    } else if (type == "maxfc") {
-      tmp <- copy(Transcripts[, .(parent_id, log2FC)])  # I don't want the intermediate calculations to modify the dtu object.
-      tmp[, abma := abs(log2FC)]
-      tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
-      # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
-      setkey(tmp, Group.1)
-      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
-      # ok, plotting time
-      result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
-                  geom_histogram(binwidth = 0.1, position="identity", alpha = 0.5) +
-                  ggtitle("Distribution of largest isoform abundance fold-change per gene") +
-                  labs(x = "abs( log2 (FC) )", 
-                       y = "Number of genes") +
-                  scale_fill_manual(values=c("steelblue3", "red")) +
-                  theme(panel.background= element_rect(fill= "grey98"),
-                        panel.grid.major= element_line(colour= "grey95") )
+    # ### MAXFC
+    # } else if (type == "maxfc") {
+    #   tmp <- copy(Transcripts[, .(parent_id, log2FC)])  # I don't want the intermediate calculations to modify the dtu object.
+    #   tmp[, abma := abs(log2FC)]
+    #   tmp <- with(tmp, data.table(aggregate(abma, by=list(parent_id), FUN = max)))
+    #   # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
+    #   setkey(tmp, Group.1)
+    #   tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
+    #   # ok, plotting time
+    #   result <- ggplot(data = na.omit(tmp), aes(x, fill=dtu)) +
+    #               geom_histogram(binwidth = 0.1, position="identity", alpha = 0.5) +
+    #               ggtitle("Largest isoform abundance fold-change per gene") +
+    #               labs(x = "abs( log2 (FC) )", 
+    #                    y = "Number of genes") +
+    #               scale_fill_manual(values=c("steelblue3", "red")) +
+    #               theme(panel.background= element_rect(fill= "grey98"),
+    #                     panel.grid.major= element_line(colour= "grey95") )
     ### FC vs DPROP
     } else if (type == "fcVSdprop") {
       result <- ggplot(data = na.omit(Transcripts[, .(log2FC, Dprop, DTU)]), aes(x=Dprop, y=log2FC, colour=DTU)) +
-                  geom_point(alpha = 0.3) +
+                  geom_point(shape=16, alpha = 0.3) +
+                  geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
                   ggtitle("Transcript abundance fold-change VS isoform proportion change") +
-                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                       x = "Proportion difference",
                        y = "log2 (FC)") +
-                  scale_fill_manual(values=c("steelblue3", "red")) +
+                  scale_colour_manual(values=c("steelblue3", "red")) +
                   theme(panel.background= element_rect(fill= "grey98"),
                         panel.grid.major= element_line(colour= "grey95") )
+    ### REPRODUCIBILITY vs DPROP
+    } else if (type == "reprodVSdprop") {
+      result <- ggplot(data= na.omit(Transcripts[, .(Dprop, quant_dtu_freq, DTU)]), aes(x=Dprop, y=quant_dtu_freq, colour=DTU)) + 
+                  geom_point(shape=16, alpha=0.3) + 
+                  geom_vline(xintercept= Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey85", size=rel(0.5)) +
+                  ggtitle("Reproducibility VS effect size") +
+                  labs(# x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
+                       x = "Isoform proportion change",
+                       y = "Pass frequency") +
+                  scale_y_continuous(limits= c(0, 1.01), expand= c(0, 0)) +
+                  scale_colour_manual(values=c("steelblue3", "red")) +
+                  theme(panel.background= element_rect(fill= "grey98"),
+                        panel.grid.major= element_line(colour= "grey95"),
+                        axis.line.x = element_line() )
+    ### REPRODUCIBILITY
+    } else if (type == "reprod") {
+      result <- ggplot(data= na.omit(Genes[, .(quant_dtu_freq, DTU)]), aes(x=quant_dtu_freq, fill=DTU)) + 
+        geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
+        scale_x_continuous(breaks = seq(0, 1, 0.2), expand=c(0, 0)) +
+        scale_fill_manual(values=c("steelblue3", "red")) +
+        ggtitle("DTU Reproducibility") +
+        labs(x = "Pass frequency", y = "Number of Genes") +
+        theme(panel.background= element_rect(fill= "grey98"),
+              panel.grid.major= element_line(colour= "grey95", size=rel(1)),
+              panel.grid.minor.x= element_blank(),
+              axis.line = element_line() )
+      maxy <- max(ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
+      maxy <- maxy + maxy * 0.05
+      result <- result +
+                  scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
+                           breaks=c(100, 500, 1000, pretty(c(0, maxy), n=4))) +
+                  coord_flip()
     } else {
       stop("Unrecognized plot type!")
     }
@@ -462,6 +573,28 @@ plot_overview <- function(dtuo, type="volcano") {
     return(result)
   })
 }
+
+#================================================================================
+#' Get largest value by absolute comparison.
+#' 
+#' Get back the original signed value. In case of equal absolutes, the positive
+#' value will be returned.
+#' 
+#' @param v A numeric vector.
+#' @return A numeric value.
+#' 
+maxabs <- function(v) {
+  if (all(is.na(v)))
+    return(NA_real_)
+  x <- max(v, na.rm=TRUE)
+  n <- min(v, na.rm=TRUE)
+  if (abs(x) >= abs(n)) {
+    return(x)
+  } else {
+    return(n)
+  }
+}
+
 
 
 #================================================================================
