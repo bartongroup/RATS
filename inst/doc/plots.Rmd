@@ -4,10 +4,10 @@ author: "Kimon Froussios"
 date: "04 APR 2017"
 output: 
   html_document: 
-    fig_caption: no
     keep_md: yes
     theme: readable
     toc: yes
+    toc_float: TRUE
 vignette: >
   %\VignetteIndexEntry{RATs 4: Plots}
   %\VignetteEngine{knitr::knitr}

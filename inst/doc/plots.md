@@ -1,28 +1,28 @@
 ---
-title: 'RATs: Plots'
+title: "RATs: Plots"
 author: "Kimon Froussios"
 date: "04 APR 2017"
-output:
-  pdf_document:
-    toc: yes
-  html_document:
+output: 
+  html_document: 
     keep_md: yes
     theme: readable
     toc: yes
-    toc_float: yes
-vignette: |
-  %\VignetteIndexEntry{RATs 4: Plots} %\VignetteEngine{knitr::knitr} \usepackage[utf8]{inputenc}
+    toc_float: TRUE
+vignette: >
+  %\VignetteIndexEntry{RATs 4: Plots}
+  %\VignetteEngine{knitr::knitr}
+  \usepackage[utf8]{inputenc}
+
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ***
 
 Set up an example.
 
-```{r}
+
+```r
 library(rats)
 
 # Simulate some data.
@@ -62,11 +62,14 @@ Options are provided to change which information layers are encoded and what col
 
 There are several styles for this plot, depending on your preferences. The default plot format includes the most information:
 
-```{r}
+
+```r
 # Grouping by condition (DEAFULT):
 #   plot_gene(mydtu, "MIX6")
 plot_gene(mydtu, "MIX6", style="bycondition")
 ```
+
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png)
 
 The top two facets show the absolute abundances (counts) of the isoforms, the bottom two show the relative abundances (proportions).
 The left two facets refer to one condition, the right two ones to the other condition. The boxplots describe the abundance measurements
@@ -77,17 +80,23 @@ and isoform `.d` could not be tested (for very narrow boxes, the fill colour is 
 
 This structure is great for seeing changes in the isoform distribution profile of a gene. A cleaner versions of the plot can also be obtained:
 
-```{r}
+
+```r
 # Grouping by condition (minimalist):
 plot_gene(mydtu, "MIX6", style="linesonly")
 ```
 
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3-1.png)
+
 When there are many lines or many isoforms, it may be preferable to group abundances by isoform, making individual comparisons easier:
 
-```{r}
+
+```r
 # Grouping by isoform:
 plot_gene(mydtu, "MIX6", style="byisoform")
 ```
+
+![plot of chunk unnamed-chunk-4](figure/unnamed-chunk-4-1.png)
 
 
 ### Customisation of the gene plot
@@ -98,22 +107,37 @@ The `fillby`, `colourby` and `shapeby` parameters can be respectively used to co
 are encoded as fill, line/point colour, and point shape. Possible values are `c("isoform", "condition", "DTU", "none", "replicate")`.
 Not all options are available in all styles, in which case they will be silently ignored.
 
-```{r}
+
+```r
 # Change the encoded information.
 plot_gene(mydtu, "MIX6", style="bycondition", fillby="isoform")
-plot_gene(mydtu, "MIX6", style="byisoform", colourby="DTU", shapeby="replicate")
+```
 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-1.png)
+
+```r
+plot_gene(mydtu, "MIX6", style="byisoform", colourby="DTU", shapeby="replicate")
+```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-2.png)
+
+```r
 # For a less busy look, any of the information layers can be disabled.
 plot_gene(mydtu, "MIX6", style="byisoform", colourby="none", shapeby="none")
 ```
 
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5-3.png)
+
 #### Change colour code
 
-```{r}
+
+```r
 # Colour codes can be customised by specifying new values for
 # condcolvec, replcolvec, isofcolvec, dtucolvec and nonecol.
 plot_gene(mydtu, "MIX6", style="bycondition", fillby="condition", condcolvec=c("magenta", "cyan"))
 ```
+
+![plot of chunk unnamed-chunk-6](figure/unnamed-chunk-6-1.png)
 
 
 ## Plots of overall run
@@ -125,10 +149,13 @@ Possibly the most common plot in differential expression is the volcano plot, wh
 the statistical significance. As it is difficult to define a single p-value and a single effect size at the gene level,
 the volcano can only be plotted at the transcript level.
 
-```{r}
+
+```r
 # Proportion change VS significance.
 plot_overview(mydtu, type="volcano")
 ```
+
+![plot of chunk unnamed-chunk-7](figure/unnamed-chunk-7-1.png)
 
 This is what it looks like on a larger dataset:
 ![Dprop VS sig](./fig/volcano.png)
@@ -137,10 +164,13 @@ The next command plots the largest change in proportion seen within each gene, a
 such change. This is a way to inspect what effect sizes are present in the data. As an additional layer of information,
 they are colour-coded by their DTU result.
 
-```{r}
+
+```r
 # Distribution of maximum proportion change.
 plot_overview(mydtu, type="maxdprop")
 ```
+
+![plot of chunk unnamed-chunk-8](figure/unnamed-chunk-8-1.png)
 
 This is what it looks like on a larger dataset:
 ![Max Dprop](./fig/maxdprop.png)
@@ -155,7 +185,8 @@ a `shiny` app, that brings up the relevant abundance changes plot for any point 
 2. Clicking will pull up information on the effect size, significance and confidence of the point(s), as well as 
 the respective isoform abundance changes plot for the point nearest to the click.
 
-```{r, eval=FALSE}
+
+```r
 # Start the interactive volcano plot.
 plot_shiny_volcano(mydtu)
 ```
@@ -173,16 +204,23 @@ You can save any of the plots as a `ggplot2` object and use [ggplot2](http://ggp
 Other `ggplot2` customisations include the axis tick marks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
 documentation for more help on these.
 
-```{r}
+
+```r
 library(ggplot2)
 
 myplot <- plot_overview(mydtu, "volcano")
 myplot  # display
+```
 
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-1.png)
+
+```r
 # Change title. 
 myplot2 <- myplot + ggtitle("MY EPIC TITLE")
 myplot2
 ```
+
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10-2.png)
 
 
 ***

@@ -471,20 +471,20 @@ Pseudo-code formulas are shown to help understand how the different fields inter
 
 <ol>
 <li><code>parent_id</code> - (str) Gene identifier.</li>
-<li><code>elig</code> - (bool) Eligible for testing. Whether the gene met the pre-filtering criteria. <code>= (elig_transc &gt;= 2)</code></li>
-<li><code>sig</code> - (bool) Statistically significant. <code>= (pvalAB_corr &lt; Parameters$p_thresh) &amp; (pvalBA_corr &lt; Parameters$p_thresh)</code></li>
-<li><code>elig_fx</code> - (bool) Eligible effect size. Whether at least one of the isoforms meets the effect size criterion. <code>= any(Transcript[parent_id, elig_fx])</code></li>
+<li><code>elig</code> - (bool) Eligible for testing. Whether the gene met the pre-filtering criteria. <code>= (elig_transc &gt;= 2)</code>.</li>
+<li><code>sig</code> - (bool) Statistically significant. <code>= (pvalAB_corr &lt; Parameters$p_thresh) &amp; (pvalBA_corr &lt; Parameters$p_thresh)</code>.</li>
+<li><code>elig_fx</code> - (bool) Eligible effect size. Whether at least one of the isoforms meets the effect size criterion. <code>= any(Transcript[parent_id, elig_fx])</code>.</li>
 <li><code>quant_reprod</code> - (bool) Quantification reproducible.
-For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code></li>
+For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code>.</li>
 <li><code>rep_reprod</code> - (bool) Replication reproducible.
-For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</code>, for non-DTU <code>= (rep_dtu_freq &lt;= 1 - Parameters$rep_reprod_thresh)</code></li>
-<li><code>DTU</code> - (bool) Differential Transcript Usage. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>rrep_as_crit==TRUE</code>, then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code></li>
-<li><code>transc_DTU</code> - (bool) Aggregated from <code>Transcripts$DTU</code>: At least one isoform was individually reported as DTU. <code>= any(Transcript[parent_id, DTU])</code></li>
+For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</code>, for non-DTU <code>= (rep_dtu_freq &lt;= 1 - Parameters$rep_reprod_thresh)</code>.</li>
+<li><code>DTU</code> - (bool) Differential Transcript Usage. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>rrep_as_crit==TRUE</code> then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code>.</li>
+<li><code>transc_DTU</code> - (bool) Aggregated from <code>Transcripts$DTU</code>: At least one isoform was individually reported as DTU. <code>= any(Transcript[parent_id, DTU])</code>.</li>
 <li><code>known_transc</code> - (int) Number of known trascripts for this gene according to the given annotation.</li>
 <li><code>detect_trancs</code> - (int) Number of detected (expressed) transcripts in the given dataset.</li>
 <li><code>elig_transc</code> - (int) Number of eligible transcripts, aggregated from <code>Transcripts$elig</code>.</li>
 <li><code>pval</code> - (num) G test of independence p-value for the isoform ratios.</li>
-<li><code>pval_corr</code> - (num) Multiple testing corrected p-value. <code>pval_corr= p.adjust(pval, Parameters$correction)</code></li>
+<li><code>pval_corr</code> - (num) Multiple testing corrected p-value. <code>pval_corr= p.adjust(pval, Parameters$correction)</code>.</li>
 <li><code>quant_p_mean</code> - (num) Mean p-value across quantification bootstraps.</li>
 <li><code>quant_p_stdev</code> - (num) Standard deviation of p-values across quantification bootstraps.</li>
 <li><code>quant_p_min</code> - (num) Minimum observed p-value across quantification bootstraps.</li>
@@ -514,32 +514,33 @@ print( names(mydtu$Transcripts) )
 
 <pre><code>##  [1] &quot;target_id&quot; &quot;parent_id&quot; &quot;elig_xp&quot;   &quot;elig&quot;      &quot;sig&quot;      
 ##  [6] &quot;elig_fx&quot;   &quot;DTU&quot;       &quot;gene_DTU&quot;  &quot;meanA&quot;     &quot;meanB&quot;    
-## [11] &quot;stdevA&quot;    &quot;stdevB&quot;    &quot;sumA&quot;      &quot;sumB&quot;      &quot;totalA&quot;   
-## [16] &quot;totalB&quot;    &quot;propA&quot;     &quot;propB&quot;     &quot;Dprop&quot;     &quot;pval&quot;     
-## [21] &quot;pval_corr&quot;
+## [11] &quot;stdevA&quot;    &quot;stdevB&quot;    &quot;sumA&quot;      &quot;sumB&quot;      &quot;log2FC&quot;   
+## [16] &quot;totalA&quot;    &quot;totalB&quot;    &quot;propA&quot;     &quot;propB&quot;     &quot;Dprop&quot;    
+## [21] &quot;pval&quot;      &quot;pval_corr&quot;
 </code></pre>
 
 <ol>
 <li><code>target_id</code> - (str) Transcript identifier.</li>
 <li><code>parent_id</code> - (str) Gene identifier.</li>
-<li><code>elig_xp</code> - (bool) Eligible expression level. <code>= (meanA &gt;= Parameters$abund_thresh | meanB &gt;= Parameters$abund_thresh)</code></li>
-<li><code>elig</code> - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). <code>= (elig_xp &amp; totalA != 0 &amp; totalB != 0 &amp; (sumA != totalA | sumB != totalB))</code></li>
-<li><code>sig</code> - (bool) Statistically significant. <code>= (pval_corr &lt; Parameters$p_thresh)</code></li>
-<li><code>elig_fx</code> - (bool) Eligible effect size. Proxy for biological significance. <code>= (Dprop &gt; Parameters$dprop_thresh)</code></li>
+<li><code>elig_xp</code> - (bool) Eligible expression level. <code>= (meanA &gt;= Parameters$abund_thresh | meanB &gt;= Parameters$abund_thresh)</code>.</li>
+<li><code>elig</code> - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). <code>= (elig_xp &amp; totalA != 0 &amp; totalB != 0 &amp; (sumA != totalA | sumB != totalB))</code>.</li>
+<li><code>sig</code> - (bool) Statistically significant. <code>= (pval_corr &lt; Parameters$p_thresh)</code>.</li>
+<li><code>elig_fx</code> - (bool) Eligible effect size. Proxy for biological significance. <code>= (Dprop &gt; Parameters$dprop_thresh)</code>.</li>
 <li><code>quant_reprod</code> - (bool) Quantification reproducible.
 For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code>.</li>
 <li><code>rep_reprod</code> - (bool) Replication reproducible.
 For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</code>, for non-DTU <code>= (rep_dtu_freq &lt;= 1 - Parameters$rep_reprod_thresh)</code>.</li>
-<li><code>DTU</code> - (bool) The transcript&#39;s proportion changed significantly. Calculated as: <code>DTU = (sig &amp; elig_fx &amp; conf)</code>.</li>
-<li><code>gene_DTU</code> - (bool) Expanded from <code>Genes$DTU</code>. Indicates that the gene as a whole shows significant change in isoform ratios. <code>= (Genes[parent_id, DTU])</code></li>
+<li><code>DTU</code> - (bool) The Transcript is Differentially Used. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>rrep_as_crit==TRUE</code> then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code>.</li>
+<li><code>gene_DTU</code> - (bool) Expanded from <code>Genes$DTU</code>. Indicates that the gene as a whole shows significant change in isoform ratios. <code>= (Genes[parent_id, DTU])</code>.</li>
 <li><code>meanA</code> and <code>meanB</code> - (num) The mean abundance across replicates, for each condition.</li>
 <li><code>stdevA</code> and <code>stdevB</code> - (num) The standard deviation of the abundance across the replicates.</li>
 <li><code>sumA</code> and <code>sumB</code> - (num) The sum of the abundances across replicates. This is the value used for the tests, so that replication level informs the significance.</li>
-<li><code>totalA</code> and <code>totalB</code> - (num) The total abundance for the gene: <code>totalA= sum(transcripts[parent_id, sumA])</code></li>
-<li><code>propA</code> and <code>propB</code> - (num) The proportion of the gene expression owed to this transcript. <code>propA= sumA/totalA</code></li>
-<li><code>Dprop</code> - (num) The difference in the proportion of the transcript between the two conditions (effect size). <code>= (probB - propA)</code></li>
+<li><code>FC</code> - (num) Fold-change of transcript abundance: <code>= (sumB / sumA)</code>.</li>
+<li><code>totalA</code> and <code>totalB</code> - (num) The total abundance for the gene: <code>totalA= sum(transcripts[parent_id, sumA])</code>.</li>
+<li><code>propA</code> and <code>propB</code> - (num) The proportion of the gene expression owed to this transcript. <code>propA= sumA / totalA</code>.</li>
+<li><code>Dprop</code> - (num) The difference in the proportion of the transcript between the two conditions (effect size). <code>= (probB - propA)</code>.</li>
 <li><code>pval</code> - (num) The proportion equality test P-value for the transcript.</li>
-<li><code>pval_corr</code> - (num) Multiple testing corrected p-value. <code>= p.adjust(pval, Parameters$correction)</code></li>
+<li><code>pval_corr</code> - (num) Multiple testing corrected p-value. <code>= p.adjust(pval, Parameters$correction)</code>.</li>
 <li><code>quant_p_mean</code> - (num) Mean p-value across quantification bootstraps.</li>
 <li><code>quant_p_stdev</code> - (num) Standard deviation of p-values across quantification bootstraps.</li>
 <li><code>quant_p_min</code> - (num) Minimum observed p-value across quantification bootstraps.</li>

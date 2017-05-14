@@ -1,28 +1,28 @@
 ---
-title: 'RATs: Raw Output'
+title: "RATs: Raw Output"
 author: "Kimon Froussios"
 date: "19 APR 2017"
-output:
-  pdf_document:
-    toc: yes
-  html_document:
+output: 
+  html_document: 
     keep_md: yes
     theme: readable
     toc: yes
-    toc_float: yes
-vignette: |
-  %\VignetteIndexEntry{RATs 3: Raw Output} %\VignetteEngine{knitr::knitr} \usepackage[utf8]{inputenc}
+    toc_float: TRUE
+vignette: >
+  %\VignetteIndexEntry{RATs 3: Raw Output}
+  %\VignetteEngine{knitr::knitr}
+  \usepackage[utf8]{inputenc}
+
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ***
 
 Set up an example.
 
-```{r}
+
+```r
 library(rats)
 
 # Simulate some data.
@@ -59,9 +59,25 @@ The `dtu_summary()` function lists the total number of genes and transcripts for
 * non-DTU:  No significant change.
 * NA:  Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one transcript.
 
-```{r}
+
+```r
 # A really simple tally of the outcome.
 print( dtu_summary(mydtu) )
+```
+
+```
+##        DTU genes (gene test)    non-DTU genes (gene test) 
+##                            2                            1 
+##         NA genes (gene test)     DTU genes (transc. test) 
+##                            7                            2 
+## non-DTU genes (transc. test)      NA genes (transc. test) 
+##                            8                            0 
+##       DTU genes (both tests)   non-DTU genes (both tests) 
+##                            2                            1 
+##        NA genes (both tests)              DTU transcripts 
+##                            0                            5 
+##          non-DTU transcripts               NA transcripts 
+##                            5                           11
 ```
 
 Notice that **three types of results are given for genes**. That's because RATs uses *two* separate methods of identifying DTU:
@@ -72,10 +88,50 @@ will display the DTU genes according to either method as well as the intersectio
 The `get_dtu_ids()` function lists the actual identifiers per category, instead of the numbers in each category.
 As of `v0.4.2` it uses the same category names as `dtu_summury()` for consistency and clarity.
 
-```{r}
+
+```r
 # Gene and transcript IDs corresponding to the tally above.
 ids <- get_dtu_ids(mydtu)
 print( ids )
+```
+
+```
+## $`DTU genes (gene test)`
+## [1] "MIX6" "CC"  
+## 
+## $`non-DTU genes (gene test)`
+## [1] "NN"
+## 
+## $`NA genes (gene test)`
+## [1] "LC"   "1A1N" "1B1C" "1D1C" "ALLA" "ALLB" "NIB" 
+## 
+## $`DTU genes (transc. test)`
+## [1] "MIX6" "CC"  
+## 
+## $`non-DTU genes (transc. test)`
+## [1] "LC"   "NN"   "1A1N" "1B1C" "1D1C" "ALLA" "ALLB" "NIB" 
+## 
+## $`NA genes (transc. test)`
+## character(0)
+## 
+## $`DTU genes (both tests)`
+## [1] "MIX6" "CC"  
+## 
+## $`non-DTU genes (both tests)`
+## [1] "NN"
+## 
+## $`NA genes (both tests)`
+## character(0)
+## 
+## $`DTU transcripts`
+## [1] "MIX6.c1" "MIX6.c2" "MIX6.c4" "CC_a"    "CC_b"   
+## 
+## $`non-DTU transcripts`
+## [1] "LC2"     "MIX6.c3" "2NN"     "1NN"     "MIX6.nc"
+## 
+## $`NA transcripts`
+##  [1] "LC1"      "1A1N-2"   "1B1C.1"   "1B1C.2"   "1D1C:one" "1D1C:two"
+##  [7] "MIX6.d"   "ALLA1"    "ALLB1"    "ALLB2"    "NIB.1"
 ```
 
 The ID lists obtained with `get_dtu_ids()` are *ordered by effect size* (`Dprop`).
@@ -87,13 +143,51 @@ Isoform switching is a subset of DTU. Primary isoform switching is often conside
 type of DTU to have an effect. The following two functions summarise the extent of isoform switching 
 in the results:
 
-```{r}
+
+```r
 # A tally of genes switching isoform ranks.
 print( dtu_switch_summary(mydtu) )
+```
 
+```
+##        Primary switch (gene test)    Non-primary switch (gene test) 
+##                                 1                                 1 
+##     Primary switch (transc. test) Non-primary switch (transc. test) 
+##                                 1                                 1 
+##       Primary switch (both tests)   Non-primary switch (both tests) 
+##                                 1                                 1
+```
+
+```r
 # The gene IDs displaying isoform switching.
 ids <- get_switch_ids(mydtu)
 print( ids )
+```
+
+```
+## $`Primary switch (gene test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Non-primary switch (gene test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Primary switch (transc. test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Non-primary switch (transc. test)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Primary switch (both tests)`
+## [1] MIX6
+## Levels: CC MIX6
+## 
+## $`Non-primary switch (both tests)`
+## [1] MIX6
+## Levels: CC MIX6
 ```
 
 Again, three versions of the gene results are shown, covering the respective DTU methods in RATs.
@@ -103,13 +197,31 @@ Again, three versions of the gene results are shown, covering the respective DTU
 
 In case you want to know how many isoforms are affected per gene.
 
-```{r}
+
+```r
 # A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )
+```
 
+```
+## 2 3 
+## 1 1
+```
+
+```r
 # The gene IDs displaying isoform switching.
 ids <- get_plurality_ids(mydtu)
 print( ids )
+```
+
+```
+## $`2`
+## [1] CC
+## Levels: 1A1N 1B1C 1D1C ALLA ALLB CC LC MIX6 NIB NN
+## 
+## $`3`
+## [1] MIX6
+## Levels: 1A1N 1B1C 1D1C ALLA ALLB CC LC MIX6 NIB NN
 ```
 
 The categories are named by the number of isoforms affected. There is one gene (`CC`) that has `2` isoforms affected
@@ -122,8 +234,13 @@ and one gene (`MIX6`) that has `3` isoforms affected.
 
 The output of RATs is a list containing 4 elements:
 
-```{r}
+
+```r
 print( names(mydtu) )
+```
+
+```
+## [1] "Parameters"  "Genes"       "Transcripts" "Abundances"
 ```
 
 
@@ -131,9 +248,21 @@ print( names(mydtu) )
 
 `Parameters` is a list that contains information about the data and the settings for a particular run.
 
-```{r}
+
+```r
 # Parameter list's elements.
 print( names(mydtu$Parameters) )
+```
+
+```
+##  [1] "description"         "time"                "rats_version"       
+##  [4] "R_version"           "var_name"            "cond_A"             
+##  [7] "cond_B"              "data_type"           "num_replic_A"       
+## [10] "num_replic_B"        "num_genes"           "num_transc"         
+## [13] "tests"               "p_thresh"            "abund_thresh"       
+## [16] "dprop_thresh"        "quant_reprod_thresh" "quant_boot"         
+## [19] "quant_bootnum"       "rep_reprod_thresh"   "rep_boot"           
+## [22] "rep_bootnum"         "rep_reprod_as_crit"
 ```
 
 1. `description` - (str) Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters...
@@ -169,9 +298,16 @@ also included here (defined as at least one isoform being called DTU individuall
 
 The maximum likelihood-based G-test of independence is used to compare the set of isoform ratios between the two conditions. 
 
-```{r}
+
+```r
 # Genes table's fields.
 print( names(mydtu$Genes) )
+```
+
+```
+##  [1] "parent_id"     "elig"          "sig"           "elig_fx"      
+##  [5] "DTU"           "transc_DTU"    "known_transc"  "detect_transc"
+##  [9] "elig_transc"   "pval"          "pval_corr"
 ```
 
 The first few columns show the result of each decision step. The remaining columns list the values based on which the decisions were made.
@@ -215,9 +351,18 @@ results at the transcript level. For your convenience, the respective gene-level
 
 The maximum likelihood-based G-test of independence is used to compare each given isoform's proportions in the two conditions.
 
-```{r}
+
+```r
 # Transcripts table's fields.
 print( names(mydtu$Transcripts) )
+```
+
+```
+##  [1] "target_id" "parent_id" "elig_xp"   "elig"      "sig"      
+##  [6] "elig_fx"   "DTU"       "gene_DTU"  "meanA"     "meanB"    
+## [11] "stdevA"    "stdevB"    "sumA"      "sumB"      "log2FC"   
+## [16] "totalA"    "totalB"    "propA"     "propB"     "Dprop"    
+## [21] "pval"      "pval_corr"
 ```
 
 1. `target_id` - (str) Transcript identifier.
@@ -264,17 +409,33 @@ so if bootstrapped data was used, these values are the means across iterations. 
 essentially contains the input data. These abundances are included in the output because they are required for some of RATs' plotting options.
 
 
-```{r}
+
+```r
 # Elements of ReplicateData
 print( names(mydtu$Abundances) )
+```
+
+```
+## [1] "condA" "condB"
 ```
 
 1. `condA` - (num) The transcript abundances in the first condition.
 2. `condB` - (num) The transcript abundances in the second condition.
 
-```{r}
+
+```r
 # Abundance table for first condition.
 print( head(mydtu$Abundances[[1]]) )
+```
+
+```
+##          V1   V2 target_id parent_id
+## 1: 19.66667 20.5    1A1N-2      1A1N
+## 2:  0.00000  0.0    1B1C.1      1B1C
+## 3: 52.33333 53.5    1B1C.2      1B1C
+## 4:  0.00000  0.0  1D1C:one      1D1C
+## 5: 76.00000 78.0  1D1C:two      1D1C
+## 6: 50.00000 45.0     ALLA1      ALLA
 ```
 
 ***

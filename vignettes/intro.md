@@ -16,9 +16,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 
 ***
@@ -100,7 +98,8 @@ RATs uses, as input, tables of transcript abundances with or without quantificat
 extract the transcript abundances from a Sleuth object. The latter option is shown below. For more details and settings, consult
 the *Input & Settings* vignette.
 
-```{r eval=FALSE}
+
+```r
 # 1. Load into R session.
 library{rats}
 

@@ -1,24 +1,20 @@
 ---
-title: 'RATs: Quick Start'
+title: "RATs: Quick Start"
 author: "Kimon Froussios"
 date: "19 APR 2017"
-output:
-  pdf_document:
-    toc: yes
-  html_document:
+output: 
+  html_document: 
     keep_md: yes
     theme: readable
     toc: yes
-    toc_float: yes
+    toc_float: TRUE
 vignette: >
-  %\VignetteIndexEntry{RATs 1: Introduction & Quick Start}
+  %\VignetteIndexEntry{RATs 1: Quick start}
   %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 
 ***
@@ -100,7 +96,8 @@ RATs uses, as input, tables of transcript abundances with or without quantificat
 extract the transcript abundances from a Sleuth object. The latter option is shown below. For more details and settings, consult
 the *Input & Settings* vignette.
 
-```{r eval=FALSE}
+
+```r
 # 1. Load into R session.
 library{rats}
 
