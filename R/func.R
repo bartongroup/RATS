@@ -215,12 +215,13 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
 
 
 #================================================================================
-#' Group sample numbers by factor.
-#'
-#' @param covariates A dataframe with different factor variables.
+#' Group samples by covariate value.
+#' 
+#' Sleuth records covariate values per sample. However, RATs needs the reverse: the 
+#' samples that correspond to a given covariate value.
+#' 
+#' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
 #' @return list of lists (per covariate) of vectors (per factor level).
-#'
-#' Row number corresponds to sample number.
 #'
 #' @export
 #'
@@ -243,9 +244,9 @@ group_samples <- function(covariates) {
 #' @param slo A sleuth object.
 #' @param tx A vector of transcript ids. The results will be ordered according to this vector.
 #' @param samples A numeric vector of samples to extract counts for.
-#' @param COUNTS_COL The name of the column with the counts.
-#' @param BS_TARGET_COL The name of the column with the transcript IDs.
-#' @param threads Number of threads.
+#' @param COUNTS_COL The name of the column with the counts. (Default "est_counts")
+#' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
+#' @param threads Number of threads. (Default 1)
 #' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
 #' NA replaced with 0.
@@ -257,7 +258,7 @@ group_samples <- function(covariates) {
 #' @import data.table
 #' @export
 #'
-denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads= 1) {
+denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL="est_counts", BS_TARGET_COL="target_id", threads= 1) {
   # Ensure data.table complies.
   # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)

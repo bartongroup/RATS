@@ -68,6 +68,32 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
                     for the purposes of the tutorial. Simulated using built-in functionality 
                     of RATs.")
 
+## ------------------------------------------------------------------------
+# 1. Restructure sample_to_covariates as covariate to samples.
+samples_by_covariate <- group_samples(myslo$sample_to_covariates)
+
+# There are two covariates in the simulated data:
+print( names(samples_by_covariate) )
+
+# Covariate "condition" in our simulated data has two values:
+print( names( samples_by_covariate$condition ) )
+
+# 2. Extract the bootstrapped abundance tables for each of the two conditions:
+condA_boots <- denest_sleuth_boots(myslo, myannot$target_id, samples_by_covariate$condition[["controls"]])
+condB_boots <- denest_sleuth_boots(myslo, myannot$target_id, samples_by_covariate$condition[["patients"]])
+
+# 3. Remove the sleuth object from memory.
+# Make sure you have saved a copy of it to file before doing this!
+rm(myslo)
+
+# 4. Run RATs with the generic bootstrapped format:
+mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots, 
+                  verbose= FALSE, 
+                  name_A= "controls", name_B= "patients", varname = "condition",
+                  description="Comparison of two sets of bootstrapped counts for the 
+                              tutorial, extracted from a simulated sleuth object. 
+                              Simulated using built-in functionality of RATs.")
+
 ## ----eval=FALSE----------------------------------------------------------
 #  # Calling DTU with custom thresholds.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients",

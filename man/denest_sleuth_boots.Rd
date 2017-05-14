@@ -4,7 +4,8 @@
 \alias{denest_sleuth_boots}
 \title{Extract bootstrap counts into a less nested structure.}
 \usage{
-denest_sleuth_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads = 1)
+denest_sleuth_boots(slo, tx, samples, COUNTS_COL = "est_counts",
+  BS_TARGET_COL = "target_id", threads = 1)
 }
 \arguments{
 \item{slo}{A sleuth object.}
@@ -13,11 +14,11 @@ denest_sleuth_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads = 1)
 
 \item{samples}{A numeric vector of samples to extract counts for.}
 
-\item{COUNTS_COL}{The name of the column with the counts.}
+\item{COUNTS_COL}{The name of the column with the counts. (Default "est_counts")}
 
-\item{BS_TARGET_COL}{The name of the column with the transcript IDs.}
+\item{BS_TARGET_COL}{The name of the column with the transcript IDs. (Default "target_id")}
 
-\item{threads}{Number of threads.}
+\item{threads}{Number of threads. (Default 1)}
 }
 \value{
 A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.

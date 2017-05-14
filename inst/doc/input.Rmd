@@ -1,18 +1,17 @@
 ---
 title: "RATs: Input and Settings"
 author: "Kimon Froussios"
-date: "19 APR 2017"
+date: "14 MAY 2017"
 output: 
   html_document: 
-    fig_caption: no
     keep_md: yes
     theme: readable
     toc: yes
+    toc_float: yes
 vignette: >
+  \usepackage[utf8]{inputenc}
   %\VignetteIndexEntry{RATs 2: Input & Settings}
   %\VignetteEngine{knitr::knitr}
-  \usepackage[utf8]{inputenc}
-
 ---
 
 ```{r setup, include=FALSE}
@@ -206,6 +205,60 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 Please note that, unlike the other two usage cases, `name_A`, `name_B` and `varname` are **not optional**, as they specify how data is extracted from the Sleuth object.
 
 
+### with a sleuth object on limited RAM
+
+Sleuth objects can take up several GBs of memory. RATs extracts the abundances from the sleuth object but then restructures them so as to access them efficiently.
+As a consequence, the bootstrapped abundances will be held in memory twice, once for internal use by RATs and once for the sleuth object. This is a waste fo resources,
+and can be a problem on limited systems like personal laptops.
+
+To allow you to free up RAM by unloading the sleuth object before calling DTU, RATs now exports some of its previously internal functions, allowing the separation of
+the DTU call step from the data restructuring step.
+
+You will need a sleuth object, the annotation table, and a vector of sample numbers.
+We will be using the simulated data created in the sleuth section above:
+
+```{r}
+# 1. Restructure sample_to_covariates as covariate to samples.
+samples_by_covariate <- group_samples(myslo$sample_to_covariates)
+
+# There are two covariates in the simulated data:
+print( names(samples_by_covariate) )
+
+# Covariate "condition" in our simulated data has two values:
+print( names( samples_by_covariate$condition ) )
+
+# 2. Extract the bootstrapped abundance tables for each of the two conditions:
+condA_boots <- denest_sleuth_boots(myslo, myannot$target_id, samples_by_covariate$condition[["controls"]])
+condB_boots <- denest_sleuth_boots(myslo, myannot$target_id, samples_by_covariate$condition[["patients"]])
+
+# 3. Remove the sleuth object from memory.
+# Make sure you have saved a copy of it to file before doing this!
+rm(myslo)
+
+# 4. Run RATs with the generic bootstrapped format:
+mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots, 
+                  verbose= FALSE, 
+                  name_A= "controls", name_B= "patients", varname = "condition",
+                  description="Comparison of two sets of bootstrapped counts for the 
+                              tutorial, extracted from a simulated sleuth object. 
+                              Simulated using built-in functionality of RATs.")
+```
+
+#### Mandatory arguents (group_samples):
+
+1. `covariates` - any data frame in the format of a sleuth object's `sample_to_covariates` table. Each row is a sample, each column is a covariate,
+and the values in the cells represent the category of the covariate for the sample.
+
+#### Mandatory arguents (denest_sleuth_boots):
+
+1. `slo` - A Sleuth object.
+2. `tx` - The transcript ID column of the annotation table you will use for calling DTU, to ensure/enforce consistent number and order of transcripts across all tables. 
+3. `samples` - A vector of sample numbers (their index in the sleuth object). Can be obtained by subsetting the output of `group_samples()``.
+
+
+NOTE: In this example `rm(myslo)` won't free up the memory, because there are other active references to it (it is part of the `simdat` object).
+
+
 ***
 
 
@@ -396,6 +449,8 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
 1. `varname` - The field name in `myslo$sample_to_covariates` where the desired condition names are listed. (Default "condition")
 2. `COUNTS_COL` - The name of the field holding the estimated counts in the Sleuth object's bootstrap tables. (Default "est-counts")
 3. `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the Sleuth object's bootstrap tables. (Default "target_id")
+
+The `COUNTS_COL` and `BS_TARGET_COL` parameters are also available for `denest_sleuth_boots()`:
 
 
 ### Annotation field names
