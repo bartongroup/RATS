@@ -3,17 +3,17 @@ title: 'RATs: Quick Start'
 author: "Kimon Froussios"
 date: "19 APR 2017"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     keep_md: yes
     theme: readable
     toc: yes
     toc_float: yes
+  pdf_document:
+    toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs 1: Introduction & Quick Start}
-  %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
+  %\VignetteIndexEntry{RATs 1: Introduction & Quick Start} 
+  %\VignetteEngine{knitr::knitr} 
 ---
 
 ```{r setup, include=FALSE}

@@ -3,15 +3,17 @@ title: 'RATs: Raw Output'
 author: "Kimon Froussios"
 date: "19 APR 2017"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     keep_md: yes
     theme: readable
     toc: yes
     toc_float: yes
-vignette: |
-  %\VignetteIndexEntry{RATs 3: Raw Output} %\VignetteEngine{knitr::knitr} \usepackage[utf8]{inputenc}
+  pdf_document:
+    toc: yes
+vignette: >
+  \usepackage[utf8]{inputenc}
+  %\VignetteIndexEntry{RATs 3: Raw Output} 
+  %\VignetteEngine{knitr::knitr} 
 ---
 
 ```{r setup, include=FALSE}
