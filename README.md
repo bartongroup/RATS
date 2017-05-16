@@ -54,9 +54,10 @@ We recommend studying the vignettes before using RATs.
 The package depends on a few third-party packages, which you may need to install first, 
 if they are not present already:
 
-1. Packages needed for computation (mandatory): `install.packages(c("data.table", "matrixStats"), dependencies=TRUE)`
-2. Package needed only for plotting (recommended): `install.packages("ggplot2", dependencies=TRUE)`
-3. Package need only for interactive visualisation feature (optional): `install.packages("shiny", dependencies=TRUE)`
+1. Packages needed for computation (mandatory) - Available on CRAN: `install.packages(c("data.table", "matrixStats"), dependencies=TRUE)`
+2. Package needed only for plotting (recommended) - Available on CRAN: `install.packages("ggplot2", dependencies=TRUE)`
+3. Packages needed only for importing directly from Salmon/Kallisto output (optional) - Available through Bioconductor: Instructions [here for Sleuth](https://pachterlab.github.io/sleuth/download) and [here for wasabi](https://github.com/COMBINE-lab/wasabi).
+4. Package needed only for interactive visualisation feature (optional) - Available on CRAN: `install.packages("shiny", dependencies=TRUE)`
 
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
 which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual for help.

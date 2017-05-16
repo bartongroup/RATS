@@ -11,11 +11,10 @@ myslo <- simdat$slo
 myannot <- simdat$annot
 
 # Call DTU
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  varname= "condition", verbose= FALSE, dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object 
-                    for the purposes of the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", 
+                  name_B= "patients", varname= "condition", verbose= FALSE, 
+                  dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
+                  description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 
 ## ------------------------------------------------------------------------
 # A really simple tally of the outcome.

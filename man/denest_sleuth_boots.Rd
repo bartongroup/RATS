@@ -4,19 +4,24 @@
 \alias{denest_sleuth_boots}
 \title{Extract bootstrap counts into a less nested structure.}
 \usage{
-denest_sleuth_boots(slo, tx, samples, COUNTS_COL = "est_counts",
-  BS_TARGET_COL = "target_id", threads = 1)
+denest_sleuth_boots(slo, annot, samples, COUNTS_COL = "est_counts",
+  BS_TARGET_COL = "target_id", TARGET_COL = "target_id",
+  PARENT_COL = "parent_id", threads = 1)
 }
 \arguments{
 \item{slo}{A sleuth object.}
 
-\item{tx}{A vector of transcript ids. The results will be ordered according to this vector.}
+\item{annot}{A data.frame matching transcript identfier to gene identifiers.}
 
 \item{samples}{A numeric vector of samples to extract counts for.}
 
 \item{COUNTS_COL}{The name of the column with the counts. (Default "est_counts")}
 
 \item{BS_TARGET_COL}{The name of the column with the transcript IDs. (Default "target_id")}
+
+\item{TARGET_COL}{The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})}
+
+\item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
 
 \item{threads}{Number of threads. (Default 1)}
 }

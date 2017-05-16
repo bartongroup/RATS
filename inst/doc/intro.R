@@ -1,7 +1,37 @@
 ## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
 
-## ----eval=FALSE----------------------------------------------------------
+## ------------------------------------------------------------------------
+#  install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
+
+## ------------------------------------------------------------------------
+#  install.packages("ggplot2", dependencies=TRUE)
+
+## ------------------------------------------------------------------------
+#  # Devtools (available on CRAN), needed by the other two.
+#  install.packages("devtools", dependencies=TRUE)
+#  
+#  # Sleuth
+#  source("http://bioconductor.org/biocLite.R")
+#  biocLite("rhdf5")
+#  devtools::install_github("pachterlab/sleuth")
+#  
+#  # Wasabi
+#  biocLite("COMBINE-lab/wasabi")
+
+## ------------------------------------------------------------------------
+#  install.packages("shiny", dependencies=TRUE)
+
+## ------------------------------------------------------------------------
+#  install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")
+
+## ------------------------------------------------------------------------
+#  devtools::install_github("bartongroup/rats", ref="master")
+
+## ------------------------------------------------------------------------
+#  devtools::install_github("bartongroup/rats", ref="development")
+
+## ------------------------------------------------------------------------
 #  # 1. Load into R session.
 #  library{rats}
 #  

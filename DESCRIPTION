@@ -21,6 +21,8 @@ Imports:
     stats,
     parallel,
     ggplot2  (>= 2.2.0),
+    sleuth,
+    wasabi,
     shiny
 Suggests:
     testthat,

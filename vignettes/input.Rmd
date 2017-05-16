@@ -13,7 +13,7 @@ output:
 vignette: >
   \usepackage[utf8]{inputenc}
   %\VignetteIndexEntry{RATs 2: Input & Settings}
-  %\VignetteEngine{knitr::knitr}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r setup, include=FALSE}
@@ -113,11 +113,10 @@ Now we can call DTU:
 mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
                   verbose= FALSE,
                   name_A= "healthy", name_B= "patients", varname= "My phenotype",
-                  description="Comparison of two simulated counts datasets for the
-                    tutorial. Simulated using built-in functionality of RATs.")
+                  description="Comparison of two simulated counts datasets for the tutorial. Simulated using built-in functionality of RATs.")
 ```
 
-#### Mandatory arguents:
+#### Mandatory arguments:
 
 1. `annot` - An annotation data frame, as described in the *Input formats* section.
 2. `count_data_A` and `count_data_B` - are each a `data.table` of transcript abundances as described in the Input section.
@@ -150,12 +149,10 @@ Now we can call DTU:
 mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B, 
                   verbose= FALSE, 
                   name_A= "wildtype", name_B= "some mutant", varname = "My phenotype",
-                  description="Comparison of two simulated datasets of bootstrapped 
-                    counts for the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+                  description="Comparison of two simulated datasets of bootstrapped counts for the tutorial. Simulated using built-in functionality of RATs.")
 ```
 
-#### Mandatory arguents:
+#### Mandatory arguments:
 
 1. `annot` - An annotation data frame, as described in the *Input formats* section.
 2. `boot_data_A` and `boot_data_B` - are each a list of `data.table` objects, as described in the Input section.
@@ -186,11 +183,9 @@ Now call DTU.
 
 ```{r}
 # Find DTU between conditions "controls" and "patients" in the simulated data.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
+mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patients", 
                   varname= "condition", verbose= FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object 
-                    for the purposes of the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+                  description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 ```
 
 #### Mandatory arguents:
@@ -229,8 +224,10 @@ print( names(samples_by_covariate) )
 print( names( samples_by_covariate$condition ) )
 
 # 2. Extract the bootstrapped abundance tables for each of the two conditions:
-condA_boots <- denest_sleuth_boots(myslo, myannot, samples_by_covariate$condition[["controls"]])
-condB_boots <- denest_sleuth_boots(myslo, myannot, samples_by_covariate$condition[["patients"]])
+condA_boots <- denest_sleuth_boots(myslo, myannot, 
+                                   samples_by_covariate$condition[["controls"]])
+condB_boots <- denest_sleuth_boots(myslo, myannot, 
+                                   samples_by_covariate$condition[["patients"]])
 
 # 3. Remove the sleuth object from memory.
 # Make sure you have saved a copy of it to file before doing this!
@@ -240,24 +237,62 @@ rm(myslo)
 mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots, 
                   verbose= FALSE, 
                   name_A= "controls", name_B= "patients", varname = "condition",
-                  description="Comparison of two sets of bootstrapped counts for the 
-                              tutorial, extracted from a simulated sleuth object. 
-                              Simulated using built-in functionality of RATs.")
+                  description="Comparison of two sets of bootstrapped counts for the tutorial, extracted from a simulated sleuth object. Simulated using built-in functionality of RATs.")
 ```
 
-#### Mandatory arguents (group_samples):
+#### Mandatory arguments (group_samples):
 
 1. `covariates` - any data frame in the format of a sleuth object's `sample_to_covariates` table. Each row is a sample, each column is a covariate,
 and the values in the cells represent the category of the covariate for the sample.
 
-#### Mandatory arguents (denest_sleuth_boots):
+#### Mandatory arguments (denest_sleuth_boots):
 
 1. `slo` - A Sleuth object.
 2. `tx` - The transcript ID column of the annotation table you will use for calling DTU, to ensure/enforce consistent number and order of transcripts across all tables. 
 3. `samples` - A vector of sample numbers (their index in the sleuth object). Can be obtained by subsetting the output of `group_samples()``.
 
 
-NOTE: In this example `rm(myslo)` won't free up the memory, because there are other active references to it (it is part of the `simdat` object).
+NOTE: In this example `rm(myslo)` won't free up the memory, because there are other active references to the sleuth object (ie. it is part of the `simdat` object).
+
+
+### with Salmon/Kallisto output
+
+The method we recommend is to to convert [Salmon](https://combine-lab.github.io/salmon/) output to [Kallisto](https://pachterlab.github.io/kallisto/) format using [wasabi](https://github.com/COMBINE-lab/wasabi) `prepare_fish_for_sleuth()`, load them into R with [Sleuth](http://pachterlab.github.io/sleuth/) `sleuth_prep()`. From there either run RATs with the Sleuth object, or use the memory-saving extraction process described in the previous section.
+
+The reason for this round-about way is that (a) it covers all the formats and (b) importing via Sleuth creates estimated transcript counts, which
+is the type of abundance that should be used with RATs. Raw read counts are not suitable, as they are not normalised for sequence and length biases and sequencing depth. TPMs are also not suitable because the values are too small to work with a counts-based distribution.
+
+We do recognise that such procedure is several extra steps and that it can be scripted. So RATs provides a wrapper that does those things for you. The catch is that you will have to repeat the process manually if you want to call DTE with Sleuth.
+
+```{r, eval=FALSE}
+# 1. Collect your outputs into vectors. The end of each path should be a 
+# directory with a unique name/identifier for one sample.
+samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", etc)
+samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", etc)
+
+# 2a. Convert, import, and extract from Salmon.
+boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= FALSE)
+
+# 2b. OR if it is already in Kallisto format.
+boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= TRUE)
+
+# 3. You might want to save boots to file, in case you want to re-run RATs on it
+# later with different parameters or in case you make a mistake, etc...
+
+# 4. Run RATs with the generic bootstrapped format:
+mydtu <- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B= boots$boot_data_B, 
+                  verbose= FALSE, 
+                  name_A= "controls", name_B= "patients", varname = "condition",
+                  description="Comparison of two sets of bootstrapped counts imported from the quantification output.")
+```
+
+#### Mandatory arguments (fish4rodents):
+
+1. `A_paths` and `B_paths` - Two vectors containing the paths to the quantification output directories, one vector for each condition. The
+last segments of each path should be a directory with a unique identifying name for a single sample.
+2. `half_cooked` - If FALSE, call wasabi to prepare Salmon format for Sleuth. Wasabi automatically skips a conversion when an `abundance.h5` file
+is present in that sample directory, so leaving it FALSE will probably work for all purposes.
+
 
 
 ***
@@ -277,8 +312,8 @@ The following three main thresholds are used in RATs:
 
 ```{r eval=FALSE}
 # Calling DTU with custom thresholds.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  p_thresh = 0.01, abund_thresh = 10, dprop_thresh = 0.25)
+mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patients", 
+                  p_thresh= 0.01, abund_thresh= 10, dprop_thres = 0.25)
 ```
 
 1. `p_thresh` - Statistical significance level. P-values below this will be considered significant. Lower threshold values are stricter. (Default 0.05)
@@ -351,9 +386,11 @@ is **not used as a criterion** in calling DTU, unless explicitly required by set
 be easily underestimated or overestimated.
 
 ```{r eval=FALSE}
-# Bootstrap (default). 
+# Bootstrap (default).
+# Note that for few replicates, the reproducibility values are highly discrete.
 # NOTE: The number of iterations for 3 samples per condition is 3*3=9. 
-# So the minimum possible error rate is 1/9=0.111. The corresponding threshold is 1-0.111=0.888.
+# So the minimum possible error rate is 1/9=0.111. 
+# The corresponding threshold is 1-0.111=0.888.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 
                   name_B = "patients", rboot = TRUE, qrep_thresh= 0.85)
 
@@ -441,10 +478,12 @@ expected names:
 ```{r, eval=FALSE}
 # Call DTU on data with custom field names.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
-                  varname="mouse", COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
+                  varname="mouse", COUNTS_COL="the-counts", BS_TARGET_COL="trscr", 
+                  verbose = FALSE)
 
-#! In our example data here, the annotation fields have been modified as well, so this command 
-#! will NOT run as it is shown. You will also need the parameters shown in teh section below.
+#! In our example data here, the annotation fields have been modified as well, 
+#! so this command will NOT run as it is shown. You will also need the parameters 
+#! shown in teh section below.
 ```
 
 1. `varname` - The field name in `myslo$sample_to_covariates` where the desired condition names are listed. (Default "condition")
@@ -464,14 +503,16 @@ allows you to change the expected names instead.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey", 
                   varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", verbose = FALSE)
 
-#! In our example data here, the Sleuth fields have been modified as well, so this command 
-#! will NOT run as it is shown. You will also need the parameters shown in the section above.
+#! In our example data here, the Sleuth fields have been modified as well, 
+#! so this command will NOT run as it is shown. You will also need the parameters 
+#! shown in the section above.
 ```
 
 1. `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame. (Default "target_id")
 2. `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame. (Default "parent_id")
 
 The `TARGET_COL` and `PARENT_COL` parameters are also available for `denest_sleuth_boots()`.
+`TARGET_COL` is also available as a parameter for `fish4rodents()`.
 
 ***
 

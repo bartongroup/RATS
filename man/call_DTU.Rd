@@ -15,17 +15,17 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
-\item{annot}{A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
+\item{annot}{A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
 
-\item{TARGET_COL}{The name of the column for the transcript identifiersthe \code{annot} object. (Default \code{"target_id"})}
+\item{TARGET_COL}{The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})}
 
-\item{PARENT_COL}{The name of the column for the gene identifiers in the \code{annot} object. (Default \code{"parent_id"})}
+\item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
 
 \item{slo}{A Sleuth object.}
 
-\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.}
+\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.  (Default "Condition-A")}
 
-\item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.}
+\item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.  (Default "Condition-B")}
 
 \item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).}
 

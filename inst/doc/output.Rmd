@@ -1,18 +1,19 @@
 ---
-title: "RATs: Raw Output"
+title: 'RATs: Raw Output'
 author: "Kimon Froussios"
 date: "19 APR 2017"
-output: 
-  html_document: 
+output:
+  html_document:
     keep_md: yes
     theme: readable
     toc: yes
-    toc_float: TRUE
+    toc_float: yes
+  pdf_document:
+    toc: yes
 vignette: >
-  %\VignetteIndexEntry{RATs 3: Raw Output}
-  %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
-
+  %\VignetteIndexEntry{RATs 3: Raw Output} 
+  %\VignetteEngine{knitr::rmarkdown} 
 ---
 
 ```{r setup, include=FALSE}
@@ -33,11 +34,10 @@ myslo <- simdat$slo
 myannot <- simdat$annot
 
 # Call DTU
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  varname= "condition", verbose= FALSE, dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object 
-                    for the purposes of the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", 
+                  name_B= "patients", varname= "condition", verbose= FALSE, 
+                  dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
+                  description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 ```
 
 We lowered `dprop_thresh` and bypassed the bootstrapping to increase the number of DTU positive 
@@ -236,7 +236,7 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 11. `meanA` and `meanB` - (num) The mean abundance across replicates, for each condition.
 12. `stdevA` and `stdevB` - (num) The standard deviation of the abundance across the replicates.
 13. `sumA` and `sumB` - (num) The sum of the abundances across replicates. This is the value used for the tests, so that replication level informs the significance.
-14. `FC` - (num) Fold-change of transcript abundance: `= (sumB / sumA)`.
+14. `log2FC` - (num) lgo2 of fold-change of transcript abundance: `= (sumB / sumA)`. sumA and sumB are NOT normalised for sequencing depth, so when log2FC is plotted the distribution may not be centred on 0. If it is not centred on 0, do NOT use this log2FC for differential transcript expression analysis!
 15. `totalA` and `totalB` - (num) The total abundance for the gene: `totalA= sum(transcripts[parent_id, sumA])`.
 16. `propA` and `propB` - (num) The proportion of the gene expression owed to this transcript. `propA= sumA / totalA`.
 17. `Dprop` - (num) The difference in the proportion of the transcript between the two conditions (effect size). `= (probB - propA)`.
