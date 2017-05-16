@@ -242,10 +242,12 @@ group_samples <- function(covariates) {
 #' Extract bootstrap counts into a less nested structure.
 #'
 #' @param slo A sleuth object.
-#' @param tx A vector of transcript ids. The results will be ordered according to this vector.
+#' @param annot A data.frame matching transcript identfier to gene identifiers.
 #' @param samples A numeric vector of samples to extract counts for.
 #' @param COUNTS_COL The name of the column with the counts. (Default "est_counts")
 #' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
 #' @param threads Number of threads. (Default 1)
 #' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
@@ -258,10 +260,20 @@ group_samples <- function(covariates) {
 #' @import data.table
 #' @export
 #'
-denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL="est_counts", BS_TARGET_COL="target_id", threads= 1) {
+denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="est_counts", BS_TARGET_COL="target_id", 
+                                TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
   # Ensure data.table complies.
   # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
+  
+  # Could just always use tidy_annot(), but that duplicates the annotation without reason. 
+  # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
+  if (!is.data.table(annot) || key(annot) != c("parent_id", "target_id")) {
+    tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)[, target_id]
+  } else {
+    tx <- annot[, target_id]
+  }
+  
   mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
     dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
@@ -283,7 +295,7 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL="est_counts", BS_TA
 #================================================================================
 #' Create output structure.
 #'
-#' @param annot A dataframe with at least 2 columns: target_id and parent_id.
+#' @param annot Pre-processed by \code{tidy_annot()}.
 #' @param full Full-sized structure or core fields only. Either "full" or "short".
 #' @return A list.
 #'
@@ -348,7 +360,7 @@ alloc_out <- function(annot, full){
 #'
 #' @param counts_A A data.table of counts for condition A. x: sample, y: transcript.
 #' @param counts_B A data.table of counts for condition B. x: sample, y: transcript.
-#' @param tx_filter A data.table with target_id and parent_id.
+#' @param tx_filter A data.table with target_id and parent_id. Pre-processed with \code{tidy_annot()}.
 #' @param test_transc Whether to do transcript-level test.
 #' @param test_genes Whether to do gene-level test.
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
@@ -502,4 +514,27 @@ g.test.2 <- function(obsx, obsy) {
                              function (i) { if (obsy[i] != 0) { return(obsy[i] * log(obsy[i]/ey[i])) } else { return(0) } }) )
               )
   return( pchisq(G, df= n - 1, lower.tail= FALSE) )
+}
+
+
+#================================================================================
+#' Tidy up annotation.
+#'
+#' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
+#' @return A data.table with genes under \code{parent_id} and transcripts under \code{target_id}. Rows ordered first by gene and then by transcript.
+#'
+#' Extract the relevant columns as a \code{data.table} and order the rows by gene. This creates a fast
+#' look-up structure that is consistent throughout RATs.
+#'
+#' @import data.table
+#' @export
+#
+tidy_annot <- function(annot, TARGET_COL="target_id", PARENT_COL="parent_id") {
+  tx_filter <- data.table(target_id= annot[, TARGET_COL], parent_id= annot[, PARENT_COL])
+  with( tx_filter,
+        setkey(tx_filter, parent_id, target_id) )
+  
+  return(tx_filter)
 }

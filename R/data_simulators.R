@@ -108,8 +108,8 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
 sim_boot_data <- function(cnames=c("A", "B")) {
   sim <- sim_sleuth_data(cnames=cnames)
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
   return(list('annot'= sim$annot, 'boots_A'= data_A, 'boots_B'= data_B))
 }
 

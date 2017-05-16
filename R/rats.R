@@ -8,9 +8,9 @@
 #'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
 #' }
 #'
-#' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
-#' @param TARGET_COL The name of the column for the transcript identifiersthe \code{annot} object. (Default \code{"target_id"})
-#' @param PARENT_COL The name of the column for the gene identifiers in the \code{annot} object. (Default \code{"parent_id"})
+#' @param annot A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
 #' @param slo A Sleuth object.
 #' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.  (Default "Condition-A")
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.  (Default "Condition-B")
@@ -102,9 +102,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # Look-up from target_id to parent_id.
   if (verbose)
     message("Creating look-up structures...")
-  tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
-  with( tx_filter,
-        setkey(tx_filter, parent_id, target_id) )  # Fixates the order of genes and transcripts to be used throughout the rest of this package.
+  tx_filter <- tidy_annot(annot, TARGET_COL, PARENT_COL)
 
   if (dbg == 2)
     return(tx_filter)
@@ -120,8 +118,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   	samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
   	# Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
     # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.
-    boot_data_A <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, threads )
-    boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, threads )
+    boot_data_A <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, threads )
+    boot_data_B <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, threads )
   } else if (steps == 2) {    # From generic bootstrapped data
     # Just re-order rows.
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
