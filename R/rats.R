@@ -118,8 +118,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   	samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
   	# Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
     # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.
-    boot_data_A <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, threads )
-    boot_data_B <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, threads )
+    boot_data_A <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, TARGET_COL, PARENT_COL, threads )
+    boot_data_B <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, TARGET_COL, PARENT_COL, threads )
   } else if (steps == 2) {    # From generic bootstrapped data
     # Just re-order rows.
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
