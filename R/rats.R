@@ -12,8 +12,8 @@
 #' @param TARGET_COL The name of the column for the transcript identifiersthe \code{annot} object. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in the \code{annot} object. (Default \code{"parent_id"})
 #' @param slo A Sleuth object.
-#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.
-#' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.  (Default "Condition-A")
+#' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.  (Default "Condition-B")
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
 #' @param COUNTS_COL For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
 #' @param BS_TARGET_COL For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})
@@ -197,8 +197,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   } else  if (steps==1) {
     resobj$Parameters["data_type"] <- "plain abundance estimates"
   }
-  resobj$Parameters["num_genes"] <- length(levels(annot$parent_id))
-  resobj$Parameters["num_transc"] <- length(annot$target_id)
+  resobj$Parameters["num_genes"] <- length(levels(annot[[PARENT_COL]]))
+  resobj$Parameters["num_transc"] <- length(annot[[TARGET_COL]])
   resobj$Parameters["description"] <- description
 
   if (dbg == 6)
