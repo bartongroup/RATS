@@ -309,8 +309,9 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]])) +
                   facet_grid(type ~ condition, scales= "free", switch="y") +
-                  geom_path(aes(colour= replicate, group= replicate), alpha=0.5) +
-                  geom_boxplot(alpha=0.2, outlier.shape= NA) +
+                  geom_path(aes(colour= replicate, group= replicate), alpha=0.7, position=position_dodge(width=0.3)) +
+                  geom_boxplot(alpha=0.25, outlier.shape= NA) +
+                  geom_point(aes(colour= replicate, group= replicate), position=position_dodge(width=0.3), shape=16, size=rel(1)) +
                   scale_fill_manual(values= colplt[[fillby]], name=fillby)
     ### BY CONDITION LINESONLY.
     } else if (style=="linesonly") {
@@ -337,7 +338,8 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
                       panel.grid.major= element_line(colour = "grey95"),
                       panel.grid.minor= element_blank(),
                       panel.background= element_rect(fill = "white"),
-                      panel.border = element_rect(colour = "black", fill=NA))
+                      panel.border = element_rect(colour = "black", fill=NA),
+                      legend.key = element_rect(fill = 'white'))
     if ( any(fillby == c("none", "isoform")) )
       result <- result + guides(fill="none")
     if ( any(colourby == c("none", "isoform")) )
