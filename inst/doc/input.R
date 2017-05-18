@@ -85,29 +85,29 @@ rm(myslo)
 
 # 4. Run RATs with the generic bootstrapped format:
 mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots, 
-                  verbose= FALSE, 
-                  name_A= "controls", name_B= "patients", varname = "condition",
+                  verbose= FALSE,  name_A= "controls", name_B= "patients", varname = "condition",
                   description="Comparison of two sets of bootstrapped counts for the tutorial, extracted from a simulated sleuth object. Simulated using built-in functionality of RATs.")
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # 1. Collect your outputs into vectors. The end of each path should be a
 #  # directory with a unique name/identifier for one sample.
-#  samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", etc)
-#  samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", etc)
+#  samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", ...)
+#  samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", ...)
+#  # OR if your outputs are all in the same path, this syntax might be more convenient:
+#  samples_A <- file.path("your/path/", c("SAMPLE1", "SAMPLE4","SAMPLE5", ...))
+#  samples_B <- file.path("your/path/", c("SAMPLE2", "SAMPLE3","SAMPLE7", ...))
 #  
-#  # 2a. Convert, import, and extract from Salmon.
-#  boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= FALSE)
 #  
-#  # 2b. OR if it is already in Kallisto format.
-#  boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= TRUE)
+#  # 2. Convert, import, and extract.
+#  # The annotation is needed to enforce consistent transcripts order throughout RATs.
+#  boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
 #  
-#  # 3. You might want to save boots to file, in case you want to re-run RATs on it
+#  # 3. You might want to save `boots` to file, in case you want to re-run RATs on it
 #  # later with different parameters or in case you make a mistake, etc...
 #  
 #  # 4. Run RATs with the generic bootstrapped format:
 #  mydtu <- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B= boots$boot_data_B,
-#                    verbose= FALSE,
-#                    name_A= "controls", name_B= "patients", varname = "condition",
+#                    verbose= FALSE, name_A= "controls", name_B= "patients", varname = "condition",
 #                    description="Comparison of two sets of bootstrapped counts imported from the quantification output.")
 
 ## ----eval=FALSE----------------------------------------------------------

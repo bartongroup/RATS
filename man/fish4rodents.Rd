@@ -4,19 +4,26 @@
 \alias{fish4rodents}
 \title{Import abundances directly from salmon and kallisto output.}
 \usage{
-fish4rodents(A_paths, B_paths, half_cooked = FALSE,
-  TARGET_COL = "target_id")
+fish4rodents(A_paths, B_paths, annot, COUNTS_COL = "est_counts",
+  BS_TARGET_COL = "target_id", TARGET_COL = "target_id",
+  PARENT_COL = "parent_id", half_cooked = FALSE)
 }
 \arguments{
 \item{A_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate. The directory name should be a unique identifier for the sample.}
 
 \item{B_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate. The directory name should be a unique identifier for the sample.}
 
-\item{half_cooked}{(logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. (Default FALSE)}
-
-\item{TARGET_COL}{(character) The name of the column in \code{annot} that contains the transcript IDs. (Default "target_id")}
-
 \item{annot}{(data.frame) A table matching transcript identifiers to gene identifiers. This should be the same that you will use with \code{call_DTU()}.}
+
+\item{COUNTS_COL}{The name of the column with the counts. (Default "est_counts")}
+
+\item{BS_TARGET_COL}{The name of the column with the transcript IDs. (Default "target_id")}
+
+\item{TARGET_COL}{The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})}
+
+\item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
+
+\item{half_cooked}{(logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if an .h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)}
 }
 \value{
 A list of two, representing the abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.

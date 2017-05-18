@@ -55,7 +55,8 @@ contain the transcript identifiers, followed by columns listing the abundance pe
 
 ## Annotation
 
-Regardless of data format, RATs also needs an annotation `data.frame` or `data.table` that matches transcript identifiers to gene identifiers. This looks like this:
+Regardless of data format, RATs also needs an annotation `data.frame` or `data.table` that matches transcript identifiers to gene identifiers. 
+By default the column labels are `target_id` for the transcript IDs and `parent_id` for the gene IDs. These label values can be overridden (see Additional Settings later in this vignette). The annotation table looks like this:
 
 ```{r, echo=FALSE}
 # Show the first rows of the table corresponding to the annotation, from simulated data.
@@ -235,8 +236,7 @@ rm(myslo)
 
 # 4. Run RATs with the generic bootstrapped format:
 mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots, 
-                  verbose= FALSE, 
-                  name_A= "controls", name_B= "patients", varname = "condition",
+                  verbose= FALSE,  name_A= "controls", name_B= "patients", varname = "condition",
                   description="Comparison of two sets of bootstrapped counts for the tutorial, extracted from a simulated sleuth object. Simulated using built-in functionality of RATs.")
 ```
 
@@ -267,22 +267,23 @@ We do recognise that such procedure is several extra steps and that it can be sc
 ```{r, eval=FALSE}
 # 1. Collect your outputs into vectors. The end of each path should be a 
 # directory with a unique name/identifier for one sample.
-samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", etc)
-samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", etc)
+samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", ...)
+samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", ...)
+# OR if your outputs are all in the same path, this syntax might be more convenient:
+samples_A <- file.path("your/path/", c("SAMPLE1", "SAMPLE4","SAMPLE5", ...))
+samples_B <- file.path("your/path/", c("SAMPLE2", "SAMPLE3","SAMPLE7", ...))
 
-# 2a. Convert, import, and extract from Salmon.
-boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= FALSE)
 
-# 2b. OR if it is already in Kallisto format.
-boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= TRUE)
+# 2. Convert, import, and extract. 
+# The annotation is needed to enforce consistent transcripts order throughout RATs.
+boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
 
-# 3. You might want to save boots to file, in case you want to re-run RATs on it
+# 3. You might want to save `boots` to file, in case you want to re-run RATs on it
 # later with different parameters or in case you make a mistake, etc...
 
 # 4. Run RATs with the generic bootstrapped format:
 mydtu <- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B= boots$boot_data_B, 
-                  verbose= FALSE, 
-                  name_A= "controls", name_B= "patients", varname = "condition",
+                  verbose= FALSE, name_A= "controls", name_B= "patients", varname = "condition",
                   description="Comparison of two sets of bootstrapped counts imported from the quantification output.")
 ```
 
@@ -290,9 +291,9 @@ mydtu <- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B= b
 
 1. `A_paths` and `B_paths` - Two vectors containing the paths to the quantification output directories, one vector for each condition. The
 last segments of each path should be a directory with a unique identifying name for a single sample.
-2. `half_cooked` - If FALSE, call wasabi to prepare Salmon format for Sleuth. Wasabi automatically skips a conversion when an `abundance.h5` file
-is present in that sample directory, so leaving it FALSE will probably work for all purposes.
+2. `annot` - The annotation table you will use for calling DTU. This must be the same throughout RATs.
 
+The return value of `fish4rodents` is a list with two items: `$boot_data_A` and `$boot_data_B`.
 
 
 ***
@@ -490,7 +491,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
 2. `COUNTS_COL` - The name of the field holding the abundances in the bootstrap tables of Sleuth. (Default "est-counts")
 3. `BS_TARGET_COL` - The name of the field holding the transcript identifiers in the bootstrap tables of Sleuth. (Default "target_id")
 
-The `COUNTS_COL` and `BS_TARGET_COL` parameters are also available for `denest_sleuth_boots()`.
+The `COUNTS_COL` and `BS_TARGET_COL` parameters are also available for `denest_sleuth_boots()` and `fish4rodents()`.
 
 
 ### Annotation field names
@@ -511,8 +512,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "M
 1. `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame. (Default "target_id")
 2. `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame. (Default "parent_id")
 
-The `TARGET_COL` and `PARENT_COL` parameters are also available for `denest_sleuth_boots()`.
-`TARGET_COL` is also available as a parameter for `fish4rodents()`.
+The `TARGET_COL` and `PARENT_COL` parameters are also available for `denest_sleuth_boots()` and `fish4rodents()`.
 
 ***
 

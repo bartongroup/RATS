@@ -224,6 +224,15 @@ div.tocify {
 
 <hr />
 <pre class="r"><code>library(rats)</code></pre>
+<pre><code>## Loading required package: matrixStats</code></pre>
+<pre><code>## Loading required package: data.table</code></pre>
+<pre><code>## data.table 1.10.4</code></pre>
+<pre><code>## **********
+## This installation of data.table has not detected OpenMP support. It will still work but in single-threaded mode. If this a Mac and you obtained the Mac binary of data.table from CRAN, CRAN's Mac does not yet support OpenMP. In the meantime please follow our Mac installation instructions on the data.table homepage. If it works and you observe benefits from multiple threads as others have reported, please convince Simon Ubanek by sending him evidence and ask him to turn on OpenMP support when CRAN builds package binaries for Mac. Alternatives are to install Ubuntu on your Mac (which I have done and works well) or use Windows where OpenMP is supported and works well.
+## **********</code></pre>
+<pre><code>##   The fastest way to learn (by data.table authors): https://www.datacamp.com/courses/data-analysis-the-data-table-way</code></pre>
+<pre><code>##   Documentation: ?data.table, example(data.table) and browseVignettes(&quot;data.table&quot;)</code></pre>
+<pre><code>##   Release notes, videos and slides: http://r-datatable.com</code></pre>
 <hr />
 <div id="input-formats" class="section level1">
 <h1>Input formats</h1>
@@ -248,7 +257,7 @@ div.tocify {
 </div>
 <div id="annotation" class="section level2">
 <h2>Annotation</h2>
-<p>Regardless of data format, RATs also needs an annotation <code>data.frame</code> or <code>data.table</code> that matches transcript identifiers to gene identifiers. This looks like this:</p>
+<p>Regardless of data format, RATs also needs an annotation <code>data.frame</code> or <code>data.table</code> that matches transcript identifiers to gene identifiers. By default the column labels are <code>target_id</code> for the transcript IDs and <code>parent_id</code> for the gene IDs. These label values can be overridden (see Additional Settings later in this vignette). The annotation table looks like this:</p>
 <pre><code>##   target_id parent_id
 ## 1     NIB.1       NIB
 ## 2    1A1N-2      1A1N
@@ -390,8 +399,7 @@ rm(myslo)
 
 # 4. Run RATs with the generic bootstrapped format:
 mydtu &lt;- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots, 
-                  verbose= FALSE, 
-                  name_A= &quot;controls&quot;, name_B= &quot;patients&quot;, varname = &quot;condition&quot;,
+                  verbose= FALSE,  name_A= &quot;controls&quot;, name_B= &quot;patients&quot;, varname = &quot;condition&quot;,
                   description=&quot;Comparison of two sets of bootstrapped counts for the tutorial, extracted from a simulated sleuth object. Simulated using built-in functionality of RATs.&quot;)</code></pre>
 <div id="mandatory-arguments-group_samples" class="section level4">
 <h4>Mandatory arguments (group_samples):</h4>
@@ -416,29 +424,31 @@ mydtu &lt;- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= cond
 <p>We do recognise that such procedure is several extra steps and that it can be scripted. So RATs provides a wrapper that does those things for you. The catch is that you will have to repeat the process manually if you want to call DTE with Sleuth.</p>
 <pre class="r"><code># 1. Collect your outputs into vectors. The end of each path should be a 
 # directory with a unique name/identifier for one sample.
-samples_A &lt;- c(&quot;your/path/SAMPLE1&quot;, &quot;your/path/SAMPLE4&quot;,&quot;your/path/SAMPLE5&quot;, etc)
-samples_B &lt;- c(&quot;your/path/SAMPLE2&quot;, &quot;your/path/SAMPLE3&quot;,&quot;your/path/SAMPLE7&quot;, etc)
+samples_A &lt;- c(&quot;your/path/SAMPLE1&quot;, &quot;your/path/SAMPLE4&quot;,&quot;your/path/SAMPLE5&quot;, ...)
+samples_B &lt;- c(&quot;your/path/SAMPLE2&quot;, &quot;your/path/SAMPLE3&quot;,&quot;your/path/SAMPLE7&quot;, ...)
+# OR if your outputs are all in the same path, this syntax might be more convenient:
+samples_A &lt;- file.path(&quot;your/path/&quot;, c(&quot;SAMPLE1&quot;, &quot;SAMPLE4&quot;,&quot;SAMPLE5&quot;, ...))
+samples_B &lt;- file.path(&quot;your/path/&quot;, c(&quot;SAMPLE2&quot;, &quot;SAMPLE3&quot;,&quot;SAMPLE7&quot;, ...))
 
-# 2a. Convert, import, and extract from Salmon.
-boots &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= FALSE)
 
-# 2b. OR if it is already in Kallisto format.
-boots &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B, half_cooked= TRUE)
+# 2. Convert, import, and extract. 
+# The annotation is needed to enforce consistent transcripts order throughout RATs.
+boots &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
 
-# 3. You might want to save boots to file, in case you want to re-run RATs on it
+# 3. You might want to save `boots` to file, in case you want to re-run RATs on it
 # later with different parameters or in case you make a mistake, etc...
 
 # 4. Run RATs with the generic bootstrapped format:
 mydtu &lt;- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B= boots$boot_data_B, 
-                  verbose= FALSE, 
-                  name_A= &quot;controls&quot;, name_B= &quot;patients&quot;, varname = &quot;condition&quot;,
+                  verbose= FALSE, name_A= &quot;controls&quot;, name_B= &quot;patients&quot;, varname = &quot;condition&quot;,
                   description=&quot;Comparison of two sets of bootstrapped counts imported from the quantification output.&quot;)</code></pre>
 <div id="mandatory-arguments-fish4rodents" class="section level4">
 <h4>Mandatory arguments (fish4rodents):</h4>
 <ol style="list-style-type: decimal">
 <li><code>A_paths</code> and <code>B_paths</code> - Two vectors containing the paths to the quantification output directories, one vector for each condition. The last segments of each path should be a directory with a unique identifying name for a single sample.</li>
-<li><code>half_cooked</code> - If FALSE, call wasabi to prepare Salmon format for Sleuth. Wasabi automatically skips a conversion when an <code>abundance.h5</code> file is present in that sample directory, so leaving it FALSE will probably work for all purposes.</li>
+<li><code>annot</code> - The annotation table you will use for calling DTU. This must be the same throughout RATs.</li>
 </ol>
+<p>The return value of <code>fish4rodents</code> is a list with two items: <code>$boot_data_A</code> and <code>$boot_data_B</code>.</p>
 <hr />
 </div>
 </div>
@@ -600,7 +610,7 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;
 <li><code>COUNTS_COL</code> - The name of the field holding the abundances in the bootstrap tables of Sleuth. (Default “est-counts”)</li>
 <li><code>BS_TARGET_COL</code> - The name of the field holding the transcript identifiers in the bootstrap tables of Sleuth. (Default “target_id”)</li>
 </ol>
-<p>The <code>COUNTS_COL</code> and <code>BS_TARGET_COL</code> parameters are also available for <code>denest_sleuth_boots()</code>.</p>
+<p>The <code>COUNTS_COL</code> and <code>BS_TARGET_COL</code> parameters are also available for <code>denest_sleuth_boots()</code> and <code>fish4rodents()</code>.</p>
 </div>
 <div id="annotation-field-names" class="section level3">
 <h3>Annotation field names</h3>
@@ -616,7 +626,7 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;
 <li><code>TARGET_COL</code> - The name of the field holding the transcript identifiers in the annotation data frame. (Default “target_id”)</li>
 <li><code>PARENT_COL</code> - The name of the field holding the respective gene identifiers in the annotation data frame. (Default “parent_id”)</li>
 </ol>
-<p>The <code>TARGET_COL</code> and <code>PARENT_COL</code> parameters are also available for <code>denest_sleuth_boots()</code>. <code>TARGET_COL</code> is also available as a parameter for <code>fish4rodents()</code>.</p>
+<p>The <code>TARGET_COL</code> and <code>PARENT_COL</code> parameters are also available for <code>denest_sleuth_boots()</code> and <code>fish4rodents()</code>.</p>
 <hr />
 </div>
 </div>
