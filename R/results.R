@@ -309,8 +309,8 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]])) +
                   facet_grid(type ~ condition, scales= "free", switch="y") +
-                  geom_path(aes(colour= replicate, group= replicate), alpha=0.25) +
-                  geom_boxplot(alpha=0.3, outlier.shape= NA) +
+                  geom_path(aes(colour= replicate, group= replicate), alpha=0.5) +
+                  geom_boxplot(alpha=0.2, outlier.shape= NA) +
                   scale_fill_manual(values= colplt[[fillby]], name=fillby)
     ### BY CONDITION LINESONLY.
     } else if (style=="linesonly") {
@@ -319,7 +319,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
                   facet_grid(type ~ condition, scales= "free", switch="y") +
-                  geom_path(aes(group= replicate))
+                  geom_path(aes(group= replicate), alpha=0.5)
     ### ERROR
     } else {
       stop("Unknown plot style.")
@@ -336,7 +336,8 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
                       strip.text.x= element_text(size= rel(1.1)),
                       panel.grid.major= element_line(colour = "grey95"),
                       panel.grid.minor= element_blank(),
-                      panel.background= element_rect(fill = "grey98") )
+                      panel.background= element_rect(fill = "white"),
+                      panel.border = element_rect(colour = "black", fill=NA))
     if ( any(fillby == c("none", "isoform")) )
       result <- result + guides(fill="none")
     if ( any(colourby == c("none", "isoform")) )
