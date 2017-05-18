@@ -309,7 +309,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       shapeby="none"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, fill= vis_data[[fillby]])) +
                   facet_grid(type ~ condition, scales= "free", switch="y") +
-                  geom_path(aes(colour= replicate, group= replicate)) +
+                  geom_path(aes(colour= replicate, group= replicate), alpha=0.25) +
                   geom_boxplot(alpha=0.3, outlier.shape= NA) +
                   scale_fill_manual(values= colplt[[fillby]], name=fillby)
     ### BY CONDITION LINESONLY.
