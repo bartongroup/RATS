@@ -16,7 +16,7 @@ plot_overview(dtuo, type = "volcano")
 \item{"dprop" - Distribution of effect size.}
 \item{"reprod" - Distribution of gene-level DTU reproducibility.}
 \item{"reprodVSdprop" - Transcript-level DTU reproducibility VS effect size.}
-\item{"tradvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
+\item{"fcvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
 \item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}}
 }
 \value{

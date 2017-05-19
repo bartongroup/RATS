@@ -32,11 +32,12 @@ library(rats)
 
 ## Data
 
-RATs can work with any of three input types:
+RATs can work with several input types:
 
-1. A [Sleuth](http://pachterlab.github.io/sleuth/) object.
+1. A Sleuth object.
 2. Bootstrapped abundance estimates.
 3. Abundance estimates.
+4. Salmon/Kallisto quantifications.
 
 -> [Sleuth](http://pachterlab.github.io/sleuth/) objects contain their input data, so RATs can extract the bootstrapped abundance estimates directly from there, 
 for your convenience if Sleuth is in your workflow already.
@@ -52,6 +53,9 @@ head(sim_boot_data()[[2]][[1]])
 -> Abundance estimates, without bootstrapping information, can be input simply as two `data.table`s, one per condition. The first column should
 contain the transcript identifiers, followed by columns listing the abundance per sample. The format of each table is identical to the one shown above.
 
+-> [Salmon](https://combine-lab.github.io/salmon/) and [Kallisto](https://pachterlab.github.io/kallisto/) quantifications are currently accessed using the 
+[wasabi](https://github.com/COMBINE-lab/wasabi) converter and the Sleuth data importer. This has the benefit that it covers both formats and that data gets 
+normalised, but at the cost of generating a temporary Sleuth object, so this approach will require considerable memory.
 
 ## Annotation
 
@@ -206,13 +210,13 @@ Please note that, unlike the other two usage cases, `name_A`, `name_B` and `varn
 ### with a sleuth object on limited RAM
 
 Sleuth objects take up several GBs of memory. RATs extracts the abundances from the sleuth object but then restructures them so as to access them efficiently.
-As a consequence, the bootstrapped abundances will be held in memory twice, once for internal use by RATs and once for the sleuth object. This is a waste of resources,
+As a consequence, the bootstrapped abundances will be held in memory twice, once for internal use by RATs and once for the Sleuth object. This is a waste of resources,
 and can be a problem on limited systems like personal laptops.
 
 To allow you to free up RAM by unloading the sleuth object before calling DTU, RATs now exports some of its previously internal functions, allowing the separation of the DTU call step from the data restructuring step.
 
 You will need a sleuth object, the annotation table, and a vector of sample numbers.
-We will be using the simulated data created in the sleuth section above:
+We will be using the simulated data created in the Sleuth section above:
 
 ```{r}
 # 1. Restructure sample_to_covariates as covariate to samples.
@@ -304,7 +308,7 @@ The return value of `fish4rodents` is a list with two items: `$boot_data_A` and 
 
 In summary, `rats` works as follows:
 
-![RATs design](./fig/RATs_decisions.png)
+![RATs design](./fig/RATs_decisions.jpg)
 
 
 ## Thresholds

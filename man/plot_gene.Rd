@@ -5,11 +5,11 @@
 \title{Plot abundances for all isoforms of a specified gene.}
 \usage{
 plot_gene(dtuo, pid, style = "lines", fillby = NA_character_,
-  colourby = NA_character_, shapeby = NA_character_, isofcolvec = c("red",
-  "blue", "forestgreen", "purple", "hotpink", "gold3"), dtucolvec = c(`TRUE` =
-  "firebrick1", `FALSE` = "dodgerblue", `NA` = "gold"),
-  condcolvec = c("grey20", "white"), replcolvec = c("orange", "darkgreen",
-  "purple"), nonecol = "grey50")
+  colourby = NA_character_, shapeby = NA_character_,
+  isofcolvec = c("tomato", "lightblue", "forestgreen", "purple", "hotpink",
+  "gold3"), dtucolvec = c(`TRUE` = "firebrick1", `FALSE` = "dodgerblue", `NA`
+  = "gold"), condcolvec = c("white", "grey20"), replcolvec = c("red",
+  "blue", "green", "violet", "pink", "orange"), nonecol = "grey50")
 }
 \arguments{
 \item{dtuo}{A DTU object.}
@@ -31,6 +31,7 @@ plot_gene(dtuo, pid, style = "lines", fillby = NA_character_,
 
 \item{colourby}{Applies to boxplot outline and points. Not all options will work with all styles.
 \itemize{
+ \item{"replicate" - Point shape by replicate.},
  \item{"isoform" - Colour lines by isoform.},
  \item{"condition" - Colour lines by condition.},
  \item{"DTU" - Colour lines by transcript-level DTU result.},
@@ -38,7 +39,7 @@ plot_gene(dtuo, pid, style = "lines", fillby = NA_character_,
 
 \item{shapeby}{Applies to points.
 \itemize{
- \item{"repliate" - Point shape by replicate.},
+ \item{"replicate" - Point shape by replicate.},
  \item{"isoform" - Point shape by isoform.},
  \item{"condition" - Point shape by condition.},
  \item{"DTU" - Point shape by transcript-level DTU result.},
