@@ -103,9 +103,7 @@ test_that("The gene plotting commands work", {
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
   
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6"))
-  expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="lines"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="bycondition"))
-  expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="merged"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="byisoform"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="linesonly"))
   
@@ -139,11 +137,17 @@ test_that("The gene plotting commands work", {
 })
 
 #==============================================================================
-test_that("The gene plotting commands work", {
+test_that("The overview plotting commands work", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
   mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
   
   expect_silent(plot_overview(mydtu))
-  expect_silent(plot_overview(dtuo=mydtu, type="volcano"))
+  expect_silent(plot_overview(dtuo=mydtu, type="tvolcano"))
+  expect_silent(plot_overview(dtuo=mydtu, type="gvolcano"))
+  expect_silent(plot_overview(dtuo=mydtu, type="fcvolcano"))
+  expect_silent(plot_overview(dtuo=mydtu, type="dprop"))
   expect_silent(plot_overview(dtuo=mydtu, type="maxdprop"))
+  expect_silent(plot_overview(dtuo=mydtu, type="fcVSdprop"))
+  expect_silent(plot_overview(dtuo=mydtu, type="reprod"))
+  expect_silent(plot_overview(dtuo=mydtu, type="reprodVSdprop"))
 })

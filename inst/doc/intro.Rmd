@@ -32,7 +32,7 @@ abundance, but does not compare them to their sibling isoforms within each gene.
 subset of those that show DTE. The figure below shows the relationship between DTU and DTE, as well as between them and
 *differential gene expression* (**DGE**):
 
-![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.jpg)
+![DGE vs. DTE vs. DTU](./figs/dge-dte-dtu.jpg)
 
 
 **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
@@ -185,5 +185,5 @@ to **read the vignette(s)**, and browse/search the support forum before posting 
 
 Enjoy!
 
-![](./fig/rats.png)
+![](./figs/rats_logo.png)
 

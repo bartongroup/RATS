@@ -116,8 +116,8 @@ plot_overview(mydtu, type="gvolcano")
 ```
 
 This is what these look like on a larger dataset:
-![Transcript significance VS effect size](./fig/tvolcano.jpg)
-![Gene significance VS largest effect size among isoforms](./fig/gvolcano.jpg)
+![Transcript significance VS effect size](./figs/tvolcano.jpg)
+![Gene significance VS largest effect size among isoforms](./figs/gvolcano.jpg)
 
 You can also get density histograms for the volcanos (the Y axis is square-root compressed):
 
@@ -129,9 +129,9 @@ plot_overview(mydtu, type="dprop")
 plot_overview(mydtu, type="maxdprop")
 ```
 
-This is what it looks like on a larger dataset:
-![Effect size distribution](./fig/dprop.jpg)
-![Largest isoform effect size per gene](./fig/maxdprop.jpg)
+This is what these look like on a larger dataset:
+![Effect size distribution](./figs/dprop.jpg)
+![Largest isoform effect size per gene](./figs/maxdprop.jpg)
 
 The gene version of the effect size distribution is often bi-modal with the positive peak being larger than the negative, 
 because when a gene has isoforms with the same absolute effect size (for example genes with two isoforms) 
@@ -140,15 +140,15 @@ the positive value is selected.
 The third criterion to classifying DTU with RATs, is the reproducibility of the effect size and significance across
 bootstrapped quantifications. Bear in mind that the reproducibility depends on the significance and effect size thresholds.
 
-![Reproducibility VS effect size](./fig/reprodvsdprop.jpg)
-![Distribution of reproducibility](./fig/reprod.jpg)
+![Reproducibility VS effect size](./figs/reprodvsdprop.jpg)
+![Distribution of reproducibility](./figs/reprod.jpg)
 
 
 Finally, although fold-changes of transcript expression are not tied to DTU, if your input counts are suitably normalised between conditions,
 you can plot the traditional FC volcano and the realtionship between FC and proportion change.
 
-![Fold change VS significance](./fig/fcvolcano.jpg)
-![Fold change VS proportion change](./fig/fcvsdprop.jpg)
+![Fold change VS significance](./figs/fcvolcano.jpg)
+![Fold change VS proportion change](./figs/fcvsdprop.jpg)
 
 
 ## Interactive plots
@@ -240,6 +240,6 @@ to **read the vignette(s)**, and browse/search the support forum before posting 
 
 Enjoy!
 
-![](./fig/rats.png)
+![](./figs/rats_logo.png)
 
 

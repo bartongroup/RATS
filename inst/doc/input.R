@@ -97,7 +97,6 @@ mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_b
 #  samples_A <- file.path("your/path/", c("SAMPLE1", "SAMPLE4","SAMPLE5", ...))
 #  samples_B <- file.path("your/path/", c("SAMPLE2", "SAMPLE3","SAMPLE7", ...))
 #  
-#  
 #  # 2. Convert, import, and extract.
 #  # The annotation is needed to enforce consistent transcripts order throughout RATs.
 #  boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)

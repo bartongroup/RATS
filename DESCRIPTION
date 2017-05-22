@@ -12,6 +12,8 @@ Maintainer: Kimon Froussios <k.froussios@dundee.ac.uk>
 Description: Given a set of transript abundances or a Sleuth output object, and a transcript-to-gene index of
     identifiers, this package identifies genes where differential transcript usage occurs.
 License: MIT + file LICENSE
+URL: https://github.com/bartongroupb/RATS
+BugReports: https://github.com/bartongroup/RATS/issues
 VignetteBuilder: knitr
 Depends:
     matrixStats,

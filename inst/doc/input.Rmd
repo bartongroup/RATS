@@ -277,7 +277,6 @@ samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", ...
 samples_A <- file.path("your/path/", c("SAMPLE1", "SAMPLE4","SAMPLE5", ...))
 samples_B <- file.path("your/path/", c("SAMPLE2", "SAMPLE3","SAMPLE7", ...))
 
-
 # 2. Convert, import, and extract. 
 # The annotation is needed to enforce consistent transcripts order throughout RATs.
 boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
@@ -308,7 +307,7 @@ The return value of `fish4rodents` is a list with two items: `$boot_data_A` and 
 
 In summary, `rats` works as follows:
 
-![RATs design](./fig/RATs_decisions.jpg)
+![RATs design](./figs/rats_workflow.jpg)
 
 
 ## Thresholds
@@ -549,4 +548,4 @@ to **read the vignette(s)**, and browse/search the support forum before posting 
 
 Enjoy!
 
-![](./fig/rats.png)
+![](./figs/rats_logo.png)

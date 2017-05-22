@@ -292,6 +292,6 @@ to **read the vignette(s)**, and browse/search the support forum before posting 
 
 Enjoy!
 
-![](./fig/rats.png)
+![](./figs/rats_logo.png)
 
 
