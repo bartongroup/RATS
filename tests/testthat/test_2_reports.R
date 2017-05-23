@@ -105,7 +105,7 @@ test_that("The gene plotting commands work", {
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="bycondition"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="byisoform"))
-  expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="linesonly"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="lines"))
   
   expect_error(plot_gene(dtuo=mydtu, pid="MIX6", fillby="replicate"))
   expect_error(plot_gene(dtuo=mydtu, pid="MIX6", style="bycondition", fillby="garbage"))

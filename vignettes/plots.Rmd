@@ -75,7 +75,8 @@ other condition. The boxplots describe the abundance measurements of each isofor
 
 The actual measurements are overlayed as points and connected by lines so as to group the set of isoform abundances measured in each replicate. This highlights the level of 
 consistency between the replicates. The points and lines are placed slightly off-centre to prevent replicates masking one another when 
-the measurements are very similar. 
+the measurements are very similar. The colours of the replicates are recycled between the two conditions, to reduce the required palette and
+boost contrast. So in the example, there are 4 samples: controls-1, controls-2, patients-1 and patients-2.
 
 In the past, the fill colour encoded the DTU outcome, but to keep things more consistent with the other styles
 the DTU is now encoded as point shape while the fill colour echoes the condition.
@@ -83,11 +84,11 @@ In this example, isoforms `.c1` and `.c2` change significantly, isoforms `.c3`, 
 and isoform `.d` could not be tested. It is not always possible to see the fill colour, depending on the spead of the measurements, so 
 refering back to the RATs output tables may be necessary.
 
-This structure is great for seeing changes in the isoform distribution profile of a gene. A minimalist version of the plot can also be obtained:
+This structure is great for seeing changes in the isoform distribution profile of a gene. A more minimalist version of the plot can also be obtained:
 
 ```{r}
 # Grouping by condition (minimalist):
-plot_gene(mydtu, "MIX6", style="linesonly")
+plot_gene(mydtu, "MIX6", style="lines")
 ```
 
 When there are many lines or many isoforms, it may be preferable to group abundances by isoform, making individual comparisons easier:

@@ -22,7 +22,7 @@ plot_gene(mydtu, "MIX6", style="bycondition")
 
 ## ------------------------------------------------------------------------
 # Grouping by condition (minimalist):
-plot_gene(mydtu, "MIX6", style="linesonly")
+plot_gene(mydtu, "MIX6", style="lines")
 
 ## ------------------------------------------------------------------------
 # Grouping by isoform:

@@ -1,6 +1,6 @@
 #================================================================================
 #' Summary of DTU calling.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @return A named numerical vector giving a tally of the results.
 #'
@@ -12,10 +12,10 @@ dtu_summary <- function(dtuo) {
 
 #================================================================================
 #' List of DTU ids.
-#' 
+#'
 #' Get the IDs for DTU/nonDTU/NA genes and transcripts.
 #' The IDs will be ordered by effect size.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @return A named list of character vectors.
 #'
@@ -32,7 +32,7 @@ get_dtu_ids <- function(dtuo) {
   pid <- unique(myt$parent_id)
   po <- match(dtuo$Genes$parent_id, pid)
   myp <- copy(dtuo$Genes[order(po), ])
-  
+
   with(myp, {
     # Extract.
     return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
@@ -54,13 +54,13 @@ get_dtu_ids <- function(dtuo) {
 
 #================================================================================
 #' List of genes that switch isoform ranks.
-#' 
+#'
 #' Get the IDs of DTU genes where isoform rank switching occurs.
-#' Switches of primary and non-primary isoforms are listed separately. 
-#' 
+#' Switches of primary and non-primary isoforms are listed separately.
+#'
 #' @param dtuo A DTU object.
 #' @return A named list of character vectors.
-#' 
+#'
 #' @import data.table
 #' @export
 get_switch_ids <- function(dtuo) {
@@ -82,7 +82,7 @@ get_switch_ids <- function(dtuo) {
     result[["Primary switch (gene test)"]] <- unique(myt$parent_id[myt$psw])
     result[["Non-primary switch (gene test)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
   }
-  
+
   # Get all the transcripts from genes with at least one DTU transcript.
   myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
   if (nrow(myt)==0) {
@@ -100,7 +100,7 @@ get_switch_ids <- function(dtuo) {
     result[["Primary switch (transc. test)"]] <- unique(myt$parent_id[myt$psw])
     result[["Non-primary switch (transc. test)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
   }
-  
+
   # Get all the transcripts from DTU genes with at least one DTU isoform.
   myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU & dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
   if (nrow(myt)==0) {
@@ -118,14 +118,14 @@ get_switch_ids <- function(dtuo) {
     result[["Primary switch (both tests)"]] <- unique(myt$parent_id[myt$psw])
     result[["Non-primary switch (both tests)"]] <- unique(myt$parent_id[myt$sw & !myt$psw])
   }
-  
+
   return(result)
 }
 
 
 #================================================================================
 #' Summary of isoform switching events.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @return A named numerical vector giving a tally of the results.
 #'
@@ -137,10 +137,10 @@ dtu_switch_summary <- function(dtuo) {
 
 #================================================================================
 #' Summary of DTU plurality.
-#' 
+#'
 #' Get the IDs of DTU genes organised by the number of isoforms affected. This
 #' is possible only based on the transcript-level results.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @return A named numerical vector giving a tally of the results.
 #'
@@ -153,14 +153,14 @@ get_plurality_ids <- function(dtuo){
       return(plurality[(V1==x), parent_id])
     })
     names(result) <- as.character(categories)
-    
+
     return(result)
   })
 }
 
 #================================================================================
 #' Summary of DTU plurality.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @return A named numerical vector giving a tally of the results.
 #'
@@ -177,15 +177,15 @@ dtu_plurality_summary <- function(dtuo) {
 #' Boxplot of absolute and relative abundances for the isoforms of a given gene.
 #' The style option allows grouping by condition or by isoform, and provides the option to
 #' include the individual measuremnts from each replicate.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
 #' @param style Different themes: \itemize{
 #'  \item{"byisoform" - Grouped by isoform. Show individual measurements as points.},
 #'  \item{"bycondition" - (Default) Grouped by condition. Connect individual measurements with colour-coded lines.}
-#'  \item{"linesonly" - Grouped by condition. Connect replicate measurements as colour-coded lines. Hide the boxplots.}
-#'  } 
-#' @param fillby Applies to the boxplots. Not all options will work with all styles. 
+#'  \item{"lines" - Grouped by condition. Connect replicate measurements as colour-coded lines. Hide the boxplots.}
+#'  }
+#' @param fillby Applies to the boxplots. Not all options will work with all styles.
 #' \itemize{
 #'  \item{"isoform" - Colour fill by isoform.},
 #'  \item{"condition" - Colour fill by condition.},
@@ -215,10 +215,10 @@ dtu_plurality_summary <- function(dtuo) {
 #' @import data.table
 #' @import ggplot2
 #' @export
-plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=NA_character_, shapeby=NA_character_,
+plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colourby=NA_character_, shapeby=NA_character_,
                       isofcolvec=c("tomato",  "lightblue", "forestgreen", "purple", "hotpink", "gold3"),
                       dtucolvec= c("TRUE"="firebrick1", "FALSE"="dodgerblue", "NA"="gold"),
-                      condcolvec=c("white", "grey20"), 
+                      condcolvec=c("grey80", "grey15"),
                       replcolvec=c("red",  "blue", "green", "violet", "pink", "orange"),
                       nonecol="grey50")
 {
@@ -226,14 +226,14 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
           !is.na(colourby) && all(colourby != c("isoform", "condition", "DTU", "none", "replicate")),
           !is.na(shapeby) && all(shapeby != c("isoform", "condition", "DTU", "none", "replicate")) ))
     stop("Invalid fillby, colourby or shapeby value!")
-  
+
   # Slice the data to get just the relevant transcripts.
   with(dtuo, {
     trdat <- dtuo$Transcripts[pid, .(target_id, as.character(DTU))]  # transformed DTU will appear as V2
     trdat[is.na(V2), V2 := "NA"]
     repdatA <- dtuo$Abundances[["condA"]][pid, -"parent_id", with=FALSE]
     repdatB <- dtuo$Abundances[["condB"]][pid, -"parent_id", with=FALSE]
-    
+
     # Restructure
     trnum <- dim(trdat)[1]
     anum <- dtuo$Parameters$num_replic_A
@@ -250,10 +250,10 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
                            "replicate"=            as.factor(c( rep(seq(1, anum), each= trnum),               rep(seq(1, bnum), each=trnum),           rep(seq(1, anum), each= trnum),            rep(seq(1, bnum), each=trnum) )),
                            "none"= as.factor(c(1))
                            )
-    
+
     # Colour and shape palettes.
-    colplt <- list("DTU"= dtucolvec, 
-                   "condition"= condcolvec, 
+    colplt <- list("DTU"= dtucolvec,
+                   "condition"= condcolvec,
                    "isoform"= colorRampPalette(isofcolvec)(length(unique(vis_data$isoform))),
                    "replicate"= colorRampPalette(c(replcolvec))(length(unique(vis_data$replicate))),
                    "none"= nonecol)
@@ -262,10 +262,10 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
                    "isoform"= seq.int(0, 24, 1),
                    "replicate" =seq.int(0, 24, 1),
                    "none"= 20)
-    
+
     # Plot.
     result <- NULL
-    
+
     ### BY ISOFORM.
     if (style=="byisoform") {
       if (is.na(fillby)) {
@@ -284,7 +284,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
                   geom_jitter(aes(shape=vis_data[[shapeby]]), position=position_jitterdodge()) +
                   geom_boxplot(position=position_dodge(), alpha=0.3, outlier.shape= NA)
     ### BY CONDITION.
-    } else if (any(style==c("bycondition", "lines"))) {
+    } else if (style=="bycondition") {
       if (is.na(fillby))
         fillby <- "condition"
       if (is.na(shapeby))
@@ -293,14 +293,14 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
                   facet_grid(type ~ condition, scales= "free", switch="y") +
                   geom_path(aes(colour= replicate, group= replicate), position=position_dodge(width=0.5), alpha=0.7) +
-                  geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.25, outlier.shape= NA, colour="grey50") +
-                  geom_point(aes(colour= replicate, group= replicate, shape=vis_data[[shapeby]]), position=position_dodge(width=0.5))
+                  geom_point(aes(colour= replicate, group= replicate, shape=vis_data[[shapeby]]), position=position_dodge(width=0.5)) +
+                  geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.25, outlier.shape= NA, colour="grey60")
       if (fillby=="condition")
         result <- result + guides(fill="none")
       if (shapeby=="none")
         result <- result + guides(shape="none")
     ### BY CONDITION LINESONLY.
-    } else if (style=="linesonly") {
+    } else if (style=="lines") {
       if (is.na(fillby))
         fillby <- "condition"
       if(is.na(shapeby))
@@ -308,7 +308,8 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
       colourby <- "replicate"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
                   facet_grid(type ~ condition, scales= "free", switch="y") +
-                  geom_path(aes(group= replicate, colour= vis_data[[colourby]]), alpha=0.5)
+                  geom_path(aes(group= replicate, colour= vis_data[[colourby]]), position=position_dodge(width=0.2)) +
+                  geom_point(aes(group= replicate, colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position=position_dodge(width=0.2))
     ### ERROR
     } else {
       stop("Unknown plot style.")
@@ -325,7 +326,8 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
                       strip.background= element_rect(fill= "grey95"),
                       strip.text.y= element_text(size= rel(1.2)),
                       strip.text.x= element_text(size= rel(1.1)),
-                      panel.grid.major= element_line(colour = "grey95"),
+                      panel.grid.major.x= element_line(colour = "grey95"),
+                      panel.grid.major.y= element_blank(),
                       panel.grid.minor= element_blank(),
                       panel.background= element_rect(fill = "white"),
                       panel.border = element_rect(colour = "black", fill=NA),
@@ -343,7 +345,7 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
 
 #================================================================================
 #' Plot DTU results overview.
-#' 
+#'
 #' @param dtuo A DTU object.
 #' @param type Type of plot. \itemize{
 #'   \item{"tvolcano" - Change in proportion VS. transcript-level statistical significance. (Default)}
@@ -356,13 +358,13 @@ plot_gene <- function(dtuo, pid, style="lines", fillby=NA_character_, colourby=N
   # \item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.}
 #'   \item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}
 #' @return A ggplot2 object. Simply display it or you can also customize it.
-#' 
+#'
 #' CAUTION: RATs does NOT normalise the input abundances for fold-change calclulations. RATs
 #' is NOT intended for study of DTE.
-#' 
+#'
 #' These overviews rely on the results of the transcript-level proportion tests. If your DTU
 #' object was created without the transcript-level tests, this function will not work.
-#' 
+#'
 #' @import data.table
 #' @import ggplot2
 #' @export
@@ -379,7 +381,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
                   ggtitle("Effect size VS significance (transcript level)") +
-                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
                        x= "Isoform propotion difference",
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
@@ -400,7 +402,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
                   ggtitle("Effect size VS significance (gene level)") +
-                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
                        x = "Largest isoform proportion difference per gene",
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
@@ -421,7 +423,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
                   ggtitle("Largest isoform proportion change VS transcript-level significance") +
-                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
@@ -432,16 +434,16 @@ plot_overview <- function(dtuo, type="volcano") {
       result <- ggplot(data = na.omit(mydata), aes(log2FC, neglogP, colour = DTU)) +
                   geom_point(shape=16, alpha = 0.3) +
                   ggtitle("Isoform abundance fold-change VS significance") +
-                  labs(x = "log2 (FC)", 
+                  labs(x = "log2 (FC)",
                        y = "-log10 (Pval)")
     ### EFFECT SIZE
     } else if (type == "dprop") {
-      result <- ggplot(data= Transcripts[(elig), .(Dprop, DTU)], aes(x=Dprop, fill=DTU)) + 
+      result <- ggplot(data= Transcripts[(elig), .(Dprop, DTU)], aes(x=Dprop, fill=DTU)) +
                   geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   ggtitle("Effect size (transcript level)") +
-                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
                        x = "Isoform proportion difference",
                        y = "Number of Transcripts") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
@@ -464,7 +466,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   ggtitle("Effect size (gene level)") +
-                  labs(# x = paste("max( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
+                  labs(# x = paste("max( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""),
                        x = "Largest isoform proportion difference per gene",
                        y = "Number of genes") +
                   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
@@ -481,19 +483,19 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   ggtitle("Transcript abundance fold-change VS isoform proportion change") +
-                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""), 
+                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
                        x = "Proportion difference",
                        y = "log2 (FC)") +
                   theme( panel.grid.minor.y= element_line(colour= "grey95", size=rel(1.5)) )
     ### REPRODUCIBILITY vs DPROP
     } else if (type == "reprodVSdprop") {
-      result <- ggplot(data= na.omit(Transcripts[, .(Dprop, quant_dtu_freq, DTU)]), aes(x=Dprop, y=quant_dtu_freq, colour=DTU)) + 
-                  geom_point(shape=20, alpha=0.3) + 
+      result <- ggplot(data= na.omit(Transcripts[, .(Dprop, quant_dtu_freq, DTU)]), aes(x=Dprop, y=quant_dtu_freq, colour=DTU)) +
+                  geom_point(shape=20, alpha=0.3) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= Parameters$quant_reprod_thresh, colour="grey50", size=rel(0.5)) +
                   ggtitle("Reproducibility VS effect size") +
-                  labs(# x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""), 
+                  labs(# x = paste("abs( Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, " )", sep=""),
                        x = "Isoform proportion change",
                        y = "Pass frequency") +
                   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
@@ -501,7 +503,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   theme( axis.line.x = element_line() )
     ### REPRODUCIBILITY
     } else if (type == "reprod") {
-      result <- ggplot(data= na.omit(Genes[, .(quant_dtu_freq, DTU)]), aes(x=quant_dtu_freq, fill=DTU)) + 
+      result <- ggplot(data= na.omit(Genes[, .(quant_dtu_freq, DTU)]), aes(x=quant_dtu_freq, fill=DTU)) +
                   geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
                   geom_vline(xintercept= Parameters$quant_reprod_thresh, colour="grey50", size=rel(0.5)) +
                   scale_x_continuous(breaks = seq(0, 1, 0.2), expand=c(0, 0)) +
@@ -526,20 +528,20 @@ plot_overview <- function(dtuo, type="volcano") {
                       panel.grid.major= element_line(colour= "grey95"),
                       # panel.border = element_rect(colour = "black", fill=NA),
                       legend.key = element_rect(fill = 'white') )
-    
+
     return(result)
   })
 }
 
 #================================================================================
 #' Get largest value by absolute comparison.
-#' 
+#'
 #' Get back the original signed value. In case of equal absolutes, the positive
 #' value will be returned.
-#' 
+#'
 #' @param v A numeric vector.
 #' @return A numeric value.
-#' 
+#'
 maxabs <- function(v) {
   if (all(is.na(v)))
     return(NA_real_)
@@ -556,21 +558,21 @@ maxabs <- function(v) {
 
 #================================================================================
 #' Interactive volcano plot, using shiny.
-#' 
+#'
 #' @param dtuo A DTU object.
-#' 
+#'
 #' @import data.table
 #' @import ggplot2
 #' @import shiny
 #' @export
-#' 
+#'
 plot_shiny_volcano <- function(dtuo) {
   # Set up interface.
   volcano_ui <- fluidPage(
     # Prepare space for plot display.
     fluidRow(
-      column(width= 12, 
-             plotOutput("plot1", height= 800, 
+      column(width= 12,
+             plotOutput("plot1", height= 800,
                         hover= hoverOpts(id= "plot_hover"),
                         click= clickOpts(id= "plot_click")) )),
     # Instructions.
@@ -585,10 +587,10 @@ plot_shiny_volcano <- function(dtuo) {
       column(width= 9,
              verbatimTextOutput("click_info")) ),
     fluidRow(
-      column(width= 12, 
+      column(width= 12,
              plotOutput("plot2", height= 600)) )
   )
-    
+
   with(dtuo, {
     # Set up mouse responses.
     volcano_server <- function(input, output) {
@@ -596,7 +598,7 @@ plot_shiny_volcano <- function(dtuo) {
       vals <- reactiveValues(
         keeprows = rep(TRUE, nrow(mtcars))
       )
-      
+
       # Set up data
       mydata <- NULL
       if ("quant_dtu_freq" %in% names(dtuo$Transcripts)) {
@@ -612,12 +614,12 @@ plot_shiny_volcano <- function(dtuo) {
       }
       names(mydata)[1] <- "target_id"
       names(mydata)[4] <- "neglogP"
-    
+
       # Plot
       output$plot1 <- renderPlot({
         plot_overview(dtuo, "gene_volcano")
       })
-    
+
       # Assign mouse hover action to hoveri info output space.
       output$hover_info <- renderPrint({
         cat("Hover info: \n")
@@ -626,7 +628,7 @@ plot_shiny_volcano <- function(dtuo) {
         if(dim(points)[1] != 0)
           noquote(points[, target_id])
       })
-    
+
       # Assign mouse click action to click info output space.
       output$click_info <- renderPrint({
         cat("Click info: \n")
@@ -636,7 +638,7 @@ plot_shiny_volcano <- function(dtuo) {
         if(dim(points)[1] != 0)
           points[, .(target_id, parent_id, DTU, Dprop, pval_corr, quant_dtu_freq, rep_dtu_freq)]
       })
-      
+
       # Assign mouse click action to gene plot output space.
       output$plot2 <- renderPlot({
         myclick <- input$plot_click
@@ -648,7 +650,7 @@ plot_shiny_volcano <- function(dtuo) {
           plot_gene(dtuo, gid)
       })
     }
-    
+
     # Display
     shinyApp(ui= volcano_ui, server= volcano_server)
   })
