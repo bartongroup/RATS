@@ -17,12 +17,11 @@ mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patie
 
 ## ------------------------------------------------------------------------
 # Grouping by condition (DEFAULT):
-#   plot_gene(mydtu, "MIX6")
 plot_gene(mydtu, "MIX6", style="bycondition")
 
-## ------------------------------------------------------------------------
-# Grouping by condition (minimalist):
-plot_gene(mydtu, "MIX6", style="lines")
+## ---- eval=FALSE---------------------------------------------------------
+#  # Grouping by condition (minimalist):
+#  plot_gene(mydtu, "MIX6", style="lines")
 
 ## ------------------------------------------------------------------------
 # Grouping by isoform:

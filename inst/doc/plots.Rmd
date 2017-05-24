@@ -65,7 +65,6 @@ There are several styles for this plot, depending on your preferences. The defau
 
 ```{r}
 # Grouping by condition (DEFAULT):
-#   plot_gene(mydtu, "MIX6")
 plot_gene(mydtu, "MIX6", style="bycondition")
 ```
 
@@ -84,9 +83,10 @@ In this example, isoforms `.c1` and `.c2` change significantly, isoforms `.c3`, 
 and isoform `.d` could not be tested. It is not always possible to see the fill colour, depending on the spead of the measurements, so 
 refering back to the RATs output tables may be necessary.
 
-This structure is great for seeing changes in the isoform distribution profile of a gene. A more minimalist version of the plot can also be obtained:
+This structure is great for seeing changes in the isoform distribution profile of a gene. A more minimalist version of the plot, without the boxpltos,
+can also be obtained:
 
-```{r}
+```{r, eval=FALSE}
 # Grouping by condition (minimalist):
 plot_gene(mydtu, "MIX6", style="lines")
 ```
@@ -138,15 +138,8 @@ The gene version of the effect size distribution is often bi-modal with the posi
 because when a gene has isoforms with the same absolute effect size (for example genes with two isoforms) 
 the positive value is selected.
 
-The third criterion to classifying DTU with RATs, is the reproducibility of the effect size and significance across
-bootstrapped quantifications. Bear in mind that the reproducibility depends on the significance and effect size thresholds.
-
-![Reproducibility VS effect size](./figs/reprodvsdprop.jpg)
-![Distribution of reproducibility](./figs/reprod.jpg)
-
-
-Finally, although fold-changes of transcript expression are not tied to DTU, if your input counts are suitably normalised between conditions,
-you can plot the traditional FC volcano and the realtionship between FC and proportion change.
+Although fold-changes of transcript expression are not tied to DTU, if your input counts are suitably normalised between conditions,
+you can plot the traditional FC volcano and the relationship between FC and proportion change.
 
 ![Fold change VS significance](./figs/fcvolcano.jpg)
 ![Fold change VS proportion change](./figs/fcvsdprop.jpg)
@@ -233,7 +226,7 @@ documentation for more help on these.
 # Contact information
 
 The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
-by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
+by Dr. Kimon Froussios, Dr. Kira Mour??o and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
