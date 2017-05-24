@@ -6,7 +6,8 @@
 #'
 #'@export
 dtu_summary <- function(dtuo) {
- return( sapply(get_dtu_ids(dtuo), length) )
+  tally <- sapply(get_dtu_ids(dtuo), length)
+  return( data.frame("category"=names(tally), "tally"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
 }
 
 
@@ -131,7 +132,8 @@ get_switch_ids <- function(dtuo) {
 #'
 #'@export
 dtu_switch_summary <- function(dtuo) {
-  return( sapply(get_switch_ids(dtuo), length) )
+  tally <- sapply(get_switch_ids(dtuo), length)
+  return( data.frame("category"=names(tally), "genes"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
 }
 
 
@@ -166,7 +168,8 @@ get_plurality_ids <- function(dtuo){
 #'
 #'@export
 dtu_plurality_summary <- function(dtuo) {
-  return( sapply(get_plurality_ids(dtuo), length) )
+  tally <- sapply(get_plurality_ids(dtuo), length)
+  return( data.frame("isof_affected"=names(tally), "num_of_genes"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
 }
 
 
