@@ -223,10 +223,9 @@ div.tocify {
 
 
 <hr />
+<pre class="r"><code>library(rats)</code></pre>
 <p>Set up an example.</p>
-<pre class="r"><code>library(rats)
-
-# Simulate some data.
+<pre class="r"><code># Simulate some data.
 simdat &lt;- sim_sleuth_data(cnames = c(&quot;controls&quot;, &quot;patients&quot;)) 
 # For convenience let's assign the contents of the list to separate variables.
 myslo &lt;- simdat$slo
@@ -252,19 +251,20 @@ mydtu &lt;- call_DTU(annot= myannot, slo= myslo, name_A= &quot;controls&quot;,
 </ul>
 <pre class="r"><code># A really simple tally of the outcome.
 print( dtu_summary(mydtu) )</code></pre>
-<pre><code>##        DTU genes (gene test)    non-DTU genes (gene test) 
-##                            2                            1 
-##         NA genes (gene test)     DTU genes (transc. test) 
-##                            7                            2 
-## non-DTU genes (transc. test)      NA genes (transc. test) 
-##                            8                            0 
-##       DTU genes (both tests)   non-DTU genes (both tests) 
-##                            2                            1 
-##        NA genes (both tests)              DTU transcripts 
-##                            0                            5 
-##          non-DTU transcripts               NA transcripts 
-##                            5                           11</code></pre>
-<p>Notice that <strong>three types of results are given for genes</strong>. That’s because RATs uses <em>two</em> separate methods of identifying DTU: The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually and then aggregates the isoform results to form a gene-level result. Therefore, as of <code>v.0.4.2</code>, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
+<pre><code>##                        category tally
+## 1         DTU genes (gene test)     2
+## 2     non-DTU genes (gene test)     1
+## 3          NA genes (gene test)     7
+## 4      DTU genes (transc. test)     2
+## 5  non-DTU genes (transc. test)     8
+## 6       NA genes (transc. test)     0
+## 7        DTU genes (both tests)     2
+## 8    non-DTU genes (both tests)     1
+## 9         NA genes (both tests)     0
+## 10              DTU transcripts     5
+## 11          non-DTU transcripts     5
+## 12               NA transcripts    11</code></pre>
+<p>RATs uses <em>two</em> separate methods of identifying DTU: The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually and then aggregates the isoform results to form a gene-level result. Therefore, as of v0.4.2, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
 <p>The <code>get_dtu_ids()</code> function lists the actual identifiers per category, instead of the numbers in each category. As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
 <pre class="r"><code># Gene and transcript IDs corresponding to the tally above.
 ids &lt;- get_dtu_ids(mydtu)
@@ -312,12 +312,13 @@ print( ids )</code></pre>
 <p>Isoform switching is a subset of DTU. Primary isoform switching is often considered the most likely type of DTU to have an effect. The following two functions summarise the extent of isoform switching in the results:</p>
 <pre class="r"><code># A tally of genes switching isoform ranks.
 print( dtu_switch_summary(mydtu) )</code></pre>
-<pre><code>##        Primary switch (gene test)    Non-primary switch (gene test) 
-##                                 1                                 1 
-##     Primary switch (transc. test) Non-primary switch (transc. test) 
-##                                 1                                 1 
-##       Primary switch (both tests)   Non-primary switch (both tests) 
-##                                 1                                 1</code></pre>
+<pre><code>##                            category genes
+## 1        Primary switch (gene test)     1
+## 2    Non-primary switch (gene test)     1
+## 3     Primary switch (transc. test)     1
+## 4 Non-primary switch (transc. test)     1
+## 5       Primary switch (both tests)     1
+## 6   Non-primary switch (both tests)     1</code></pre>
 <pre class="r"><code># The gene IDs displaying isoform switching.
 ids &lt;- get_switch_ids(mydtu)
 print( ids )</code></pre>
@@ -344,15 +345,16 @@ print( ids )</code></pre>
 ## $`Non-primary switch (both tests)`
 ## [1] MIX6
 ## Levels: CC MIX6</code></pre>
-<p>Again, three versions of the gene results are shown, covering the respective DTU methods in RATs. <code>MIX6</code> is demonstrating a switch in both primary and tertiary isoforms.</p>
+<p>Again, three versions of the results are shown, covering the respective DTU methods in RATs. <code>MIX6</code> is demonstrating a switch in both primary and tertiary isoforms.</p>
 </div>
 <div id="summary-of-dtu-plurality" class="section level2">
 <h2>Summary of DTU plurality</h2>
 <p>In case you want to know how many isoforms are affected per gene.</p>
 <pre class="r"><code># A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )</code></pre>
-<pre><code>## 2 3 
-## 1 1</code></pre>
+<pre><code>##   isof_affected num_of_genes
+## 1             2            1
+## 2             3            1</code></pre>
 <pre class="r"><code># The gene IDs displaying isoform switching.
 ids &lt;- get_plurality_ids(mydtu)
 print( ids )</code></pre>

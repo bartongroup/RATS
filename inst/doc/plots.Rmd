@@ -22,11 +22,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ***
 
+```{r, include=FALSE}
+library(rats)
+```
+
+```{r, eval=FALSE}
+library(rats)
+```
+
+
 Set up an example.
 
 ```{r}
-library(rats)
-
 # Simulate some data.
 simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
 # For convenience let's assign the contents of the list to separate variables.

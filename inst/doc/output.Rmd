@@ -22,11 +22,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ***
 
+```{r, include=FALSE}
+library(rats)
+```
+
+```{r, eval=FALSE}
+library(rats)
+```
+
+
 Set up an example.
 
 ```{r}
-library(rats)
-
 # Simulate some data.
 simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
 # For convenience let's assign the contents of the list to separate variables.
@@ -65,9 +72,9 @@ The `dtu_summary()` function lists the total number of genes and transcripts for
 print( dtu_summary(mydtu) )
 ```
 
-Notice that **three types of results are given for genes**. That's because RATs uses *two* separate methods of identifying DTU:
-The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually
-and then aggregates the isoform results to form a gene-level result. Therefore, as of `v.0.4.2`, `dtu_summury()`
+RATs uses *two* separate methods of identifying DTU: The gene-level test works on the isoforms of each gene as a set, 
+whereas the transcript-level test works on each isoform individually
+and then aggregates the isoform results to form a gene-level result. Therefore, as of v0.4.2, `dtu_summury()`
 will display the DTU genes according to either method as well as the intersection of the two.
 
 The `get_dtu_ids()` function lists the actual identifiers per category, instead of the numbers in each category.
@@ -97,7 +104,7 @@ ids <- get_switch_ids(mydtu)
 print( ids )
 ```
 
-Again, three versions of the gene results are shown, covering the respective DTU methods in RATs.
+Again, three versions of the results are shown, covering the respective DTU methods in RATs.
 `MIX6` is demonstrating a switch in both primary and tertiary isoforms.
 
 ## Summary of DTU plurality

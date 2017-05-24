@@ -1,9 +1,13 @@
 ## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-## ------------------------------------------------------------------------
+## ---- include=FALSE------------------------------------------------------
 library(rats)
 
+## ---- eval=FALSE---------------------------------------------------------
+#  library(rats)
+
+## ------------------------------------------------------------------------
 # Simulate some data.
 simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
 # For convenience let's assign the contents of the list to separate variables.

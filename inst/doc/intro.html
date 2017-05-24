@@ -249,16 +249,14 @@ div.tocify {
 <ul>
 <li>Packages needed only for importing directly from Salmon/Kallisto output (optional) - Available through Bioconductor:</li>
 </ul>
-<pre class="r"><code># Devtools (available on CRAN), needed by the other two.
+<pre class="r"><code># Devtools (available on both CRAN and Bioconductor), needed by wasabi apparently?
 install.packages(&quot;devtools&quot;, dependencies=TRUE)
 
-# Sleuth
 source(&quot;http://bioconductor.org/biocLite.R&quot;)
-biocLite(&quot;rhdf5&quot;)
-devtools::install_github(&quot;pachterlab/sleuth&quot;)
-
-# Wasabi
-biocLite(&quot;COMBINE-lab/wasabi&quot;)</code></pre>
+# Wasabi converter from Salmon/Sailfish to Kallisto.
+biocLite(&quot;COMBINE-lab/wasabi&quot;)
+#Kallisto parser
+biocLite(&quot;rhdf5&quot;)</code></pre>
 <ul>
 <li>Package needed only for interactive visualisation features (optional) - Available on CRAN:</li>
 </ul>
@@ -291,7 +289,7 @@ biocLite(&quot;COMBINE-lab/wasabi&quot;)</code></pre>
 <h1>Use RATs</h1>
 <p>RATs uses, as input, tables of transcript abundances with or without quantification bootstraps. For convenience, RATs can also extract the transcript abundances from a Sleuth object. The latter option is shown below. For more details and settings, consult the <em>Input &amp; Settings</em> vignette.</p>
 <pre class="r"><code># 1. Load into R session.
-library{rats}
+library(rats)
 
 # 2. Specify transcript grouping:
 my_identifiers_table &lt;- annot2ids(&quot;my_annotation.gtf&quot;)
@@ -304,7 +302,7 @@ mydtu &lt;- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tabl
                   boot_data_B= my_list_data_tables_A)
 # 3c. Call DTU on generic abundance estimates:
 mydtu &lt;- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
-                  count_data_B= my_data_table_B, qboots= FALSE)
+                  count_data_B= my_data_table_B, qboot= FALSE)
 
 # 4. Plot significance VS effect size:
 plot_overview(mydtu)

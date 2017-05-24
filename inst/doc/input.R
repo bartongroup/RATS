@@ -1,8 +1,11 @@
 ## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-## ------------------------------------------------------------------------
+## ---- include=FALSE------------------------------------------------------
 library(rats)
+
+## ---- eval=FALSE---------------------------------------------------------
+#  library(rats)
 
 ## ---- echo=FALSE---------------------------------------------------------
 # Show the first rows of the table corresponding to one sample, from simulated data.

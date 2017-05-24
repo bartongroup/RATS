@@ -1,39 +1,37 @@
 ## ----setup, include=FALSE------------------------------------------------
-knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
+knitr::opts_chunk$set(echo = TRUE)
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  install.packages("ggplot2", dependencies=TRUE)
 
-## ------------------------------------------------------------------------
-#  # Devtools (available on CRAN), needed by the other two.
+## ---- eval= FALSE--------------------------------------------------------
+#  # Devtools (available on both CRAN and Bioconductor), needed by wasabi apparently?
 #  install.packages("devtools", dependencies=TRUE)
 #  
-#  # Sleuth
 #  source("http://bioconductor.org/biocLite.R")
-#  biocLite("rhdf5")
-#  devtools::install_github("pachterlab/sleuth")
-#  
-#  # Wasabi
+#  # Wasabi converter from Salmon/Sailfish to Kallisto.
 #  biocLite("COMBINE-lab/wasabi")
+#  #Kallisto parser
+#  biocLite("rhdf5")
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  install.packages("shiny", dependencies=TRUE)
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  devtools::install_github("bartongroup/rats", ref="master")
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  devtools::install_github("bartongroup/rats", ref="development")
 
-## ------------------------------------------------------------------------
+## ---- eval= FALSE--------------------------------------------------------
 #  # 1. Load into R session.
-#  library{rats}
+#  library(rats)
 #  
 #  # 2. Specify transcript grouping:
 #  my_identifiers_table <- annot2ids("my_annotation.gtf")
@@ -46,7 +44,7 @@ knitr::opts_chunk$set(echo = TRUE, eval=FALSE)
 #                    boot_data_B= my_list_data_tables_A)
 #  # 3c. Call DTU on generic abundance estimates:
 #  mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A,
-#                    count_data_B= my_data_table_B, qboots= FALSE)
+#                    count_data_B= my_data_table_B, qboot= FALSE)
 #  
 #  # 4. Plot significance VS effect size:
 #  plot_overview(mydtu)
