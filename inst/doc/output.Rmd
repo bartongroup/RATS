@@ -36,7 +36,7 @@ myannot <- simdat$annot
 # Call DTU
 mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", 
                   name_B= "patients", varname= "condition", verbose= FALSE, 
-                  dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
+                  dprop_thresh=0.1, qboot=TRUE, rboot=TRUE,
                   description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 ```
 
@@ -113,8 +113,7 @@ ids <- get_plurality_ids(mydtu)
 print( ids )
 ```
 
-The categories are named by the number of isoforms affected. There is one gene (`CC`) that has `2` isoforms affected
-and one gene (`MIX6`) that has `3` isoforms affected.
+The categories are named by the number of isoforms affected. There is one gene (`MIX6`) that has `3` isoforms affected.
 
 ***
 
@@ -284,7 +283,7 @@ print( head(mydtu$Abundances[[1]]) )
 # Contact information
 
 The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
-by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
+by Dr. Kimon Froussios, Dr. Kira Mour??o and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
