@@ -15,7 +15,7 @@
 #' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.  (Default "Condition-A")
 #' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.  (Default "Condition-B")
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
-#' @param COUNTS_COL For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
+#' @param COUNTS_COL For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"tpm"})
 #' @param BS_TARGET_COL For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})
 #' @param count_data_A A data.table of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
 #' @param count_data_B A data.table of estimated counts for condition B. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.
@@ -44,7 +44,7 @@
 #' @import matrixStats
 #' @export
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
-                     slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
+                     slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "tpm", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH",
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=FALSE, rrep_thresh= 0.85, rrep_as_crit= FALSE,
@@ -118,8 +118,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   	samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
   	# Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
     # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.
-    boot_data_A <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, TARGET_COL, PARENT_COL, threads )
-    boot_data_B <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, TARGET_COL, PARENT_COL, threads )
+    boot_data_A <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, "target_id", "parent_id", threads )
+    boot_data_B <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, "target_id", "parent_id", threads )
   } else if (steps == 2) {    # From generic bootstrapped data
     # Just re-order rows.
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })

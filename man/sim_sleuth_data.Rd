@@ -4,7 +4,7 @@
 \alias{sim_sleuth_data}
 \title{Generate an artificial minimal sleuth-like structure, for code-testing or examples.}
 \usage{
-sim_sleuth_data(varname = "condition", COUNTS_COL = "est_counts",
+sim_sleuth_data(varname = "condition", COUNTS_COL = "tpm",
   TARGET_COL = "target_id", PARENT_COL = "parent_id",
   BS_TARGET_COL = "target_id", cnames = c("A", "B"),
   errannot_inconsistent = FALSE, cv_dt = FALSE)

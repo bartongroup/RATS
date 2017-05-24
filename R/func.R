@@ -244,7 +244,7 @@ group_samples <- function(covariates) {
 #' @param slo A sleuth object.
 #' @param annot A data.frame matching transcript identfier to gene identifiers.
 #' @param samples A numeric vector of samples to extract counts for.
-#' @param COUNTS_COL The name of the column with the counts. (Default "est_counts")
+#' @param COUNTS_COL The name of the column with the counts. (Default "tpm")
 #' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
@@ -253,14 +253,14 @@ group_samples <- function(covariates) {
 #'
 #' NA replaced with 0.
 #'
-#' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
-#' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
+#' Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
+#' Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
 #' @import parallel
 #' @import data.table
 #' @export
 #'
-denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="est_counts", BS_TARGET_COL="target_id", 
+denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id", 
                                 TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
   # Ensure data.table complies.
   # if (packageVersion("data.table") >= "1.9.8")
@@ -268,11 +268,7 @@ denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="est_counts", BS
   
   # Could just always use tidy_annot(), but that duplicates the annotation without reason. 
   # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
-  if (!is.data.table(annot) || key(annot) != c("parent_id", "target_id")) {
-    tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)[, target_id]
-  } else {
-    tx <- annot[, target_id]
-  }
+  tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
   
   mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
@@ -283,7 +279,7 @@ denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="est_counts", BS
     # Replace any NAs with 0. Happens when annotation different from that used for DTE.
     dt[is.na(dt)] <- 0
     # Add transcript ID.
-    dt[, "target_id" := tx]
+    dt[, target_id := tx]
     nn <- names(dt)
     ll <- length(nn)
     # Return reordered so that IDs are in first column.
@@ -523,7 +519,7 @@ g.test.2 <- function(obsx, obsy) {
 #' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
-#' @return A data.table with genes under \code{parent_id} and transcripts under \code{target_id}. Rows ordered first by gene and then by transcript.
+#' @return A data.table with genes under \code{parent_id} and transcripts under \code{target_id}, regardless of what the input annotation named them. Rows ordered first by gene and then by transcript.
 #'
 #' Extract the relevant columns as a \code{data.table} and order the rows by gene. This creates a fast
 #' look-up structure that is consistent throughout RATs.
@@ -532,7 +528,7 @@ g.test.2 <- function(obsx, obsy) {
 #' @export
 #
 tidy_annot <- function(annot, TARGET_COL="target_id", PARENT_COL="parent_id") {
-  tx_filter <- data.table(target_id= annot[, TARGET_COL], parent_id= annot[, PARENT_COL])
+  tx_filter <- data.table(target_id= annot[[TARGET_COL]], parent_id= annot[[PARENT_COL]])
   with( tx_filter,
         setkey(tx_filter, parent_id, target_id) )
   

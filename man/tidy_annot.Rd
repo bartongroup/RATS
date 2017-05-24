@@ -14,7 +14,7 @@ tidy_annot(annot, TARGET_COL = "target_id", PARENT_COL = "parent_id")
 \item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
 }
 \value{
-A data.table with genes under \code{parent_id} and transcripts under \code{target_id}. Rows ordered first by gene and then by transcript.
+A data.table with genes under \code{parent_id} and transcripts under \code{target_id}, regardless of what the input annotation named them. Rows ordered first by gene and then by transcript.
 
 Extract the relevant columns as a \code{data.table} and order the rows by gene. This creates a fast
 look-up structure that is consistent throughout RATs.

@@ -21,7 +21,7 @@
 #' @import data.table
 #' @export
 #' 
-sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET_COL="target_id" , 
+sim_sleuth_data <- function(varname="condition", COUNTS_COL="tpm", TARGET_COL="target_id" , 
                             PARENT_COL="parent_id", BS_TARGET_COL="target_id", cnames=c("A","B"), 
                             errannot_inconsistent=FALSE, cv_dt=FALSE)
 {
@@ -108,8 +108,8 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
 sim_boot_data <- function(cnames=c("A", "B")) {
   sim <- sim_sleuth_data(cnames=cnames)
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "tpm", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "tpm", "target_id")
   return(list('annot'= sim$annot, 'boots_A'= data_A, 'boots_B'= data_B))
 }
 
@@ -127,8 +127,8 @@ sim_boot_data <- function(cnames=c("A", "B")) {
 sim_count_data <- function(cnames=c("A","B")) {
   sim <- sim_sleuth_data(cnames=cnames)
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "tpm", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "tpm", "target_id")
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[1]]
@@ -174,11 +174,11 @@ countrange_sim <- function(proportions= seq(0, 1, 0.01),
   # condition A
   sl$kal[[1]] <- list()
   sl$kal[[1]]["bootstrap"] <- list()
-  sl$kal[[1]]$bootstrap[[1]] <- data.frame("target_id"=grd$target_id, "est_counts"=grd$propA * grd$mag)
+  sl$kal[[1]]$bootstrap[[1]] <- data.frame("target_id"=grd$target_id, "tpm"=grd$propA * grd$mag)
   # condition B
   sl$kal[[2]] <- list()
   sl$kal[[2]]["bootstrap"] <- list()
-  sl$kal[[2]]$bootstrap[[1]] <- data.frame("target_id"=grd$target_id, "est_counts"=grd$propB * grd$mag)
+  sl$kal[[2]]$bootstrap[[1]] <- data.frame("target_id"=grd$target_id, "tpm"=grd$propB * grd$mag)
   
   # Create annotation:
   anno <- data.frame("target_id"=grd$target_id, "parent_id"=grd$parent_id)

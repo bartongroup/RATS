@@ -4,7 +4,7 @@
 \alias{denest_sleuth_boots}
 \title{Extract bootstrap counts into a less nested structure.}
 \usage{
-denest_sleuth_boots(slo, annot, samples, COUNTS_COL = "est_counts",
+denest_sleuth_boots(slo, annot, samples, COUNTS_COL = "tpm",
   BS_TARGET_COL = "target_id", TARGET_COL = "target_id",
   PARENT_COL = "parent_id", threads = 1)
 }
@@ -15,7 +15,7 @@ denest_sleuth_boots(slo, annot, samples, COUNTS_COL = "est_counts",
 
 \item{samples}{A numeric vector of samples to extract counts for.}
 
-\item{COUNTS_COL}{The name of the column with the counts. (Default "est_counts")}
+\item{COUNTS_COL}{The name of the column with the counts. (Default "tpm")}
 
 \item{BS_TARGET_COL}{The name of the column with the transcript IDs. (Default "target_id")}
 
@@ -30,8 +30,8 @@ A list of data.tables, one per sample, containing all the bootstrap counts of th
 
 NA replaced with 0.
 
-Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
-Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
+Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
+Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 }
 \description{
 Extract bootstrap counts into a less nested structure.

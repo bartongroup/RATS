@@ -269,6 +269,11 @@ myannot &lt;- annot2ids(&quot;my_annotation_file.gtf&quot;)</code></pre>
 <p>To bypass the complexity of running third-party tools in this tutorial, we will instead use <strong>emulated data</strong>. RATs comes with data emulators, intended to be used for testing the code. However, they are also convenient to use for showcasing how RATs works. If you happen to have real data available, you can use that instead if you wish.</p>
 <p>By default, RATs reports on its progress and produces a summary report. The progress messages and summary can be suppressed by adding the <code>verbose = FALSE</code> parameter to the call. To prevent cluttering this tutorial with verbose output, we will use this option in all the examples.</p>
 <p>If you leave <code>verbose = TRUE</code> when trying out the examples below using the emulated data, you will get <strong>warnings</strong> about the number of bootstraps. The warning is triggered because the emulated dataset used in the examples immitates only the structure of real data, not the actual volume of it, and as such contains too few bootstrap iterations.</p>
+<div id="tpms-vs.read-counts-vs." class="section level3">
+<h3>TPMs vs. read counts vs. … ?</h3>
+<p>RATs will give you results regardless of what type of abundances you give it. It is <em>your responisbility</em> to decide on the appropriate abundance type <em>and</em> adjust the parameters and thresholds to match the properties of the abundances.</p>
+<p>Our recommendation is to use transcript counts rather than read counts. Read counts are influenced by the length of the transcripts, which affects the isoform abundance profile and thus the DTU. TPMs are normalised transcript counts and in principle should work, but be warned that the DTU calls are likely to be conservative as the TPM numbers are generallly small. If you have an idea on how to extrapolate the number of transcript copies in a sample from the TPMs and/or read counts, those would be ideal.</p>
+</div>
 <div id="from-abundance-estimates-without-bootstraps" class="section level3">
 <h3>from abundance estimates, without bootstraps</h3>
 <p>This is the simplest usage case, provided only for completeness. We recommend using bootstrapped data whenever possible, for reasons that will be discussed in the relevant section below.</p>
@@ -375,12 +380,12 @@ mydtu &lt;- call_DTU(annot= myannot, slo= myslo, name_A= &quot;controls&quot;, n
 samples_by_covariate &lt;- group_samples(myslo$sample_to_covariates)
 
 # There are two covariates in the simulated data:
-print( names(samples_by_covariate) )</code></pre>
-<pre><code>## [1] &quot;condition&quot; &quot;batch&quot;</code></pre>
-<pre class="r"><code># Covariate &quot;condition&quot; in our simulated data has two values:
-print( names( samples_by_covariate$condition ) )</code></pre>
-<pre><code>## [1] &quot;controls&quot; &quot;patients&quot;</code></pre>
-<pre class="r"><code># 2. Extract the bootstrapped abundance tables for each of the two conditions:
+print( names(samples_by_covariate) )
+
+# Covariate &quot;condition&quot; in our simulated data has two values:
+print( names( samples_by_covariate$condition ) )
+
+# 2. Extract the bootstrapped abundance tables for each of the two conditions:
 condA_boots &lt;- denest_sleuth_boots(myslo, myannot, 
                                    samples_by_covariate$condition[[&quot;controls&quot;]])
 condB_boots &lt;- denest_sleuth_boots(myslo, myannot, 
@@ -412,9 +417,7 @@ mydtu &lt;- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= cond
 </div>
 <div id="with-salmonkallisto-output" class="section level3">
 <h3>with Salmon/Kallisto output</h3>
-<p>The method we recommend is to to convert <a href="https://combine-lab.github.io/salmon/">Salmon</a> output to <a href="https://pachterlab.github.io/kallisto/">Kallisto</a> format using <a href="https://github.com/COMBINE-lab/wasabi">wasabi</a> <code>prepare_fish_for_sleuth()</code>, load them into R with <a href="http://pachterlab.github.io/sleuth/">Sleuth</a> <code>sleuth_prep()</code>. From there either run RATs with the Sleuth object, or use the memory-saving extraction process described in the previous section.</p>
-<p>The reason for this round-about way is that (a) it covers all the formats and (b) importing via Sleuth creates estimated transcript counts, which is the type of abundance that should be used with RATs. Raw read counts are not suitable, as they are not normalised for sequence and length biases and sequencing depth. TPMs are also not suitable because the values are too small to work with a counts-based distribution.</p>
-<p>We do recognise that such procedure is several extra steps and that it can be scripted. So RATs provides a wrapper that does those things for you. The catch is that you will have to repeat the process manually if you want to call DTE with Sleuth.</p>
+<p>RATs offers a method to convert <a href="https://combine-lab.github.io/salmon/">Salmon</a> output to <a href="https://pachterlab.github.io/kallisto/">Kallisto</a> format using <a href="https://github.com/COMBINE-lab/wasabi">wasabi</a> <code>prepare_fish_for_sleuth()</code>, and then import the bootstrapped read counts and convert them to TPMs.</p>
 <pre class="r"><code># 1. Collect your outputs into vectors. The end of each path should be a 
 # directory with a unique name/identifier for one sample.
 samples_A &lt;- c(&quot;your/path/SAMPLE1&quot;, &quot;your/path/SAMPLE4&quot;,&quot;your/path/SAMPLE5&quot;, ...)
@@ -438,9 +441,9 @@ mydtu &lt;- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B
 <h4>Mandatory arguments (fish4rodents):</h4>
 <ol style="list-style-type: decimal">
 <li><code>A_paths</code> and <code>B_paths</code> - Two vectors containing the paths to the quantification output directories, one vector for each condition. The last segments of each path should be a directory with a unique identifying name for a single sample.</li>
-<li><code>annot</code> - The annotation table you will use for calling DTU. This must be the same throughout RATs.</li>
+<li><code>annot</code> - The annotation table you used for quantification and that you will use for calling DTU.</li>
 </ol>
-<p>The return value of <code>fish4rodents</code> is a list with two items: <code>$boot_data_A</code> and <code>$boot_data_B</code>.</p>
+<p>The return value of <code>fish4rodents</code> is a list with two items: <code>$boot_data_A</code> and <code>$boot_data_B</code>. These two items are formatted for RATs’ generic bootstrapped input.</p>
 <hr />
 </div>
 </div>
@@ -555,9 +558,9 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <h2>Input field names</h2>
 <p>RATs needs to pull information from different fields of the data and annotation and it does so based on the names of the columns. You can override the default names of these fields.</p>
 <pre class="r"><code># Lets emulate some input with custom field names. 
-sim &lt;- sim_sleuth_data(varname=&quot;mouse&quot;, cnames=c(&quot;Splinter&quot;, &quot;Mickey&quot;), 
-                       COUNTS_COL=&quot;the-counts&quot;, TARGET_COL=&quot;transcript&quot;, 
-                       PARENT_COL=&quot;gene&quot;, BS_TARGET_COL = &quot;trscr&quot;)
+sim &lt;- sim_sleuth_data(varname = &quot;mouse&quot;, cnames = c(&quot;Splinter&quot;, &quot;Mickey&quot;), 
+                       COUNTS_COL = &quot;the-counts&quot;, TARGET_COL = &quot;transcript&quot;, 
+                       PARENT_COL = &quot;gene&quot;, BS_TARGET_COL = &quot;trscr&quot;)
 myslo &lt;- sim$slo
 myannot &lt;- sim$annot
 
@@ -588,7 +591,7 @@ print( head(sim$annot) )</code></pre>
 ## 6     1B1C.2 1B1C</code></pre>
 <div id="sleuth-field-names" class="section level3">
 <h3>Sleuth field names</h3>
-<p>Although we expect Sleuth field names to be constant with the exception of covariate names, RATs allows overriding the expected names:</p>
+<p>Although we expect Sleuth field names to be constant with the exception of covariate names, RATs allows overriding the expected names. One reason to do this would be to switch between using <code>tpm</code> and <code>est_count</code> abundances.</p>
 <pre class="r"><code># Call DTU on data with custom field names.
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;, name_B = &quot;Mickey&quot;, 
                   varname=&quot;mouse&quot;, COUNTS_COL=&quot;the-counts&quot;, BS_TARGET_COL=&quot;trscr&quot;, 
@@ -599,10 +602,10 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;Splinter&quot;
 #! shown in teh section below.</code></pre>
 <ol style="list-style-type: decimal">
 <li><code>varname</code> - The field name in <code>myslo$sample_to_covariates</code> where the desired condition names are listed. (Default “condition”)</li>
-<li><code>COUNTS_COL</code> - The name of the field holding the abundances in the bootstrap tables of Sleuth. (Default “est-counts”)</li>
+<li><code>COUNTS_COL</code> - The name of the field holding the abundances in the bootstrap tables of Sleuth. (Default “tpm”)</li>
 <li><code>BS_TARGET_COL</code> - The name of the field holding the transcript identifiers in the bootstrap tables of Sleuth. (Default “target_id”)</li>
 </ol>
-<p>The <code>COUNTS_COL</code> and <code>BS_TARGET_COL</code> parameters are also available for <code>denest_sleuth_boots()</code> and <code>fish4rodents()</code>.</p>
+<p>The <code>COUNTS_COL</code> and <code>BS_TARGET_COL</code> parameters are also available for <code>denest_sleuth_boots()</code>.</p>
 </div>
 <div id="annotation-field-names" class="section level3">
 <h3>Annotation field names</h3>
