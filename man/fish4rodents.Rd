@@ -5,7 +5,8 @@
 \title{Import abundances directly from salmon and kallisto output.}
 \usage{
 fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
-  PARENT_COL = "parent_id", half_cooked = FALSE, threads = 1)
+  PARENT_COL = "parent_id", half_cooked = FALSE, threads = 1L,
+  scaleto = 1e+06)
 }
 \arguments{
 \item{A_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate. The directory name should be a unique identifier for the sample.}
@@ -21,6 +22,8 @@ fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
 \item{half_cooked}{(logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)}
 
 \item{threads}{(integer) For parallel processing. (Default 1)}
+
+\item{scaleto}{(double) Scaling factor for normalised abundances. (Default 1000000 gives TPM)}
 }
 \value{
 A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
