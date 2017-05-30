@@ -312,7 +312,7 @@ alloc_out <- function(annot, full){
                        "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "rep_reprod_as_crit"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
-                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
+                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
                         "pval"=NA_real_, "pval_corr"=NA_real_,
                         "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_, 
                         "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,

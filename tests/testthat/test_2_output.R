@@ -20,13 +20,14 @@ test_that("The output structure is correct", {
                                    "rep_reprod_thresh", "rep_boot", "rep_bootnum", "rep_reprod_as_crit"))
   
   expect_true(is.data.frame(mydtu$Genes))
-  expect_equal(dim(mydtu$Genes)[2], 25)
+  expect_equal(dim(mydtu$Genes)[2], 26)
   expect_named(mydtu$Genes, c("parent_id", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "transc_DTU",
-                              "known_transc", "detect_transc", "elig_transc", "pval", "pval_corr", 
+                              "known_transc", "detect_transc", "elig_transc", "maxDprop", "pval", "pval_corr", 
                               "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_dtu_freq",
                               "rep_p_mean",  "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.numeric(mydtu$Genes[["known_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["detect_transc"]]))
+  expect_true(is.numeric(mydtu$Genes[["maxDprop"]]))
   expect_true(is.numeric(mydtu$Genes[["pval"]]))
   expect_true(is.numeric(mydtu$Genes[["pval_corr"]]))
   expect_true(is.numeric(mydtu$Genes[["quant_dtu_freq"]]))

@@ -28,10 +28,10 @@ test_that("The reporting structures are created correctly", {
   
   expect_true(is.data.frame(full$Genes))
   expect_true(is.data.frame(short$Genes))
-  expect_equal(dim(full$Genes)[2], 25)
+  expect_equal(dim(full$Genes)[2], 26)
   expect_equal(dim(short$Genes)[2], 8)
   expect_named(full$Genes, c("parent_id", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "transc_DTU",
-                             "known_transc", "detect_transc", "elig_transc", "pval", "pval_corr", 
+                             "known_transc", "detect_transc", "elig_transc", "maxDprop", "pval", "pval_corr", 
                              "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_dtu_freq",
                              "rep_p_mean",  "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_named(short$Genes, c("parent_id", "DTU", "elig_transc", "elig", "elig_fx", "pval", "pval_corr", "sig") )

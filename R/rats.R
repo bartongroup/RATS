@@ -398,6 +398,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   with(resobj, {
     # Cross-display the DTU calls.
+    Genes[, maxDprop := Transcripts[, maxabs(Dprop), by=parent_id][, V1] ]
     if (test_transc)
       Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
     if (test_genes)

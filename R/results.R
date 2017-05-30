@@ -23,19 +23,18 @@ dtu_summary <- function(dtuo) {
 #'@import data.table
 #'@export
 get_dtu_ids <- function(dtuo) {
-  myt <- copy(dtuo$Transcripts[, c("DTU", "parent_id", "target_id", "Dprop")])
+  myt <- copy(dtuo$Transcripts[, c("DTU", "target_id", "Dprop")])
   with(myt, {
     # Sort transcripts.
     myt[, adp := abs(Dprop)]
     setorder(myt, -adp, na.last=TRUE)
   })
   
-  pid <- unique(myt$parent_id)
-  myp <- copy(dtuo$Genes[, c("DTU", "transc_DTU", "parent_id")])
+  myp <- copy(dtuo$Genes[, c("DTU", "transc_DTU", "parent_id", "maxDprop")])
   with(myp, {
     # Sort genes to match.
-    myp[, po := match(parent_id, pid)]
-    setorder(myp, po)
+    myp[, adp := abs(maxDprop)]
+    setorder(myp, -adp, na.last=TRUE)
 
     # Extract.
     return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
@@ -583,8 +582,8 @@ plot_shiny_volcano <- function(dtuo) {
     # Instructions.
     fluidRow(
       column(width=12,
-             wellPanel("* Hover over points to see Transcript ID.
-                       * Click to get more info on the Transcript and to plot the relevant Gene.") )),
+             wellPanel("* Hover over points to see Gene ID.
+                       * Click to get more details.") )),
     # Hover and click info.
     fluidRow(
       column(width= 3,
@@ -605,10 +604,12 @@ plot_shiny_volcano <- function(dtuo) {
       )
 
       # Set up data
-      mydata <- NULL
-      if ("quant_dtu_freq" %in% names(dtuo$Transcripts)) {
-        if ("rep_dtu_freq" %in% names(dtuo$Transcripts)) {
-          mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), quant_dtu_freq, rep_dtu_freq, DTU)]
+      myt <- NULL
+      myp <- NULL
+      if ("quant_dtu_freq" %in% names(dtuo$Genes)) {
+        if ("rep_dtu_freq" %in% names(dtuo$Genes)) {
+          myp <- dtuo$Genes[, list(as.character(parent_id), -log10(pval_corr), quant_dtu_freq, rep_dtu_freq, DTU)]
+          myt <- dtuo$Transcripts[, list(as.character(parent_id), as.character(target_id), Dprop, -log10(pval_corr), quant_dtu_freq, rep_dtu_freq, DTU)]
         } else {
           mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), quant_dtu_freq, DTU)]
         }
@@ -617,12 +618,12 @@ plot_shiny_volcano <- function(dtuo) {
       } else {
         mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), DTU)]
       }
-      names(mydata)[1] <- "target_id"
+      names(mydata)[1] <- "parent_id"
       names(mydata)[4] <- "neglogP"
 
       # Plot
       output$plot1 <- renderPlot({
-        plot_overview(dtuo, "gene_volcano")
+        plot_overview(dtuo, "gvolcano")
       })
 
       # Assign mouse hover action to hoveri info output space.
