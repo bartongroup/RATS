@@ -383,7 +383,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     }
   })
 
-  # Store the replicate means adter re-adding the IDs.
+  # Store the replicate means after re-adding the IDs.
   with(count_data_A, {
     count_data_A[,  target_id := tx_filter$target_id]
     count_data_A[,  parent_id := tx_filter$parent_id]
@@ -399,7 +399,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   with(resobj, {
     # Cross-display the DTU calls.
     if (test_transc)
-      Genes[, transc_DTU := Transcripts[, any(DTU, na.rm=TRUE), by = parent_id][, V1] ]
+      Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
 

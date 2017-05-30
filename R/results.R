@@ -23,18 +23,20 @@ dtu_summary <- function(dtuo) {
 #'@import data.table
 #'@export
 get_dtu_ids <- function(dtuo) {
-  # Sort transcripts.
   myt <- copy(dtuo$Transcripts[, c("DTU", "parent_id", "target_id", "Dprop")])
   with(myt, {
+    # Sort transcripts.
     myt[, adp := abs(Dprop)]
     setorder(myt, -adp, na.last=TRUE)
-    # Sort genes.
   })
+  
   pid <- unique(myt$parent_id)
-  po <- match(dtuo$Genes$parent_id, pid)
-  myp <- copy(dtuo$Genes[order(po), ])
-
+  myp <- copy(dtuo$Genes[, c("DTU", "transc_DTU", "parent_id")])
   with(myp, {
+    # Sort genes to match.
+    myp[, po := match(parent_id, pid)]
+    setorder(myp, po)
+
     # Extract.
     return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
                "non-DTU genes (gene test)" = as.vector( myp[DTU==FALSE, parent_id] ),
