@@ -129,6 +129,6 @@ the support forum before posting a new issue, in case your question is already a
 
 Enjoy!
 
-![](./vignettes/fig/rats.png)
+![](./vignettes/figs/rats.png)
 
 
