@@ -90,7 +90,7 @@ which you can see by scrolling back through the installation output to look for 
 
 ### Installation
 
-1. Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
+Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
 Download the latest release and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
@@ -99,8 +99,10 @@ The latest release can also be directly installed from github, using the `devtoo
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
-2. For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
+For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
+
 `devtools::install_github("bartongroup/rats", ref="development")`
+
 Developmental versions are works in progress and will not be archived in snapshots. They are also likely to contain new bugs and
 may at times not work correctly or at all. For reproducible/publishable analyses, **always use a release version**, NOT a developmental version.
 
