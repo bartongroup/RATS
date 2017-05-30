@@ -81,8 +81,8 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     with(dt, setkey(dt, V1) )
     names(dt)[1] <- TARGET_COL
     # Order transcripts to match annotation.
-    ord <- match(annot$target_id, dt$target_id)
-    return (dt[ord, ])
+    dt <- merge(annot[, .(target_id)], dt, by=TARGET_COL, all=TRUE)
+    return (dt)
   }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
   boots_B <- mclapply(B_paths, function(x) {
     ids <- as.data.table( h5read(file.path(x, "abundance.h5"), "/aux/ids") )
@@ -95,10 +95,10 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     }) )
     dt <- as.data.table( cbind(ids, tpm) )
     with(dt, setkey(dt, V1) )
-    names(dt)[1] <- "target_id"
+    names(dt)[1] <- TARGET_COL
     # Order transcripts to match annotation.
-    ord <- match(annot$target_id, dt$target_id)
-    return (dt[ord, ])
+    dt <- merge(annot[, .(target_id)], dt, by=TARGET_COL, all=TRUE)
+    return (dt)
   }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
 
   return(list("boot_data_A"= boots_A, "boot_data_B"= boots_B))
