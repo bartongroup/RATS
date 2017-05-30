@@ -385,49 +385,37 @@ plot_overview <- function(dtuo, type="volcano") {
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
                   ggtitle("Effect size VS significance (transcript level)") +
-                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
-                       x= "Isoform propotion difference",
+                  labs(x= "Isoform propotion difference",
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
     ### GENE VOLCANO
     } else if (any(type == c("gene_volcano", "gvolcano"))) {
-      tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
-      tmp <- with(tmp, data.table(aggregate(Dprop, by=list(parent_id), FUN = maxabs)) )
-      # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
-      setkey(tmp, Group.1)
-      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
-      tmp[, nlp := Genes[match(tmp$Group.1, Genes[, parent_id]), -log10(Genes$pval_corr)] ]
-      # ok, plotting time
+      mydata = Genes[, .(parent_id, maxDprop, -log10(pval_corr), DTU)]
+      names(mydata)[3] <- "neglogP"
       result <- ggplot() +
-                  geom_point(aes(x=unlist(tmp[dtu==FALSE, x]), y=unlist(tmp[dtu==FALSE, nlp]), colour=unlist(tmp[dtu==FALSE, dtu])), alpha = 0.3, shape=20) +
-                  geom_point(aes(x=unlist(tmp[dtu==TRUE, x]), y=unlist(tmp[dtu==TRUE, nlp]), colour=unlist(tmp[dtu==TRUE, dtu])), alpha = 0.3, shape=20) +
+                  geom_point(aes(x=mydata[DTU==FALSE, maxDprop], y=mydata[DTU==FALSE,neglogP], colour=mydata[DTU==FALSE, DTU]), alpha = 0.3, shape=20) +
+                  geom_point(aes(x=mydata[DTU==TRUE, maxDprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.3, shape=20) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
                   ggtitle("Effect size VS significance (gene level)") +
-                  labs(# x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
-                       x = "Largest isoform proportion difference per gene",
+                  labs(x= "Largest difference in isoform propotion",
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
     ### GENE VOLCANO 2
     } else if (any(type == c("gtvolcano"))) {
-      tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
-      tmp <- with(tmp, data.table(aggregate(Dprop, by=list(parent_id), FUN = maxabs)) )
-      # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
-      setkey(tmp, Group.1)
-      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$transc_DTU] ]
-      tmp[, nlp := Genes[match(tmp$Group.1, Genes[, parent_id]), -log10(Genes$pval_corr)] ]
-      # ok, plotting time
+      mydata = Genes[, .(parent_id, maxDprop, -log10(pval_corr), transc_DTU)]
+      names(mydata)[3] <- "neglogP"
       result <- ggplot() +
-                  geom_point(aes(x=unlist(tmp[dtu==FALSE, x]), y=unlist(tmp[dtu==FALSE, nlp]), colour=unlist(tmp[dtu==FALSE, dtu])), alpha = 0.3, shape=20) +
-                  geom_point(aes(x=unlist(tmp[dtu==TRUE, x]), y=unlist(tmp[dtu==TRUE, nlp]), colour=unlist(tmp[dtu==TRUE, dtu])), alpha = 0.3, shape=20) +
+                  geom_point(aes(x=mydata[transc_DTU==FALSE, maxDprop], y=mydata[transc_DTU==FALSE,neglogP], colour=mydata[transc_DTU==FALSE, transc_DTU]), alpha = 0.3, shape=20) +
+                  geom_point(aes(x=mydata[transc_DTU==TRUE, maxDprop], y=mydata[transc_DTU==TRUE,neglogP], colour=mydata[transc_DTU==TRUE, transc_DTU]), alpha = 0.3, shape=20) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
-                  ggtitle("Largest isoform proportion change VS transcript-level significance") +
-                  labs(x = paste("Prop in ", Parameters$cond_B, " (-) Prop in ", Parameters$cond_A, sep=""),
+                  ggtitle("Effect size VS significance (transcript level)") +
+                  labs(x= "Largest difference in isoform propotion",
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
@@ -459,14 +447,9 @@ plot_overview <- function(dtuo, type="volcano") {
                            breaks=c(100, 500, 1000, pretty(c(0, maxy), n=4)))
     ### MAXDPROP
     } else if (type == "maxdprop") {
-      tmp <- copy(Transcripts[, .(parent_id, Dprop)])  # I don't want the intermediate calculations to modify the dtu object.
-      tmp <- with(tmp, data.table(aggregate(Dprop, by=list(parent_id), FUN = maxabs)) )
-      # Also want coloured by dtu, so I need to retrieve that into a vector that matches tmp.
-      setkey(tmp, Group.1)
-      tmp[, dtu := Genes[match(tmp$Group.1, Genes[, parent_id]), Genes$DTU] ]
-      # ok, plotting time
-      result <- ggplot(data = na.omit(tmp), aes(x=x, fill=dtu)) +
-                  geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
+      mydata = Genes[, .(parent_id, maxDprop, DTU)]
+      result <- ggplot(data = na.omit(mydata), aes(x=maxDprop, fill=DTU)) +
+                  geom_histogram(binwidth = 0.02, position="identity", alpha = 0.4) +
                   geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
                   ggtitle("Effect size (gene level)") +
