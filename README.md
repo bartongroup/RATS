@@ -101,8 +101,8 @@ The latest release can also be directly installed from github, using the `devtoo
 
 2. For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
 `devtools::install_github("bartongroup/rats", ref="development")`
-Developmental versions are works in progress and will not be archived in snapshots. For reproducible/publishable analyses, 
-**always use a release version**, NOT a developmental version.
+Developmental versions are works in progress and will not be archived in snapshots. They are also likely to contain new bugs and
+may at times not work correctly or at all. For reproducible/publishable analyses, **always use a release version**, NOT a developmental version.
 
 
 ### Differential Transcript Usage
