@@ -74,7 +74,7 @@ source("http://bioconductor.org/biocLite.R")
 # Wasabi converter from Salmon/Sailfish to Kallisto.
 biocLite("COMBINE-lab/wasabi")
 #Kallisto parser
-biocLite("rhdf5")`
+biocLite("rhdf5")
 ```
 
 * Package needed only for interactive visualisation feature (optional)
