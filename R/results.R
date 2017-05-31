@@ -559,20 +559,24 @@ plot_shiny_volcano <- function(dtuo) {
     # Prepare space for plot display.
     fluidRow(
       column(width= 12,
-             plotOutput("plot1", height= 800,
+             plotOutput("plot1", height= 600,
                         hover= hoverOpts(id= "plot_hover"),
-                        click= clickOpts(id= "plot_click")) )),
-    # Instructions.
+                        click= clickOpts(id= "plot_click")) )
+    ),
+    # Hover info.
     fluidRow(
-      column(width=12,
-             wellPanel("* Hover over points to see Gene ID.
-                       * Click to get more details.") )),
-    # Hover and click info.
+      column(width= 12,
+             verbatimTextOutput("hover_info") )
+    ),
+    # Click info.
     fluidRow(
-      column(width= 3,
-             verbatimTextOutput("hover_info")),
-      column(width= 9,
-             verbatimTextOutput("click_info")) ),
+      column(width= 12,
+             verbatimTextOutput("gene_info") ) 
+    ),
+    fluidRow(
+      column(width= 12,
+             verbatimTextOutput("transc_info") ) 
+    ),
     fluidRow(
       column(width= 12,
              plotOutput("plot2", height= 600)) )
@@ -587,56 +591,54 @@ plot_shiny_volcano <- function(dtuo) {
       )
 
       # Set up data
-      myt <- NULL
-      myp <- NULL
-      if ("quant_dtu_freq" %in% names(dtuo$Genes)) {
-        if ("rep_dtu_freq" %in% names(dtuo$Genes)) {
-          myp <- dtuo$Genes[, list(as.character(parent_id), -log10(pval_corr), quant_dtu_freq, rep_dtu_freq, DTU)]
-          myt <- dtuo$Transcripts[, list(as.character(parent_id), as.character(target_id), Dprop, -log10(pval_corr), quant_dtu_freq, rep_dtu_freq, DTU)]
-        } else {
-          mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), quant_dtu_freq, DTU)]
-        }
-      } else if ("rep_dtu_freq" %in% names(dtuo$Transcripts)) {
-        mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), rep_dtu_freq, DTU)]
-      } else {
-        mydata <- dtuo$Transcripts[, list(as.character(target_id), parent_id, Dprop, -log10(pval_corr), DTU)]
-      }
-      names(mydata)[1] <- "parent_id"
-      names(mydata)[4] <- "neglogP"
+      myp <- dtuo$Genes[, list(as.character(parent_id), maxDprop, -log10(pval_corr))]
+      names(myp)[1] <- "parent_id"
+      names(myp)[3] <- "neglogP"
 
       # Plot
       output$plot1 <- renderPlot({
         plot_overview(dtuo, "gvolcano")
       })
 
-      # Assign mouse hover action to hoveri info output space.
+      # Assign mouse hover action to hover info output space.
       output$hover_info <- renderPrint({
-        cat("Hover info: \n")
+        cat("Mouse-hover info: \n")
         myhover <- input$plot_hover
-        points <- nearPoints(mydata, myhover, threshold= 5)
-        if(dim(points)[1] != 0)
-          noquote(points[, target_id])
+        points <- nearPoints(myp, myhover, xvar="maxDprop", yvar="neglogP", threshold= 5)
+        if(dim(points)[1] != 0) {
+          pid <- noquote(points[, parent_id])
+          dtuo$Genes[pid, .(parent_id, known_transc, elig_transc, maxDprop, pval_corr)]
+        }
       })
 
       # Assign mouse click action to click info output space.
-      output$click_info <- renderPrint({
-        cat("Click info: \n")
+      output$gene_info <- renderPrint({
+        cat("Gene info (left click): \n")
         myclick <- input$plot_click
-        points <- nearPoints(mydata, myclick, threshold= 5)
-        suppressWarnings({ points[, pval_corr := 10 ^ (0-neglogP)] })
-        if(dim(points)[1] != 0)
-          points[, .(target_id, parent_id, DTU, Dprop, pval_corr, quant_dtu_freq, rep_dtu_freq)]
+        points <- nearPoints(myp, myclick, xvar="maxDprop", yvar="neglogP", threshold= 5)
+        if(dim(points)[1] != 0) {
+          pid <- noquote(points[, parent_id])
+          dtuo$Genes[pid, ]
+        }
+      })
+      output$transc_info <- renderPrint({
+        cat("Transcript info (left click): \n")
+        myclick <- input$plot_click
+        points <- nearPoints(myp, myclick, xvar="maxDprop", yvar="neglogP", threshold= 5)
+        if(dim(points)[1] != 0) {
+          pid <- noquote(points[, parent_id])
+          dtuo$Transcripts[pid, ]
+        }
       })
 
       # Assign mouse click action to gene plot output space.
       output$plot2 <- renderPlot({
         myclick <- input$plot_click
-        points <- nearPoints(mydata, myclick, threshold= 5, addDist= TRUE)
+        points <- nearPoints(myp, myclick, xvar="maxDprop", yvar="neglogP", threshold= 5, addDist=TRUE)
         md <- which.min(points[, dist_])
-        tid <- points[md, target_id]
-        gid <- as.vector(dtuo$Transcripts[(target_id == tid), parent_id])
-        if(!is.na(gid[1]))
-          plot_gene(dtuo, gid)
+        pid <- points[md, parent_id]
+        if(!is.na(pid[1]))
+          plot_gene(dtuo, pid, style="byisoform")
       })
     }
 
