@@ -12,10 +12,10 @@ test_that("The output structure is correct", {
   expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "Abundances"))
   
   expect_type(mydtu$Parameters, "list")
-  expect_length(mydtu$Parameters, 23)
+  expect_length(mydtu$Parameters, 24)
   expect_named(mydtu$Parameters, c("description", "time", "rats_version", "R_version",
                                    "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
-                                   "tests", "p_thresh", "abund_thresh", "dprop_thresh",
+                                   "tests", "p_thresh", "abund_thresh", "dprop_thresh", "abund_scaling",
                                    "quant_reprod_thresh", "quant_boot", "quant_bootnum",
                                    "rep_reprod_thresh", "rep_boot", "rep_bootnum", "rep_reprod_as_crit"))
   

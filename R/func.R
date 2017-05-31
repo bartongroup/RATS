@@ -26,6 +26,7 @@
 #' @param rrep_thresh Confidence threshold.
 #' @param rrep_as_crit Whether to use rrep as a DTU criterion.
 #' @param threads Number of threads.
+#' @param scaling Abundance scaling factor.
 #'
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -41,7 +42,7 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL,
                             count_thresh, testmode, qboot, qbootnum, dprop_thresh,
                             count_data_A, count_data_B, boot_data_A, boot_data_B, qrep_thresh,
-                            threads, rboot, rrep_thresh, rrep_as_crit) {
+                            threads, rboot, rrep_thresh, rrep_as_crit, scaling) {
   warnmsg <- list()
 
   # Input format.
@@ -86,6 +87,8 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
   if (!is.logical(rrep_as_crit))
     return(list("error"=TRUE, "message"="Unrecognized value for rrep_as_crit! Must be TRUE/FALSE."))
+  if ((!is.numeric(scaling)) || scaling == 0)
+    return(list("error"=TRUE, "message"="Invalid scaling factor! Must be non-zero number."))
 
   # Sleuth
   if (!is.null(slo)) {
@@ -307,7 +310,7 @@ alloc_out <- function(annot, full){
                        "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_,
+                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=NA_real_,
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
                        "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "rep_reprod_as_crit"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
