@@ -282,7 +282,7 @@ denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET
     # Replace any NAs with 0. Happens when annotation different from that used for DTE.
     dt[is.na(dt)] <- 0
     # Add transcript ID.
-    dt[, target_id := tx]
+    with(dt, dt[, target_id := tx])
     nn <- names(dt)
     ll <- length(nn)
     # Return reordered so that IDs are in first column.

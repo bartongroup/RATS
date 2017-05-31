@@ -81,7 +81,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     with(dt, setkey(dt, V1) )
     names(dt)[1] <- TARGET_COL
     # Order transcripts to match annotation.
-    dt <- merge(annot[, .(target_id)], dt, by=TARGET_COL, all=TRUE)
+    dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
     return (dt)
   }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
   boots_B <- mclapply(B_paths, function(x) {
@@ -97,7 +97,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     with(dt, setkey(dt, V1) )
     names(dt)[1] <- TARGET_COL
     # Order transcripts to match annotation.
-    dt <- merge(annot[, .(target_id)], dt, by=TARGET_COL, all=TRUE)
+    dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
     return (dt)
   }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
 
