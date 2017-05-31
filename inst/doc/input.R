@@ -67,31 +67,6 @@ myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 #                    description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 
 ## ---- eval=FALSE---------------------------------------------------------
-#  # 1. Restructure sample_to_covariates as covariate to samples.
-#  samples_by_covariate <- group_samples(myslo$sample_to_covariates)
-#  
-#  # There are two covariates in the simulated data:
-#  print( names(samples_by_covariate) )
-#  
-#  # Covariate "condition" in our simulated data has two values:
-#  print( names( samples_by_covariate$condition ) )
-#  
-#  # 2. Extract the bootstrapped abundance tables for each of the two conditions:
-#  condA_boots <- denest_sleuth_boots(myslo, myannot,
-#                                     samples_by_covariate$condition[["controls"]])
-#  condB_boots <- denest_sleuth_boots(myslo, myannot,
-#                                     samples_by_covariate$condition[["patients"]])
-#  
-#  # 3. Remove the sleuth object from memory.
-#  # Make sure you have saved a copy of it to file before doing this!
-#  rm(myslo)
-#  
-#  # 4. Run RATs with the generic bootstrapped format:
-#  mydtu <- call_DTU(annot= myannot, boot_data_A= condA_boots, boot_data_B= condB_boots,
-#                    verbose= FALSE,  name_A= "controls", name_B= "patients", varname = "condition",
-#                    description="Comparison of two sets of bootstrapped counts for the tutorial, extracted from a simulated sleuth object. Simulated using built-in functionality of RATs.")
-
-## ---- eval=FALSE---------------------------------------------------------
 #  # 1. Collect your outputs into vectors. The end of each path should be a
 #  # directory with a unique name/identifier for one sample.
 #  samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", ...)
@@ -102,15 +77,13 @@ myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 #  
 #  # 2. Convert, import, and extract.
 #  # The annotation is needed to enforce consistent transcripts order throughout RATs.
-#  boots <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
+#  mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
 #  
-#  # 3. You might want to save `boots` to file, in case you want to re-run RATs on it
-#  # later with different parameters or in case you make a mistake, etc...
-#  
-#  # 4. Run RATs with the generic bootstrapped format:
-#  mydtu <- call_DTU(annot= myannot, boot_data_A= boots$boot_data_A, boot_data_B= boots$boot_data_B,
-#                    verbose= FALSE, name_A= "controls", name_B= "patients", varname = "condition",
-#                    description="Comparison of two sets of bootstrapped counts imported from the quantification output.")
+#  # 3. Run RATs with the generic bootstrapped format:
+#  mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A,
+#                    boot_data_B= mydata$boot_data_B, verbose= FALSE,
+#                    name_A= "controls", name_B= "patients",
+#                    varname = "condition", description="Comparison of two sets of bootstrapped counts imported from the quantification output.")
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Calling DTU with custom thresholds.
@@ -185,9 +158,15 @@ print( head(sim$annot) )
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Call DTU using annotation with custom field names.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey",
-#                    varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", verbose = FALSE)
+#                    varname="mouse", TARGET_COL="transcript", PARENT_COL="gene",
+#                    verbose = FALSE)
 #  
 #  #! In our example data here, the Sleuth fields have been modified as well,
 #  #! so this command will NOT run as it is shown. You will also need the parameters
 #  #! shown in the section above.
+
+## ----eval=FALSE----------------------------------------------------------
+#  # If your sample preps contain ~70 million transcripts and you are using TPM abundances
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", COUNTS_COL = "tpm", scaling = 70)
 
