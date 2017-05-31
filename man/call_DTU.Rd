@@ -6,13 +6,13 @@
 \usage{
 call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   slo = NULL, name_A = "Condition-A", name_B = "Condition-B",
-  varname = "condition", COUNTS_COL = "tpm", BS_TARGET_COL = "target_id",
-  count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL,
-  boot_data_B = NULL, p_thresh = 0.05, abund_thresh = 5,
-  dprop_thresh = 0.2, correction = "BH", scaling = 1, testmode = "both",
-  qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95, rboot = FALSE,
-  rrep_thresh = 0.85, rrep_as_crit = FALSE, description = NA_character_,
-  verbose = TRUE, threads = 1L, dbg = 0)
+  varname = "condition", COUNTS_COL = "est_counts",
+  BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
+  boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
+  abund_thresh = 5, dprop_thresh = 0.2, correction = "BH", scaling = 1,
+  testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
+  rboot = FALSE, rrep_thresh = 0.85, rrep_as_crit = FALSE,
+  description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
 \item{annot}{A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
@@ -29,7 +29,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).}
 
-\item{COUNTS_COL}{For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"tpm"})}
+\item{COUNTS_COL}{For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})}
 
 \item{BS_TARGET_COL}{For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})}
 

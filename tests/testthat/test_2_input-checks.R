@@ -13,8 +13,8 @@ test_that("The input checks work", {
   sim2 <- sim_sleuth_data(varname= "waffles", COUNTS_COL= "counts", TARGET_COL= "target" , PARENT_COL= "parent", 
                          BS_TARGET_COL= "id", cnames= c("AAAA","BBBB"))
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim1$slo, sim1$annot, c(1,3), "tpm", "target_id")
-  data_B <- denest_sleuth_boots(sim1$slo, sim1$annot, c(2,4), "tpm", "target_id")
+  data_A <- denest_sleuth_boots(sim1$slo, sim1$annot, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim1$slo, sim1$annot, c(2,4), "est_counts", "target_id")
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[1]]
