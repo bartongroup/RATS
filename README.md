@@ -70,11 +70,13 @@ install.packages("ggplot2", dependencies=TRUE)
 
 ```
 install.packages("devtools", dependencies=TRUE)
+
 source("http://bioconductor.org/biocLite.R")
+
 # Wasabi converter from Salmon/Sailfish to Kallisto.
 biocLite("COMBINE-lab/wasabi")
 
-# Kallisto parser
+# Kallisto parser.
 biocLite("rhdf5")
 ```
 
