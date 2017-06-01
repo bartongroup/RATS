@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Input and Settings'
 author: "Kimon Froussios"
-date: "14 MAY 2017"
+date: "31 MAY 2017"
 output:
   html_document:
     keep_md: yes

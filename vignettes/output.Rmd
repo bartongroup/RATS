@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Raw Output'
 author: "Kimon Froussios"
-date: "19 APR 2017"
+date: "01 JUN 2017"
 output:
   html_document:
     keep_md: yes
@@ -157,13 +157,14 @@ print( names(mydtu$Parameters) )
 12. `p_thresh` - (num) The value passed to the `p_thresh` parameter.
 13. `abund_thresh` - (num) The value passed to the `abund_thresh` parameter.
 14. `dprop_thresh` - (num) The value passed to the `dprop_thresh` parameter.
-15. `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter.
-16. `quant_boot` - (bool) The value passed to the `qboots` parameter.
-17. `quant_bootnum` - (int) The value passed to the `qbootnum` parameter.
-18. `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter.
-19. `rep_boots` - (bool) The value passed to the `rboot` parameter.
-20. `rep_bootnum` - (int) The number of replicate bootstrapping iterations (usually  M*N, where M and N are the number of samples in the two conditions).
-21. `rep_reprod_as_crit` - (bool) The value passed to the `rrep_as_crit` parameter.
+15. `abund_sclaing` - (num) The value passed to the `scaling` parameter.
+16. `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter.
+17. `quant_boot` - (bool) The value passed to the `qboots` parameter.
+18. `quant_bootnum` - (int) The value passed to the `qbootnum` parameter.
+19. `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter.
+20. `rep_boots` - (bool) The value passed to the `rboot` parameter.
+21. `rep_bootnum` - (int) The number of replicate bootstrapping iterations (usually  M*N, where M and N are the number of samples in the two conditions).
+22. `rep_reprod_as_crit` - (bool) The value passed to the `rrep_as_crit` parameter.
 
 **Note:** If bootstraps are disabled, the bootstrap-related fields may have `NA` values despite any values that were passed to their respective parameters.
 

@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Plots'
 author: "Kimon Froussios"
-date: "19 MAY 2017"
+date: "01 JUN 2017"
 output:
   html_document:
     keep_md: yes
@@ -113,7 +113,7 @@ So, instead, each one is accompanied by a static image of the plot created with 
 
 Possibly the most common plot in differential expression is the volcano plot, which plots the effect size against 
 the statistical significance. The thresholds are also shown, although the default significance threshold of 0.05
-is very small (hint: no lines are drawn for the axes).
+is very low (hint: no lines are drawn for the axes).
 
 ```{r, eval=FALSE}
 # Proportion change VS transcript-level significance. Each point is a transcript
@@ -148,26 +148,34 @@ the positive value is selected.
 Although fold-changes of transcript expression are not tied to DTU, if your input counts are suitably normalised between conditions,
 you can plot the traditional FC volcano and the relationship between FC and proportion change.
 
+```{r, eval=FALSE}
+# Proportion change VS transcript-level significance. Each point is a transcript
+plot_overview(mydtu, type="fcvolcano")
+
+# This can also be plotted for genes, by using the largest isoform effect size as proxy.
+plot_overview(mydtu, type="fcVSdprop")
+```
+
 ![Fold change VS significance](./figs/fcvolcano.jpg)
 ![Fold change VS proportion change](./figs/fcvsdprop.jpg)
 
 
 ## Interactive plots
 
-If you prefer picking points from a plot than sorting through tables, the volcano plot is also available through 
-a `shiny` app, that brings up the relevant abundance changes plot for any point in the volcano plot.
-
-1. By hovering over points on the volcano plot in the app, you can see the respective transcript identifier(s). 
-2. Clicking will pull up information on the effect size, significance and confidence of the point(s), as well as 
-the respective isoform abundance changes plot for the point nearest to the click.
+If you prefer picking points from a plot rather than sorting through tables, the volcano plot is also available through 
+an interactive `shiny` app, that pulls up the relevant `Gene` and `Transcript` results and the isoform abundance plot 
+for any volcano point you select.
 
 ```{r, eval=FALSE}
 # Start the interactive volcano plot.
 plot_shiny_volcano(mydtu)
 ```
 
+1. Hovering over a point (or cluster of points) will show the gene IDs and some summary info.
+2. Clicking on a point will display the all the available information calculated for the gene and its isoforms, as
+well as draw the isoform abundance plot for the gene.
 
-You will need to close down the app to return to your R terminal.
+When you finish exploring the volcano plot, close the popup window or stop the shiny runtime in order to return to your R terminal.
 
 
 # Plot customisation

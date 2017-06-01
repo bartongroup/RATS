@@ -46,6 +46,13 @@ plot_gene(mydtu, "MIX6", style="byisoform")
 #  plot_overview(mydtu, type="maxdprop")
 
 ## ---- eval=FALSE---------------------------------------------------------
+#  # Proportion change VS transcript-level significance. Each point is a transcript
+#  plot_overview(mydtu, type="fcvolcano")
+#  
+#  # This can also be plotted for genes, by using the largest isoform effect size as proxy.
+#  plot_overview(mydtu, type="fcVSdprop")
+
+## ---- eval=FALSE---------------------------------------------------------
 #  # Start the interactive volcano plot.
 #  plot_shiny_volcano(mydtu)
 
