@@ -7,7 +7,7 @@
 alloc_out(annot, full)
 }
 \arguments{
-\item{annot}{A dataframe with at least 2 columns: target_id and parent_id.}
+\item{annot}{Pre-processed by \code{tidy_annot()}.}
 
 \item{full}{Full-sized structure or core fields only. Either "full" or "short".}
 }

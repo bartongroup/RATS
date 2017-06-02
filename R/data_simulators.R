@@ -108,8 +108,8 @@ sim_sleuth_data <- function(varname="condition", COUNTS_COL="est_counts", TARGET
 sim_boot_data <- function(cnames=c("A", "B")) {
   sim <- sim_sleuth_data(cnames=cnames)
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
   return(list('annot'= sim$annot, 'boots_A'= data_A, 'boots_B'= data_B))
 }
 
@@ -127,8 +127,8 @@ sim_boot_data <- function(cnames=c("A", "B")) {
 sim_count_data <- function(cnames=c("A","B")) {
   sim <- sim_sleuth_data(cnames=cnames)
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[1]]
@@ -191,14 +191,14 @@ countrange_sim <- function(proportions= seq(0, 1, 0.01),
 
 
 #===============================================================================
-#' Combine simulatation details with DTU calls, in preparation for plotting.
+#' Combine simulation details with DTU calls, in preparation for plotting.
 #' 
 #' @param sim An object generated with countrange_sim(), containing the simulated data details with which the \code{dtu} object was calculated.
 #' @param dtuo The object with the DTU results corresponding to the \code{sim} object's data.
 #' @return dataframe
 #'
 #' @import data.table
-#' @export
+##' @export
 combine_sim_dtu <- function(sim, dtuo) {
   with(dtuo, {
     results <- data.table(Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu, pval_prop_min, dtu_prop)])
@@ -219,7 +219,7 @@ combine_sim_dtu <- function(sim, dtuo) {
 #' 
 #' @import ggplot2
 #' @import data.table
-#' @export
+##' @export
 plot_sim <- function(data, type = "AvBvM") {
   with(data, {
     if(type =="AvBvM"){

@@ -40,7 +40,7 @@ test_that("Bootstrapped counts are extracted correctly", {
   bst <- "id"
   cnt <- "counts"
   sim <- sim_sleuth_data(COUNTS_COL = cnt, BS_TARGET_COL = bst)
-  lr <- denest_sleuth_boots(sim$slo, sim$annot[[1]], samples, cnt, bst)
+  lr <- denest_sleuth_boots(sim$slo, sim$annot, samples, cnt, bst)
   
   for (i in 1:length(lr)) {
     # The transcripts supposed to be there are there.

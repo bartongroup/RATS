@@ -2,7 +2,7 @@
 % Please edit documentation in R/data_simulators.R
 \name{combine_sim_dtu}
 \alias{combine_sim_dtu}
-\title{Combine simulatation details with DTU calls, in preparation for plotting.}
+\title{Combine simulation details with DTU calls, in preparation for plotting.}
 \usage{
 combine_sim_dtu(sim, dtuo)
 }
@@ -15,5 +15,5 @@ combine_sim_dtu(sim, dtuo)
 dataframe
 }
 \description{
-Combine simulatation details with DTU calls, in preparation for plotting.
+Combine simulation details with DTU calls, in preparation for plotting.
 }

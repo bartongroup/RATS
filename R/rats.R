@@ -8,12 +8,12 @@
 #'  \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
 #' }
 #'
-#' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
-#' @param TARGET_COL The name of the column for the transcript identifiersthe \code{annot} object. (Default \code{"target_id"})
-#' @param PARENT_COL The name of the column for the gene identifiers in the \code{annot} object. (Default \code{"parent_id"})
+#' @param annot A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
 #' @param slo A Sleuth object.
-#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.
-#' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.
+#' @param name_A The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.  (Default "Condition-A")
+#' @param name_B The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.  (Default "Condition-B")
 #' @param varname The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).
 #' @param COUNTS_COL For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})
 #' @param BS_TARGET_COL For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})
@@ -22,9 +22,10 @@
 #' @param boot_data_A A list of data.tables, one per sample/replicate of condition A. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param boot_data_B A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.
 #' @param p_thresh The p-value threshold. (Default 0.05)
-#' @param abund_thresh Noise threshold. Minimum mean abundance, for transcripts to be eligible for testing. (Default 5)
+#' @param abund_thresh Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
 #' @param correction The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})
+#' @param scaling A scaling factor to be applied to the abundances, *prior* to any thresholding and testing. Useful for scaling TPM abundances to the actual number of transcripts in the sequencing sample, if you use TPMs and if you can infer that information from your sample preparation. Improper use of the scaling factor will artificially inflate/deflate the significances obtained. (Default 1)
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
 #' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
 #' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
@@ -46,7 +47,7 @@
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
-                     p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH",
+                     p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=FALSE, rrep_thresh= 0.85, rrep_as_crit= FALSE,
                      description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
@@ -61,7 +62,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   paramcheck <- parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL,
                                 correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, abund_thresh, testmode,
                                 qboot, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A, boot_data_B,
-                                qrep_thresh, threads, rboot, rrep_thresh, rrep_as_crit)
+                                qrep_thresh, threads, rboot, rrep_thresh, rrep_as_crit, scaling)
   if (paramcheck$error)
     stop(paramcheck$message)
   if (verbose)
@@ -72,7 +73,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       }
 
   threads <- as.integer(threads)  # Can't be decimal.
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
 
   if (qbootnum == 0 && qboot)   # Use smart default.
@@ -91,7 +93,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   if (steps == 1 || is.na(qbootnum))
     qboot <- FALSE  # No quantification bootstraps data was provided.
 
-  if (dbg == 1)
+  if (dbg == "prep")
     return(steps)
 
 
@@ -101,53 +103,70 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # Look-up from target_id to parent_id.
   if (verbose)
     message("Creating look-up structures...")
-  tx_filter <- data.table(target_id = annot[[TARGET_COL]], parent_id = annot[[PARENT_COL]])
-  with( tx_filter,
-        setkey(tx_filter, parent_id, target_id) )  # Fixates the order of genes and transcripts to be used throughout the rest of this package.
+  tx_filter <- tidy_annot(annot, TARGET_COL, PARENT_COL)
 
-  if (dbg == 2)
+  if (dbg == "indx")
     return(tx_filter)
 
 
   #---------- EXTRACT DATA
 
-
+  
+  if (verbose)
+    message("Preparing data...")
+  
   if (steps == 3) {   # From Sleuth
-    if (verbose)
-      message("Restructuring and aggregating bootstraps...")
-  	# Reverse look-up from replicates to covariates.
+    # Reverse look-up from replicates to covariates.
   	samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
   	# Re-order rows and collate booted counts in a dataframe per sample. Put dataframes in a list per condition.
     # Target_id is included but NOT used as key so as to ensure that the order keeps matching tx_filter.
-    boot_data_A <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, threads )
-    boot_data_B <- denest_sleuth_boots(slo, tx_filter$target_id, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, threads )
+    boot_data_A <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_A]], COUNTS_COL, BS_TARGET_COL, "target_id", "parent_id", threads )
+    boot_data_B <- denest_sleuth_boots(slo, tx_filter, samples_by_condition[[name_B]], COUNTS_COL, BS_TARGET_COL, "target_id", "parent_id", threads )
   } else if (steps == 2) {    # From generic bootstrapped data
     # Just re-order rows.
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
     boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
   }
-
-  if (dbg == 3)
+  
+  if (dbg == "bootin")
     return(list("bootA"=count_data_A, "bootB"=count_data_B))
 
-  # ID columns are removed so I don't have to constantly subset.
   if (steps > 1) {    # Either Sleuth or generic bootstraps.
+    # Remove ID columns so I don't have to always subset for math operations.
+    for (smpl in c(boot_data_A, boot_data_B)) {
+        smpl[, 1 := NULL]
+    }
+    
+    # Scale abundances before aggregating.
+    if (scaling != 1) {
+      if (verbose)
+        message("Applying scaling factor...")
+      boot_data_A <- mclapply(boot_data_A, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+      boot_data_B <- mclapply(boot_data_B, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+    }
+    
     # Calculate mean count across bootstraps.
-    count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) },
+    count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { return(rowMeans(b)) },
                                            mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
-    count_data_B <- as.data.table(mclapply(boot_data_B, function(b) { n <- names(b); rowMeans(b[, n[2:length(n)], with=FALSE]) },
+    count_data_B <- as.data.table(mclapply(boot_data_B, function(b) { return(rowMeans(b)) },
                                            mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
-    # (data.tables don't have access to column ranges by index, so I have to go roundabout via their names).
-    # (Also, the first column is the target_id, so I leave it out).
   } else {    # From generic unbootstrapped data.
     # Just re-order rows and crop out the transcript IDs.
     nn <- names(count_data_A)
     count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
     nn <- names(count_data_B)  # The number of columns may be different from A.
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
+    
+    # Scale abundances.
+    if (scaling != 1) {
+      if (verbose)
+        message("Applying scaling factor...")
+      count_data_A <- count_data_A * scaling
+      count_data_B <- count_data_B * scaling
+    }
   }
 
-  if (dbg == 4)
+  if (dbg == "data")
     return(list("countA"=count_data_A, "countB"=count_data_B))
 
 
@@ -159,7 +178,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     message("Calculating significances...")
   resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", abund_thresh, p_thresh, dprop_thresh, correction, threads)
 
-  if (dbg == 5)
+  if (dbg == "test")
     return(resobj)
 
   #-------- ADD INFO
@@ -172,10 +191,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
     Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns type double.
     Genes[(is.na(detect_transc)), detect_transc := 0]
-    Transcripts[, meanA :=  rowMeans(count_data_A) ]
-    Transcripts[, meanB :=  rowMeans(count_data_B) ]
-    Transcripts[, stdevA :=  rowSds(as.matrix(count_data_A)) ]
-    Transcripts[, stdevB :=  rowSds(as.matrix(count_data_B)) ]
+    Transcripts[, meanA := rowMeans(count_data_A) ]
+    Transcripts[, meanB := rowMeans(count_data_B) ]
+    Transcripts[, stdevA := rowSds(as.matrix(count_data_A)) ]
+    Transcripts[, stdevB := rowSds(as.matrix(count_data_B)) ]
+    Transcripts[, log2FC := log2(sumB / sumA)]
   })
 
   # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)
@@ -185,6 +205,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters["p_thresh"] <- p_thresh
   resobj$Parameters["abund_thresh"] <- abund_thresh
   resobj$Parameters["dprop_thresh"] <- dprop_thresh
+  resobj$Parameters["abund_scaling"] <- scaling
   resobj$Parameters["tests"] <- testmode
   resobj$Parameters["rep_boot"] <- rboot
   resobj$Parameters["quant_boot"] <- qboot
@@ -195,11 +216,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   } else  if (steps==1) {
     resobj$Parameters["data_type"] <- "plain abundance estimates"
   }
-  resobj$Parameters["num_genes"] <- length(levels(annot$parent_id))
-  resobj$Parameters["num_transc"] <- length(annot$target_id)
+  resobj$Parameters["num_genes"] <- length(levels(annot[[PARENT_COL]]))
+  resobj$Parameters["num_transc"] <- length(annot[[TARGET_COL]])
   resobj$Parameters["description"] <- description
 
-  if (dbg == 6)
+  if (dbg == "info")
     return(resobj)
 
 
@@ -241,7 +262,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
 
-    if (dbg == 9)
+    if (dbg == "rboot")
       return(repres)
 
     #----- Stats
@@ -279,7 +300,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       }
     })
 
-    if (dbg == 10)
+    if (dbg == "rbootsum")
       return(resobj)
   }
 
@@ -323,7 +344,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
 
-    if (dbg == 7)
+    if (dbg == "qboot")
       return(bootres)
 
     #----- Stats
@@ -361,7 +382,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     })
   }
 
-  if (dbg == 8)
+  if (dbg == "qbootsum")
     return(resobj)
 
 
@@ -383,7 +404,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     }
   })
 
-  # Store the replicate means adter re-adding the IDs.
+  # Store the replicate means after re-adding the IDs.
   with(count_data_A, {
     count_data_A[,  target_id := tx_filter$target_id]
     count_data_A[,  parent_id := tx_filter$parent_id]
@@ -398,8 +419,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   with(resobj, {
     # Cross-display the DTU calls.
+    Genes[, maxDprop := Transcripts[, maxabs(Dprop), by=parent_id][, V1] ]
     if (test_transc)
-      Genes[, transc_DTU := Transcripts[, any(DTU, na.rm=TRUE), by = parent_id][, V1] ]
+      Genes[, transc_DTU := Transcripts[, any(DTU), by = parent_id][, V1] ]
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
 
@@ -418,15 +440,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     message("All done!")
     message("Summary of DTU results:")
     dtusum <- dtu_summary(resobj)
-    print(dtusum[c(1,2,3)])
-    print(dtusum[c(4,5,6)])
-    print(dtusum[c(7,8,9)])
-    print(dtusum[c(10,11,12)])
+    print(dtusum)
     message("Isoform-switching subset of DTU:")
     switchsum <- dtu_switch_summary(resobj)
-    print(switchsum[c(1,2)])
-    print(switchsum[c(3,4)])
-    print(switchsum[c(5,6)])
+    print(switchsum)
+    
   }
 
   return(resobj)

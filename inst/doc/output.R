@@ -1,9 +1,13 @@
 ## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-## ------------------------------------------------------------------------
+## ---- include=FALSE------------------------------------------------------
 library(rats)
 
+## ---- eval=FALSE---------------------------------------------------------
+#  library(rats)
+
+## ------------------------------------------------------------------------
 # Simulate some data.
 simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
 # For convenience let's assign the contents of the list to separate variables.
@@ -11,11 +15,10 @@ myslo <- simdat$slo
 myannot <- simdat$annot
 
 # Call DTU
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  varname= "condition", verbose= FALSE, dprop_thresh=0.1, qboot=FALSE, rboot=FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object 
-                    for the purposes of the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", 
+                  name_B= "patients", varname= "condition", verbose= FALSE, 
+                  dprop_thresh=0.1, qboot=TRUE, rboot=TRUE,
+                  description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 
 ## ------------------------------------------------------------------------
 # A really simple tally of the outcome.

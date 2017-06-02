@@ -12,21 +12,22 @@ test_that("The output structure is correct", {
   expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "Abundances"))
   
   expect_type(mydtu$Parameters, "list")
-  expect_length(mydtu$Parameters, 23)
+  expect_length(mydtu$Parameters, 24)
   expect_named(mydtu$Parameters, c("description", "time", "rats_version", "R_version",
                                    "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
-                                   "tests", "p_thresh", "abund_thresh", "dprop_thresh",
+                                   "tests", "p_thresh", "abund_thresh", "dprop_thresh", "abund_scaling",
                                    "quant_reprod_thresh", "quant_boot", "quant_bootnum",
                                    "rep_reprod_thresh", "rep_boot", "rep_bootnum", "rep_reprod_as_crit"))
   
   expect_true(is.data.frame(mydtu$Genes))
-  expect_equal(dim(mydtu$Genes)[2], 25)
+  expect_equal(dim(mydtu$Genes)[2], 26)
   expect_named(mydtu$Genes, c("parent_id", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "transc_DTU",
-                              "known_transc", "detect_transc", "elig_transc", "pval", "pval_corr", 
+                              "known_transc", "detect_transc", "elig_transc", "maxDprop", "pval", "pval_corr", 
                               "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_dtu_freq",
                               "rep_p_mean",  "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.numeric(mydtu$Genes[["known_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["detect_transc"]]))
+  expect_true(is.numeric(mydtu$Genes[["maxDprop"]]))
   expect_true(is.numeric(mydtu$Genes[["pval"]]))
   expect_true(is.numeric(mydtu$Genes[["pval_corr"]]))
   expect_true(is.numeric(mydtu$Genes[["quant_dtu_freq"]]))
@@ -50,9 +51,9 @@ test_that("The output structure is correct", {
   expect_true(is.logical(mydtu$Genes[["transc_DTU"]]))
   
   expect_true(is.data.frame(mydtu$Transcripts))
-  expect_equal(dim(mydtu$Transcripts)[2], 35)
+  expect_equal(dim(mydtu$Transcripts)[2], 36)
   expect_named(mydtu$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "gene_DTU", 
-                                    "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
+                                    "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "log2FC", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
                                     "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq",
                                     "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.logical(mydtu$Transcripts[["elig_xp"]]))
@@ -66,6 +67,7 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["Dprop"]]))
   expect_true(is.numeric(mydtu$Transcripts[["sumA"]]))
   expect_true(is.numeric(mydtu$Transcripts[["sumB"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["log2FC"]]))
   expect_true(is.numeric(mydtu$Transcripts[["meanA"]]))
   expect_true(is.numeric(mydtu$Transcripts[["meanB"]]))
   expect_true(is.numeric(mydtu$Transcripts[["stdevA"]]))
@@ -118,8 +120,8 @@ test_that("The output structure is correct", {
 test_that("The output content is complete", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[2]]
@@ -228,8 +230,8 @@ test_that("The output content is complete", {
 test_that("The result is consistent across input data formats", {
   sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot$target_id, c(2,4), "est_counts", "target_id")
+  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
+  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[2]]

@@ -1,24 +1,20 @@
 ---
-title: 'RATs: Quick Start'
+title: "RATs: Quick Start"
 author: "Kimon Froussios"
-date: "15 MAY 2017"
-output:
-  html_document:
+date: "19 APR 2017"
+output: 
+  html_document: 
     keep_md: yes
     theme: readable
     toc: yes
-    toc_float: yes
-  pdf_document:
-    toc: yes
+    toc_float: TRUE
 vignette: >
+  %\VignetteIndexEntry{RATs 1: Quick start}
+  %\VignetteEngine{knitr::knitr}
   \usepackage[utf8]{inputenc}
-  %\VignetteIndexEntry{RATs 1: Introduction & Quick Start} 
-  %\VignetteEngine{knitr::rmarkdown} 
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 
 ***
@@ -32,7 +28,7 @@ abundance, but does not compare them to their sibling isoforms within each gene.
 subset of those that show DTE. The figure below shows the relationship between DTU and DTE, as well as between them and
 *differential gene expression* (**DGE**):
 
-![DGE vs. DTE vs. DTU](./figs/dge-dte-dtu.jpg)
+![DGE vs. DTE vs. DTU](./fig/dge-dte-dtu.png)
 
 
 **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
@@ -51,35 +47,13 @@ This provides a measure of confidence in the DTU calls.
 
 ## Install dependencies first
 
-* Packages needed for computation (mandatory) - Available on CRAN: 
+`install.packages(c("data.table", "matrixStats", "ggplot2", "shiny"), dependencies=TRUE)`
 
-```{r, eval= FALSE}
-install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
-```
+If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
+which you can see by scrolling back through the output to look for the errors. Please refer to the R manual and the documentations of these packages for help.
 
-* Package needed only for plotting (recommended) - Available on CRAN: 
-
-```{r, eval= FALSE}
-install.packages("ggplot2", dependencies=TRUE)
-```
-
-* Packages needed only for importing directly from Salmon/Kallisto output (optional) - Available through Bioconductor: 
-
-```{r, eval= FALSE}
-# Devtools (available on both CRAN and Bioconductor), needed by wasabi apparently?
-install.packages("devtools", dependencies=TRUE)
-
-source("http://bioconductor.org/biocLite.R")
-# Wasabi converter from Salmon/Sailfish to Kallisto.
-biocLite("COMBINE-lab/wasabi")
-#Kallisto parser
-biocLite("rhdf5")
-```
-
-* Package needed only for interactive visualisation features (optional) - Available on CRAN: 
-```{r, eval= FALSE}
-install.packages("shiny", dependencies=TRUE)
-```
+Strictly speaking, only `data.table` and `matrixStats` are needed for DTU calculations. `ggplot2` is needed only for plotting. We think plotting is very useful,
+so we recommend installing it. `shiny` is needed only for a particular visualisation feature. Unless you plan to use that feature, `shiny` is not a required package. 
 
 
 ## Install the rats package
@@ -89,15 +63,11 @@ install.packages("shiny", dependencies=TRUE)
 RATs is available as R source package from the project's [releases section](https://github.com/bartongroup/Rats/releases) on Github.
 Download the latest release and then install it using:
 
-```{r, eval= FALSE}
-install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")
-```
+`install.packages("<path/to/dowloaded/package>", repos = NULL, type="source")`
 
 Or install directly with the help of the [devtools](https://www.rstudio.com/products/rpackages/devtools/) package:
 
-```{r, eval= FALSE}
-devtools::install_github("bartongroup/rats", ref="master")
-```
+`devtools::install_github("bartongroup/rats", ref="master")`
 
 Release snapshots are labelled with even-ending version numbers (x.x.x0/2/4/6/8).
 
@@ -109,9 +79,7 @@ Not available yet.
 
 The most current developmental version of `rats` can be installed directly from the working copy on Github, using `devtools`:
 
-```{r, eval= FALSE}
-devtools::install_github("bartongroup/rats", ref="development")
-```
+`devtools::install_github("bartongroup/rats", ref="development")`
 
 As this version represents active development, it can change at any moment. Features may be added, removed or changed without notice, and it
 may even temporarily not work at all. **Do not rely on this version for reproducible analysis of important data!**
@@ -128,9 +96,10 @@ RATs uses, as input, tables of transcript abundances with or without quantificat
 extract the transcript abundances from a Sleuth object. The latter option is shown below. For more details and settings, consult
 the *Input & Settings* vignette.
 
-```{r, eval= FALSE}
+
+```r
 # 1. Load into R session.
-library(rats)
+library{rats}
 
 # 2. Specify transcript grouping:
 my_identifiers_table <- annot2ids("my_annotation.gtf")
@@ -143,7 +112,7 @@ mydtu <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_data_tables_
                   boot_data_B= my_list_data_tables_A)
 # 3c. Call DTU on generic abundance estimates:
 mydtu <- call_DTU(annot= my_identifiers_table, count_data_A= my_data_table_A, 
-                  count_data_B= my_data_table_B, qboot= FALSE)
+                  count_data_B= my_data_table_B, qboots= FALSE)
 
 # 4. Plot significance VS effect size:
 plot_overview(mydtu)
@@ -183,5 +152,5 @@ to **read the vignette(s)**, and browse/search the support forum before posting 
 
 Enjoy!
 
-![](./figs/rats_logo.png)
+![](./fig/rats.png)
 

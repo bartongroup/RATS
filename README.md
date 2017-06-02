@@ -54,17 +54,45 @@ We recommend studying the vignettes before using RATs.
 The package depends on a few third-party packages, which you may need to install first, 
 if they are not present already:
 
-1. Packages needed for computation (mandatory): `install.packages(c("data.table", "matrixStats"), dependencies=TRUE)`
-2. Package needed only for plotting (recommended): `install.packages("ggplot2", dependencies=TRUE)`
-3. Package need only for interactive visualisation feature (optional): `install.packages("shiny", dependencies=TRUE)`
+* Packages needed for computation (mandatory)
+
+```
+install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
+```
+
+* Package needed only for plotting (recommended)
+
+```
+install.packages("ggplot2", dependencies=TRUE)
+```
+
+* Packages needed only for importing abundances from Salmon/Kallisto output (optional) - 
+
+```
+install.packages("devtools", dependencies=TRUE)
+
+source("http://bioconductor.org/biocLite.R")
+
+# Wasabi converter from Salmon/Sailfish to Kallisto.
+biocLite("COMBINE-lab/wasabi")
+
+# Kallisto parser.
+biocLite("rhdf5")
+```
+
+* Package needed only for interactive visualisation feature (optional)
+
+```
+install.packages("shiny", dependencies=TRUE)
+```
 
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
-which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual for help.
+which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual or respective package manuals for help.
 
 
 ### Installation
 
-1. Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
+Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
 Download the latest release and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
@@ -73,10 +101,12 @@ The latest release can also be directly installed from github, using the `devtoo
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
-2. For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
+For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
+
 `devtools::install_github("bartongroup/rats", ref="development")`
-Developmental versions are works in progress and will not be archived in snapshots. For reproducible/publishable analyses, 
-**always use a release version**, NOT a developmental version.
+
+Developmental versions are works in progress and will not be archived in snapshots. They are also likely to contain new bugs and
+may at times not work correctly or at all. For reproducible/publishable analyses, **always use a release version**, NOT a developmental version.
 
 
 ### Differential Transcript Usage
@@ -103,6 +133,6 @@ the support forum before posting a new issue, in case your question is already a
 
 Enjoy!
 
-![](./vignettes/fig/rats.png)
+![](./vignettes/figs/rats.png)
 
 

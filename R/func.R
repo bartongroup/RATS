@@ -26,6 +26,7 @@
 #' @param rrep_thresh Confidence threshold.
 #' @param rrep_as_crit Whether to use rrep as a DTU criterion.
 #' @param threads Number of threads.
+#' @param scaling Abundance scaling factor.
 #'
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -41,7 +42,7 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
                             correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL,
                             count_thresh, testmode, qboot, qbootnum, dprop_thresh,
                             count_data_A, count_data_B, boot_data_A, boot_data_B, qrep_thresh,
-                            threads, rboot, rrep_thresh, rrep_as_crit) {
+                            threads, rboot, rrep_thresh, rrep_as_crit, scaling) {
   warnmsg <- list()
 
   # Input format.
@@ -86,6 +87,8 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
   if (!is.logical(rrep_as_crit))
     return(list("error"=TRUE, "message"="Unrecognized value for rrep_as_crit! Must be TRUE/FALSE."))
+  if ((!is.numeric(scaling)) || scaling == 0)
+    return(list("error"=TRUE, "message"="Invalid scaling factor! Must be non-zero number."))
 
   # Sleuth
   if (!is.null(slo)) {
@@ -215,12 +218,13 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
 
 
 #================================================================================
-#' Group sample numbers by factor.
-#'
-#' @param covariates A dataframe with different factor variables.
+#' Group samples by covariate value.
+#' 
+#' Sleuth records covariate values per sample. However, RATs needs the reverse: the 
+#' samples that correspond to a given covariate value.
+#' 
+#' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
 #' @return list of lists (per covariate) of vectors (per factor level).
-#'
-#' Row number corresponds to sample number.
 #'
 #' @export
 #'
@@ -241,25 +245,34 @@ group_samples <- function(covariates) {
 #' Extract bootstrap counts into a less nested structure.
 #'
 #' @param slo A sleuth object.
-#' @param tx A vector of transcript ids. The results will be ordered according to this vector.
+#' @param annot A data.frame matching transcript identfier to gene identifiers.
 #' @param samples A numeric vector of samples to extract counts for.
-#' @param COUNTS_COL The name of the column with the counts.
-#' @param BS_TARGET_COL The name of the column with the transcript IDs.
-#' @param threads Number of threads.
+#' @param COUNTS_COL The name of the column with the counts. (Default "tpm")
+#' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
+#' @param threads Number of threads. (Default 1)
 #' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 #'
 #' NA replaced with 0.
 #'
-#' Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
-#' Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
+#' Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
+#' Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 #'
 #' @import parallel
 #' @import data.table
 #' @export
 #'
-denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads= 1) {
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id", 
+                                TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
+  
+  # Could just always use tidy_annot(), but that duplicates the annotation without reason. 
+  # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
+  tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
+  
   mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
     dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
@@ -269,7 +282,7 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, thr
     # Replace any NAs with 0. Happens when annotation different from that used for DTE.
     dt[is.na(dt)] <- 0
     # Add transcript ID.
-    dt[, "target_id" := tx]
+    with(dt, dt[, target_id := tx])
     nn <- names(dt)
     ll <- length(nn)
     # Return reordered so that IDs are in first column.
@@ -281,14 +294,15 @@ denest_sleuth_boots <- function(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, thr
 #================================================================================
 #' Create output structure.
 #'
-#' @param annot A dataframe with at least 2 columns: target_id and parent_id.
+#' @param annot Pre-processed by \code{tidy_annot()}.
 #' @param full Full-sized structure or core fields only. Either "full" or "short".
 #' @return A list.
 #'
 #' @import data.table
 #'
 alloc_out <- function(annot, full){
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(1)
   if (full == "full") {
     Parameters <- list("description"=NA_character_, "time"=date(),
@@ -296,12 +310,12 @@ alloc_out <- function(annot, full){
                        "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_,
+                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=NA_real_,
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
                        "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "rep_reprod_as_crit"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
-                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_,
+                        "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
                         "pval"=NA_real_, "pval_corr"=NA_real_,
                         "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_, 
                         "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
@@ -310,7 +324,7 @@ alloc_out <- function(annot, full){
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "gene_DTU"=NA,
                               "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_,
-                              "sumA"=NA_real_, "sumB"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
+                              "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
                               "pval"=NA_real_, "pval_corr"=NA_real_,
                               "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_,"quant_p_max"=NA_real_,
@@ -324,8 +338,8 @@ alloc_out <- function(annot, full){
                         "elig_transc"=NA_integer_, "elig"=NA, "elig_fx"=NA,
                         "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA,
-                              "sumA"=NA_real_, "sumB"=NA_real_,  # sum across replicates of means across bootstraps
-                              "totalA"=NA_real_, "totalB"=NA_real_,  # sum of all transcripts for that gene
+                              "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_,  #log2FC currently not used in decision making and bootstrapping, but maybe in the future.
+                              "totalA"=NA_real_, "totalB"=NA_real_,
                               "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
@@ -345,7 +359,7 @@ alloc_out <- function(annot, full){
 #'
 #' @param counts_A A data.table of counts for condition A. x: sample, y: transcript.
 #' @param counts_B A data.table of counts for condition B. x: sample, y: transcript.
-#' @param tx_filter A data.table with target_id and parent_id.
+#' @param tx_filter A data.table with target_id and parent_id. Pre-processed with \code{tidy_annot()}.
 #' @param test_transc Whether to do transcript-level test.
 #' @param test_genes Whether to do gene-level test.
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
@@ -361,7 +375,8 @@ alloc_out <- function(annot, full){
 #' @import data.table
 #'
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
-  if (packageVersion("data.table") >= "1.9.8")  # Ensure data.table complies.
+  # Ensure data.table complies.
+  # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
 
   #---------- PRE-ALLOCATE
@@ -389,7 +404,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
     Transcripts[(is.nan(propB)), propB := NA_real_]
     Transcripts[, Dprop := propB - propA]
-
+    
     #---------- FILTER
 
     # Filter transcripts and genes to reduce number of tests:
@@ -397,6 +412,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)]
     Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off in one condition, changes in proportion cannot be defined.
+                                                                                                      # If sum and total are equal in both conditions the gene has only one expressed isoform, or one isoform altogether.
     # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
     Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]
@@ -497,4 +513,27 @@ g.test.2 <- function(obsx, obsy) {
                              function (i) { if (obsy[i] != 0) { return(obsy[i] * log(obsy[i]/ey[i])) } else { return(0) } }) )
               )
   return( pchisq(G, df= n - 1, lower.tail= FALSE) )
+}
+
+
+#================================================================================
+#' Tidy up annotation.
+#'
+#' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
+#' @return A data.table with genes under \code{parent_id} and transcripts under \code{target_id}, regardless of what the input annotation named them. Rows ordered first by gene and then by transcript.
+#'
+#' Extract the relevant columns as a \code{data.table} and order the rows by gene. This creates a fast
+#' look-up structure that is consistent throughout RATs.
+#'
+#' @import data.table
+#' @export
+#
+tidy_annot <- function(annot, TARGET_COL="target_id", PARENT_COL="parent_id") {
+  tx_filter <- data.table(target_id= annot[[TARGET_COL]], parent_id= annot[[PARENT_COL]])
+  with( tx_filter,
+        setkey(tx_filter, parent_id, target_id) )
+  
+  return(tx_filter)
 }

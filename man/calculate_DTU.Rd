@@ -12,7 +12,7 @@ calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, full,
 
 \item{counts_B}{A data.table of counts for condition B. x: sample, y: transcript.}
 
-\item{tx_filter}{A data.table with target_id and parent_id.}
+\item{tx_filter}{A data.table with target_id and parent_id. Pre-processed with \code{tidy_annot()}.}
 
 \item{test_transc}{Whether to do transcript-level test.}
 

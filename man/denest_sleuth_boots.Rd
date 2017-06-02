@@ -4,28 +4,34 @@
 \alias{denest_sleuth_boots}
 \title{Extract bootstrap counts into a less nested structure.}
 \usage{
-denest_sleuth_boots(slo, tx, samples, COUNTS_COL, BS_TARGET_COL, threads = 1)
+denest_sleuth_boots(slo, annot, samples, COUNTS_COL = "tpm",
+  BS_TARGET_COL = "target_id", TARGET_COL = "target_id",
+  PARENT_COL = "parent_id", threads = 1)
 }
 \arguments{
 \item{slo}{A sleuth object.}
 
-\item{tx}{A vector of transcript ids. The results will be ordered according to this vector.}
+\item{annot}{A data.frame matching transcript identfier to gene identifiers.}
 
 \item{samples}{A numeric vector of samples to extract counts for.}
 
-\item{COUNTS_COL}{The name of the column with the counts.}
+\item{COUNTS_COL}{The name of the column with the counts. (Default "tpm")}
 
-\item{BS_TARGET_COL}{The name of the column with the transcript IDs.}
+\item{BS_TARGET_COL}{The name of the column with the transcript IDs. (Default "target_id")}
 
-\item{threads}{Number of threads.}
+\item{TARGET_COL}{The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})}
+
+\item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
+
+\item{threads}{Number of threads. (Default 1)}
 }
 \value{
 A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
 
 NA replaced with 0.
 
-Transcripts in \code{slo} that are missing from \code{tx} will be skipped completely.
-Transcripts in \code{tx} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
+Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
+Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 }
 \description{
 Extract bootstrap counts into a less nested structure.

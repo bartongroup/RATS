@@ -1,8 +1,11 @@
 ## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
-## ------------------------------------------------------------------------
+## ---- include=FALSE------------------------------------------------------
 library(rats)
+
+## ---- eval=FALSE---------------------------------------------------------
+#  library(rats)
 
 ## ---- echo=FALSE---------------------------------------------------------
 # Show the first rows of the table corresponding to one sample, from simulated data.
@@ -12,26 +15,25 @@ head(sim_boot_data()[[2]][[1]])
 # Show the first rows of the table corresponding to the annotation, from simulated data.
 head(sim_count_data()[[1]])
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  # Extract transcript ID to gene ID index from a GTF annotation.
 #  myannot <- annot2ids("my_annotation_file.gtf")
 
-## ------------------------------------------------------------------------
-# Simulate some data.
-simdat <- sim_count_data()
+## ---- eval=FALSE---------------------------------------------------------
+#  # Simulate some data.
+#  simdat <- sim_count_data()
+#  
+#  # For convenience let's assign the contents of the list to separate variables.
+#  mycond_A <- simdat[[2]]       # Simulated abundances for one condition.
+#  mycond_B <- simdat[[3]]       # Simulated abundances for other condition.
+#  myannot <- simdat[[1]]        # Transcript and gene IDs for the above data.
 
-# For convenience let's assign the contents of the list to separate variables.
-mycond_A <- simdat[[2]]       # Simulated abundances for one condition.
-mycond_B <- simdat[[3]]       # Simulated abundances for other condition.
-myannot <- simdat[[1]]        # Transcript and gene IDs for the above data.
-
-## ------------------------------------------------------------------------
-# Find DTU between the simulated datasets.
-mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B, 
-                  verbose= FALSE,
-                  name_A= "healthy", name_B= "patients", varname= "My phenotype",
-                  description="Comparison of two simulated counts datasets for the
-                    tutorial. Simulated using built-in functionality of RATs.")
+## ---- eval=FALSE---------------------------------------------------------
+#  # Find DTU between the simulated datasets.
+#  mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, count_data_B= mycond_B,
+#                    verbose= FALSE,
+#                    name_A= "healthy", name_B= "patients", varname= "My phenotype",
+#                    description="Comparison of two simulated counts datasets for the tutorial. Simulated using built-in functionality of RATs.")
 
 ## ------------------------------------------------------------------------
 # Simulate some data. (Notice it is a different function than before.)
@@ -42,14 +44,12 @@ mycond_A <- simdat[[2]]       # Simulated bootstrapped data for one condition.
 mycond_B <- simdat[[3]]       # Simulated bootstrapped data for other condition.
 myannot <- simdat[[1]]        # Transcript and gene IDs for the above data.
 
-## ------------------------------------------------------------------------
-# Find DTU between conditions "controls" and "patients" in the simulated data.
-mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B, 
-                  verbose= FALSE, 
-                  name_A= "wildtype", name_B= "some mutant", varname = "My phenotype",
-                  description="Comparison of two simulated datasets of bootstrapped 
-                    counts for the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+## ---- eval=FALSE---------------------------------------------------------
+#  # Find DTU between conditions "controls" and "patients" in the simulated data.
+#  mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, boot_data_B= mycond_B,
+#                    verbose= FALSE,
+#                    name_A= "wildtype", name_B= "some mutant", varname = "My phenotype",
+#                    description="Comparison of two simulated datasets of bootstrapped counts for the tutorial. Simulated using built-in functionality of RATs.")
 
 ## ------------------------------------------------------------------------
 # Simulate some data.
@@ -60,20 +60,37 @@ simdat <- sim_sleuth_data(cnames = c("controls", "patients"))
 myslo <- simdat$slo       # Simulated minimal sleuth object.
 myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 
-## ------------------------------------------------------------------------
-# Find DTU between conditions "controls" and "patients" in the simulated data.
-mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients", 
-                  varname= "condition", verbose= FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object 
-                    for the purposes of the tutorial. Simulated using built-in functionality 
-                    of RATs.")
+## ---- eval=FALSE---------------------------------------------------------
+#  # Find DTU between conditions "controls" and "patients" in the simulated data.
+#  mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patients",
+#                    varname= "condition", verbose= FALSE,
+#                    description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
+#  # 1. Collect your outputs into vectors. The end of each path should be a
+#  # directory with a unique name/identifier for one sample.
+#  samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5", ...)
+#  samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", ...)
+#  # OR if your outputs are all in the same path, this syntax might be more convenient:
+#  samples_A <- file.path("your/path/", c("SAMPLE1", "SAMPLE4","SAMPLE5", ...))
+#  samples_B <- file.path("your/path/", c("SAMPLE2", "SAMPLE3","SAMPLE7", ...))
+#  
+#  # 2. Convert, import, and extract.
+#  # The annotation is needed to enforce consistent transcripts order throughout RATs.
+#  mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, annot= myannot)
+#  
+#  # 3. Run RATs with the generic bootstrapped format:
+#  mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A,
+#                    boot_data_B= mydata$boot_data_B, verbose= FALSE,
+#                    name_A= "controls", name_B= "patients",
+#                    varname = "condition", description="Comparison of two sets of bootstrapped counts imported from the quantification output.")
+
+## ---- eval=FALSE---------------------------------------------------------
 #  # Calling DTU with custom thresholds.
-#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "patients",
-#                    p_thresh = 0.01, abund_thresh = 10, dprop_thresh = 0.25)
+#  mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patients",
+#                    p_thresh= 0.01, abund_thresh= 10, dprop_thres = 0.25)
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  # Bootstrap (default). Do 100 iterations.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", qboot = TRUE, qbootnum = 100, qrep_thresh= 0.95)
@@ -82,10 +99,12 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", qboot = FALSE)
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  # Bootstrap (default).
+#  # Note that for few replicates, the reproducibility values are highly discrete.
 #  # NOTE: The number of iterations for 3 samples per condition is 3*3=9.
-#  # So the minimum possible error rate is 1/9=0.111. The corresponding threshold is 1-0.111=0.888.
+#  # So the minimum possible error rate is 1/9=0.111.
+#  # The corresponding threshold is 1-0.111=0.888.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", rboot = TRUE, qrep_thresh= 0.85)
 #  
@@ -98,7 +117,7 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", threads = 8)
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  # Transcripts only.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", testmode="transc")
@@ -106,16 +125,16 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", name_B = "p
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", testmode="genes")
 
-## ----eval=FALSE----------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  # Bonferroni correction.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 #                    name_B = "patients", correction = "bonferroni")
 
 ## ------------------------------------------------------------------------
 # Lets emulate some input with custom field names. 
-sim <- sim_sleuth_data(varname="mouse", cnames=c("Splinter", "Mickey"), 
-                       COUNTS_COL="the-counts", TARGET_COL="transcript", 
-                       PARENT_COL="gene", BS_TARGET_COL = "trscr")
+sim <- sim_sleuth_data(varname = "mouse", cnames = c("Splinter", "Mickey"), 
+                       COUNTS_COL = "the-counts", TARGET_COL = "transcript", 
+                       PARENT_COL = "gene", BS_TARGET_COL = "trscr")
 myslo <- sim$slo
 myannot <- sim$annot
 
@@ -129,16 +148,25 @@ print( head(sim$annot) )
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Call DTU on data with custom field names.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey",
-#                    varname="mouse", COUNTS_COL="the-counts", BS_TARGET_COL="trscr", verbose = FALSE)
+#                    varname="mouse", COUNTS_COL="the-counts", BS_TARGET_COL="trscr",
+#                    verbose = FALSE)
 #  
-#  #! In our example data here, the annotation fields have been modified as well, so this command
-#  #! will NOT run as it is shown. You will also need the parameters shown in teh section below.
+#  #! In our example data here, the annotation fields have been modified as well,
+#  #! so this command will NOT run as it is shown. You will also need the parameters
+#  #! shown in teh section below.
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Call DTU using annotation with custom field names.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "Splinter", name_B = "Mickey",
-#                    varname="mouse", TARGET_COL="transcript", PARENT_COL="gene", verbose = FALSE)
+#                    varname="mouse", TARGET_COL="transcript", PARENT_COL="gene",
+#                    verbose = FALSE)
 #  
-#  #! In our example data here, the Sleuth fields have been modified as well, so this command
-#  #! will NOT run as it is shown. You will also need the parameters shown in the section above.
+#  #! In our example data here, the Sleuth fields have been modified as well,
+#  #! so this command will NOT run as it is shown. You will also need the parameters
+#  #! shown in the section above.
+
+## ----eval=FALSE----------------------------------------------------------
+#  # If your sample preps contain ~70 million transcripts and you are using TPM abundances
+#  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
+#                    name_B = "patients", COUNTS_COL = "tpm", scaling = 70)
 

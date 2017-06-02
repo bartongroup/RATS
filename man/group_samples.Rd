@@ -2,18 +2,17 @@
 % Please edit documentation in R/func.R
 \name{group_samples}
 \alias{group_samples}
-\title{Group sample numbers by factor.}
+\title{Group samples by covariate value.}
 \usage{
 group_samples(covariates)
 }
 \arguments{
-\item{covariates}{A dataframe with different factor variables.}
+\item{covariates}{A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.}
 }
 \value{
 list of lists (per covariate) of vectors (per factor level).
-
-Row number corresponds to sample number.
 }
 \description{
-Group sample numbers by factor.
+Sleuth records covariate values per sample. However, RATs needs the reverse: the 
+samples that correspond to a given covariate value.
 }

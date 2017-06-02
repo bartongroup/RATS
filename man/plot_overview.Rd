@@ -2,7 +2,7 @@
 % Please edit documentation in R/results.R
 \name{plot_overview}
 \alias{plot_overview}
-\title{Plot DTU results from the proportions test.}
+\title{Plot DTU results overview.}
 \usage{
 plot_overview(dtuo, type = "volcano")
 }
@@ -10,14 +10,24 @@ plot_overview(dtuo, type = "volcano")
 \item{dtuo}{A DTU object.}
 
 \item{type}{Type of plot. \itemize{
-\item{"volcano"}{Change in proportion VS. statistical significance. Done at the transcript level. (Default)}
-\item{"maxdprop"}{Distribution of biggest change in proportion in each gene.} }}
+\item{"tvolcano" - Change in proportion VS. transcript-level statistical significance. (Default)}
+\item{"gvolcano" - Largest change in proportion per gene VS. gene-leel statistical significance.}
+\item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
+\item{"dprop" - Distribution of effect size.}
+\item{"reprod" - Distribution of gene-level DTU reproducibility.}
+\item{"reprodVSdprop" - Transcript-level DTU reproducibility VS effect size.}
+\item{"fcvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
+\item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}}
 }
 \value{
 A ggplot2 object. Simply display it or you can also customize it.
 
-Generally uses the results of the transcript-level proportion tests.
+CAUTION: RATs does NOT normalise the input abundances for fold-change calclulations. RATs
+is NOT intended for study of DTE.
+
+These overviews rely on the results of the transcript-level proportion tests. If your DTU
+object was created without the transcript-level tests, this function will not work.
 }
 \description{
-Plot DTU results from the proportions test.
+Plot DTU results overview.
 }

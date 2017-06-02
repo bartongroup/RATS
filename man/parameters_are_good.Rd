@@ -7,7 +7,7 @@
 parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
   p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode,
   qboot, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A,
-  boot_data_B, qrep_thresh, threads, rboot, rrep_thresh, rrep_as_crit)
+  boot_data_B, qrep_thresh, threads, rboot, rrep_thresh, rrep_as_crit, scaling)
 }
 \arguments{
 \item{slo}{Sleuth object}
@@ -59,6 +59,8 @@ parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 \item{rrep_thresh}{Confidence threshold.}
 
 \item{rrep_as_crit}{Whether to use rrep as a DTU criterion.}
+
+\item{scaling}{Abundance scaling factor.}
 }
 \value{
 List: \itemize{
