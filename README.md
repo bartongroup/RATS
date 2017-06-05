@@ -92,12 +92,12 @@ which you can see by scrolling back through the installation output to look for 
 
 ### Installation
 
-Platform-independent package releases are available from the [releases section](https://github.com/bartongroup/Rats/releases) on **Github**.
-Download the latest release and then install it using:
+The recommended option is to obtain the latest platform-independent package release from the [releases section](https://github.com/bartongroup/Rats/releases) here on **Github**.
+Download the package file and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
-The latest release can also be directly installed from github, using the `devtools` package:
+The latest release can also be installed directly from Github, using the `devtools` package (but this option has a tendency to install exhaustive minor dependencies or update existing packages, so it can take a while to complete):
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
@@ -108,6 +108,7 @@ For testing purposes (bug resolutions, new features), you can install the ongoin
 Developmental versions are works in progress and will not be archived in snapshots. They are also likely to contain new bugs and
 may at times not work correctly or at all. For reproducible/publishable analyses, **always use a release version**, NOT a developmental version.
 
+Eventually, we aim to make the package also available through Bioconductor.
 
 ### Differential Transcript Usage
 
