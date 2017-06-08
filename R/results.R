@@ -29,7 +29,7 @@ get_dtu_ids <- function(dtuo) {
     myt[, adp := abs(Dprop)]
     setorder(myt, -adp, na.last=TRUE)
   })
-  
+
   myp <- copy(dtuo$Genes[, c("DTU", "transc_DTU", "parent_id", "maxDprop")])
   with(myp, {
     # Sort genes to match.
@@ -520,28 +520,6 @@ plot_overview <- function(dtuo, type="volcano") {
   })
 }
 
-#================================================================================
-#' Get largest value by absolute comparison.
-#'
-#' Get back the original signed value. In case of equal absolutes, the positive
-#' value will be returned.
-#'
-#' @param v A numeric vector.
-#' @return A numeric value.
-#'
-maxabs <- function(v) {
-  if (all(is.na(v)))
-    return(NA_real_)
-  x <- max(v, na.rm=TRUE)
-  n <- min(v, na.rm=TRUE)
-  if (abs(x) >= abs(n)) {
-    return(x)
-  } else {
-    return(n)
-  }
-}
-
-
 
 #================================================================================
 #' Interactive volcano plot, using shiny.
@@ -571,11 +549,11 @@ plot_shiny_volcano <- function(dtuo) {
     # Click info.
     fluidRow(
       column(width= 12,
-             verbatimTextOutput("gene_info") ) 
+             verbatimTextOutput("gene_info") )
     ),
     fluidRow(
       column(width= 12,
-             verbatimTextOutput("transc_info") ) 
+             verbatimTextOutput("transc_info") )
     ),
     fluidRow(
       column(width= 12,
