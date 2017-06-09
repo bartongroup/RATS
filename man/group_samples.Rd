@@ -13,6 +13,6 @@ group_samples(covariates)
 list of lists (per covariate) of vectors (per factor level).
 }
 \description{
-Sleuth records covariate values per sample. However, RATs needs the reverse: the 
+Sleuth records covariate values per sample. However, RATs needs the reverse: the
 samples that correspond to a given covariate value.
 }

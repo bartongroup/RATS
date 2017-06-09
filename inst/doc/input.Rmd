@@ -394,21 +394,19 @@ mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",
 
 Three parameters control bootstrapping of DTU calls agaisnt the samples:
 
-1. `rboot` - Whether to bootstrap the replicates or not. (Default FALSE)
+1. `rboot` - Whether to bootstrap the replicates or not. (Default TRUE)
 2. `rrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.85)
-3. `rrep_as_crit` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default FALSE)
+3. `rrep_as_crit` - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default TRUE)
 
 Unlike bootstrapping the quantifications, bootstrapping the replicates is currently **not stochastic**. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition.
 This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.
 
-Because only one replicate is used each time, this process has reduced statistical power and only the strongest results will persist. Due to this, the sample-wise reproducibility
-is **not used as a criterion** in calling DTU, unless explicitly required by setting the `rrep_as_crit` flag. For low replication levels in particular, the reproducibility may
-be easily underestimated or overestimated.
+To maintain comparable statistical significance to the actual experimental design, because only one replicate is used each time, the abundances are scaled up by the number of replicates in the condition. This is equivalent to the idealised scenario of all the replicates being extremely consistent and similar to the chosen one.
 
 ```{r, eval=FALSE}
 # Bootstrap (default).
-# Note that for few replicates, the reproducibility values are highly discrete.
-# NOTE: The number of iterations for 3 samples per condition is 3*3=9. 
+# Note that for few replicates, the reproducibility values are highly discrete:
+# The number of iterations for 3 samples per condition is 3*3=9. 
 # So the minimum possible error rate is 1/9=0.111. 
 # The corresponding threshold is 1-0.111=0.888.
 mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls", 

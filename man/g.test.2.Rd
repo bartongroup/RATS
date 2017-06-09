@@ -12,7 +12,7 @@ g.test.2(obsx, obsy)
 \item{obsy}{a numeric vector of positive counts of same length as obsx, with at least one non-zero value.
 
 The order of values in the two vectors should be the same.
-No corrections are applied. 
+No corrections are applied.
 No input checks are applied, as RATs needs to run this millions of times.}
 }
 \description{

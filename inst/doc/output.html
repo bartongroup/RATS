@@ -252,17 +252,17 @@ mydtu &lt;- call_DTU(annot= myannot, slo= myslo, name_A= &quot;controls&quot;,
 <pre class="r"><code># A really simple tally of the outcome.
 print( dtu_summary(mydtu) )</code></pre>
 <pre><code>##                        category tally
-## 1         DTU genes (gene test)     1
-## 2     non-DTU genes (gene test)     2
+## 1         DTU genes (gene test)     0
+## 2     non-DTU genes (gene test)     3
 ## 3          NA genes (gene test)     7
-## 4      DTU genes (transc. test)     1
+## 4      DTU genes (transc. test)     0
 ## 5  non-DTU genes (transc. test)     2
-## 6       NA genes (transc. test)     7
-## 7        DTU genes (both tests)     1
+## 6       NA genes (transc. test)     8
+## 7        DTU genes (both tests)     0
 ## 8    non-DTU genes (both tests)     2
 ## 9         NA genes (both tests)     7
-## 10              DTU transcripts     3
-## 11          non-DTU transcripts     7
+## 10              DTU transcripts     0
+## 11          non-DTU transcripts    10
 ## 12               NA transcripts    11</code></pre>
 <p>RATs uses <em>two</em> separate methods of identifying DTU: The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually and then aggregates the isoform results to form a gene-level result. Therefore, as of v0.4.2, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
 <p>The <code>get_dtu_ids()</code> function lists the actual identifiers per category, instead of the numbers in each category. As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
@@ -270,25 +270,25 @@ print( dtu_summary(mydtu) )</code></pre>
 ids &lt;- get_dtu_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`DTU genes (gene test)`
-## [1] &quot;MIX6&quot;
+## character(0)
 ## 
 ## $`non-DTU genes (gene test)`
-## [1] &quot;CC&quot; &quot;NN&quot;
+## [1] &quot;MIX6&quot; &quot;CC&quot;   &quot;NN&quot;  
 ## 
 ## $`NA genes (gene test)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (transc. test)`
-## [1] &quot;MIX6&quot;
+## character(0)
 ## 
 ## $`non-DTU genes (transc. test)`
 ## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`NA genes (transc. test)`
-## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
+## [1] &quot;MIX6&quot; &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (both tests)`
-## [1] &quot;MIX6&quot;
+## character(0)
 ## 
 ## $`non-DTU genes (both tests)`
 ## [1] &quot;CC&quot; &quot;NN&quot;
@@ -297,10 +297,11 @@ print( ids )</code></pre>
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU transcripts`
-## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot;
+## character(0)
 ## 
 ## $`non-DTU transcripts`
-## [1] &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
+##  [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot; &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot;
+##  [8] &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
 ## 
 ## $`NA transcripts`
 ##  [1] &quot;LC1&quot;      &quot;1A1N-2&quot;   &quot;1B1C.1&quot;   &quot;1B1C.2&quot;   &quot;1D1C:one&quot; &quot;1D1C:two&quot;
@@ -323,28 +324,22 @@ print( dtu_switch_summary(mydtu) )</code></pre>
 ids &lt;- get_switch_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`Primary switch (gene test)`
-## [1] MIX6
-## Levels: MIX6
+## [1] NA
 ## 
 ## $`Non-primary switch (gene test)`
-## [1] MIX6
-## Levels: MIX6
+## [1] NA
 ## 
 ## $`Primary switch (transc. test)`
-## [1] MIX6
-## Levels: MIX6
+## [1] NA
 ## 
 ## $`Non-primary switch (transc. test)`
-## [1] MIX6
-## Levels: MIX6
+## [1] NA
 ## 
 ## $`Primary switch (both tests)`
-## [1] MIX6
-## Levels: MIX6
+## [1] NA
 ## 
 ## $`Non-primary switch (both tests)`
-## [1] MIX6
-## Levels: MIX6</code></pre>
+## [1] NA</code></pre>
 <p>Again, three versions of the results are shown, covering the respective DTU methods in RATs. <code>MIX6</code> is demonstrating a switch in both primary and tertiary isoforms.</p>
 </div>
 <div id="summary-of-dtu-plurality" class="section level2">
@@ -352,14 +347,12 @@ print( ids )</code></pre>
 <p>In case you want to know how many isoforms are affected per gene.</p>
 <pre class="r"><code># A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )</code></pre>
-<pre><code>##   isof_affected num_of_genes
-## 1             3            1</code></pre>
+<pre><code>## [1] isof_affected
+## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
 <pre class="r"><code># The gene IDs displaying isoform switching.
 ids &lt;- get_plurality_ids(mydtu)
 print( ids )</code></pre>
-<pre><code>## $`3`
-## [1] MIX6
-## Levels: 1A1N 1B1C 1D1C ALLA ALLB CC LC MIX6 NIB NN</code></pre>
+<pre><code>## named list()</code></pre>
 <p>The categories are named by the number of isoforms affected. There is one gene (<code>MIX6</code>) that has <code>3</code> isoforms affected.</p>
 <hr />
 </div>

@@ -30,9 +30,9 @@
 #' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
 #' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
 #' @param qrep_thresh Reproducibility threshold for quantification bootsrapping. (Default 0.95)
-#' @param rboot Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{FALSE})
-#' @param rrep_thresh Reproducibility threshold for replicate bootsrapping. (Default 0.85)
-#' @param rrep_as_crit Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)
+#' @param rboot Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})
+#' @param rrep_thresh Reproducibility threshold for replicate bootsrapping. (Default 0.85) With few replicates per condition, the reproducibility takes heavily quantized values. For 3x3, there are 9 possible 1v1 comparisons, and a consistency of 8/9 = 0.88.
+#' @param rrep_as_crit Whether DTU calls should include replicate reproducibility as a criterion. (Default TRUE)
 #' @param description Free-text description of the run. You can use this to add metadata to the results object.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
@@ -48,7 +48,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      slo= NULL, name_A= "Condition-A", name_B= "Condition-B", varname= "condition", COUNTS_COL= "est_counts", BS_TARGET_COL= "target_id",
                      count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
-                     testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=FALSE, rrep_thresh= 0.85, rrep_as_crit= FALSE,
+                     testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85, rrep_as_crit= TRUE,
                      description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
 {
   #---------- PREP
@@ -111,10 +111,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   #---------- EXTRACT DATA
 
-  
+
   if (verbose)
     message("Preparing data...")
-  
+
   if (steps == 3) {   # From Sleuth
     # Reverse look-up from replicates to covariates.
   	samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
@@ -127,7 +127,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
     boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
   }
-  
+
   if (dbg == "bootin")
     return(list("bootA"=count_data_A, "bootB"=count_data_B))
 
@@ -136,7 +136,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     for (smpl in c(boot_data_A, boot_data_B)) {
         smpl[, 1 := NULL]
     }
-    
+
     # Scale abundances before aggregating.
     if (scaling != 1) {
       if (verbose)
@@ -144,7 +144,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       boot_data_A <- mclapply(boot_data_A, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
       boot_data_B <- mclapply(boot_data_B, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
     }
-    
+
     # Calculate mean count across bootstraps.
     count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { return(rowMeans(b)) },
                                            mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
@@ -156,7 +156,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
     nn <- names(count_data_B)  # The number of columns may be different from A.
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
-    
+
     # Scale abundances.
     if (scaling != 1) {
       if (verbose)
@@ -246,8 +246,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                     setTxtProgressBar(myprogress, p)
 
                   # Grab a replicate from each condition.
-                  counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] )
-                  counts_B <- as.data.table( count_data_A[[ names(count_data_B)[pairs[[p]][2]] ]] )
+    			  # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
+                  counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] ) * resobj$Parameters$num_replic_A
+                  counts_B <- as.data.table( count_data_A[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
 
                   # Do the work.
                   pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
@@ -444,7 +445,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     message("Isoform-switching subset of DTU:")
     switchsum <- dtu_switch_summary(resobj)
     print(switchsum)
-    
+
   }
 
   return(resobj)
