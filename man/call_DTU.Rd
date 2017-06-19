@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
   abund_thresh = 5, dprop_thresh = 0.2, correction = "BH", scaling = 1,
   testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
-  rboot = FALSE, rrep_thresh = 0.85, rrep_as_crit = FALSE,
+  rboot = TRUE, rrep_thresh = 0.85, rrep_as_crit = TRUE,
   description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
 }
 \arguments{
@@ -59,11 +59,11 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{qrep_thresh}{Reproducibility threshold for quantification bootsrapping. (Default 0.95)}
 
-\item{rboot}{Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{FALSE})}
+\item{rboot}{Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})}
 
-\item{rrep_thresh}{Reproducibility threshold for replicate bootsrapping. (Default 0.85)}
+\item{rrep_thresh}{Reproducibility threshold for replicate bootsrapping. (Default 0.85) With few replicates per condition, the reproducibility takes heavily quantized values. For 3x3, there are 9 possible 1v1 comparisons, and a consistency of 8/9 = 0.88.}
 
-\item{rrep_as_crit}{Whether DTU calls should include replicate reproducibility as a criterion. (Default FALSE)}
+\item{rrep_as_crit}{Whether DTU calls should include replicate reproducibility as a criterion. (Default TRUE)}
 
 \item{description}{Free-text description of the run. You can use this to add metadata to the results object.}
 

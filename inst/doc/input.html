@@ -491,15 +491,15 @@ mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;
 <h3>Replicate bootstraping</h3>
 <p>Three parameters control bootstrapping of DTU calls agaisnt the samples:</p>
 <ol style="list-style-type: decimal">
-<li><code>rboot</code> - Whether to bootstrap the replicates or not. (Default FALSE)</li>
+<li><code>rboot</code> - Whether to bootstrap the replicates or not. (Default TRUE)</li>
 <li><code>rrep_thresh</code> - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. Higher threshold values are stricter. (Default 0.85)</li>
-<li><code>rrep_as_crit</code> - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default FALSE)</li>
+<li><code>rrep_as_crit</code> - Whether the replicate-wise reproducibility should be used as a criterion in calling DTU. (Default TRUE)</li>
 </ol>
 <p>Unlike bootstrapping the quantifications, bootstrapping the replicates is currently <strong>not stochastic</strong>. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition. This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.</p>
-<p>Because only one replicate is used each time, this process has reduced statistical power and only the strongest results will persist. Due to this, the sample-wise reproducibility is <strong>not used as a criterion</strong> in calling DTU, unless explicitly required by setting the <code>rrep_as_crit</code> flag. For low replication levels in particular, the reproducibility may be easily underestimated or overestimated.</p>
+<p>To maintain comparable statistical significance to the actual experimental design, because only one replicate is used each time, the abundances are scaled up by the number of replicates in the condition. This is equivalent to the idealised scenario of all the replicates being extremely consistent and similar to the chosen one.</p>
 <pre class="r"><code># Bootstrap (default).
-# Note that for few replicates, the reproducibility values are highly discrete.
-# NOTE: The number of iterations for 3 samples per condition is 3*3=9. 
+# Note that for few replicates, the reproducibility values are highly discrete:
+# The number of iterations for 3 samples per condition is 3*3=9. 
 # So the minimum possible error rate is 1/9=0.111. 
 # The corresponding threshold is 1-0.111=0.888.
 mydtu &lt;- call_DTU(annot = myannot, slo = myslo, name_A = &quot;controls&quot;, 

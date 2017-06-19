@@ -101,8 +101,8 @@ myannot <- simdat$annot   # Transcript and gene Identifiers for the above data.
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Bootstrap (default).
-#  # Note that for few replicates, the reproducibility values are highly discrete.
-#  # NOTE: The number of iterations for 3 samples per condition is 3*3=9.
+#  # Note that for few replicates, the reproducibility values are highly discrete:
+#  # The number of iterations for 3 samples per condition is 3*3=9.
 #  # So the minimum possible error rate is 1/9=0.111.
 #  # The corresponding threshold is 1-0.111=0.888.
 #  mydtu <- call_DTU(annot = myannot, slo = myslo, name_A = "controls",

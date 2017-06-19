@@ -219,10 +219,10 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
 
 #================================================================================
 #' Group samples by covariate value.
-#' 
-#' Sleuth records covariate values per sample. However, RATs needs the reverse: the 
+#'
+#' Sleuth records covariate values per sample. However, RATs needs the reverse: the
 #' samples that correspond to a given covariate value.
-#' 
+#'
 #' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
 #' @return list of lists (per covariate) of vectors (per factor level).
 #'
@@ -263,16 +263,16 @@ group_samples <- function(covariates) {
 #' @import data.table
 #' @export
 #'
-denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id", 
+denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id",
                                 TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
   # Ensure data.table complies.
   # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(threads)
-  
-  # Could just always use tidy_annot(), but that duplicates the annotation without reason. 
+
+  # Could just always use tidy_annot(), but that duplicates the annotation without reason.
   # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
   tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
-  
+
   mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
     dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
@@ -317,7 +317,7 @@ alloc_out <- function(annot, full){
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
                         "pval"=NA_real_, "pval_corr"=NA_real_,
-                        "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_, 
+                        "quant_p_mean"=NA_real_, "quant_p_stdev"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_,
                         "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
                         "rep_p_mean"=NA_real_, "rep_p_stdev"=NA_real_, "rep_p_min"=NA_real_, "rep_p_max"=NA_real_,
                         "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
@@ -404,7 +404,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
     Transcripts[(is.nan(propB)), propB := NA_real_]
     Transcripts[, Dprop := propB - propA]
-    
+
     #---------- FILTER
 
     # Filter transcripts and genes to reduce number of tests:
@@ -462,9 +462,9 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #'
 #' The order of values in the two vectors should be the same.
 #' If any value of xp is zero and the corresponding xobs is not, g.test.1 will always reject the hypothesis.
-#' No corrections are applied. 
+#' No corrections are applied.
 #' No input checks are applied, as RATs needs to run this millions of times.
-#' 
+#'
 #' @import stats
 #' @export
 #
@@ -472,7 +472,7 @@ g.test.1 <- function(obsx, px) {
   n = length(obsx)
   sx <- sum(obsx)
   ex <- sx * px  # expected values
-  G <- 2 * sum( sapply (seq.int(1, n, 1), 
+  G <- 2 * sum( sapply (seq.int(1, n, 1),
                         function (i) { if (obsx[i] != 0) { return(obsx[i] * log(obsx[i]/ex[i])) } else { return(0) } }) )
   return( pchisq(G, df= n - 1, lower.tail= FALSE) )
 }
@@ -486,8 +486,8 @@ g.test.1 <- function(obsx, px) {
 #' @param obsy	a numeric vector of positive counts of same length as obsx, with at least one non-zero value.
 #'
 #' The order of values in the two vectors should be the same.
-#' No corrections are applied. 
-#' No input checks are applied, as RATs needs to run this millions of times. 
+#' No corrections are applied.
+#' No input checks are applied, as RATs needs to run this millions of times.
 #'
 #' @import stats
 #' @export
@@ -507,9 +507,9 @@ g.test.2 <- function(obsx, obsy) {
   ex <- mpx * mpv * st
   ey <- mpy * mpv * st
   # Statistic.
-  G <- 2 * sum( sum( sapply (seq.int(1, n, 1), 
+  G <- 2 * sum( sum( sapply (seq.int(1, n, 1),
                              function (i) { if (obsx[i] != 0) { return(obsx[i] * log(obsx[i]/ex[i])) } else { return(0) } }) ),
-                sum( sapply (seq.int(1, n, 1), 
+                sum( sapply (seq.int(1, n, 1),
                              function (i) { if (obsy[i] != 0) { return(obsy[i] * log(obsy[i]/ey[i])) } else { return(0) } }) )
               )
   return( pchisq(G, df= n - 1, lower.tail= FALSE) )
@@ -534,6 +534,28 @@ tidy_annot <- function(annot, TARGET_COL="target_id", PARENT_COL="parent_id") {
   tx_filter <- data.table(target_id= annot[[TARGET_COL]], parent_id= annot[[PARENT_COL]])
   with( tx_filter,
         setkey(tx_filter, parent_id, target_id) )
-  
+
   return(tx_filter)
+}
+
+
+#================================================================================
+#' Get largest value by absolute comparison.
+#'
+#' Get back the original signed value. In case of equal absolutes, the positive
+#' value will be returned.
+#'
+#' @param v A numeric vector.
+#' @return A numeric value.
+#'
+maxabs <- function(v) {
+	if (all(is.na(v)))
+		return(NA_real_)
+	x <- max(v, na.rm=TRUE)
+	n <- min(v, na.rm=TRUE)
+	if (abs(x) >= abs(n)) {
+		return(x)
+	} else {
+		return(n)
+	}
 }

@@ -1,8 +1,8 @@
 Type: Package
 Package: rats
-Version: 0.5.0
+Version: 0.5.0-0
 Date: 2017-06-01
-Title: Relative Abundance of Transcripts
+Title: Relative Abundance of Transcripts (BETA)
 Encoding: UTF-8
 Authors: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
              person("Kira Mour??o", role=c("aut"), email="k.mourao@dundee.ac.uk"),
