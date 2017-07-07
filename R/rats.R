@@ -261,7 +261,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                 })
 
     if (verbose)  # Forcing a new line after the progress bar.
-      message("")
+      print("")
 
     if (dbg == "rboot")
       return(repres)
@@ -343,7 +343,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gdtu" = Genes[, DTU] )) })
               })
     if (verbose)  # Forcing a new line after the progress bar.
-      message("")
+      print("")
 
     if (dbg == "qboot")
       return(bootres)
@@ -439,13 +439,13 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   if(verbose) {
     message("All done!")
-    message("Summary of DTU results:")
+    print("")
+    print("Summary of DTU results:")
     dtusum <- dtu_summary(resobj)
     print(dtusum)
-    message("Isoform-switching subset of DTU:")
+    print("Isoform-switching subset of DTU:")
     switchsum <- dtu_switch_summary(resobj)
     print(switchsum)
-
   }
 
   return(resobj)
