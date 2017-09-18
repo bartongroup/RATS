@@ -18,3 +18,6 @@ No input checks are applied, as RATs needs to run this millions of times.}
 \description{
 For two sets of observations.
 }
+\details{
+General utility function.
+}

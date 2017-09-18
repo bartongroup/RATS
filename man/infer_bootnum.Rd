@@ -4,11 +4,9 @@
 \alias{infer_bootnum}
 \title{Rule-of-thumb number of iterations.}
 \usage{
-infer_bootnum(slo, boot_data_A, boot_data_B)
+infer_bootnum(boot_data_A, boot_data_B)
 }
 \arguments{
-\item{slo}{Sleuth object.}
-
 \item{boot_data_A}{List of tables of bootstrapped counts.}
 
 \item{boot_data_B}{List of tables of bootstrapped counts.}

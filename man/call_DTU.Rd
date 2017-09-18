@@ -5,14 +5,13 @@
 \title{Calculate differential transcript usage.}
 \usage{
 call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
-  slo = NULL, name_A = "Condition-A", name_B = "Condition-B",
-  varname = "condition", COUNTS_COL = "est_counts",
-  BS_TARGET_COL = "target_id", count_data_A = NULL, count_data_B = NULL,
-  boot_data_A = NULL, boot_data_B = NULL, p_thresh = 0.05,
-  abund_thresh = 5, dprop_thresh = 0.2, correction = "BH", scaling = 1,
-  testmode = "both", qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95,
-  rboot = TRUE, rrep_thresh = 0.85, rrep_as_crit = TRUE,
-  description = NA_character_, verbose = TRUE, threads = 1L, dbg = 0)
+  count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL,
+  boot_data_B = NULL, name_A = "Condition-A", name_B = "Condition-B",
+  varname = "condition", p_thresh = 0.05, abund_thresh = 5,
+  dprop_thresh = 0.2, correction = "BH", scaling = 1, testmode = "both",
+  qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95, rboot = TRUE,
+  rrep_thresh = 0.85, description = NA_character_, verbose = TRUE,
+  threads = 1L, dbg = 0)
 }
 \arguments{
 \item{annot}{A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
@@ -20,18 +19,6 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 \item{TARGET_COL}{The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})}
 
 \item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
-
-\item{slo}{A Sleuth object.}
-
-\item{name_A}{The name for one condition, as it appears in the \code{sample_to_covariates} table within the Sleuth object.  (Default "Condition-A")}
-
-\item{name_B}{The name for the other condition, as it appears in the \code{sample_to_covariates} table within the sleuth object.  (Default "Condition-B")}
-
-\item{varname}{The name of the covariate to which the two conditions belong, as it appears in the \code{sample_to_covariates} table within the sleuth object. (Default \code{"condition"}).}
-
-\item{COUNTS_COL}{For Sleuth objects only. The name of the counts column to use for the DTU calculation (est_counts or tpm). (Default \code{"est_counts"})}
-
-\item{BS_TARGET_COL}{For Sleuth objects only. The name of the transcript identifiers column in the bootstrap tables. (Default \code{"target_id"})}
 
 \item{count_data_A}{A data.table of estimated counts for condition A. One column per sample/replicate, one row per transcript. The first column should contain the transcript identifiers.}
 
@@ -41,15 +28,21 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{boot_data_B}{A list of data.tables, one per sample/replicate of condition B. One bootstrap iteration's estimates per column, one transcript per row. The first column should contain the transcript identifiers.}
 
+\item{name_A}{The name for one condition. (Default "Condition-A")}
+
+\item{name_B}{The name for the other condition. (Default "Condition-B")}
+
+\item{varname}{The name of the covariate to which the two conditions belong. (Default \code{"condition"}).}
+
 \item{p_thresh}{The p-value threshold. (Default 0.05)}
 
 \item{abund_thresh}{Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)}
 
 \item{dprop_thresh}{Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)}
 
-\item{correction}{The p-value correction to apply, as defined in \code{stats::p.adjust.methods}. (Default \code{"BH"})}
+\item{correction}{The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})}
 
-\item{scaling}{A scaling factor to be applied to the abundances, *prior* to any thresholding and testing. Useful for scaling TPM abundances to the actual number of transcripts in the sequencing sample, if you use TPMs and if you can infer that information from your sample preparation. Improper use of the scaling factor will artificially inflate/deflate the significances obtained. (Default 1)}
+\item{scaling}{A scaling factor to be applied to the abundances, *prior* to any thresholding and testing. Useful for scaling TPM (transcripts per 1 million reads) abundances to the actual library size. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained. (Default 1)}
 
 \item{testmode}{One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.}
 
@@ -59,11 +52,9 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{qrep_thresh}{Reproducibility threshold for quantification bootsrapping. (Default 0.95)}
 
-\item{rboot}{Bootstrap the DTU robustness against the replicates. Does ALL 1 vs 1 combinations. (Default \code{TRUE})}
+\item{rboot}{Bootstrap the DTU robustness against the replicates. Does *ALL* 1 vs 1 combinations. (Default \code{TRUE})}
 
 \item{rrep_thresh}{Reproducibility threshold for replicate bootsrapping. (Default 0.85) With few replicates per condition, the reproducibility takes heavily quantized values. For 3x3, there are 9 possible 1v1 comparisons, and a consistency of 8/9 = 0.88.}
-
-\item{rrep_as_crit}{Whether DTU calls should include replicate reproducibility as a criterion. (Default TRUE)}
 
 \item{description}{Free-text description of the run. You can use this to add metadata to the results object.}
 
@@ -77,10 +68,9 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 }
 \description{
-There are three options for input:
+There are two modes for input:
 \itemize{
- \item{A sleuth object. This requires the following parameters: \code{slo}, \code{name_A}, \code{name_B} and optionally \code{varname}, \code{COUNT_COL}, \code{BS_TARGET_COL}.}
- \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
- \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}. \code{name_A} and \code{name_B} can optionally be used to name the conditions.}
+ \item{Bootstrapped count estimates. This requires the following parameters: \code{boot_data_A} and \code{boot_data_B}.}
+ \item{Count estimates. This requires the following parameters: \code{count_data_A} and \code{count_data_B}.}
 }
 }

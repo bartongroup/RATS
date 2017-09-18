@@ -13,6 +13,9 @@ group_samples(covariates)
 list of lists (per covariate) of vectors (per factor level).
 }
 \description{
-Sleuth records covariate values per sample. However, RATs needs the reverse: the
-samples that correspond to a given covariate value.
+*Legacy function* No longer in use, but kept for possible general utility.
+}
+\details{
+Converts a table where each row is a sample and each column a variable into a
+lookup structure that matches each value of each variable to a vector of corresponding samples.
 }

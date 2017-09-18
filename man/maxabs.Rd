@@ -13,6 +13,10 @@ maxabs(v)
 A numeric value.
 }
 \description{
-Get back the original signed value. In case of equal absolutes, the positive
-value will be returned.
+General utility function.
+}
+\details{
+Returns the original signed value with the largest absolute value in the vector. 
+In case of equal absolutes between a positive and negative value, the positive 
+value will always be the one that is returned.
 }

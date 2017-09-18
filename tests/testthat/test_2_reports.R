@@ -4,8 +4,8 @@ context("DTU Reports")
 
 #==============================================================================
 test_that("The summaries work", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE)
   
   expect_silent(ids <- get_dtu_ids(mydtu))
   expect_type(ids, "list")
@@ -39,7 +39,7 @@ test_that("The summaries work", {
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
   expect_false(any(is.na(tally)))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
   expect_silent(tally <- dtu_summary(mydtu))
   expect_silent(ids <- get_dtu_ids(mydtu))
   expect_equal(tally[[2]],  c(2, 1, 7, 2, 1, 7, 2, 1, 7, 5, 5, 11)) 
@@ -60,8 +60,8 @@ test_that("The summaries work", {
 
 #==============================================================================
 test_that("The isoform switching summaries work", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
   
   expect_silent(ids <- get_switch_ids(mydtu))
   expect_type(ids, "list")
@@ -86,8 +86,8 @@ test_that("The isoform switching summaries work", {
 
 #==============================================================================
 test_that("The plurality summaries work", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
   
   expect_silent(ids <- get_plurality_ids(mydtu))
   expect_type(ids, "list")
@@ -104,7 +104,7 @@ test_that("The plurality summaries work", {
   expect_equal(tally[[2]], c(1, 1))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.3)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.3)
   expect_silent(ids <- get_plurality_ids(mydtu))
   expect_silent(tally <- dtu_plurality_summary(mydtu))
   expect_named(ids, c("1"))
@@ -115,8 +115,8 @@ test_that("The plurality summaries work", {
 
 #==============================================================================
 test_that("The gene plotting commands work", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
   
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="bycondition"))
@@ -154,8 +154,8 @@ test_that("The gene plotting commands work", {
 
 #==============================================================================
 test_that("The overview plotting commands work", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
   
   expect_silent(plot_overview(mydtu))
   expect_silent(plot_overview(dtuo=mydtu, type="tvolcano"))

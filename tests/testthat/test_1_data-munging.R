@@ -82,8 +82,8 @@ test_that("Filters work correctly", {
   # !!! This test is tightly dependent on the data used for the test and the default parameter values, in order to
   # !!! ensure correct response to specific scenarios.
   
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", abund_thresh=10, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=10, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE)
   
   expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(1, 1, 0, FALSE, FALSE))
@@ -153,10 +153,7 @@ test_that("Filters work correctly", {
 
 #==============================================================================
 test_that("The number of iterations is detected correctly", {
-  sim <- sim_sleuth_data()
-  expect_equal(infer_bootnum(sim$slo, NULL, NULL), 2)
-  
   sim <- sim_boot_data()
-  expect_equal(infer_bootnum(NULL,sim$boots_A, sim$boots_B), 2)
+  expect_equal(infer_bootnum(sim$boots_A, sim$boots_B), 2)
 })
 
