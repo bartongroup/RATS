@@ -136,6 +136,7 @@ sim_boot_data <- function(varname="condition", cnames=c("A", "B"), errannot_inco
 #' @param PARENT_COL Name for the bootdtraps column containing counts.
 #' @param TARGET_COL Name for annotation column containing transcript identification.
 #' @param cnames A vector of (two) name values for the comparison variable.
+#' @param errannot_inconsistent Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)
 #' @return A list with 3 elements. First, a data.frame with the corresponding annotation table. 
 #' Then, 2 data.tables, one per condition. Each data table contains the abundance estimates for all the samples for the respective condition.
 #' 
@@ -149,6 +150,7 @@ sim_count_data <- function(varname="condition", cnames=c("A", "B"), errannot_inc
   # Emulate non-bootstrap data.
   counts_A <- data_A[[1]]
   counts_B <- data_B[[1]]
+  
   return(list(sim$annot, 'counts_A'= counts_A, 'counts_B'= counts_B))
 }
 

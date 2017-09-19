@@ -2,9 +2,6 @@
 #' Check input parameters.
 #'
 #' @param annot Annotation dataframe.
-#' @param name_A Condition name.
-#' @param name_B Condition name.
-#' @param varname Name of condition variable.
 #' @param correction P-value correction method.
 #' @param p_thresh Significance level.
 #' @param TARGET_COL Name of transcript id column in annotation.
@@ -205,7 +202,7 @@ group_samples <- function(covariates) {
 #' 
 #' *Legacy function* 
 #' 
-#' It extracts the bootstrap data from the older-style \link[sleuth]{\code{sleuth}} object. 
+#' It extracts the bootstrap data from the older-style \code{sleuth} object. 
 #' As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
 #' 
 #' @param slo A sleuth object.

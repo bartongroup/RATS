@@ -37,6 +37,6 @@ Transcripts in \code{annot} that are missing from \code{slo} are automatically p
 *Legacy function*
 }
 \details{
-It extracts the bootstrap data from the older-style \link[sleuth]{\code{sleuth}} object. 
+It extracts the bootstrap data from the older-style \code{sleuth} object. 
 As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
 }

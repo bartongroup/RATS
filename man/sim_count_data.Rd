@@ -13,6 +13,8 @@ sim_count_data(varname = "condition", cnames = c("A", "B"),
 
 \item{cnames}{A vector of (two) name values for the comparison variable.}
 
+\item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)}
+
 \item{PARENT_COL}{Name for the bootdtraps column containing counts.}
 
 \item{TARGET_COL}{Name for annotation column containing transcript identification.}

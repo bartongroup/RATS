@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Plots'
 author: "Kimon Froussios"
-date: "01 JUN 2017"
+date: "19 SEP 2017"
 output:
   html_document:
     keep_md: yes
@@ -35,15 +35,16 @@ Set up an example.
 
 ```{r}
 # Simulate some data.
-simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
-# For convenience let's assign the contents of the list to separate variables.
-myslo <- simdat$slo
-myannot <- simdat$annot
+simdat <- sim_boot_data() 
+# For convenience let's assign the contents of the list to separate variables
+mycond_A <- simdat[[2]]   # Simulated bootstrapped data for one condition.
+mycond_B <- simdat[[3]]   # Simulated bootstrapped data for other condition.
+myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 
 # Call DTU
-mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patients", 
-                  varname= "condition", verbose= FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
+mydtu <- call_DTU(annot= myannot, verbose= FALSE,
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  dprop_thresh=0.1, qboot=TRUE, rboot=FALSE)
 ```
 
 
@@ -78,19 +79,19 @@ plot_gene(mydtu, "MIX6", style="bycondition")
 The top two facets show the absolute abundances (counts) of the isoforms as supplied in the input, the bottom two show the correspondng 
 relative abundances (proportions). These are split by condition: The left two facets refer to one condition, the right two ones to the 
 other condition. The boxplots describe the abundance measurements of each isoform across replicates. 
+The actual measurements are overlayed as points and connected by lines so as to group the set of isoform abundances measured in each replicate. 
+This highlights the level of consistency between the replicates. The points and lines are placed slightly off-centre to prevent replicates 
+masking one another when the measurements are very similar. 
 
-The actual measurements are overlayed as points and connected by lines so as to group the set of isoform abundances measured in each replicate. This highlights the level of 
-consistency between the replicates. The points and lines are placed slightly off-centre to prevent replicates masking one another when 
-the measurements are very similar. The colours of the replicates are recycled between the two conditions, to reduce the required palette and
-boost contrast. So in the example, there are 4 samples: controls-1, controls-2, patients-1 and patients-2.
+The colours of the replicates are recycled between the two conditions, to reducethe required palette and boost contrast. 
+So in the example, there are 4 samples: controls-1, controls-2, patients-1 and patients-2.
 
 In the past, the fill colour encoded the DTU outcome, but to keep things more consistent with the other styles
 the DTU is now encoded as point shape while the fill colour echoes the condition.
 In this example, isoforms `.c1` and `.c2` change significantly, isoforms `.c3`, `.c4` and `.nc` do not change significantly 
-and isoform `.d` could not be tested. It is not always possible to see the fill colour, depending on the spead of the measurements, so 
-refering back to the RATs output tables may be necessary.
+and isoform `.d` could not be tested.
 
-This structure is great for seeing changes in the isoform distribution profile of a gene. A more minimalist version of the plot, without the boxpltos,
+This structure is great for seeing changes in the isoform distribution profile of a gene. A more minimalist version of this, without the boxpltos,
 can also be obtained:
 
 ```{r, eval=FALSE}
@@ -98,7 +99,7 @@ can also be obtained:
 plot_gene(mydtu, "MIX6", style="lines")
 ```
 
-When there are many lines or many isoforms, it may be preferable to group abundances by isoform, making individual comparisons easier:
+When there are many replicates or many isoforms, it may be preferable to group abundances by isoform, making individual comparisons easier:
 
 ```{r}
 # Grouping by isoform:
@@ -143,7 +144,7 @@ This is what these look like on a larger dataset:
 
 The gene version of the effect size distribution is often bi-modal with the positive peak being larger than the negative, 
 because when a gene has isoforms with the same absolute effect size (for example genes with two isoforms) 
-the positive value is selected.
+the positive value is deterministically selected.
 
 Although fold-changes of transcript expression are not tied to DTU, if your input counts are suitably normalised between conditions,
 you can plot the traditional FC volcano and the relationship between FC and proportion change.
@@ -162,7 +163,7 @@ plot_overview(mydtu, type="fcVSdprop")
 
 ## Interactive plots
 
-If you prefer picking points from a plot rather than sorting through tables, the volcano plot is also available through 
+If you prefer picking points from a plot rather than sorting through tables, the gene-level volcano plot is also available through 
 an interactive `shiny` app, that pulls up the relevant `Gene` and `Transcript` results and the isoform abundance plot 
 for any volcano point you select.
 
@@ -210,29 +211,18 @@ plot_gene(mydtu, "MIX6", style="bycondition", fillby="condition",
           replcolvec=c("green", "darkgreen"))
 ```
 
-1. `isofcolvec` - Colour vector for isoform highlighting. Used to build a colorRampPalette.
-2. `dtucolvec` - Colour vector for DTU highlighting.
-3. `condcolvec` - Colour vector for condition highlighting.
-4. `replcolvec` - Colour vector for replicate highlighting. Used to build a colorRampPalette.
-5. `nonecol` - Colour to use when no colour coding is wanted.
+* `isofcolvec` - Colour vector for isoform highlighting. Used to build a colorRampPalette.
+* `dtucolvec` - Colour vector for DTU highlighting.
+* `condcolvec` - Colour vector for condition highlighting.
+* `replcolvec` - Colour vector for replicate highlighting. Used to build a colorRampPalette.
+* `nonecol` - Colour to use when no colour coding is wanted.
 
 
 ## General customisations for all plots
 
-You can save any of the gene and overview plots as a `ggplot2` object and use [ggplot2](http://ggplot2.org) manipulations on it, such as changing the axis scales.
-Other `ggplot2` customisations include the axis tick marks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
+You can save any of the gene and overview plots as a `ggplot2` object and use ggplot2 manipulations on it, such as
+the axis tick marks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
 documentation for more help on these.
-
-<!-- ```{r} -->
-<!-- library(ggplot2) -->
-
-<!-- myplot <- plot_overview(mydtu, "volcano") -->
-<!-- myplot  # display -->
-
-<!-- # Change title.  -->
-<!-- myplot2 <- myplot + ggtitle("MY EPIC TITLE") -->
-<!-- myplot2 -->
-<!-- ``` -->
 
 
 ***

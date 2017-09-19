@@ -16,28 +16,22 @@ Anyone working in transcriptomics, analysing gene expression and transcript abun
 This is called **Differential Transcript Usage (DTU)**. 
 
 2. **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
-transcript abundances. This makes it *suitable for use with alignment-free quantification tools* like [Kallisto](http://pachterlab.github.io/kallisto/)
-or [Salmon](https://github.com/COMBINE-lab/salmon). It is also compatible with DTE output from [Sleuth](http://pachterlab.github.io/sleuth).
+transcript abundances, which you can obtain using any tool you like. This makes it *suitable for use with alignment-free quantification tools* 
+like [Kallisto](http://pachterlab.github.io/kallisto/) or [Salmon](https://github.com/COMBINE-lab/salmon). 
 
 3. RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. These bootstrapped
-data are used by `RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
+data are used by RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
 and thus provide a measure of confidence in the DTU calls. 
 
 
 #### What it needs
 
-1. This is an R source package, and will run on any platform with a reasonably up-to-date R environment.
+1. This is an R source package, and will run on any platform with a reasonably up-to-date R environment. A few third-party R packages are also required (see below).
 
-2. As input, RATs requires transcript abundance estimates with or without bootstrapping. For convenience, these can also be extracted directly
-from the output of [Sleuth](http://pachterlab.github.io/sleuth/). 
+2. As input, RATs requires transcript abundance estimates with or without bootstrapping. The format either way is tables with the samples as columns and the transcripts as rows. An extra column holds the transcript IDs. Some functionality to create these from Salmon or Kallisto quantification files is provided by RATs.
 
-3. RATs also requires a look-up table matching transcript identifiers to respective gene identifiers. This can be obtained through various means,
-one of them being extracting this info from a GTF file.
-
-4. RATs makes use of the [data.table](https://cran.r-project.org/web/packages/data.table/index.html) and 
-[matrixStats](https://cran.r-project.org/web/packages/matrixStats/index.html) packages, as well as 
-[ggplot2](https://cran.r-project.org/web/packages/ggplot2/index.html) and [shiny](https://cran.r-project.org/web/packages/shiny/shiny.pdf) for visualisations. All these are
-available from CRAN.
+3. RATs also requires a look-up table matching the transcript identifiers to the respective gene identifiers. This can be obtained through various means,
+one of them being extracting this info from a GTF file using functionality provided by RATs.
 
 ***
 
@@ -66,17 +60,17 @@ install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
 install.packages("ggplot2", dependencies=TRUE)
 ```
 
-* Packages needed only for importing abundances from Salmon/Kallisto output (optional) - 
+* Packages needed only for importing abundances from Salmon/Kallisto output (recommended) - 
 
 ```
 install.packages("devtools", dependencies=TRUE)
 
 source("http://bioconductor.org/biocLite.R")
 
-# Wasabi converter from Salmon/Sailfish to Kallisto.
+# Format converter from Salmon/Sailfish to Kallisto.
 biocLite("COMBINE-lab/wasabi")
 
-# Kallisto parser.
+# Compressed format parser.
 biocLite("rhdf5")
 ```
 
@@ -105,21 +99,25 @@ For testing purposes (bug resolutions, new features), you can install the ongoin
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-Developmental versions are works in progress and will not be archived in snapshots. They are also likely to contain new bugs and
-may at times not work correctly or at all. For reproducible/publishable analyses, **always use a release version**, NOT a developmental version.
+Developmental versions are works in progress and will not be archived in release snapshots. They are also likely to contain new bugs and
+may at times not work correctly or at all. For reproducible/publishable analyses, always **use a release version**, not a developmental version.
 
 Eventually, we aim to make the package also available through Bioconductor.
 
+
 ### Differential Transcript Usage
 
-A typical command to call DTU given a Sleuth object looks like this:
+A typical command to call DTU bootstrapped quantifications looks like this:
 
-`results <- call_DTU(annot = my_identifiers_table, slo = my_sleuth_object,  name_A = "Condition-1", name_B = "Condition-2")`
+`results <- call_DTU(annot = my_identifiers_table, boot_data_A=my_list_of_tables_A, boot_data_B=my_list_of_tables_B)`
 
-RATs also accepts data input in **generic formats**. Please consult the vignettes for syntax details, format specifications and additional settings.
+and for plain quantifications like this:
 
-The output is a list containing (among other items) two tables that list the final results as well as the intermediate calculations and decisions.
-Details on the output structure and visualisation options are provided in the vignettes.
+`results <- call_DTU(annot = my_identifiers_table, count_data_A=my_table_A, count_data_B=my_tables_B)`
+
+The output is a list containing (among other items) two tables, one with gene-level details and one with transcript-level details. In these you will
+find the raw values for all calculations, the pass/fail for each threshold and the final classification for each gene or transcript respectively.
+Details on the output structure and the result visualisation options are provided in the vignettes.
 
 ***
 
@@ -128,7 +126,7 @@ Details on the output structure and visualisation options are provided in the vi
 The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
-To **report problems** or ask for **assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
+To report **problems** or ask for **assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
 the support forum before posting a new issue, in case your question is already answered there.
 

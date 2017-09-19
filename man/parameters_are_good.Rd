@@ -46,12 +46,6 @@ parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
 \item{rboot}{Whether to bootstrap against samples.}
 
 \item{rrep_thresh}{Confidence threshold.}
-
-\item{name_A}{Condition name.}
-
-\item{name_B}{Condition name.}
-
-\item{varname}{Name of condition variable.}
 }
 \value{
 List: \itemize{
