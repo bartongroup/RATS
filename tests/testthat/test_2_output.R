@@ -4,20 +4,20 @@ context("DTU Output")
 
 #==============================================================================
 test_that("The output structure is correct", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", qbootnum=2, qboot=TRUE, rboot=TRUE, verbose = FALSE)
+  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, qboot=TRUE, rboot=TRUE, verbose = FALSE)
   
   expect_type(mydtu, "list")
   expect_equal(length(mydtu), 4)
   expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "Abundances"))
   
   expect_type(mydtu$Parameters, "list")
-  expect_length(mydtu$Parameters, 24)
+  expect_length(mydtu$Parameters, 23)
   expect_named(mydtu$Parameters, c("description", "time", "rats_version", "R_version",
                                    "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
                                    "tests", "p_thresh", "abund_thresh", "dprop_thresh", "abund_scaling",
                                    "quant_reprod_thresh", "quant_boot", "quant_bootnum",
-                                   "rep_reprod_thresh", "rep_boot", "rep_bootnum", "rep_reprod_as_crit"))
+                                   "rep_reprod_thresh", "rep_boot", "rep_bootnum"))
   
   expect_true(is.data.frame(mydtu$Genes))
   expect_equal(dim(mydtu$Genes)[2], 26)
@@ -93,22 +93,22 @@ test_that("The output structure is correct", {
   expect_true(is.data.frame(mydtu$Abundances[[1]]))
   expect_true(is.data.frame(mydtu$Abundances[[2]]))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, qboot = FALSE)  
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", verbose = FALSE, qboot = FALSE)  
   expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Genes)))
   expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Transcripts)))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", verbose = FALSE, rboot = FALSE)  
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", verbose = FALSE, rboot = FALSE)  
   expect_false(any(c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
   expect_false(any(c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
   
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", testmode="transc", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", testmode="transc", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE)
   expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
                      "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
   expect_true(all(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
                     "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
   
-  mydtu <- call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", testmode="genes", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", testmode="genes", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE)
   expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
                      "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
   expect_true(all(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
@@ -126,9 +126,9 @@ test_that("The output content is complete", {
   counts_A <- data_A[[1]]
   counts_B <- data_B[[2]]
   
-  mydtu <- list(call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", rboot=TRUE, qboot=TRUE, qbootnum=2, verbose = FALSE, description="test"),
-                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=TRUE, qboot=TRUE, qbootnum=2, verbose = FALSE, description="test"),
-                call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, description="test"))
+  mydtu <- list(call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, description="test"),
+                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=TRUE, qboot=TRUE, qbootnum=2, verbose = FALSE, description="test")
+                )
   
   for (x in length(mydtu)) {
     # Parameters.
@@ -150,9 +150,8 @@ test_that("The output content is complete", {
     expect_false(is.na(mydtu[[x]]$Parameters$"time"))
     expect_false(is.na(mydtu[[x]]$Parameters$"rep_boot"))
     expect_false(is.na(mydtu[[x]]$Parameters$"quant_boot"))
-    if (x<3) {
+    if (x>1) {
       expect_false(is.na(mydtu[[x]]$Parameters$"rep_bootnum"))
-      expect_false(is.na(mydtu[[x]]$Parameters$"rep_reprod_as_crit"))
       expect_false(is.na(mydtu[[x]]$Parameters$"quant_bootnum"))
       expect_false(is.na(mydtu[[x]]$Parameters$"rep_reprod_thresh"))
       expect_false(is.na(mydtu[[x]]$Parameters$"quant_reprod_thresh"))
@@ -168,7 +167,7 @@ test_that("The output content is complete", {
     expect_false(all(is.na(mydtu[[x]]$Genes[["sig"]])))
     expect_false(all(is.na(mydtu[[x]]$Genes[["DTU"]])))
     expect_false(all(is.na(mydtu[[x]]$Genes[["transc_DTU"]])))
-    if (x <3) {
+    if (x>1) {
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_dtu_freq"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_mean"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_stdev"]])))
@@ -204,7 +203,7 @@ test_that("The output content is complete", {
     expect_false(all(is.na(mydtu[[x]]$Transcripts[["pval"]])))
     expect_false(all(is.na(mydtu[[x]]$Transcripts[["pval_corr"]])))
     expect_false(all(is.na(mydtu[[x]]$Transcripts[["sig"]])))
-    if (x <3) {
+    if (x>1) {
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_dtu_freq"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_mean"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_stdev"]])))
@@ -221,8 +220,8 @@ test_that("The output content is complete", {
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_reprod"]])))
     }
     # Paranoid check that all the annotation entries are present in the output.
-    expect_equal(dim(mydtu[[x]]$Genes)[1], length(levels(sim$annot$parent_id)))
-    expect_equal(dim(mydtu[[x]]$Transcripts)[1], length(levels(sim$annot$target_id)))
+    expect_equal(dim(mydtu[[x]]$Genes)[1], length(unique(sim$annot$parent_id)))
+    expect_equal(dim(mydtu[[x]]$Transcripts)[1], length(sim$annot$target_id))
   }
 })
 
@@ -236,14 +235,11 @@ test_that("The result is consistent across input data formats", {
   counts_A <- data_A[[1]]
   counts_B <- data_B[[2]]
   
-  mydtu <- list(call_DTU(annot= sim$annot, slo= sim$slo, name_A= "ONE", name_B= "TWO", rboot=FALSE, qboot=FALSE, verbose = FALSE),
-                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE),
+  mydtu <- list(call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE),
                 call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE))
   
-  expect_equal(mydtu[[1]][[2]], mydtu[[2]][[2]])
-  expect_equal(mydtu[[1]][[2]][, seq(1,7), with=FALSE], mydtu[[3]][[2]][, seq(1,7), with=FALSE])
-  expect_equal(mydtu[[1]][[3]], mydtu[[2]][[3]])
-  expect_equal(mydtu[[1]][[3]][, seq(1,4), with=FALSE], mydtu[[3]][[3]][, seq(1,4), with=FALSE])
+  expect_equal(mydtu[[1]][[2]][, seq(1,7), with=FALSE], mydtu[[2]][[2]][, seq(1,7), with=FALSE])
+  expect_equal(mydtu[[1]][[3]][, seq(1,4), with=FALSE], mydtu[[2]][[3]][, seq(1,4), with=FALSE])
 })
 
 

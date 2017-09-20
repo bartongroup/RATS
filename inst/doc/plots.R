@@ -9,15 +9,16 @@ library(rats)
 
 ## ------------------------------------------------------------------------
 # Simulate some data.
-simdat <- sim_sleuth_data(cnames = c("controls", "patients")) 
-# For convenience let's assign the contents of the list to separate variables.
-myslo <- simdat$slo
-myannot <- simdat$annot
+simdat <- sim_boot_data() 
+# For convenience let's assign the contents of the list to separate variables
+mycond_A <- simdat[[2]]   # Simulated bootstrapped data for one condition.
+mycond_B <- simdat[[3]]   # Simulated bootstrapped data for other condition.
+myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 
 # Call DTU
-mydtu <- call_DTU(annot= myannot, slo= myslo, name_A= "controls", name_B= "patients", 
-                  varname= "condition", verbose= FALSE,
-                  description="Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.")
+mydtu <- call_DTU(annot= myannot, verbose= FALSE,
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  dprop_thresh=0.1, qboot=TRUE, rboot=FALSE)
 
 ## ------------------------------------------------------------------------
 # Grouping by condition (DEFAULT):

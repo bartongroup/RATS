@@ -14,8 +14,11 @@ g.test.1(obsx, px)
 The order of values in the two vectors should be the same.
 If any value of xp is zero and the corresponding xobs is not, g.test.1 will always reject the hypothesis.
 No corrections are applied.
-No input checks are applied, as RATs needs to run this millions of times.}
+No input checks are applied.}
 }
 \description{
-Log-likelihood test of goodness of fit.
+For a set of observations against a set of probabilities.
+}
+\details{
+General utility function.
 }

@@ -1,18 +1,12 @@
 #================================================================================
 #' Check input parameters.
 #'
-#' @param slo Sleuth object
 #' @param annot Annotation dataframe.
-#' @param name_A Condition name.
-#' @param name_B Condition name.
-#' @param varname Name of condition variable.
-#' @param COUNTS_COL Name of counts column in bootstrap.
 #' @param correction P-value correction method.
 #' @param p_thresh Significance level.
 #' @param TARGET_COL Name of transcript id column in annotation.
 #' @param PARENT_COL Name of gene id column in annotation.
-#' @param BS_TARGET_COL Name of transcript id column in bootstrap.
-#' @param count_thresh Minimum transcript abundance per sample.
+#' @param abund_thresh Minimum transcript abundance per sample.
 #' @param testmode Which test to run.
 #' @param qboot Whether to bootstrap against quantifications.
 #' @param qbootnum Number of bootstrap iterations.
@@ -24,7 +18,6 @@
 #' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
 #' @param rboot Whether to bootstrap against samples.
 #' @param rrep_thresh Confidence threshold.
-#' @param rrep_as_crit Whether to use rrep as a DTU criterion.
 #' @param threads Number of threads.
 #' @param scaling Abundance scaling factor.
 #'
@@ -38,20 +31,21 @@
 #'
 #' @import data.table
 #'
-parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
-                            correction, p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL,
-                            count_thresh, testmode, qboot, qbootnum, dprop_thresh,
-                            count_data_A, count_data_B, boot_data_A, boot_data_B, qrep_thresh,
-                            threads, rboot, rrep_thresh, rrep_as_crit, scaling) {
+parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
+                                TARGET_COL, PARENT_COL,
+                                correction, testmode, scaling, threads,
+                                p_thresh, abund_thresh, dprop_thresh, 
+                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh) {
   warnmsg <- list()
 
   # Input format.
   if(any(is.null(annot),
-         all( any(is.null(slo), is.null(name_A), is.null(name_B), is.null(varname), is.null(BS_TARGET_COL), is.null(COUNTS_COL)),
-              any(is.null(count_data_A), is.null(count_data_B)),
+         all( any(is.null(count_data_A), is.null(count_data_B)),
               any(is.null(boot_data_A), is.null(boot_data_B)) ) ))
     return(list("error"=TRUE, "message"="Insufficient parameters!"))
-
+  if(any(is.null(count_data_A) != is.null(count_data_B), is.null(boot_data_A) != is.null(boot_data_B)))
+    return(list("error"=TRUE, "message"="You must specify (the same type of) data for both conditions!"))
+  
   # Annotation.
   if (!is.data.frame(annot))
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
@@ -69,7 +63,7 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Invalid p-value threshold!"))
   if ((!is.numeric(dprop_thresh)) || dprop_thresh < 0 || dprop_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
-  if ((!is.numeric(count_thresh)) || count_thresh < 0)
+  if ((!is.numeric(abund_thresh)) || abund_thresh < 0)
     return(list("error"=TRUE, "message"="Invalid abundance threshold! Must be between 0 and 1."))
   if ((!is.numeric(qbootnum)) || qbootnum < 0)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive integer number."))
@@ -85,39 +79,19 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
-  if (!is.logical(rrep_as_crit))
-    return(list("error"=TRUE, "message"="Unrecognized value for rrep_as_crit! Must be TRUE/FALSE."))
   if ((!is.numeric(scaling)) || scaling == 0)
     return(list("error"=TRUE, "message"="Invalid scaling factor! Must be non-zero number."))
 
-  # Sleuth
-  if (!is.null(slo)) {
-    if (any(! c("kal","sample_to_covariates") %in% names(slo), ! "bootstrap" %in% names(slo$kal[[1]]) ))
-      return(list("error"=TRUE, "message"="The specified sleuth object is not valid!"))
-    if (!COUNTS_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
-      return(list("error"=TRUE, "message"="The specified counts field name does not exist!"))
-    if (!varname %in% names(slo$sample_to_covariates))
-      return(list("error"=TRUE, "message"="The specified covariate name does not exist!"))
-    if (any(!c(name_A, name_B) %in% slo$sample_to_covariates[[varname]] ))
-      return(list("error"=TRUE, "message"="One or both of the specified conditions do not exist!"))
-    if (!BS_TARGET_COL %in% names(slo$kal[[1]]$bootstrap[[1]]))
-      return(list("error"=TRUE, "message"="The specified target IDs field name does not exist in the bootstraps!"))
-  }
-
   # Booted counts.
-  if (!is.null(boot_data_A)) {  # If slo available ignore boot_data.
-    if(is.null(slo)) {
+  if (!is.null(boot_data_A)) {
       if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
         return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
-    } else {
-      warnmsg["slo&boots"] <- "Received multiple input formats! Only the sleuth object will be used."
-    }
   }
 
   # Counts.
-  if (!is.null(count_data_A)) {  # If slo or boot_data available, ignore count_data.
-    if(is.null(slo) && any(is.null(boot_data_A), is.null(boot_data_B))) {
-      if (any(!is.data.table(count_data_A), !is.data.table(count_data_B)))
+  if (!is.null(count_data_A)) {  # If boot_data available, ignore count_data.
+    if(is.null(boot_data_A)) {
+      if (!is.data.table(count_data_A) | !is.data.table(count_data_B))
         return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
       if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
         return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs between conditions!"))
@@ -130,16 +104,13 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
   minboots <- NA_integer_
   samples_by_condition <- NULL
   numsamples <- NA_integer_
-  if (!is.null(slo)) {
-  	samples_by_condition <- group_samples(slo$sample_to_covariates)[[varname]]
-  	numsamples <- length(samples_by_condition[[1]]) + length(samples_by_condition[[2]])
-  } else if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
+  if (!is.null(boot_data_A)) {
   	numsamples <- length(boot_data_A) + length(boot_data_B)
   }
   maxmatrix <- 2^31 - 1
   if (qboot) {
     # Consistency,
-    if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
+    if (!is.null(boot_data_A)) {
       # Direct data.
       tx <- boot_data_A[[1]][[1]][order(boot_data_A[[1]][[1]])]
       for (k in 2:length(boot_data_A)){
@@ -150,34 +121,27 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
         if (!all( tx == boot_data_B[[k]][[1]][order(boot_data_B[[k]][[1]])] ))
           return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
       }
-    } else if (!is.null(slo)) {
-      # Sleuth.
-      tx <- slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[1]]$bootstrap[[1]][[BS_TARGET_COL]]) ]
-      for (k in 2:length(slo$kal)) {
-        if (!all( tx == slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]][ order(slo$kal[[k]]$bootstrap[[1]][[BS_TARGET_COL]]) ] ))
-          return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
-      }
+    
+      # Number of iterations.
+      minboots <- infer_bootnum(boot_data_A, boot_data_B)
+      if (!is.na(minboots)) {
+        if (minboots <= 1)
+          return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
+        if (minboots < 100) {
+          warnmsg["toofewboots"] <- "Your quantifications have few bootstrap iterations, which reduces reproducibility of the calls."
+        }
+        if (qbootnum < 100 && qbootnum != 0) {
+          warnmsg["toolowbootnum"] <- "The requested qbootnum is low, which reduces reproducibility of the calls."
+        }
+        bootcombos <- minboots^numsamples  # Conservative estimate.
+        if (qbootnum >= bootcombos/100)
+          warnmsg["toomanyboots"] <- "The requested number of quantification bootstraps is very high, relatively to the supplied data. Over 1% chance of duplicate iterations."
+        if (qbootnum >= maxmatrix/dim(annot)[1])
+          return(list("error"=TRUE,"message"="The requested number of quantification bootstraps would exceed the maximum capacity of an R matrix."))
+      } # else it is probably count data and qboot will be auto-set to FALSE
     } else {
       warnmsg["noboots"] <- "qboot is TRUE but no bootstrapped estimates were provided! Continuing without bootstrapping."
     }
-
-    # Number of iterations.
-    minboots <- infer_bootnum(slo, boot_data_A, boot_data_B)
-    if (!is.na(minboots)) {
-      if (minboots <= 1)
-        return(list("error"=TRUE, "message"="It appears some of your samples have no bootstraps!"))
-      if (minboots < 100) {
-        warnmsg["toofewboots"] <- "Your quantifications have few bootstrap iterations, which reduces reproducibility of the calls."
-      }
-      if (qbootnum < 100 && qbootnum != 0) {
-        warnmsg["toolowbootnum"] <- "The requested qbootnum is low, which reduces reproducibility of the calls."
-      }
-      bootcombos <- minboots^numsamples  # Conservative estimate.
-      if (qbootnum >= bootcombos/100)
-        warnmsg["toomanyboots"] <- "The requested number of quantification bootstraps is very high, relatively to the supplied data. Over 1% chance of duplicate iterations."
-      if (qbootnum >= maxmatrix/dim(annot)[1])
-        return(list("error"=TRUE,"message"="The requested number of quantification bootstraps would exceed the maximum capacity of an R matrix."))
-    } # else it is probably count data and qboot will be auto-set to FALSE
   }
   if (rboot & any( length(samples_by_condition[[1]]) * length(samples_by_condition[[2]]) > maxmatrix/dim(annot)[1],
   				         length(boot_data_A)               * length(boot_data_B)               > maxmatrix/dim(annot)[1] ) )
@@ -190,28 +154,18 @@ parameters_are_good <- function(slo, annot, name_A, name_B, varname, COUNTS_COL,
 #================================================================================
 #' Rule-of-thumb number of iterations.
 #'
-#' @param slo Sleuth object.
 #' @param boot_data_A List of tables of bootstrapped counts.
 #' @param boot_data_B List of tables of bootstrapped counts.
 #' @return The least number of iterations seen in the input.
 #'
-infer_bootnum <- function(slo, boot_data_A, boot_data_B){
+infer_bootnum <- function(boot_data_A, boot_data_B){
   minboot <- NA_integer_
-  # Bootstrapped counts.
-  if (!is.null(boot_data_A) && !is.null(boot_data_B)) {
-    minboot <- length(boot_data_A[[1]]) - 1   # ID column
-    for (k in 2:length(boot_data_A)){
-      minboot <- min(minboot, length(boot_data_A[[k]]) - 1)
-    }
-    for (k in 1:length(boot_data_B)){
-      minboot <- min(minboot, length(boot_data_B[[k]]) - 1)
-    }
-  # Sleuth.
-  } else if (!is.null(slo)) {
-    minboot <- length(slo$kal[[1]]$bootstrap)
-    for (k in 2:length(slo$kal)) {
-      minboot <- min(minboot, length(slo$kal[[k]]$bootstrap))
-    }
+  minboot <- length(boot_data_A[[1]]) - 1   # ID column
+  for (k in 2:length(boot_data_A)){
+    minboot <- min(minboot, length(boot_data_A[[k]]) - 1)
+  }
+  for (k in 1:length(boot_data_B)){
+    minboot <- min(minboot, length(boot_data_B[[k]]) - 1)
   }
   return(minboot)
 }
@@ -220,8 +174,10 @@ infer_bootnum <- function(slo, boot_data_A, boot_data_B){
 #================================================================================
 #' Group samples by covariate value.
 #'
-#' Sleuth records covariate values per sample. However, RATs needs the reverse: the
-#' samples that correspond to a given covariate value.
+#' *Legacy function* No longer in use, but kept for possible general utility.
+#' 
+#' Converts a table where each row is a sample and each column a variable into a
+#' lookup structure that matches each value of each variable to a vector of corresponding samples.
 #'
 #' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
 #' @return list of lists (per covariate) of vectors (per factor level).
@@ -243,7 +199,12 @@ group_samples <- function(covariates) {
 
 #================================================================================
 #' Extract bootstrap counts into a less nested structure.
-#'
+#' 
+#' *Legacy function* 
+#' 
+#' It extracts the bootstrap data from the older-style \code{sleuth} object. 
+#' As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
+#' 
 #' @param slo A sleuth object.
 #' @param annot A data.frame matching transcript identfier to gene identifiers.
 #' @param samples A numeric vector of samples to extract counts for.
@@ -266,10 +227,8 @@ group_samples <- function(covariates) {
 denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id",
                                 TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
   # Ensure data.table complies.
-  # if (packageVersion("data.table") >= "1.9.8")
-    setDTthreads(threads)
+  setDTthreads(threads)
 
-  # Could just always use tidy_annot(), but that duplicates the annotation without reason.
   # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
   tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
 
@@ -312,7 +271,7 @@ alloc_out <- function(annot, full){
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
                        "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=NA_real_,
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
-                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "rep_reprod_as_crit"=NA)
+                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
@@ -376,8 +335,7 @@ alloc_out <- function(annot, full){
 #'
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   # Ensure data.table complies.
-  # if (packageVersion("data.table") >= "1.9.8")
-    setDTthreads(threads)
+  setDTthreads(threads)
 
   #---------- PRE-ALLOCATE
 
@@ -457,13 +415,17 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #================================================================================
 #' Log-likelihood test of goodness of fit.
 #'
+#' For a set of observations against a set of probabilities.
+#' 
+#' General utility function.
+#' 
 #' @param obsx	a numeric vector of finite positive counts, with at least one non-zero value.
 #' @param px	a vector of probabilities of the same length as xobs. ( sum(px) <= 1 )
 #'
 #' The order of values in the two vectors should be the same.
 #' If any value of xp is zero and the corresponding xobs is not, g.test.1 will always reject the hypothesis.
 #' No corrections are applied.
-#' No input checks are applied, as RATs needs to run this millions of times.
+#' No input checks are applied.
 #'
 #' @import stats
 #' @export
@@ -481,6 +443,8 @@ g.test.1 <- function(obsx, px) {
 #' Log-likelihood test of independence.
 #'
 #' For two sets of observations.
+#' 
+#' General utility function.
 #'
 #' @param obsx	a numeric vector of positive counts, with at least one non-zero value.
 #' @param obsy	a numeric vector of positive counts of same length as obsx, with at least one non-zero value.
@@ -542,12 +506,16 @@ tidy_annot <- function(annot, TARGET_COL="target_id", PARENT_COL="parent_id") {
 #================================================================================
 #' Get largest value by absolute comparison.
 #'
-#' Get back the original signed value. In case of equal absolutes, the positive
-#' value will be returned.
+#' General utility function.
+#'
+#' Returns the original signed value with the largest absolute value in the vector. 
+#' In case of equal absolutes between a positive and negative value, the positive 
+#' value will always be the one that is returned.
 #'
 #' @param v A numeric vector.
 #' @return A numeric value.
-#'
+#' 
+#' @export
 maxabs <- function(v) {
 	if (all(is.na(v)))
 		return(NA_real_)

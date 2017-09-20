@@ -34,5 +34,9 @@ Transcripts in \code{slo} that are missing from \code{annot} will be skipped com
 Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
 }
 \description{
-Extract bootstrap counts into a less nested structure.
+*Legacy function*
+}
+\details{
+It extracts the bootstrap data from the older-style \code{sleuth} object. 
+As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
 }

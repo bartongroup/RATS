@@ -4,43 +4,12 @@
 \alias{parameters_are_good}
 \title{Check input parameters.}
 \usage{
-parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
-  p_thresh, TARGET_COL, PARENT_COL, BS_TARGET_COL, count_thresh, testmode,
-  qboot, qbootnum, dprop_thresh, count_data_A, count_data_B, boot_data_A,
-  boot_data_B, qrep_thresh, threads, rboot, rrep_thresh, rrep_as_crit, scaling)
+parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
+  TARGET_COL, PARENT_COL, correction, testmode, scaling, threads, p_thresh,
+  abund_thresh, dprop_thresh, qboot, qbootnum, qrep_thresh, rboot, rrep_thresh)
 }
 \arguments{
-\item{slo}{Sleuth object}
-
 \item{annot}{Annotation dataframe.}
-
-\item{name_A}{Condition name.}
-
-\item{name_B}{Condition name.}
-
-\item{varname}{Name of condition variable.}
-
-\item{COUNTS_COL}{Name of counts column in bootstrap.}
-
-\item{correction}{P-value correction method.}
-
-\item{p_thresh}{Significance level.}
-
-\item{TARGET_COL}{Name of transcript id column in annotation.}
-
-\item{PARENT_COL}{Name of gene id column in annotation.}
-
-\item{BS_TARGET_COL}{Name of transcript id column in bootstrap.}
-
-\item{count_thresh}{Minimum transcript abundance per sample.}
-
-\item{testmode}{Which test to run.}
-
-\item{qboot}{Whether to bootstrap against quantifications.}
-
-\item{qbootnum}{Number of bootstrap iterations.}
-
-\item{dprop_thresh}{Minimum change in proportion.}
 
 \item{count_data_A}{A dataframe of estimated counts.}
 
@@ -50,17 +19,33 @@ parameters_are_good(slo, annot, name_A, name_B, varname, COUNTS_COL, correction,
 
 \item{boot_data_B}{A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.}
 
-\item{qrep_thresh}{Confidence threshold.}
+\item{TARGET_COL}{Name of transcript id column in annotation.}
+
+\item{PARENT_COL}{Name of gene id column in annotation.}
+
+\item{correction}{P-value correction method.}
+
+\item{testmode}{Which test to run.}
+
+\item{scaling}{Abundance scaling factor.}
 
 \item{threads}{Number of threads.}
+
+\item{p_thresh}{Significance level.}
+
+\item{abund_thresh}{Minimum transcript abundance per sample.}
+
+\item{dprop_thresh}{Minimum change in proportion.}
+
+\item{qboot}{Whether to bootstrap against quantifications.}
+
+\item{qbootnum}{Number of bootstrap iterations.}
+
+\item{qrep_thresh}{Confidence threshold.}
 
 \item{rboot}{Whether to bootstrap against samples.}
 
 \item{rrep_thresh}{Confidence threshold.}
-
-\item{rrep_as_crit}{Whether to use rrep as a DTU criterion.}
-
-\item{scaling}{Abundance scaling factor.}
 }
 \value{
 List: \itemize{

@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kimon Froussios" />
 
-<meta name="date" content="2017-06-01" />
+<meta name="date" content="2017-09-19" />
 
 <title>RATs: Raw Output</title>
 
@@ -217,7 +217,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">RATs: Raw Output</h1>
 <h4 class="author"><em>Kimon Froussios</em></h4>
-<h4 class="date"><em>01 JUN 2017</em></h4>
+<h4 class="date"><em>19 SEP 2017</em></h4>
 
 </div>
 
@@ -226,69 +226,68 @@ div.tocify {
 <pre class="r"><code>library(rats)</code></pre>
 <p>Set up an example.</p>
 <pre class="r"><code># Simulate some data.
-simdat &lt;- sim_sleuth_data(cnames = c(&quot;controls&quot;, &quot;patients&quot;)) 
-# For convenience let's assign the contents of the list to separate variables.
-myslo &lt;- simdat$slo
-myannot &lt;- simdat$annot
+simdat &lt;- sim_boot_data() 
+# For convenience let's assign the contents of the list to separate variables
+mycond_A &lt;- simdat[[2]]   # Simulated bootstrapped data for one condition.
+mycond_B &lt;- simdat[[3]]   # Simulated bootstrapped data for other condition.
+myannot &lt;- simdat[[1]]    # Transcript and gene IDs for the above data.
 
 # Call DTU
-mydtu &lt;- call_DTU(annot= myannot, slo= myslo, name_A= &quot;controls&quot;, 
-                  name_B= &quot;patients&quot;, varname= &quot;condition&quot;, verbose= FALSE, 
-                  dprop_thresh=0.1, qboot=TRUE, rboot=TRUE,
-                  description=&quot;Comparison of two conditions using a simulated sleuth object for the purposes of the tutorial. Simulated using built-in functionality of RATs.&quot;)</code></pre>
-<p>We lowered <code>dprop_thresh</code> and bypassed the bootstrapping to increase the number of DTU positive classifications, to better illustrate the summary fucntions below for the given artificial data.</p>
+mydtu &lt;- call_DTU(annot= myannot, verbose= FALSE,
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  dprop_thresh=0.1, qboot=TRUE, rboot=FALSE)</code></pre>
 <hr />
 <div id="quick-results" class="section level1">
 <h1>Quick results</h1>
-<p>For your convenience, RATs provides a few functions to give you a quick summary of your results. However, we do recommend you become familiar with the actual results structure and content, so that you can judge the quality of the DTU calls and trace the reasons behind the classification of each gene or transcript.</p>
+<p>For your convenience, RATs provides a few functions to give you a quick summary of your results. However, we do recommend you become familiar with the actual results structure and content, as this will allow you to better understand the reasons behind your results and enable you to ask more complex/detailed questions than those covered by the functions provided.</p>
 <div id="summary-of-dtu" class="section level2">
 <h2>Summary of DTU</h2>
 <p>The <code>dtu_summary()</code> function lists the total number of genes and transcripts for each of 3 categories:</p>
 <ul>
 <li>DTU: There is significant change in isoform ratios.</li>
 <li>non-DTU: No significant change.</li>
-<li>NA: Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one transcript.</li>
+<li>NA: Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one known transcript.</li>
 </ul>
 <pre class="r"><code># A really simple tally of the outcome.
 print( dtu_summary(mydtu) )</code></pre>
 <pre><code>##                        category tally
-## 1         DTU genes (gene test)     0
-## 2     non-DTU genes (gene test)     3
+## 1         DTU genes (gene test)     1
+## 2     non-DTU genes (gene test)     2
 ## 3          NA genes (gene test)     7
-## 4      DTU genes (transc. test)     0
+## 4      DTU genes (transc. test)     1
 ## 5  non-DTU genes (transc. test)     2
-## 6       NA genes (transc. test)     8
-## 7        DTU genes (both tests)     0
+## 6       NA genes (transc. test)     7
+## 7        DTU genes (both tests)     1
 ## 8    non-DTU genes (both tests)     2
 ## 9         NA genes (both tests)     7
-## 10              DTU transcripts     0
-## 11          non-DTU transcripts    10
+## 10              DTU transcripts     3
+## 11          non-DTU transcripts     7
 ## 12               NA transcripts    11</code></pre>
-<p>RATs uses <em>two</em> separate methods of identifying DTU: The gene-level test works on the isoforms of each gene as a set, whereas the transcript-level test works on each isoform individually and then aggregates the isoform results to form a gene-level result. Therefore, as of v0.4.2, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
-<p>The <code>get_dtu_ids()</code> function lists the actual identifiers per category, instead of the numbers in each category. As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
+<p>RATs tests for DTU at both the gene level and the transcript level. Therefore, as of v0.4.2, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
+<p>The <code>get_dtu_ids()</code> function lists the coresponding identifiers per category. As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
 <pre class="r"><code># Gene and transcript IDs corresponding to the tally above.
 ids &lt;- get_dtu_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`DTU genes (gene test)`
-## character(0)
+## [1] &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (gene test)`
-## [1] &quot;MIX6&quot; &quot;CC&quot;   &quot;NN&quot;  
+## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`NA genes (gene test)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (transc. test)`
-## character(0)
+## [1] &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (transc. test)`
 ## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`NA genes (transc. test)`
-## [1] &quot;MIX6&quot; &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
+## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (both tests)`
-## character(0)
+## [1] &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (both tests)`
 ## [1] &quot;CC&quot; &quot;NN&quot;
@@ -297,11 +296,10 @@ print( ids )</code></pre>
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU transcripts`
-## character(0)
+## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot;
 ## 
 ## $`non-DTU transcripts`
-##  [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot; &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot;
-##  [8] &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
+## [1] &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
 ## 
 ## $`NA transcripts`
 ##  [1] &quot;LC1&quot;      &quot;1A1N-2&quot;   &quot;1B1C.1&quot;   &quot;1B1C.2&quot;   &quot;1D1C:one&quot; &quot;1D1C:two&quot;
@@ -324,36 +322,37 @@ print( dtu_switch_summary(mydtu) )</code></pre>
 ids &lt;- get_switch_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`Primary switch (gene test)`
-## [1] NA
+## [1] &quot;MIX6&quot;
 ## 
 ## $`Non-primary switch (gene test)`
-## [1] NA
+## [1] &quot;MIX6&quot;
 ## 
 ## $`Primary switch (transc. test)`
-## [1] NA
+## [1] &quot;MIX6&quot;
 ## 
 ## $`Non-primary switch (transc. test)`
-## [1] NA
+## [1] &quot;MIX6&quot;
 ## 
 ## $`Primary switch (both tests)`
-## [1] NA
+## [1] &quot;MIX6&quot;
 ## 
 ## $`Non-primary switch (both tests)`
-## [1] NA</code></pre>
-<p>Again, three versions of the results are shown, covering the respective DTU methods in RATs. <code>MIX6</code> is demonstrating a switch in both primary and tertiary isoforms.</p>
+## [1] &quot;MIX6&quot;</code></pre>
+<p>Again, three versions of the results are shown, covering the respective DTU methods in RATs.</p>
 </div>
 <div id="summary-of-dtu-plurality" class="section level2">
 <h2>Summary of DTU plurality</h2>
 <p>In case you want to know how many isoforms are affected per gene.</p>
 <pre class="r"><code># A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )</code></pre>
-<pre><code>## [1] isof_affected
-## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
+<pre><code>##   isof_affected num_of_genes
+## 1             3            1</code></pre>
 <pre class="r"><code># The gene IDs displaying isoform switching.
 ids &lt;- get_plurality_ids(mydtu)
 print( ids )</code></pre>
-<pre><code>## named list()</code></pre>
-<p>The categories are named by the number of isoforms affected. There is one gene (<code>MIX6</code>) that has <code>3</code> isoforms affected.</p>
+<pre><code>## $`3`
+## [1] &quot;MIX6&quot;</code></pre>
+<p>These give you the number and IDs of genes in which 2, 3, etc isoforms show DTU.</p>
 <hr />
 </div>
 </div>
@@ -374,8 +373,8 @@ print( names(mydtu$Parameters) )</code></pre>
 ## [13] &quot;tests&quot;               &quot;p_thresh&quot;            &quot;abund_thresh&quot;       
 ## [16] &quot;dprop_thresh&quot;        &quot;abund_scaling&quot;       &quot;quant_reprod_thresh&quot;
 ## [19] &quot;quant_boot&quot;          &quot;quant_bootnum&quot;       &quot;rep_reprod_thresh&quot;  
-## [22] &quot;rep_boot&quot;            &quot;rep_bootnum&quot;         &quot;rep_reprod_as_crit&quot;</code></pre>
-<ol style="list-style-type: decimal">
+## [22] &quot;rep_boot&quot;            &quot;rep_bootnum&quot;</code></pre>
+<ul>
 <li><code>description</code> - (str) Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters…</li>
 <li><code>time</code> - (str) Date and time for the run. This does not represent the exact time the run started.</li>
 <li><code>rats_version</code> - (str) The version of RATs.</li>
@@ -397,8 +396,7 @@ print( names(mydtu$Parameters) )</code></pre>
 <li><code>rep_reprod_thresh</code> - (num) The value passed to the <code>rrep_thresh</code> parameter.</li>
 <li><code>rep_boots</code> - (bool) The value passed to the <code>rboot</code> parameter.</li>
 <li><code>rep_bootnum</code> - (int) The number of replicate bootstrapping iterations (usually M*N, where M and N are the number of samples in the two conditions).</li>
-<li><code>rep_reprod_as_crit</code> - (bool) The value passed to the <code>rrep_as_crit</code> parameter.</li>
-</ol>
+</ul>
 <p><strong>Note:</strong> If bootstraps are disabled, the bootstrap-related fields may have <code>NA</code> values despite any values that were passed to their respective parameters.</p>
 </div>
 <div id="genes" class="section level2">
@@ -408,14 +406,12 @@ print( names(mydtu$Parameters) )</code></pre>
 <pre class="r"><code># Genes table's fields.
 print( names(mydtu$Genes) )</code></pre>
 <pre><code>##  [1] &quot;parent_id&quot;      &quot;elig&quot;           &quot;sig&quot;            &quot;elig_fx&quot;       
-##  [5] &quot;quant_reprod&quot;   &quot;rep_reprod&quot;     &quot;DTU&quot;            &quot;transc_DTU&quot;    
-##  [9] &quot;known_transc&quot;   &quot;detect_transc&quot;  &quot;elig_transc&quot;    &quot;maxDprop&quot;      
-## [13] &quot;pval&quot;           &quot;pval_corr&quot;      &quot;quant_p_mean&quot;   &quot;quant_p_stdev&quot; 
-## [17] &quot;quant_p_min&quot;    &quot;quant_p_max&quot;    &quot;quant_na_freq&quot;  &quot;quant_dtu_freq&quot;
-## [21] &quot;rep_p_mean&quot;     &quot;rep_p_stdev&quot;    &quot;rep_p_min&quot;      &quot;rep_p_max&quot;     
-## [25] &quot;rep_na_freq&quot;    &quot;rep_dtu_freq&quot;</code></pre>
+##  [5] &quot;quant_reprod&quot;   &quot;DTU&quot;            &quot;transc_DTU&quot;     &quot;known_transc&quot;  
+##  [9] &quot;detect_transc&quot;  &quot;elig_transc&quot;    &quot;maxDprop&quot;       &quot;pval&quot;          
+## [13] &quot;pval_corr&quot;      &quot;quant_p_mean&quot;   &quot;quant_p_stdev&quot;  &quot;quant_p_min&quot;   
+## [17] &quot;quant_p_max&quot;    &quot;quant_na_freq&quot;  &quot;quant_dtu_freq&quot;</code></pre>
 <p>The first few columns show the result of each decision step. The remaining columns list the values based on which the decisions were made. Pseudo-code formulas are shown to help understand how the different fields interact when making decisions.</p>
-<ol style="list-style-type: decimal">
+<ul>
 <li><code>parent_id</code> - (str) Gene identifier.</li>
 <li><code>elig</code> - (bool) Eligible for testing. Whether the gene met the pre-filtering criteria. <code>= (elig_transc &gt;= 2)</code>.</li>
 <li><code>sig</code> - (bool) Statistically significant. <code>= (pvalAB_corr &lt; Parameters$p_thresh) &amp; (pvalBA_corr &lt; Parameters$p_thresh)</code>.</li>
@@ -441,7 +437,7 @@ print( names(mydtu$Genes) )</code></pre>
 <li><code>rep_p_max</code> - (num) Maximum observed p-value across replication bootstraps.</li>
 <li><code>rep_na_freq</code> - (num) Fraction of replication iterations in which <code>DTU</code> could not be determined (not meeting pre-filtering criteria).</li>
 <li><code>rep_dtu_freq</code> - (num) Fraction of replication iterations that support a positive <code>DTU</code> classification.</li>
-</ol>
+</ul>
 <p><strong>Note:</strong> The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.</p>
 </div>
 <div id="transcripts" class="section level2">
@@ -451,25 +447,27 @@ print( names(mydtu$Genes) )</code></pre>
 <pre class="r"><code># Transcripts table's fields.
 print( names(mydtu$Transcripts) )</code></pre>
 <pre><code>##  [1] &quot;target_id&quot;      &quot;parent_id&quot;      &quot;elig_xp&quot;        &quot;elig&quot;          
-##  [5] &quot;sig&quot;            &quot;elig_fx&quot;        &quot;quant_reprod&quot;   &quot;rep_reprod&quot;    
-##  [9] &quot;DTU&quot;            &quot;gene_DTU&quot;       &quot;meanA&quot;          &quot;meanB&quot;         
-## [13] &quot;stdevA&quot;         &quot;stdevB&quot;         &quot;sumA&quot;           &quot;sumB&quot;          
-## [17] &quot;log2FC&quot;         &quot;totalA&quot;         &quot;totalB&quot;         &quot;propA&quot;         
-## [21] &quot;propB&quot;          &quot;Dprop&quot;          &quot;pval&quot;           &quot;pval_corr&quot;     
-## [25] &quot;quant_p_mean&quot;   &quot;quant_p_stdev&quot;  &quot;quant_p_min&quot;    &quot;quant_p_max&quot;   
-## [29] &quot;quant_na_freq&quot;  &quot;quant_dtu_freq&quot; &quot;rep_p_mean&quot;     &quot;rep_p_stdev&quot;   
-## [33] &quot;rep_p_min&quot;      &quot;rep_p_max&quot;      &quot;rep_na_freq&quot;    &quot;rep_dtu_freq&quot;</code></pre>
-<ol style="list-style-type: decimal">
+##  [5] &quot;sig&quot;            &quot;elig_fx&quot;        &quot;quant_reprod&quot;   &quot;DTU&quot;           
+##  [9] &quot;gene_DTU&quot;       &quot;meanA&quot;          &quot;meanB&quot;          &quot;stdevA&quot;        
+## [13] &quot;stdevB&quot;         &quot;sumA&quot;           &quot;sumB&quot;           &quot;log2FC&quot;        
+## [17] &quot;totalA&quot;         &quot;totalB&quot;         &quot;propA&quot;          &quot;propB&quot;         
+## [21] &quot;Dprop&quot;          &quot;pval&quot;           &quot;pval_corr&quot;      &quot;quant_p_mean&quot;  
+## [25] &quot;quant_p_stdev&quot;  &quot;quant_p_min&quot;    &quot;quant_p_max&quot;    &quot;quant_na_freq&quot; 
+## [29] &quot;quant_dtu_freq&quot;</code></pre>
+<ul>
 <li><code>target_id</code> - (str) Transcript identifier.</li>
 <li><code>parent_id</code> - (str) Gene identifier.</li>
 <li><code>elig_xp</code> - (bool) Eligible expression level. <code>= (meanA &gt;= Parameters$abund_thresh | meanB &gt;= Parameters$abund_thresh)</code>.</li>
 <li><code>elig</code> - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). <code>= (elig_xp &amp; totalA != 0 &amp; totalB != 0 &amp; (sumA != totalA | sumB != totalB))</code>.</li>
 <li><code>sig</code> - (bool) Statistically significant. <code>= (pval_corr &lt; Parameters$p_thresh)</code>.</li>
 <li><code>elig_fx</code> - (bool) Eligible effect size. Proxy for biological significance. <code>= (Dprop &gt; Parameters$dprop_thresh)</code>.</li>
+</ul>
+<ol start="7" style="list-style-type: decimal">
 <li><code>quant_reprod</code> - (bool) Quantification reproducible. For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code>.</li>
+</ol>
+<ul>
 <li><code>rep_reprod</code> - (bool) Replication reproducible. For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</code>, for non-DTU <code>= (rep_dtu_freq &lt;= 1 - Parameters$rep_reprod_thresh)</code>.</li>
-<li><code>DTU</code> - (bool) The Transcript is Differentially Used. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>rrep_as_crit==TRUE</code> then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code>.</li>
-<li><code>gene_DTU</code> - (bool) Expanded from <code>Genes$DTU</code>. Indicates that the gene as a whole shows significant change in isoform ratios. <code>= (Genes[parent_id, DTU])</code>.</li>
+<li><code>DTU</code> - (bool) The Transcript is Differentially Used. <code>= (sig &amp; elig_fx &amp; quant_reprod)</code>, or if <code>rrep_as_crit==TRUE</code> then <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code>. *. <code>gene_DTU</code> - (bool) Expanded from <code>Genes$DTU</code>. Indicates that the gene as a whole shows significant change in isoform ratios. <code>= (Genes[parent_id, DTU])</code>.</li>
 <li><code>meanA</code> and <code>meanB</code> - (num) The mean abundance across replicates, for each condition.</li>
 <li><code>stdevA</code> and <code>stdevB</code> - (num) The standard deviation of the abundance across the replicates.</li>
 <li><code>sumA</code> and <code>sumB</code> - (num) The sum of the abundances across replicates. This is the value used for the tests, so that replication level informs the significance.</li>
@@ -491,13 +489,13 @@ print( names(mydtu$Transcripts) )</code></pre>
 <li><code>rep_p_max</code> - (num) Maximum observed p-value across replication bootstraps.</li>
 <li><code>rep_na_freq</code> - (num) Fraction of replication iterations in which <code>DTU</code> could not be determined (not meeting pre-filtering criteria).</li>
 <li><code>rep_dtu_freq</code> - (num) Fraction of replication iterations that support a positive <code>DTU</code> classification.</li>
-</ol>
+</ul>
 <p><strong>Note:</strong> The fields reporting on the bootstraps will not be shown when bootstrapping is disabled.</p>
 </div>
 <div id="abundances" class="section level2">
 <h2>Abundances</h2>
 <p><code>Abundances</code> is a list of two <code>data.table</code>s, one for each condition. Each transcript is represented by a single abundance value per replicate, so if bootstrapped data was used, these values are the means across iterations. If plain abundances were provided as input, then <code>Abundances</code> essentially contains the input data. These abundances are included in the output because they are required for some of RATs’ plotting options.</p>
-<pre class="r"><code># Elements of ReplicateData
+<pre class="r"><code># Elements of Abundances.
 print( names(mydtu$Abundances) )</code></pre>
 <pre><code>## [1] &quot;condA&quot; &quot;condB&quot;</code></pre>
 <ol style="list-style-type: decimal">
