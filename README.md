@@ -99,8 +99,7 @@ For testing purposes (bug resolutions, new features), you can install the ongoin
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-Developmental versions are works in progress and will not be archived in release snapshots. They are also likely to contain new bugs and
-may at times not work correctly or at all. For reproducible/publishable analyses, always **use a release version**, not a developmental version.
+From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas developmental versions now have a 4-part version number. Despite having version numbers, developmental versions are not archived and are **not suitable** for reproducible/critical/publishable analyses. They may also temporarily not work correctly or at all. For critical analyses you shoud use the latest release version.
 
 Eventually, we aim to make the package also available through Bioconductor.
 
