@@ -70,8 +70,8 @@ get_switch_ids <- function(dtuo) {
   myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
   result <- list()
   if (nrow(myt)==0) {
-    result[["Primary switch (gene test)"]] <- NA_character_
-    result[["Non-primary switch (gene test)"]] <- NA_character_
+    result[["Primary switch (gene test)"]] <- character(0)
+    result[["Non-primary switch (gene test)"]] <- character(0)
   } else {
     with(myt, {
       myt[, rankA := frank(propA), by=parent_id]
@@ -88,8 +88,8 @@ get_switch_ids <- function(dtuo) {
   # Get all the transcripts from genes with at least one DTU transcript.
   myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
   if (nrow(myt)==0) {
-    result[["Primary switch (transc. test)"]] <- NA_character_
-    result[["Non-primary switch (transc. test)"]] <- NA_character_
+    result[["Primary switch (transc. test)"]] <- character(0)
+    result[["Non-primary switch (transc. test)"]] <- character(0)
   } else {
     with(myt, {
       myt[, rankA := frank(propA), by=parent_id]
@@ -106,8 +106,8 @@ get_switch_ids <- function(dtuo) {
   # Get all the transcripts from DTU genes with at least one DTU isoform.
   myt <- copy(dtuo$Transcripts[dtuo$Genes[(dtuo$Genes$DTU & dtuo$Genes$transc_DTU), c("parent_id")], c("parent_id", "target_id", "propA", "propB")])
   if (nrow(myt)==0) {
-    result[["Primary switch (both tests)"]] <- NA_character_
-    result[["Non-primary switch (both tests)"]] <- NA_character_
+    result[["Primary switch (both tests)"]] <- character(0)
+    result[["Non-primary switch (both tests)"]] <- character(0)
   } else {
     with(myt, {
       myt[, rankA := frank(propA), by=parent_id]
@@ -139,10 +139,10 @@ dtu_switch_summary <- function(dtuo) {
 
 
 #================================================================================
-#' Summary of DTU plurality.
+#' List the gene IDs by number of isoforms showing significant change.
 #'
 #' Get the IDs of DTU genes organised by the number of isoforms affected. This
-#' is possible only based on the transcript-level results.
+#' is possible only if transcript-level results are enabled.
 #'
 #' @param dtuo A DTU object.
 #' @return A named numerical vector giving a tally of the results.
