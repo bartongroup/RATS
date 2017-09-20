@@ -1,6 +1,6 @@
 Type: Package
 Package: rats
-Version: 0.6.0
+Version: 0.6.0-0
 Date: 2017-09-18
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
