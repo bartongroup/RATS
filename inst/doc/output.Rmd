@@ -22,11 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ***
 
-```{r, include=FALSE}
-library(rats)
-```
-
-```{r, eval=FALSE}
+```{r}
 library(rats)
 ```
 

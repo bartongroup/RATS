@@ -2,7 +2,7 @@
 % Please edit documentation in R/results.R
 \name{get_plurality_ids}
 \alias{get_plurality_ids}
-\title{Summary of DTU plurality.}
+\title{List the gene IDs by number of isoforms showing significant change.}
 \usage{
 get_plurality_ids(dtuo)
 }
@@ -14,5 +14,5 @@ A named numerical vector giving a tally of the results.
 }
 \description{
 Get the IDs of DTU genes organised by the number of isoforms affected. This
-is possible only based on the transcript-level results.
+is possible only if transcript-level results are enabled.
 }

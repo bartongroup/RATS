@@ -22,11 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ***
 
-```{r, include=FALSE}
-library(rats)
-```
-
-```{r, eval=FALSE}
+```{r}
 library(rats)
 ```
 
@@ -103,6 +99,13 @@ print( ids )
 
 Again, three versions of the results are shown, covering the respective DTU methods in RATs.
 
+The gene "MIX6" is showing both primary and tertiary isoform switching. Looking at the abundances (more on this in the plots vignette),
+indeed isoforms c1 and c2 swap ranks, as do isoforms c3 and c4:
+
+```{r}
+plot_gene(mydtu, "MIX6")
+```
+
 
 ## Summary of DTU plurality
 
@@ -118,6 +121,9 @@ print( ids )
 ```
 
 These give you the number and IDs of genes in which 2, 3, etc isoforms show DTU.
+
+For example, one gene ("MIX6") is showing significant change in 3 of its isoforms.
+
 
 ***
 

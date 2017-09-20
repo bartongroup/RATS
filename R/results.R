@@ -1,17 +1,4 @@
 #================================================================================
-#' Summary of DTU calling.
-#'
-#' @param dtuo A DTU object.
-#' @return A named numerical vector giving a tally of the results.
-#'
-#'@export
-dtu_summary <- function(dtuo) {
-  tally <- sapply(get_dtu_ids(dtuo), length)
-  return( data.frame("category"=names(tally), "tally"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
-}
-
-
-#================================================================================
 #' List of DTU ids.
 #'
 #' Get the IDs for DTU/nonDTU/NA genes and transcripts.
@@ -29,28 +16,43 @@ get_dtu_ids <- function(dtuo) {
     myt[, adp := abs(Dprop)]
     setorder(myt, -adp, na.last=TRUE)
   })
-
+  
   myp <- copy(dtuo$Genes[, c("DTU", "transc_DTU", "parent_id", "maxDprop")])
   with(myp, {
     # Sort genes to match.
     myp[, adp := abs(maxDprop)]
     setorder(myp, -adp, na.last=TRUE)
-
+    
     # Extract.
     return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
-               "non-DTU genes (gene test)" = as.vector( myp[DTU==FALSE, parent_id] ),
-               "NA genes (gene test)" = as.vector( myp[is.na(DTU), parent_id] ),
-               "DTU genes (transc. test)" = as.vector( myp[(transc_DTU), parent_id] ),
-               "non-DTU genes (transc. test)" = as.vector( myp[transc_DTU==FALSE, parent_id] ),
-               "NA genes (transc. test)" = as.vector( myp[is.na(transc_DTU), parent_id] ),
-               "DTU genes (both tests)" = as.vector( myp[(DTU & transc_DTU), parent_id] ),
-               "non-DTU genes (both tests)" = as.vector( myp[DTU==FALSE & transc_DTU==FALSE, parent_id] ),
-               "NA genes (both tests)" = as.vector( myp[is.na(DTU) & is.na(transc_DTU), parent_id] ),
-               "DTU transcripts" = as.vector(myt[(DTU), target_id]),
-               "non-DTU transcripts" = as.vector(myt[DTU==FALSE, target_id]),
-               "NA transcripts" = as.vector(myt[is.na(DTU), target_id])
+                "non-DTU genes (gene test)" = as.vector( myp[DTU==FALSE, parent_id] ),
+                "NA genes (gene test)" = as.vector( myp[is.na(DTU), parent_id] ),
+                "DTU genes (transc. test)" = as.vector( myp[(transc_DTU), parent_id] ),
+                "non-DTU genes (transc. test)" = as.vector( myp[transc_DTU==FALSE, parent_id] ),
+                "NA genes (transc. test)" = as.vector( myp[is.na(transc_DTU), parent_id] ),
+                "DTU genes (both tests)" = as.vector( myp[(DTU & transc_DTU), parent_id] ),
+                "non-DTU genes (both tests)" = as.vector( myp[DTU==FALSE & transc_DTU==FALSE, parent_id] ),
+                "NA genes (both tests)" = as.vector( myp[is.na(DTU) & is.na(transc_DTU), parent_id] ),
+                "DTU transcripts" = as.vector(myt[(DTU), target_id]),
+                "non-DTU transcripts" = as.vector(myt[DTU==FALSE, target_id]),
+                "NA transcripts" = as.vector(myt[is.na(DTU), target_id])
     ))
   })
+}
+
+
+#================================================================================
+#' Summary of DTU calling.
+#'
+#' A tally of DTU genes and transcripts.
+#' 
+#' @param dtuo A DTU object.
+#' @return A data.frame with catefory names in the first column and values in the second column.
+#'
+#'@export
+dtu_summary <- function(dtuo) {
+  tally <- sapply(get_dtu_ids(dtuo), length)
+  return( data.frame("category"=names(tally), "tally"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
 }
 
 
@@ -128,8 +130,10 @@ get_switch_ids <- function(dtuo) {
 #================================================================================
 #' Summary of isoform switching events.
 #'
+#' A tally of genes showing isoform switching.
+#'
 #' @param dtuo A DTU object.
-#' @return A named numerical vector giving a tally of the results.
+#' @return A data.frame with catefory names in the first column and values in the second column.
 #'
 #'@export
 dtu_switch_summary <- function(dtuo) {
@@ -163,9 +167,11 @@ get_plurality_ids <- function(dtuo){
 
 #================================================================================
 #' Summary of DTU plurality.
+#' 
+#' A tally of genes based on how many isoforms show significant change.
 #'
 #' @param dtuo A DTU object.
-#' @return A named numerical vector giving a tally of the results.
+#' @return A data.frame with catefory names in the first column and values in the second column.
 #'
 #'@export
 dtu_plurality_summary <- function(dtuo) {

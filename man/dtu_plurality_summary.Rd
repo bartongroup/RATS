@@ -10,8 +10,8 @@ dtu_plurality_summary(dtuo)
 \item{dtuo}{A DTU object.}
 }
 \value{
-A named numerical vector giving a tally of the results.
+A data.frame with catefory names in the first column and values in the second column.
 }
 \description{
-Summary of DTU plurality.
+A tally of genes based on how many isoforms show significant change.
 }
