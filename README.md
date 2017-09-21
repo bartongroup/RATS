@@ -108,11 +108,11 @@ Eventually, we aim to make the package also available through Bioconductor.
 
 A typical command to call DTU bootstrapped quantifications looks like this:
 
-`results <- call_DTU(annot = my_identifiers_table, boot_data_A=my_list_of_tables_A, boot_data_B=my_list_of_tables_B)`
+`results <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_of_tables_A, boot_data_B= my_list_of_tables_B)`
 
 and for plain quantifications like this:
 
-`results <- call_DTU(annot = my_identifiers_table, count_data_A=my_table_A, count_data_B=my_tables_B)`
+`results <- call_DTU(annot= my_identifiers_table, count_data_A= my_table_A, count_data_B= my_table_B)`
 
 The output is a list containing (among other items) two tables, one with gene-level details and one with transcript-level details. In these you will
 find the raw values for all calculations, the pass/fail for each threshold and the final classification for each gene or transcript respectively.
