@@ -99,14 +99,14 @@ For testing purposes (bug resolutions, new features), you can install the ongoin
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas developmental versions now have a 4-part version number. Despite having version numbers, developmental versions are not archived and are **not suitable** for reproducible/critical/publishable analyses. They may also temporarily not work correctly or at all. For critical analyses you shoud use the latest release version.
+From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas developmental versions now have a 4-part version number. Despite having version numbers, developmental versions are not archived and are **not suitable** for reproducible/critical/publishable analyses. They may also temporarily not work correctly or at all. For critical analyses you should use the latest release version.
 
 Eventually, we aim to make the package also available through Bioconductor.
 
 
 ### Differential Transcript Usage
 
-A typical command to call DTU bootstrapped quantifications looks like this:
+A typical command to call DTU from bootstrapped quantifications looks like this:
 
 `results <- call_DTU(annot= my_identifiers_table, boot_data_A= my_list_of_tables_A, boot_data_B= my_list_of_tables_B)`
 
