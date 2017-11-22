@@ -14,11 +14,12 @@
 #' @param dprop_thresh Minimum change in proportion.
 #' @param count_data_A A dataframe of estimated counts.
 #' @param count_data_B A dataframe of estimated counts.
-#' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
-#' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
+#' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimates for the sample.
+#' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimates for the sample.
 #' @param rboot Whether to bootstrap against samples.
 #' @param rrep_thresh Confidence threshold.
 #' @param threads Number of threads.
+#' @param seed Seed for random engine.
 #' @param scaling Abundance scaling factor.
 #'
 #' @return List: \itemize{
@@ -33,7 +34,7 @@
 #'
 parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
                                 TARGET_COL, PARENT_COL,
-                                correction, testmode, scaling, threads,
+                                correction, testmode, scaling, threads, seed,
                                 p_thresh, abund_thresh, dprop_thresh, 
                                 qboot, qbootnum, qrep_thresh, rboot, rrep_thresh) {
   warnmsg <- list()
@@ -81,7 +82,10 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
   if ((!is.numeric(scaling)) || scaling == 0)
     return(list("error"=TRUE, "message"="Invalid scaling factor! Must be non-zero number."))
-
+  if (!is.na(seed) && !is.numeric(seed))
+    return(list("error"=TRUE, "message"="Invalid seed! Must be numeric or NA_integer_."))
+  
+  
   # Booted counts.
   if (!is.null(boot_data_A)) {
       if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
@@ -271,7 +275,7 @@ alloc_out <- function(annot, full){
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
                        "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=NA_real_,
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
-                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_)
+                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "seed"=NA_integer_)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,

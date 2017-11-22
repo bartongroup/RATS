@@ -32,6 +32,7 @@
 #' @param description Free-text description of the run. You can use this to add metadata to the results object.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
+#' @param seed A numeric integer used to initialise the random number engine. Use this only if reproducible bootstrap selections are required. (Default NA)
 #' @param dbg Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
 #' @return List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 #'
@@ -45,7 +46,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      name_A= "Condition-A", name_B= "Condition-B", varname= "condition",
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
-                     description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
+                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, dbg= 0)
 {
   #---------- PREP
 
@@ -57,7 +58,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # Input checks.
   paramcheck <- parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
                                     TARGET_COL, PARENT_COL,
-                                    correction, testmode, scaling, threads,
+                                    correction, testmode, scaling, threads, seed,
                                     p_thresh, abund_thresh, dprop_thresh, 
                                     qboot, qbootnum, qrep_thresh, rboot, rrep_thresh)
   if (paramcheck$error)
@@ -69,10 +70,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         message(w)  # So it displays at runtime.
       }
 
+  # Set seed, if required.
+  if (!is.na(seed))
+    set.seed(as.integer(seed))
+  
+  # Use specified threads.
   threads <- as.integer(threads)  # Can't be decimal.
-  # Ensure data.table complies.
   setDTthreads(threads)
 
+  # Testing options.
   if (qbootnum == 0 && qboot)   # Use smart default.
     qbootnum = paramcheck$maxboots
   qbootnum <- as.integer(qbootnum)  # Can't be decimal.
