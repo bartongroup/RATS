@@ -418,6 +418,23 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
 
+    # Eradicate NAs from flag columns, as they mess up sub-setting of the tables.
+    Genes[is.na(elig), elig := c(FALSE)]
+    Genes[is.na(sig), sig := c(FALSE)]
+    Genes[is.na(elig_fx), elig_fx := c(FALSE)]
+    Genes[is.na(quant_reprod), quant_reprod := c(FALSE)]
+    Genes[is.na(rep_reprod), rep_reprod := c(FALSE)]
+    Genes[is.na(DTU), DTU := c(FALSE)]
+    Genes[is.na(transc_DTU), transc_DTU := c(FALSE)]
+    Transcripts[is.na(elig_xp), elig_xp := c(FALSE)]
+    Transcripts[is.na(elig), elig := c(FALSE)]
+    Transcripts[is.na(sig), sig := c(FALSE)]
+    Transcripts[is.na(elig_fx), elig_fx := c(FALSE)]
+    Transcripts[is.na(quant_reprod), quant_reprod := c(FALSE)]
+    Transcripts[is.na(rep_reprod), rep_reprod := c(FALSE)]
+    Transcripts[is.na(DTU), DTU := c(FALSE)]
+    Transcripts[is.na(gene_DTU), gene_DTU := c(FALSE)]
+    
     # Drop the bootstrap columns, if unused.
     if (!qboot || !test_transc)
         Transcripts[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
@@ -427,6 +444,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       Transcripts[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
     if(!rboot || !test_genes)
       Genes[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
+    
   })
 
   if(verbose) {

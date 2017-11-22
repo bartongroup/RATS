@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   dprop_thresh = 0.2, correction = "BH", scaling = 1, testmode = "both",
   qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95, rboot = TRUE,
   rrep_thresh = 0.85, description = NA_character_, verbose = TRUE,
-  threads = 1L, dbg = 0)
+  threads = 1L, seed = NA_integer_, dbg = 0)
 }
 \arguments{
 \item{annot}{A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
@@ -61,6 +61,8 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 \item{verbose}{Display progress updates and warnings. (Default \code{TRUE})}
 
 \item{threads}{Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.}
+
+\item{seed}{A numeric integer used to initialise the random number engine. Use this only if reproducible bootstrap selections are required. (Default NA)}
 
 \item{dbg}{Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
 }

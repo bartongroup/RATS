@@ -83,7 +83,7 @@ test_that("Filters work correctly", {
   # !!! ensure correct response to specific scenarios.
   
   sim <- sim_boot_data(cnames=c("ONE","TWO"))
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=10, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=10, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666)
   
   expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(1, 1, 0, FALSE, FALSE))
@@ -92,9 +92,9 @@ test_that("Filters work correctly", {
   expect_equivalent(as.list(mydtu$Genes["1D1C", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(2, 1, 0, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Genes["ALLA", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 1, 0, FALSE, NA))
+                    list(1, 1, 0, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Genes["ALLB", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 0, FALSE, NA))
+                    list(2, 2, 0, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Genes["CC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(2, 2, 2, TRUE, TRUE))
   expect_equivalent(as.list(mydtu$Genes["LC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
@@ -102,7 +102,7 @@ test_that("Filters work correctly", {
   expect_equivalent(as.list(mydtu$Genes["MIX6", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(6, 5, 5, TRUE, TRUE))
   expect_equivalent(as.list(mydtu$Genes["NIB", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 0, 0, FALSE, NA))
+                    list(1, 0, 0, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Genes["NN", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(2, 2, 2, TRUE, FALSE))
   
@@ -118,11 +118,11 @@ test_that("Filters work correctly", {
   expect_equivalent(as.list(mydtu$Transcripts["1D1C:two", list(elig_xp, elig, elig_fx)]),
                     list(TRUE, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["ALLA1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, NA))
+                    list(TRUE, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["ALLB1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, NA))
+                    list(TRUE, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["ALLB2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, NA))
+                    list(TRUE, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["CC_a", list(elig_xp, elig, elig_fx)]),
                     list(TRUE, TRUE, TRUE))
   expect_equivalent(as.list(mydtu$Transcripts["CC_b", list(elig_xp, elig, elig_fx)]),
@@ -144,7 +144,7 @@ test_that("Filters work correctly", {
   expect_equivalent(as.list(mydtu$Transcripts["MIX6.nc", .(elig_xp, elig, elig_fx)]),
                     list(TRUE, TRUE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["NIB.1", .(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, NA))
+                    list(FALSE, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["1NN", .(elig_xp, elig, elig_fx)]),
                     list(TRUE, TRUE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["2NN", .(elig_xp, elig, elig_fx)]),

@@ -10,32 +10,35 @@
 #'@import data.table
 #'@export
 get_dtu_ids <- function(dtuo) {
-  myt <- copy(dtuo$Transcripts[, c("DTU", "target_id", "Dprop")])
+  myt <- copy(dtuo$Transcripts[, c("elig", "DTU", "target_id", "parent_id", "Dprop")])
+  myp <- copy(dtuo$Genes[, c("elig", "DTU", "transc_DTU", "parent_id", "maxDprop")])
+  myp[, transc_elig := myt[, any(elig), by = parent_id][, V1] ]
+  
   with(myt, {
     # Sort transcripts.
     myt[, adp := abs(Dprop)]
     setorder(myt, -adp, na.last=TRUE)
   })
-  
-  myp <- copy(dtuo$Genes[, c("DTU", "transc_DTU", "parent_id", "maxDprop")])
   with(myp, {
     # Sort genes to match.
     myp[, adp := abs(maxDprop)]
     setorder(myp, -adp, na.last=TRUE)
-    
+  })
+  
+  with(dtuo, {
     # Extract.
     return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
-                "non-DTU genes (gene test)" = as.vector( myp[DTU==FALSE, parent_id] ),
-                "NA genes (gene test)" = as.vector( myp[is.na(DTU), parent_id] ),
+                "non-DTU genes (gene test)" = as.vector( myp[ elig & !DTU, parent_id] ),
+                "NA genes (gene test)" = as.vector( myp[(!elig), parent_id] ),
                 "DTU genes (transc. test)" = as.vector( myp[(transc_DTU), parent_id] ),
-                "non-DTU genes (transc. test)" = as.vector( myp[transc_DTU==FALSE, parent_id] ),
-                "NA genes (transc. test)" = as.vector( myp[is.na(transc_DTU), parent_id] ),
-                "DTU genes (both tests)" = as.vector( myp[(DTU & transc_DTU), parent_id] ),
-                "non-DTU genes (both tests)" = as.vector( myp[DTU==FALSE & transc_DTU==FALSE, parent_id] ),
-                "NA genes (both tests)" = as.vector( myp[is.na(DTU) & is.na(transc_DTU), parent_id] ),
+                "non-DTU genes (transc. test)" = as.vector( myp[transc_elig & !transc_DTU, parent_id] ),
+                "NA genes (transc. test)" = as.vector( myp[(!transc_elig), parent_id] ), ####
+                "DTU genes (both tests)" = as.vector( myp[DTU & transc_DTU, parent_id] ),
+                "non-DTU genes (both tests)" = as.vector( myp[elig & transc_elig & !DTU & !transc_DTU, parent_id] ),
+                "NA genes (both tests)" = as.vector( myp[!elig | !transc_elig, parent_id] ),
                 "DTU transcripts" = as.vector(myt[(DTU), target_id]),
-                "non-DTU transcripts" = as.vector(myt[DTU==FALSE, target_id]),
-                "NA transcripts" = as.vector(myt[is.na(DTU), target_id])
+                "non-DTU transcripts" = as.vector(myt[elig & !DTU, target_id]),
+                "NA transcripts" = as.vector(myt[(!elig), target_id])
     ))
   })
 }
