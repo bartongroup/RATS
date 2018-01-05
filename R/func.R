@@ -387,28 +387,33 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 
     # Transcript-level test.
     if (test_transc) {
-      Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
-                                                    function(row) {
-                                                      return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )
-                                                    }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
-                                          ) ]
-      Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
-      Transcripts[(elig), sig := pval_corr < p_thresh]
-      Transcripts[(elig), DTU := sig & elig_fx]
+      if(any(Transcripts$elig)){  # Extreme case. If nothing is eligible, table subsetting by `elig` is nonsense and crashes. 
+                                  # We can just skip testing altegether, as all output fields are initialized with NA already.
+        Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
+                                                      function(row) {
+                                                        return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )
+                                                      }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
+                                            ) ]
+        Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
+        Transcripts[(elig), sig := pval_corr < p_thresh]
+        Transcripts[(elig), DTU := sig & elig_fx]
+      }
     }
 
     # Gene-level test.
     if (test_genes) {
-      Genes[(elig), pval := t( as.data.frame( mclapply(Genes[(elig), parent_id],
-                                        function(parent) {
-                                            # Extract all relevant data to avoid repeated look ups in the large table.
-                                            subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
-                                            return( g.test.2(obsx= subdt$sumA, obsy= subdt$sumB) )
-                                        }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
-                )) ]
-      Genes[(elig), pval_corr := p.adjust(pval, method=correction)]
-      Genes[(elig), sig := pval_corr < p_thresh]
-      Genes[(elig), DTU := sig & elig_fx]
+      if(any(Genes$elig)){  # Skip testing if nothing is eligible, otherwise table subsetting by `elig` is nonsense and crashes. 
+        Genes[(elig), pval := t( as.data.frame( mclapply(Genes[(elig), parent_id],
+                                          function(parent) {
+                                              # Extract all relevant data to avoid repeated look ups in the large table.
+                                              subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
+                                              return( g.test.2(obsx= subdt$sumA, obsy= subdt$sumB) )
+                                          }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
+                  )) ]
+        Genes[(elig), pval_corr := p.adjust(pval, method=correction)]
+        Genes[(elig), sig := pval_corr < p_thresh]
+        Genes[(elig), DTU := sig & elig_fx]
+      }
     }
   })
   return(resobj)
