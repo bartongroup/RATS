@@ -46,7 +46,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      name_A= "Condition-A", name_B= "Condition-B", varname= "condition",
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
-                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, dbg= 0)
+                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, dbg= "0")
 {
   #---------- PREP
 
@@ -238,7 +238,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                     setTxtProgressBar(myprogress, p)
 
                   # Grab a replicate from each condition.
-    			  # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
+                  # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
                   counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] ) * resobj$Parameters$num_replic_A
                   counts_B <- as.data.table( count_data_A[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
 
