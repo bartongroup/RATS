@@ -17,11 +17,13 @@ get_dtu_ids <- function(dtuo) {
   with(myt, {
     # Sort transcripts.
     myt[, adp := abs(Dprop)]
+    setkey(myt, NULL)  # It seems setorder() can throw a hissy fit if a table is already ordered by a key (ie. parent_id).
     setorder(myt, -adp, na.last=TRUE)
   })
   with(myp, {
     # Sort genes to match.
     myp[, adp := abs(maxDprop)]
+    setkey(myp, NULL) # Again, minimmising chance of clash with setorder().
     setorder(myp, -adp, na.last=TRUE)
   })
   
@@ -29,16 +31,16 @@ get_dtu_ids <- function(dtuo) {
     # Extract.
     return(list("DTU genes (gene test)" = as.vector( myp[(DTU), parent_id] ),
                 "non-DTU genes (gene test)" = as.vector( myp[ elig & !DTU, parent_id] ),
-                "NA genes (gene test)" = as.vector( myp[(!elig), parent_id] ),
+                "ineligible genes (gene test)" = as.vector( myp[(!elig), parent_id] ),
                 "DTU genes (transc. test)" = as.vector( myp[(transc_DTU), parent_id] ),
                 "non-DTU genes (transc. test)" = as.vector( myp[transc_elig & !transc_DTU, parent_id] ),
-                "NA genes (transc. test)" = as.vector( myp[(!transc_elig), parent_id] ), ####
+                "ineligible genes (transc. test)" = as.vector( myp[(!transc_elig), parent_id] ),
                 "DTU genes (both tests)" = as.vector( myp[DTU & transc_DTU, parent_id] ),
                 "non-DTU genes (both tests)" = as.vector( myp[elig & transc_elig & !DTU & !transc_DTU, parent_id] ),
-                "NA genes (both tests)" = as.vector( myp[!elig | !transc_elig, parent_id] ),
+                "ineligible genes (both tests)" = as.vector( myp[!elig | !transc_elig, parent_id] ),
                 "DTU transcripts" = as.vector(myt[(DTU), target_id]),
                 "non-DTU transcripts" = as.vector(myt[elig & !DTU, target_id]),
-                "NA transcripts" = as.vector(myt[(!elig), target_id])
+                "ineligible transcripts" = as.vector(myt[(!elig), target_id])
     ))
   })
 }

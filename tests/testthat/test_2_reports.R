@@ -9,53 +9,56 @@ test_that("The summaries work", {
   
   expect_silent(ids <- get_dtu_ids(mydtu))
   expect_type(ids, "list")
-  expect_named(ids, c("DTU genes (gene test)", "non-DTU genes (gene test)", "NA genes (gene test)", 
-                      "DTU genes (transc. test)", "non-DTU genes (transc. test)", "NA genes (transc. test)", 
-                      "DTU genes (both tests)", "non-DTU genes (both tests)", "NA genes (both tests)", 
-                      "DTU transcripts", "non-DTU transcripts", "NA transcripts"))
+  expect_named(ids, c("DTU genes (gene test)", "non-DTU genes (gene test)", "ineligible genes (gene test)", 
+                      "DTU genes (transc. test)", "non-DTU genes (transc. test)", "ineligible genes (transc. test)", 
+                      "DTU genes (both tests)", "non-DTU genes (both tests)", "ineligible genes (both tests)", 
+                      "DTU transcripts", "non-DTU transcripts", "ineligible transcripts"))
   for (v in ids) {
     expect_false(any(is.na(v)))
   }
-  expect_equal(as.vector(unlist(ids)), c("MIX6",     
-                                         "CC", "NN",
-                                         "LC", "1A1N", "1B1C",  "1D1C",  "ALLA", "ALLB", "NIB",
-                                         "MIX6",
-                                         "CC", "NN",
-                                         "LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB",
-                                         "MIX6",
-                                         "CC", "NN",
-                                         "LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB",
-                                         "MIX6.c1", "MIX6.c2",
-                                         "MIX6.c4", "LC2", "CC_a", "CC_b", "MIX6.c3", "2NN", "1NN", "MIX6.nc",
-                                         "LC1", "1A1N-2", "1B1C.1", "1B1C.2", "1D1C:one", "1D1C:two", "MIX6.d", "ALLA1", "ALLB1", "ALLB2", "NIB.1") )
+  expect_equal(ids[[1]], c("MIX6"))
+  expect_equal(ids[[2]], c("CC", "NN"))
+  expect_equal(ids[[3]], c("LC", "1A1N", "1B1C",  "1D1C",  "ALLA", "ALLB", "NIB"))
+  expect_equal(ids[[4]], c("MIX6"))
+  expect_equal(ids[[5]], c("LC", "CC", "NN"))
+  expect_equal(ids[[6]], c("1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
+  expect_equal(ids[[7]], c("MIX6"))
+  expect_equal(ids[[8]], c("CC", "NN"))
+  expect_equal(ids[[9]], c("LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
+  expect_equal(ids[[10]], c("MIX6.c1", "MIX6.c2"))
+  expect_equal(ids[[11]], c("MIX6.c4", "LC2", "CC_a", "CC_b", "MIX6.c3", "2NN", "1NN", "MIX6.nc"))
+  expect_equal(ids[[12]], c("LC1", "1A1N-2", "1B1C.1", "1B1C.2", "1D1C:one", "1D1C:two", "MIX6.d", "ALLA1", "ALLB1", "ALLB2", "NIB.1"))
   
   expect_silent(tally <- dtu_summary(mydtu))
   expect_true(is.data.frame(tally))
-  expect_equal(tally[[1]], c("DTU genes (gene test)", "non-DTU genes (gene test)", "NA genes (gene test)", 
-                        "DTU genes (transc. test)", "non-DTU genes (transc. test)", "NA genes (transc. test)", 
-                        "DTU genes (both tests)", "non-DTU genes (both tests)", "NA genes (both tests)", 
-                        "DTU transcripts", "non-DTU transcripts", "NA transcripts"))
-  expect_equal(tally[[2]],  c(1, 2, 7, 1, 2, 7, 1, 2, 7, 2, 8, 11)) 
+  expect_equal(tally[[1]], c("DTU genes (gene test)", "non-DTU genes (gene test)", "ineligible genes (gene test)", 
+                        "DTU genes (transc. test)", "non-DTU genes (transc. test)", "ineligible genes (transc. test)", 
+                        "DTU genes (both tests)", "non-DTU genes (both tests)", "ineligible genes (both tests)", 
+                        "DTU transcripts", "non-DTU transcripts", "ineligible transcripts"))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
+  expect_equal(tally[[2]],  c(1, 2, 7, 1, 3, 6, 1, 2, 7, 2, 8, 11)) 
   expect_false(any(is.na(tally)))
   
+  # Lower effect size threshold to verify that DTU changes accordingly.
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
-  expect_silent(tally <- dtu_summary(mydtu))
+  
   expect_silent(ids <- get_dtu_ids(mydtu))
-  expect_equal(tally[[2]],  c(2, 1, 7, 2, 1, 7, 2, 1, 7, 5, 5, 11)) 
-  expect_equal(as.vector(unlist(ids)), c("MIX6", "CC",
-                                         "NN",
-                                         "LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB", 
-                                         "MIX6", "CC",
-                                         "NN" ,
-                                         "LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB",
-                                         "MIX6", "CC",
-                                         "NN",
-                                         "LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB",
-                                         "MIX6.c1",  "MIX6.c2", "MIX6.c4", "CC_a", "CC_b",
-                                         "LC2", "MIX6.c3", "2NN", "1NN", "MIX6.nc",
-                                         "LC1", "1A1N-2", "1B1C.1", "1B1C.2", "1D1C:one", "1D1C:two", "MIX6.d", "ALLA1", "ALLB1", "ALLB2", "NIB.1"))
+  expect_equal(ids[[1]], c("MIX6", "CC"))
+  expect_equal(ids[[2]], c("NN"))
+  expect_equal(ids[[3]], c("LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
+  expect_equal(ids[[4]], c("MIX6", "CC"))
+  expect_equal(ids[[5]], c("LC", "NN"))
+  expect_equal(ids[[6]], c("1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
+  expect_equal(ids[[7]], c("MIX6", "CC"))
+  expect_equal(ids[[8]], c("NN"))
+  expect_equal(ids[[9]], c("LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
+  expect_equal(ids[[10]], c("MIX6.c1",  "MIX6.c2", "MIX6.c4", "CC_a", "CC_b"))
+  expect_equal(ids[[11]], c("LC2", "MIX6.c3", "2NN", "1NN", "MIX6.nc"))
+  expect_equal(ids[[12]], c("LC1", "1A1N-2", "1B1C.1", "1B1C.2", "1D1C:one", "1D1C:two", "MIX6.d", "ALLA1", "ALLB1", "ALLB2", "NIB.1"))
+  
+  expect_silent(tally <- dtu_summary(mydtu))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
+  expect_equal(tally[[2]],  c(2, 1, 7, 2, 2, 6, 2, 1, 7, 5, 5, 11)) 
 })
 
 #==============================================================================

@@ -35,6 +35,9 @@ ids <- get_switch_ids(mydtu)
 print( ids )
 
 ## ------------------------------------------------------------------------
+plot_gene(mydtu, "MIX6")
+
+## ------------------------------------------------------------------------
 # A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )
 

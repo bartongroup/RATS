@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Raw Output'
 author: "Kimon Froussios"
-date: "19 SEP 2017"
+date: "05 JAN 2018"
 output:
   html_document:
     keep_md: yes
@@ -58,9 +58,9 @@ more complex/detailed questions than those covered by the functions provided.
 
 The `dtu_summary()` function lists the total number of genes and transcripts for each of 3 categories:
 
-* DTU:  There is significant change in isoform ratios.
+* DTU:  There is significant change in isoform ratios (in terms of both effect size and statistical significance).
 * non-DTU:  No significant change.
-* NA:  Not applicable. Genes/transcripts with abundance below the noise threshold, or where the gene has only one known transcript.
+* ineligible: Ineligible for testing. Genes/transcripts with read count below the set threshold, or where the gene has only one known transcript. Up to `v0.6.0` this category was labelled "NA" instead.
 
 ```{r}
 # A really simple tally of the outcome.
@@ -160,13 +160,13 @@ print( names(mydtu$Parameters) )
 * `p_thresh` - (num) The value passed to the `p_thresh` parameter.
 * `abund_thresh` - (num) The value passed to the `abund_thresh` parameter.
 * `dprop_thresh` - (num) The value passed to the `dprop_thresh` parameter.
-* `abund_sclaing` - (num) The value passed to the `scaling` parameter.
+* `abund_scaling` - (num) The value passed to the `scaling` parameter.
 * `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter.
 * `quant_boot` - (bool) The value passed to the `qboots` parameter.
 * `quant_bootnum` - (int) The value passed to the `qbootnum` parameter.
 * `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter.
-* `rep_boots` - (bool) The value passed to the `rboot` parameter.
-* `rep_bootnum` - (int) The number of replicate bootstrapping iterations (usually  M*N, where M and N are the number of samples in the two conditions).
+* `rep_boot` - (bool) The value passed to the `rboot` parameter.
+* `rep_bootnum` - (int) The number of replicate bootstrapping iterations (currently  M*N, where M and N are the numbers of samples in the two conditions).
 
 **Note:** If bootstraps are disabled, the bootstrap-related fields may have `NA` values despite any values that were passed to their respective parameters.
 
@@ -195,8 +195,8 @@ Pseudo-code formulas are shown to help understand how the different fields inter
 For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for non-DTU `= (quant_dtu_freq <= 1 - Parameters$quant_reprod_thresh)`.
 * `rep_reprod` - (bool) Replication reproducible.
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`.
-* `DTU` - (bool) Differential Transcript Usage. `= (sig & elig_fx & quant_reprod)`, or if `rrep_as_crit==TRUE` then `= (sig & elig_fx & quant_reprod & rep_reprod)`.
-* `transc_DTU` - (bool) Aggregated from `Transcripts$DTU`: At least one isoform was individually reported as DTU. `= any(Transcript[parent_id, DTU])`.
+* `DTU` - (bool) Differential Transcript Usage. `= (sig & elig_fx & quant_reprod & rep_reprod)`.
+* `transc_DTU` - (bool) Aggregated from `Transcripts$DTU`: At least one isoform was individually reported as DTU. `= (Transcript[ , any(DTU), by=parent_id])`.
 * `known_transc` - (int) Number of known trascripts for this gene according to the given annotation.
 * `detect_trancs` - (int) Number of detected (expressed) transcripts in the given dataset.
 * `elig_transc` - (int) Number of eligible transcripts, aggregated from `Transcripts$elig`.
@@ -240,12 +240,12 @@ print( names(mydtu$Transcripts) )
 For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for non-DTU `= (quant_dtu_freq <= 1 - Parameters$quant_reprod_thresh)`.
 * `rep_reprod` - (bool) Replication reproducible.
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`.
-* `DTU` - (bool) The Transcript is Differentially Used. `= (sig & elig_fx & quant_reprod)`, or if `rrep_as_crit==TRUE` then `= (sig & elig_fx & quant_reprod & rep_reprod)`.
+* `DTU` - (bool) The Transcript is Differentially Used. `= (sig & elig_fx & quant_reprod & rep_reprod)`.
 *. `gene_DTU` - (bool) Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in isoform ratios. `= (Genes[parent_id, DTU])`.
 * `meanA` and `meanB` - (num) The mean abundance across replicates, for each condition.
 * `stdevA` and `stdevB` - (num) The standard deviation of the abundance across the replicates.
 * `sumA` and `sumB` - (num) The sum of the abundances across replicates. This is the value used for the tests, so that replication level informs the significance.
-* `log2FC` - (num) lgo2 of fold-change of transcript abundance: `= (sumB / sumA)`. sumA and sumB are NOT normalised for sequencing depth, so when log2FC is plotted the distribution may not be centred on 0. If it is not centred on 0, do NOT use this log2FC for differential transcript expression analysis!
+* `log2FC` - (num) log2 of fold-change of transcript abundance: `= log2(sumB / sumA)`. sumA and sumB are not normalised for library size, so the log2FC is meaningless unless the input data were pre-normalised (such as scaled TPMs).
 * `totalA` and `totalB` - (num) The total abundance for the gene: `totalA= sum(transcripts[parent_id, sumA])`.
 * `propA` and `propB` - (num) The proportion of the gene expression owed to this transcript. `propA= sumA / totalA`.
 * `Dprop` - (num) The difference in the proportion of the transcript between the two conditions (effect size). `= (probB - propA)`.
@@ -292,7 +292,7 @@ print( head(mydtu$Abundances[[1]]) )
 # Contact information
 
 The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
-by Dr. Kimon Froussios, Dr. Kira Mour??o and Dr. Nick Schurch.
+by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
