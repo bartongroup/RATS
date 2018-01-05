@@ -42,7 +42,7 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
 #' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)
 #' @param threads (integer) For parallel processing. (Default 1)
-#' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM)
+#' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
 #' @return A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
 #'
 #' @import wasabi
@@ -55,9 +55,7 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", half_cooked=FALSE, threads= 1L, scaleto= 1000000)
 {
   threads <- as.integer(threads)  # Can't be decimal.
-  # Ensure data.table complies.
-  # if (packageVersion("data.table") >= "1.9.8")
-    setDTthreads(1)
+  setDTthreads(1)  # Not a typo. Threads used for larger mclapply blocks instead of single table operations.
 
   # Don't assume the annotation is ordered properly.
   annot <- tidy_annot(annot, TARGET_COL, PARENT_COL)
@@ -67,14 +65,29 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     prepare_fish_for_sleuth(c(A_paths, B_paths))
   }
 
+  # Sort out scaling.
+  lA <- length(A_paths)
+  lB <- length(B_paths)
+  sfA <- NULL
+  sfB <- NULL
+  if (length(scaleto) == 1) {
+    sfA <- rep(scaleto, lA)
+    sfB <- rep(scaleto, lB)
+  } else {
+    sfA <- scaleto[1:lA]
+    sfB <- scaleto[(1+lA):(lA+lB)]
+  }
+  
   # Load and convert manually.
-  boots_A <- mclapply(A_paths, function(x) {
-    ids <- as.data.table( h5read(file.path(x, "abundance.h5"), "/aux/ids") )
-    counts <- as.data.table( h5read(file.path(x, "abundance.h5"), "/bootstrap") )
+  boots_A <- mclapply(1:lA, function(x) {
+    fil <- A_paths[x]
+    sf <- sfA[x]
+    ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
+    counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
     effl <- h5read(file.path(x, "abundance.h5"), "/aux/eff_lengths")
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
-      tcpb <- scaleto / sum(cpb)
+      tcpb <- sf / sum(cpb)
       return(cpb * tcpb)
     }) )
     dt <- as.data.table( cbind(ids, tpm) )
@@ -84,13 +97,16 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
     return (dt)
   }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-  boots_B <- mclapply(B_paths, function(x) {
-    ids <- as.data.table( h5read(file.path(x, "abundance.h5"), "/aux/ids") )
-    counts <- as.data.table( h5read(file.path(x, "abundance.h5"), "/bootstrap") )
+  
+  boots_B <- mclapply(1:lB, function(x) {
+    fil <- B_paths[x]
+    sf <- sfB[x]
+    ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
+    counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
     effl <- h5read(file.path(x, "abundance.h5"), "/aux/eff_lengths")
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
-      tcpb <- scaleto / sum(cpb)
+      tcpb <- sf / sum(cpb)
       return(cpb * tcpb)
     }) )
     dt <- as.data.table( cbind(ids, tpm) )
@@ -103,3 +119,57 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 
   return(list("boot_data_A"= boots_A, "boot_data_B"= boots_B))
 }
+
+
+#================================================================================
+#' Extract bootstrap counts into a less nested structure.
+#' 
+#' *Legacy function* 
+#' 
+#' It extracts the bootstrap data from the older-style \code{sleuth} object. 
+#' As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
+#' 
+#' @param slo A sleuth object.
+#' @param annot A data.frame matching transcript identfier to gene identifiers.
+#' @param samples A numeric vector of samples to extract counts for.
+#' @param COUNTS_COL The name of the column with the counts. (Default "tpm")
+#' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
+#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
+#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
+#' @param threads Number of threads. (Default 1)
+#' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
+#'
+#' NA replaced with 0.
+#'
+#' Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
+#' Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
+#'
+#' @import parallel
+#' @import data.table
+#' @export
+#'
+denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id",
+                                TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
+  # Ensure data.table complies.
+  setDTthreads(threads)
+  
+  # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
+  tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
+  
+  mclapply(samples, function(smpl) {
+    # Extract counts in the order of provided transcript vector, for safety and consistency.
+    dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
+      roworder <- match(tx, boot[[BS_TARGET_COL]])
+      boot[roworder, COUNTS_COL]
+    }))
+    # Replace any NAs with 0. Happens when annotation different from that used for DTE.
+    dt[is.na(dt)] <- 0
+    # Add transcript ID.
+    with(dt, dt[, target_id := tx])
+    nn <- names(dt)
+    ll <- length(nn)
+    # Return reordered so that IDs are in first column.
+    return(dt[, c(nn[ll], nn[seq.int(1, ll-1)]), with=FALSE])
+  }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
+}
+

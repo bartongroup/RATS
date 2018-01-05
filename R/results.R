@@ -12,7 +12,7 @@
 get_dtu_ids <- function(dtuo) {
   myt <- copy(dtuo$Transcripts[, c("elig", "DTU", "target_id", "parent_id", "Dprop")])
   myp <- copy(dtuo$Genes[, c("elig", "DTU", "transc_DTU", "parent_id", "maxDprop")])
-  myp[, transc_elig := myt[, any(elig), by = parent_id][, V1] ]
+  with(myp, myp[, transc_elig := myt[, any(elig), by = parent_id][, V1] ])
   
   with(myt, {
     # Sort transcripts.

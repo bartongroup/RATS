@@ -251,17 +251,17 @@ mydtu &lt;- call_DTU(annot= myannot, verbose= FALSE,
 <pre class="r"><code># A really simple tally of the outcome.
 print( dtu_summary(mydtu) )</code></pre>
 <pre><code>##                           category tally
-## 1            DTU genes (gene test)     2
-## 2        non-DTU genes (gene test)     1
+## 1            DTU genes (gene test)     1
+## 2        non-DTU genes (gene test)     2
 ## 3     ineligible genes (gene test)     7
-## 4         DTU genes (transc. test)     2
-## 5     non-DTU genes (transc. test)     2
+## 4         DTU genes (transc. test)     1
+## 5     non-DTU genes (transc. test)     3
 ## 6  ineligible genes (transc. test)     6
-## 7           DTU genes (both tests)     2
-## 8       non-DTU genes (both tests)     1
+## 7           DTU genes (both tests)     1
+## 8       non-DTU genes (both tests)     2
 ## 9    ineligible genes (both tests)     7
-## 10                 DTU transcripts     5
-## 11             non-DTU transcripts     5
+## 10                 DTU transcripts     3
+## 11             non-DTU transcripts     7
 ## 12          ineligible transcripts    11</code></pre>
 <p>RATs tests for DTU at both the gene level and the transcript level. Therefore, as of v0.4.2, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
 <p>The <code>get_dtu_ids()</code> function lists the coresponding identifiers per category. As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
@@ -269,37 +269,37 @@ print( dtu_summary(mydtu) )</code></pre>
 ids &lt;- get_dtu_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`DTU genes (gene test)`
-## [1] &quot;MIX6&quot; &quot;CC&quot;  
+## [1] &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (gene test)`
-## [1] &quot;NN&quot;
+## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`ineligible genes (gene test)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (transc. test)`
-## [1] &quot;MIX6&quot; &quot;CC&quot;  
+## [1] &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (transc. test)`
-## [1] &quot;LC&quot; &quot;NN&quot;
+## [1] &quot;LC&quot; &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`ineligible genes (transc. test)`
 ## [1] &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (both tests)`
-## [1] &quot;MIX6&quot; &quot;CC&quot;  
+## [1] &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (both tests)`
-## [1] &quot;NN&quot;
+## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`ineligible genes (both tests)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU transcripts`
-## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot; &quot;CC_a&quot;    &quot;CC_b&quot;   
+## [1] &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot;
 ## 
 ## $`non-DTU transcripts`
-## [1] &quot;LC2&quot;     &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
+## [1] &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
 ## 
 ## $`ineligible transcripts`
 ##  [1] &quot;LC1&quot;      &quot;1A1N-2&quot;   &quot;1B1C.1&quot;   &quot;1B1C.2&quot;   &quot;1D1C:one&quot; &quot;1D1C:two&quot;
@@ -349,15 +349,11 @@ print( ids )</code></pre>
 <pre class="r"><code># A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )</code></pre>
 <pre><code>##   isof_affected num_of_genes
-## 1             2            1
-## 2             3            1</code></pre>
+## 1             3            1</code></pre>
 <pre class="r"><code># The gene IDs displaying isoform switching.
 ids &lt;- get_plurality_ids(mydtu)
 print( ids )</code></pre>
-<pre><code>## $`2`
-## [1] &quot;CC&quot;
-## 
-## $`3`
+<pre><code>## $`3`
 ## [1] &quot;MIX6&quot;</code></pre>
 <p>These give you the number and IDs of genes in which 2, 3, etc isoforms show DTU.</p>
 <p>For example, one gene (“MIX6”) is showing significant change in 3 of its isoforms.</p>

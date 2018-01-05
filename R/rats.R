@@ -22,7 +22,7 @@
 #' @param abund_thresh Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
 #' @param correction The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})
-#' @param scaling A scaling factor to be applied to the abundances, *prior* to any thresholding and testing. Useful for scaling TPM (transcripts per 1 million reads) abundances to the actual library size. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained. (Default 1)
+#' @param scaling A scaling factor or vector of scaling factors, to be applied to the abundances *prior* to any thresholding and testing. Useful for scaling TPMs (transcripts per 1 million reads) to the actual library sizes of the samples. If a vector is supplied, the order should correspond to the samples in group A followed by the samples in group B. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained.
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
 #' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
 #' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
@@ -131,14 +131,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         smpl[, 1 := NULL]
     }
 
-    # Scale abundances before aggregating.
-    if (scaling != 1) {
-      if (verbose)
-        message("Applying scaling factor...")
-      boot_data_A <- mclapply(boot_data_A, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-      boot_data_B <- mclapply(boot_data_B, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-    }
-
     # Calculate mean count across bootstraps.
     count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { return(rowMeans(b)) },
                                            mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
@@ -151,16 +143,31 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
     nn <- names(count_data_B)  # The number of columns may be different from A.
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
-
-    # Scale abundances.
-    if (scaling != 1) {
-      if (verbose)
-        message("Applying scaling factor...")
-      count_data_A <- count_data_A * scaling
-      count_data_B <- count_data_B * scaling
-    }
   }
 
+  # Scale abundances.
+  if (any(scaling != 1)) {
+    if (verbose)
+      message("Applying scaling factor(s)...")
+    
+    lA <- dim(count_data_A)[2]
+    lB <- dim(count_data_B)[2]
+    sfA <- NULL
+    sfB <- NULL
+    if (length(scaling) == 1) {
+      sfA <- rep(scaling, lA)
+      sfB <- rep(scaling, lB)
+    } else {
+      sfA <- scaling[1:lA]
+      sfB <- scaling[(1+lA):(lA+lB)]
+    }
+    
+    count_data_A <- mclapply(1:lA, function(x) { return(count_data_A[[x]] * sfA[x]) }, 
+                             mc.cores=threads, mc.allow.recursive = FALSE)
+    count_data_B <- mclapply(1:lB, function(x) { return(count_data_B[[x]] * sfB[x]) }, 
+                             mc.cores=threads, mc.allow.recursive = FALSE)
+  }
+  
   if (dbg == "data")
     return(list("countA"=count_data_A, "countB"=count_data_B))
 

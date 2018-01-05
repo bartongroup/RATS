@@ -176,85 +176,6 @@ infer_bootnum <- function(boot_data_A, boot_data_B){
 
 
 #================================================================================
-#' Group samples by covariate value.
-#'
-#' *Legacy function* No longer in use, but kept for possible general utility.
-#' 
-#' Converts a table where each row is a sample and each column a variable into a
-#' lookup structure that matches each value of each variable to a vector of corresponding samples.
-#'
-#' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
-#' @return list of lists (per covariate) of vectors (per factor level).
-#'
-#' @export
-#'
-group_samples <- function(covariates) {
-  samplesByVariable <- list()
-  for(varname in names(covariates)) {
-    categories <- unique(covariates[[varname]])
-    samplesByVariable[[varname]] <- list()
-    for (x in categories) {
-      samplesByVariable[[varname]][[x]] <- which(covariates[[varname]] == x)
-    }
-  }
-  return(samplesByVariable)
-}
-
-
-#================================================================================
-#' Extract bootstrap counts into a less nested structure.
-#' 
-#' *Legacy function* 
-#' 
-#' It extracts the bootstrap data from the older-style \code{sleuth} object. 
-#' As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
-#' 
-#' @param slo A sleuth object.
-#' @param annot A data.frame matching transcript identfier to gene identifiers.
-#' @param samples A numeric vector of samples to extract counts for.
-#' @param COUNTS_COL The name of the column with the counts. (Default "tpm")
-#' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
-#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
-#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
-#' @param threads Number of threads. (Default 1)
-#' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
-#'
-#' NA replaced with 0.
-#'
-#' Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
-#' Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
-#'
-#' @import parallel
-#' @import data.table
-#' @export
-#'
-denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id",
-                                TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
-  # Ensure data.table complies.
-  setDTthreads(threads)
-
-  # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
-  tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
-
-  mclapply(samples, function(smpl) {
-    # Extract counts in the order of provided transcript vector, for safety and consistency.
-    dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
-      roworder <- match(tx, boot[[BS_TARGET_COL]])
-      boot[roworder, COUNTS_COL]
-    }))
-    # Replace any NAs with 0. Happens when annotation different from that used for DTE.
-    dt[is.na(dt)] <- 0
-    # Add transcript ID.
-    with(dt, dt[, target_id := tx])
-    nn <- names(dt)
-    ll <- length(nn)
-    # Return reordered so that IDs are in first column.
-    return(dt[, c(nn[ll], nn[seq.int(1, ll-1)]), with=FALSE])
-  }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
-}
-
-
-#================================================================================
 #' Create output structure.
 #'
 #' @param annot Pre-processed by \code{tidy_annot()}.
@@ -536,3 +457,31 @@ maxabs <- function(v) {
 		return(n)
 	}
 }
+
+
+#================================================================================
+#' Group samples by covariate value.
+#'
+#' *Legacy function* No longer in use, but kept for possible general utility.
+#' 
+#' Converts a table where each row is a sample and each column a variable into a
+#' lookup structure that matches each value of each variable to a vector of corresponding samples.
+#'
+#' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
+#' @return list of lists (per covariate) of vectors (per factor level).
+#'
+#' @export
+#'
+group_samples <- function(covariates) {
+  samplesByVariable <- list()
+  for(varname in names(covariates)) {
+    categories <- unique(covariates[[varname]])
+    samplesByVariable[[varname]] <- list()
+    for (x in categories) {
+      samplesByVariable[[varname]][[x]] <- which(covariates[[varname]] == x)
+    }
+  }
+  return(samplesByVariable)
+}
+
+

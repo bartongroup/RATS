@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   dprop_thresh = 0.2, correction = "BH", scaling = 1, testmode = "both",
   qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95, rboot = TRUE,
   rrep_thresh = 0.85, description = NA_character_, verbose = TRUE,
-  threads = 1L, seed = NA_integer_, dbg = 0)
+  threads = 1L, seed = NA_integer_, dbg = "0")
 }
 \arguments{
 \item{annot}{A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
@@ -42,7 +42,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{correction}{The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})}
 
-\item{scaling}{A scaling factor to be applied to the abundances, *prior* to any thresholding and testing. Useful for scaling TPM (transcripts per 1 million reads) abundances to the actual library size. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained. (Default 1)}
+\item{scaling}{A scaling factor or vector of scaling factors, to be applied to the abundances *prior* to any thresholding and testing. Useful for scaling TPMs (transcripts per 1 million reads) to the actual library sizes of the samples. If a vector is supplied, the order should correspond to the samples in group A followed by the samples in group B. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained.}
 
 \item{testmode}{One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.}
 

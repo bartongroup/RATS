@@ -23,7 +23,7 @@ fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
 
 \item{threads}{(integer) For parallel processing. (Default 1)}
 
-\item{scaleto}{(double) Scaling factor for normalised abundances. (Default 1000000 gives TPM)}
+\item{scaleto}{(double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.}
 }
 \value{
 A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
