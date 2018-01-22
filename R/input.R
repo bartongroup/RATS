@@ -77,14 +77,14 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     sfA <- scaleto[1:lA]
     sfB <- scaleto[(1+lA):(lA+lB)]
   }
-  
+
   # Load and convert manually.
   boots_A <- mclapply(1:lA, function(x) {
     fil <- A_paths[x]
     sf <- sfA[x]
     ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
     counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- h5read(file.path(x, "abundance.h5"), "/aux/eff_lengths")
+    effl <- h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
       tcpb <- sf / sum(cpb)
@@ -97,13 +97,13 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
     return (dt)
   }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-  
+
   boots_B <- mclapply(1:lB, function(x) {
     fil <- B_paths[x]
     sf <- sfB[x]
     ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
     counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- h5read(file.path(x, "abundance.h5"), "/aux/eff_lengths")
+    effl <- h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
       tcpb <- sf / sum(cpb)
@@ -123,12 +123,12 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 
 #================================================================================
 #' Extract bootstrap counts into a less nested structure.
-#' 
-#' *Legacy function* 
-#' 
-#' It extracts the bootstrap data from the older-style \code{sleuth} object. 
+#'
+#' *Legacy function*
+#'
+#' It extracts the bootstrap data from the older-style \code{sleuth} object.
 #' As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
-#' 
+#'
 #' @param slo A sleuth object.
 #' @param annot A data.frame matching transcript identfier to gene identifiers.
 #' @param samples A numeric vector of samples to extract counts for.
@@ -152,10 +152,10 @@ denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET
                                 TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
   # Ensure data.table complies.
   setDTthreads(threads)
-  
+
   # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
   tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
-  
+
   mclapply(samples, function(smpl) {
     # Extract counts in the order of provided transcript vector, for safety and consistency.
     dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
