@@ -160,7 +160,7 @@ print( names(mydtu$Parameters) )
 * `p_thresh` - (num) The value passed to the `p_thresh` parameter.
 * `abund_thresh` - (num) The value passed to the `abund_thresh` parameter.
 * `dprop_thresh` - (num) The value passed to the `dprop_thresh` parameter.
-* `abund_scaling` - (num) The value passed to the `scaling` parameter.
+* `abund_scaling` - (num) The value(s) passed to the `scaling` parameter. It will be either a single numeric value or a named vector of values.
 * `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter.
 * `quant_boot` - (bool) The value passed to the `qboots` parameter.
 * `quant_bootnum` - (int) The value passed to the `qbootnum` parameter.
