@@ -4,12 +4,14 @@
 \alias{alloc_out}
 \title{Create output structure.}
 \usage{
-alloc_out(annot, full)
+alloc_out(annot, full, n = 1)
 }
 \arguments{
 \item{annot}{Pre-processed by \code{tidy_annot()}.}
 
 \item{full}{Full-sized structure or core fields only. Either "full" or "short".}
+
+\item{n}{How many scaling factors to reserve space for.}
 }
 \value{
 A list.

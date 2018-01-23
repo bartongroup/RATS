@@ -80,10 +80,16 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
-  if ((!is.numeric(scaling)) || scaling == 0)
-    return(list("error"=TRUE, "message"="Invalid scaling factor! Must be non-zero number."))
-  if (!is.na(seed) && !is.numeric(seed))
-    return(list("error"=TRUE, "message"="Invalid seed! Must be numeric or NA_integer_."))
+  nsmpl <- NULL
+  if (!is.null(count_data_A)){
+    nsmpl <- dim(count_data_A)[2] + dim(count_data_B)[2]
+  } else {
+    nsmpl <- length(boot_data_A) + length(boot_data_B)
+  }
+  if ((!is.numeric(scaling)) || any(scaling == 0) || all(length(scaling) != 1, length(scaling) != nsmpl))
+    return(list("error"=TRUE, "message"="Invalid scaling factor(s)! Must be vector of non-zero numbers. Vector length must be either 1 or equal to the combined number of samples in the two conditions."))
+  if (!is.na(seed) && !is.integer(seed))
+    return(list("error"=TRUE, "message"="Invalid seed! Must be integer or NA_integer_."))
   
   
   # Booted counts.
@@ -180,11 +186,12 @@ infer_bootnum <- function(boot_data_A, boot_data_B){
 #'
 #' @param annot Pre-processed by \code{tidy_annot()}.
 #' @param full Full-sized structure or core fields only. Either "full" or "short".
+#' @param n How many scaling factors to reserve space for.
 #' @return A list.
 #'
 #' @import data.table
 #'
-alloc_out <- function(annot, full){
+alloc_out <- function(annot, full, n=1){
   # Ensure data.table complies.
   # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(1)
@@ -194,7 +201,7 @@ alloc_out <- function(annot, full){
                        "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=NA_real_,
+                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=numeric(length=n),
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
                        "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "seed"=NA_integer_)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
@@ -265,7 +272,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
   #---------- PRE-ALLOCATE
 
   # Pre-allocate results object.
-  resobj <- alloc_out(tx_filter, full)
+  resobj <- alloc_out(tx_filter, full, dim(counts_A)[2] + dim(counts_B)[2])
   resobj$Parameters["num_replic_A"] <- dim(counts_A)[2]
   resobj$Parameters["num_replic_B"] <- dim(counts_B)[2]
 
