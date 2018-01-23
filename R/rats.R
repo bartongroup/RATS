@@ -162,10 +162,26 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       sfB <- scaling[(1+lA):(lA+lB)]
     }
     
-    count_data_A <- mclapply(1:lA, function(x) { return(count_data_A[[x]] * sfA[x]) }, 
-                             mc.cores=threads, mc.allow.recursive = FALSE)
-    count_data_B <- mclapply(1:lB, function(x) { return(count_data_B[[x]] * sfB[x]) }, 
-                             mc.cores=threads, mc.allow.recursive = FALSE)
+    # Scale counts.
+    count_data_A <- mclapply(1:lA, function(x) { 
+                        return(count_data_A[[x]] * sfA[x])  # Can't apply scaling to whole table in one step, because each column/sample can have a different scaling factor.
+                    }, mc.cores=threads, mc.allow.recursive = FALSE)
+    count_data_B <- mclapply(1:lB, function(x) { 
+                        return(count_data_B[[x]] * sfB[x]) 
+                    }, mc.cores=threads, mc.allow.recursive = FALSE)
+    # Also scale the bootstraps, if they exist.
+    if (steps > 1){
+      boot_data_A <- lapply(1:lA , function (smpl){
+                        return(as.data.table( mclapply(boot_data_A[[smpl]], function(b) { 
+                                                  return(b * sfA[smpl]) # The bootstraps table belongs to a single sample, so here I can apply the factor to the whole table.
+                                              }, mc.cores=threads, mc.allow.recursive = FALSE) ))
+                    })
+      boot_data_B <- lapply(1:lB , function (smpl){
+                        return(as.data.table( mclapply(boot_data_B[[smpl]], function(b) { 
+                                                  return(b * sfB[smpl]) # The bootstraps table belongs to a single sample, so here I can apply the factor to the whole table.
+                                              }, mc.cores=threads, mc.allow.recursive = FALSE) ))
+                    })
+    }
   }
   
   if (dbg == "data")
