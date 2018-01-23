@@ -163,12 +163,12 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     }
     
     # Scale counts.
-    count_data_A <- mclapply(1:lA, function(x) { 
+    count_data_A <- as.data.table( mclapply(1:lA, function(x) { 
                         return(count_data_A[[x]] * sfA[x])  # Can't apply scaling to whole table in one step, because each column/sample can have a different scaling factor.
-                    }, mc.cores=threads, mc.allow.recursive = FALSE)
-    count_data_B <- mclapply(1:lB, function(x) { 
+                    }, mc.cores=threads, mc.allow.recursive = FALSE) )
+    count_data_B <- as.data.table( mclapply(1:lB, function(x) { 
                         return(count_data_B[[x]] * sfB[x]) 
-                    }, mc.cores=threads, mc.allow.recursive = FALSE)
+                    }, mc.cores=threads, mc.allow.recursive = FALSE) )
     # Also scale the bootstraps, if they exist.
     if (steps > 1){
       boot_data_A <- lapply(1:lA , function (smpl){
