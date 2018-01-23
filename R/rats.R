@@ -276,7 +276,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                 })
 
     if (verbose)  # Forcing a new line after the progress bar.
-      print("")
+      message("")
 
     if (dbg == "rboot")
       return(repres)
@@ -358,7 +358,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gdtu" = Genes[, DTU] )) })
               })
     if (verbose)  # Forcing a new line after the progress bar.
-      print("")
+      message("")
 
     if (dbg == "qboot")
       return(bootres)
