@@ -217,24 +217,24 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   })
 
   # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)
-  resobj$Parameters["var_name"] <- varname
-  resobj$Parameters["cond_A"] <- name_A
-  resobj$Parameters["cond_B"] <- name_B
-  resobj$Parameters["p_thresh"] <- p_thresh
-  resobj$Parameters["abund_thresh"] <- abund_thresh
-  resobj$Parameters["dprop_thresh"] <- dprop_thresh
-  resobj$Parameters["abund_scaling"] <- scaling
-  resobj$Parameters["tests"] <- testmode
-  resobj$Parameters["rep_boot"] <- rboot
-  resobj$Parameters["quant_boot"] <- qboot
+  resobj$Parameters[["var_name"]] <- varname
+  resobj$Parameters[["cond_A"]] <- name_A
+  resobj$Parameters[["cond_B"]] <- name_B
+  resobj$Parameters[["p_thresh"]] <- p_thresh
+  resobj$Parameters[["abund_thresh"]] <- abund_thresh
+  resobj$Parameters[["dprop_thresh"]] <- dprop_thresh
+  resobj$Parameters[["abund_scaling"]] <- c(scaling)
+  resobj$Parameters[["tests"]] <- testmode
+  resobj$Parameters[["rep_boot"]] <- rboot
+  resobj$Parameters[["quant_boot"]] <- qboot
   if (steps==2) {
-    resobj$Parameters["data_type"] <- "bootstrapped abundance estimates"
+    resobj$Parameters[["data_type"]] <- "bootstrapped abundance estimates"
   } else  if (steps==1) {
-    resobj$Parameters["data_type"] <- "plain abundance estimates"
+    resobj$Parameters[["data_type"]] <- "plain abundance estimates"
   }
-  resobj$Parameters["num_genes"] <- length(levels(annot[[PARENT_COL]]))
-  resobj$Parameters["num_transc"] <- length(annot[[TARGET_COL]])
-  resobj$Parameters["description"] <- description
+  resobj$Parameters[["num_genes"]] <- length(unique(annot[[PARENT_COL]]))
+  resobj$Parameters[["num_transc"]] <- length(annot[[TARGET_COL]])
+  resobj$Parameters[["description"]] <- description
 
   if (dbg == "info")
     return(resobj)
@@ -249,8 +249,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
-    resobj$Parameters["rep_bootnum"] <- numpairs
-    resobj$Parameters["rep_reprod_thresh"] <- rrep_thresh
+    resobj$Parameters[["rep_bootnum"]] <- numpairs
+    resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
     
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
@@ -331,8 +331,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     }
 
-    resobj$Parameters["quant_reprod_thresh"] <- qrep_thresh
-    resobj$Parameters["quant_bootnum"] <- qbootnum
+    resobj$Parameters[["quant_reprod_thresh"]] <- qrep_thresh
+    resobj$Parameters[["quant_bootnum"]] <- qbootnum
 
     #----- Iterations
 
