@@ -94,7 +94,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     qboot <- FALSE  # No quantification bootstraps data was provided or no iterations required.
 
   if (dbg == "prep")
-    return(steps)
+    return(list(steps, qbootnum, test_transc, test_genes))
 
 
   #----------- LOOK-UP
@@ -122,8 +122,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   }
 
   if (dbg == "bootin")
-    return(list("bootA"=count_data_A, "bootB"=count_data_B))
-
+    return(list("bootA"=boot_data_A, "bootB"=boot_data_B))
+  
   # From generic bootstrapped data.
   if (steps > 1) {
     # Remove ID columns so I don't have to always subset for math operations.
@@ -145,6 +145,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
   }
 
+  if (dbg == "countin")
+    return(list("countA"=count_data_A, "countB"=count_data_B))
+  
   # Scale abundances.
   if (any(scaling != 1)) {
     if (verbose)
@@ -184,8 +187,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     }
   }
   
-  if (dbg == "data")
-    return(list("countA"=count_data_A, "countB"=count_data_B))
+  if (dbg == "scale")
+    return(list("countA"=count_data_A, "countB"=count_data_B, "bootA"=boot_data_A, "bootB"=boot_data_B))
 
 
   #---------- TEST
@@ -235,7 +238,12 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters[["num_genes"]] <- length(unique(annot[[PARENT_COL]]))
   resobj$Parameters[["num_transc"]] <- length(annot[[TARGET_COL]])
   resobj$Parameters[["description"]] <- description
-
+  resobj$Parameters[["seed"]] <- seed
+  resobj$Parameters[["correction"]] <- correction
+  resobj$Parameters[["quant_reprod_thresh"]] <- qrep_thresh
+  resobj$Parameters[["quant_bootnum"]] <- qbootnum
+  resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
+  
   if (dbg == "info")
     return(resobj)
 
@@ -250,7 +258,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
     resobj$Parameters[["rep_bootnum"]] <- numpairs
-    resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
     
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
@@ -318,6 +325,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     if (dbg == "rbootsum")
       return(resobj)
+  } else {
+    # No point reporting a threshold for an operation not carried out.
+    resobj$Parameters[["rep_reprod_thresh"]] <- NA_real_
   }
 
 
@@ -330,9 +340,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       # Bootstrapping can take long, so showing progress is nice.
       myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
     }
-
-    resobj$Parameters[["quant_reprod_thresh"]] <- qrep_thresh
-    resobj$Parameters[["quant_bootnum"]] <- qbootnum
 
     #----- Iterations
 
@@ -396,6 +403,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
     })
+  } else {
+    # No point reporting a threshold for an operation not carried out.
+    resobj$Parameters[["quant_reprod_thresh"]] <- NA_real_
+    resobj$Parameters[["quant_bootnum"]] <- NA_integer_
   }
 
   if (dbg == "qbootsum")
