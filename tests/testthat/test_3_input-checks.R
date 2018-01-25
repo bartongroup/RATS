@@ -10,7 +10,7 @@ test_that("The input checks work", {
   
   # Emulate bootstrap data.
   sim1 <- sim_boot_data()
-  sim2 <- sim_boot_data(varname="waffles", cnames=c("AAAA", "BBBB"), errannot_inconsistent=FALSE, PARENT_COL="parent", TARGET_COL="target")
+  sim2 <- sim_boot_data(errannot_inconsistent=FALSE, PARENT_COL="parent", TARGET_COL="target")
   # Emulate non-bootstrap data.
   counts_A <- sim1$boots_A[[1]]
   counts_B <- sim1$boots_B[[1]]
@@ -18,8 +18,8 @@ test_that("The input checks work", {
   # No false alarms with valid calls.
   expect_silent(call_DTU(annot= sim2$annot, boot_data_A= sim2$boots_A, boot_data_B= sim2$boots_B, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, abund_thresh= 10,
                          rrep_thresh = 0.6, qrep_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, rboot= FALSE, qboot=TRUE,
-                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep"))
-  expect_silent(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep"))
+                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21)))
+  expect_silent(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=30))
   expect_silent(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, rboot=FALSE, qboot= FALSE, verbose = FALSE, dbg= "prep"))
   
   # Mixed input formats.
@@ -37,7 +37,7 @@ test_that("The input checks work", {
   expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, name_A= name_A, name_B= name_B, PARENT_COL= wrong_name, verbose = FALSE, dbg= "prep"),
                "target and/or parent IDs field names do not exist in annot", fixed= TRUE)
   # Inconsistent annotation.
-  sim3 <- sim_boot_data(errannot_inconsistent= TRUE, cnames= c(name_A, name_B))
+  sim3 <- sim_boot_data(errannot_inconsistent= TRUE)
   expect_error(call_DTU(annot= sim3$annot, boot_data_A= sim3$boots_A, boot_data_B= sim3$boots_B, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= "prep"),
                "Inconsistent set of transcript IDs", fixed= TRUE)
   # Non unique IDs.
@@ -129,6 +129,20 @@ test_that("The input checks work", {
   expect_silent(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE), verbose= FALSE, dbg= "prep"))
   expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE) + 1, verbose= FALSE, dbg= "prep"),
                "threads exceed", fixed= TRUE)
+  
+  # Scaling of abundances.
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=0),
+               "Invalid scaling factor", fixed= TRUE)
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=-33),
+               "Invalid scaling factor", fixed= TRUE)
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=c(2,3,4)),
+               "Invalid scaling factor", fixed= TRUE)
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=c(1,2,3,4,5)),
+               "Invalid scaling factor", fixed= TRUE)
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=c(1,0,2,3,4)),
+               "Invalid scaling factor", fixed= TRUE)
+  expect_error(call_DTU(annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE, dbg= "prep", scaling=c(1,2,-3,4,5)),
+               "Invalid scaling factor", fixed= TRUE)
 })
 
 

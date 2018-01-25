@@ -4,7 +4,7 @@ context("DTU Reports")
 
 #==============================================================================
 test_that("The summaries work", {
-  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  sim <- sim_boot_data()
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE)
   
   expect_silent(ids <- get_dtu_ids(mydtu))
@@ -63,7 +63,7 @@ test_that("The summaries work", {
 
 #==============================================================================
 test_that("The isoform switching summaries work", {
-  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  sim <- sim_boot_data()
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
   
   expect_silent(ids <- get_switch_ids(mydtu))
@@ -89,7 +89,7 @@ test_that("The isoform switching summaries work", {
 
 #==============================================================================
 test_that("The plurality summaries work", {
-  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  sim <- sim_boot_data()
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
   
   expect_silent(ids <- get_plurality_ids(mydtu))
@@ -118,7 +118,7 @@ test_that("The plurality summaries work", {
 
 #==============================================================================
 test_that("The gene plotting commands work", {
-  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  sim <- sim_boot_data()
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
   
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6"))
@@ -157,7 +157,7 @@ test_that("The gene plotting commands work", {
 
 #==============================================================================
 test_that("The overview plotting commands work", {
-  sim <- sim_boot_data(cnames=c("ONE","TWO"))
+  sim <- sim_boot_data()
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
   
   expect_silent(plot_overview(mydtu))
