@@ -86,9 +86,9 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   } else {
     nsmpl <- length(boot_data_A) + length(boot_data_B)
   }
-  if ((!is.numeric(scaling)) || any(scaling == 0) || all(length(scaling) != 1, length(scaling) != nsmpl))
+  if (!is.numeric(scaling) || any(scaling < 1) || (length(scaling) != 1 && length(scaling) != nsmpl))
     return(list("error"=TRUE, "message"="Invalid scaling factor(s)! Must be vector of non-zero numbers. Vector length must be either 1 or equal to the combined number of samples in the two conditions."))
-  if (!is.na(seed) && !is.integer(seed))
+  if (!is.na(seed) && (!is.numeric(seed) || as.integer(seed) != seed) )
     return(list("error"=TRUE, "message"="Invalid seed! Must be integer or NA_integer_."))
   
   
@@ -201,7 +201,8 @@ alloc_out <- function(annot, full, n=1){
                        "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=numeric(length=n),
+                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "correction"=NA_character_, 
+                       "abund_scaling"=numeric(length=n),
                        "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
                        "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_, "seed"=NA_integer_)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
