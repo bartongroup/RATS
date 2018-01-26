@@ -260,7 +260,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     resobj$Parameters[["rep_bootnum"]] <- numpairs
     
     if (verbose)
-      myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
+      myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
 
     repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU().
                   # Update progress.
@@ -283,7 +283,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                 })
 
     if (verbose)  # Forcing a new line after the progress bar.
-      message("")
+      print("", quote=FALSE)
 
     if (dbg == "rboot")
       return(repres)
@@ -338,7 +338,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose) {
       message("Bootstrapping quantifications...")
       # Bootstrapping can take long, so showing progress is nice.
-      myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
+      myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = stderr())
     }
 
     #----- Iterations
@@ -365,7 +365,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gdtu" = Genes[, DTU] )) })
               })
     if (verbose)  # Forcing a new line after the progress bar.
-      message("")
+      print("", quote=FALSE)
 
     if (dbg == "qboot")
       return(bootres)
@@ -483,10 +483,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   if(verbose) {
     message("All done!")
-    print(noquote("Summary of DTU results:"))
+    cat(noquote("# Summary of DTU results:\n"))
     dtusum <- dtu_summary(resobj)
     print(dtusum)
-    print(noquote("Isoform-switching subset of DTU:"))
+    cat(noquote("\n# Isoform-switching subset of DTU:\n"))
     switchsum <- dtu_switch_summary(resobj)
     print(switchsum)
   }
