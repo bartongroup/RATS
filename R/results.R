@@ -364,13 +364,12 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
 #' @param dtuo A DTU object.
 #' @param type Type of plot. \itemize{
 #'   \item{"tvolcano" - Change in proportion VS. transcript-level statistical significance. (Default)}
-#'   \item{"gvolcano" - Largest change in proportion per gene VS. gene-leel statistical significance.}
+#'   \item{"gvolcano" - Largest change in proportion per gene VS. gene-level statistical significance.}
 #'   \item{"maxdprop" - Distribution of biggest change in proportion in each gene.}
 #'   \item{"dprop" - Distribution of effect size.}
 #'   \item{"reprod" - Distribution of gene-level DTU reproducibility.}
-#'   \item{"reprodVSdprop" - Transcript-level DTU reproducibility VS effect size.}
+#'   \item{"reprodVSdprop" - Transcript-level quantification reproducibility VS effect size.}
 #'   \item{"fcvolcano" - Fold-change in abundance VS. statistical significance. Done at the transcript level.}
-  # \item{"maxfc" - Distribution of biggest fold-change in isoform abundance in each gene.}
 #'   \item{"fcVSdprop" - Fold-change of abundance VS difference in proportion, ofr each transcript.}}
 #' @return A ggplot2 object. Simply display it or you can also customize it.
 #'
@@ -382,9 +381,11 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
 #'
 #' @import data.table
 #' @import ggplot2
+
 #' @export
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
+    
     ### VOLCANO
     if (any(type == c("transc_volcano", "tvolcano", "volcano"))) {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
@@ -400,6 +401,7 @@ plot_overview <- function(dtuo, type="volcano") {
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
+    
     ### GENE VOLCANO
     } else if (any(type == c("gene_volcano", "gvolcano"))) {
       mydata = Genes[, .(parent_id, maxDprop, -log10(pval_corr), DTU)]
@@ -415,6 +417,7 @@ plot_overview <- function(dtuo, type="volcano") {
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
+    
     ### GENE VOLCANO 2
     } else if (any(type == c("gtvolcano"))) {
       mydata = Genes[, .(parent_id, maxDprop, -log10(pval_corr), transc_DTU)]
@@ -430,6 +433,7 @@ plot_overview <- function(dtuo, type="volcano") {
                        y = "-log10 (Pval)") +
                   scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(expand=c(0,0))
+    
     ### TRADITIONAL VOLCANO
     } else if (any(type == "fcvolcano")) {
       mydata = Transcripts[, .(target_id, log2FC, -log10(pval_corr), DTU)]
@@ -439,6 +443,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   ggtitle("Isoform abundance fold-change VS significance") +
                   labs(x = "log2 (FC)",
                        y = "-log10 (Pval)")
+    
     ### EFFECT SIZE
     } else if (type == "dprop") {
       result <- ggplot(data= Transcripts[(elig), .(Dprop, DTU)], aes(x=Dprop, fill=DTU)) +
@@ -456,6 +461,7 @@ plot_overview <- function(dtuo, type="volcano") {
       result <- result +
         scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
                            breaks=c(100, 500, 1000, pretty(c(0, maxy), n=4)))
+    
     ### MAXDPROP
     } else if (type == "maxdprop") {
       mydata = Genes[, .(parent_id, maxDprop, DTU)]
@@ -474,6 +480,7 @@ plot_overview <- function(dtuo, type="volcano") {
       result <- result +
                     scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
                                        breaks=pretty(c(0, maxy), n=5))
+    
     ### FC vs DPROP
     } else if (type == "fcVSdprop") {
       result <- ggplot(data = na.omit(Transcripts[, .(log2FC, Dprop, DTU)]), aes(x=Dprop, y=log2FC, colour=DTU)) +
@@ -485,6 +492,7 @@ plot_overview <- function(dtuo, type="volcano") {
                        x = "Proportion difference",
                        y = "log2 (FC)") +
                   theme( panel.grid.minor.y= element_line(colour= "grey95", size=rel(1.5)) )
+    
     ### REPRODUCIBILITY vs DPROP
     } else if (type == "reprodVSdprop") {
       result <- ggplot(data= na.omit(Transcripts[, .(Dprop, quant_dtu_freq, DTU)]), aes(x=Dprop, y=quant_dtu_freq, colour=DTU)) +
@@ -499,6 +507,7 @@ plot_overview <- function(dtuo, type="volcano") {
                   scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
                   scale_y_continuous(limits= c(0, 1.01), expand= c(0, 0)) +
                   theme( axis.line.x = element_line() )
+    
     ### REPRODUCIBILITY
     } else if (type == "reprod") {
       result <- ggplot(data= na.omit(Genes[, .(quant_dtu_freq, DTU)]), aes(x=quant_dtu_freq, fill=DTU)) +
@@ -517,7 +526,8 @@ plot_overview <- function(dtuo, type="volcano") {
     } else {
       stop("Unrecognized plot type!")
     }
-    ### THEME
+    
+    # Apply theme.
     result <- result +
                 scale_fill_manual(values=c("lightblue", "red")) +
                 scale_colour_manual(values=c("lightblue", "red")) +
@@ -531,6 +541,45 @@ plot_overview <- function(dtuo, type="volcano") {
   })
 }
 
+#================================================================================
+#' Plot diagnostics.
+#' 
+#' @param dtuo A DTU object.
+#' @param type Type of plot. \itemize{
+#'   \item{"cormat" - Pairwise Pearson's correlation matrix among samples.}
+#'   
+#' @return A ggplot2 object. Simply display it or you can also customize it.
+#' @import data.table
+#' @import ggplot2
+#'
+#' @export
+plot_diagnostics <- function(dtuo, type="cormat") {
+  with(dtuo, {
+    
+    ### CORRELATIONS
+    if (type == 'cormat') {
+      mydata <- cbind(dtuo[['Abundances']][['condA']][, -c('target_id', 'parent_id')], 
+                      dtuo[['Abundances']][['condB']][, -c('target_id', 'parent_id')])
+      names(mydata)[seq.int(1,dtuo$Parameters$num_replic_A)] <- paste0(dtuo$Parameters$cond_A, '_', names(mydata)[seq.int(1,dtuo$Parameters$num_replic_A)])
+      names(mydata)[seq.int(dtuo$Parameters$num_replic_A+1, dtuo$Parameters$num_replic_A + dtuo$Parameters$num_replic_B)] <- paste0(dtuo$Parameters$cond_B, '_', names(mydata)[seq.int(dtuo$Parameters$num_replic_A+1, dtuo$Parameters$num_replic_A + dtuo$Parameters$num_replic_B)])
+      # Do all the pairwise correlations between the columns. Must leave out all rows that contain NA, otherwise all correlations become NA.
+      corels <- melt(cor(mydata[complete.cases(mydata)]))
+      result <- ggplot() +
+        geom_tile(aes(x=corels[[1]], y=corels[[2]], fill=corels[[3]])) +
+        scale_fill_gradient(low="purple", high="white") +
+        xlab('Sample') + ylab('Sample') + ggtitle('Pairwise Pearson correlations') + labs(fill='corr') +
+        theme(axis.text.x=element_text(angle=90))
+    }
+    
+    # Apply theme.
+    result <- result +
+                theme(panel.background= element_rect(fill= "white"),
+                      legend.key = element_rect(fill = 'white') )
+    
+    return(result)
+  })
+}
+  
 
 #================================================================================
 #' Interactive volcano plot, using shiny.

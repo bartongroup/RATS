@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Plots'
 author: "Kimon Froussios"
-date: "19 SEP 2017"
+date: "09 FEB 2018"
 output:
   html_document:
     keep_md: yes
@@ -55,7 +55,7 @@ mydtu <- call_DTU(annot= myannot, verbose= FALSE,
 
 
 The RATs output object provides a host of information and we encourage users to familiarize themselves with it. 
-But a good plot is worth a thousand numbers.
+But a good plot is worth a thousand numbers. RATs provides a non-exhaustive set of basic visualisation options for the results.
 
 
 ## Isoform abundances for a given gene
@@ -159,6 +159,19 @@ plot_overview(mydtu, type="fcVSdprop")
 
 ![Fold change VS significance](./figs/fcvolcano.jpg)
 ![Fold change VS proportion change](./figs/fcvsdprop.jpg)
+
+
+## Diagnostic plots
+
+Currently there is only one plot type in this category.
+
+```{r}
+# Matrix of pairwise Pearson's correlations among samples.
+plot_diagnostics(mydtu, type='cormat') # Default type.
+```
+
+What you want to see here, is a nice separation between the samples of different conditions.
+Anomalies in this plot may indicate batch effects or mislabelled samples.
 
 
 ## Interactive plots
