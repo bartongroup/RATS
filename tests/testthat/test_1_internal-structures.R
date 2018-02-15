@@ -17,13 +17,13 @@ test_that("The reporting structures are created correctly", {
   
   expect_type(full$Parameters, "list")
   expect_true(typeof(full$Parameters) == typeof(short$Parameters))
-  expect_length(full$Parameters, 23)
+  expect_length(full$Parameters, 25)
   expect_length(short$Parameters, 2)
   expect_named(full$Parameters, c("description", "time", "rats_version", "R_version",
                                   "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
-                                  "tests", "p_thresh", "abund_thresh", "dprop_thresh", "abund_scaling",
-                                  "quant_reprod_thresh", "quant_boot", "quant_bootnum",
-                                  "rep_reprod_thresh", "rep_boot", "rep_bootnum"))
+                                  "tests", "p_thresh", "abund_thresh", "dprop_thresh", "correction", "abund_scaling",
+                                  "quant_boot", "quant_reprod_thresh", "quant_bootnum",
+                                  "rep_boot", "rep_reprod_thresh", "rep_bootnum", "seed"))
   expect_named(short$Parameters, c("num_replic_A", "num_replic_B"))
   
   expect_true(is.data.frame(full$Genes))

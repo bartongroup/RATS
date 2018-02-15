@@ -4,15 +4,10 @@
 \alias{sim_boot_data}
 \title{Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.}
 \usage{
-sim_boot_data(varname = "condition", cnames = c("A", "B"),
-  errannot_inconsistent = FALSE, PARENT_COL = "parent_id",
+sim_boot_data(errannot_inconsistent = FALSE, PARENT_COL = "parent_id",
   TARGET_COL = "target_id")
 }
 \arguments{
-\item{varname}{Name for the variables by which to compare.}
-
-\item{cnames}{A vector of (two) name values for the comparison variable.}
-
 \item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)}
 
 \item{PARENT_COL}{Name for the bootdtraps column containing counts.}

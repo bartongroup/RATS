@@ -14,11 +14,12 @@
 #' @param dprop_thresh Minimum change in proportion.
 #' @param count_data_A A dataframe of estimated counts.
 #' @param count_data_B A dataframe of estimated counts.
-#' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
-#' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.
+#' @param boot_data_A A list of dataframes, one per sample, each with all the bootstrapped estimates for the sample.
+#' @param boot_data_B A list of dataframes, one per sample, each with all the bootstrapped estimates for the sample.
 #' @param rboot Whether to bootstrap against samples.
 #' @param rrep_thresh Confidence threshold.
 #' @param threads Number of threads.
+#' @param seed Seed for random engine.
 #' @param scaling Abundance scaling factor.
 #'
 #' @return List: \itemize{
@@ -33,7 +34,7 @@
 #'
 parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
                                 TARGET_COL, PARENT_COL,
-                                correction, testmode, scaling, threads,
+                                correction, testmode, scaling, threads, seed,
                                 p_thresh, abund_thresh, dprop_thresh, 
                                 qboot, qbootnum, qrep_thresh, rboot, rrep_thresh) {
   warnmsg <- list()
@@ -79,9 +80,18 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
-  if ((!is.numeric(scaling)) || scaling == 0)
-    return(list("error"=TRUE, "message"="Invalid scaling factor! Must be non-zero number."))
-
+  nsmpl <- NULL
+  if (!is.null(count_data_A)){
+    nsmpl <- dim(count_data_A)[2] + dim(count_data_B)[2]
+  } else {
+    nsmpl <- length(boot_data_A) + length(boot_data_B)
+  }
+  if (!is.numeric(scaling) || any(scaling < 1) || (length(scaling) != 1 && length(scaling) != nsmpl))
+    return(list("error"=TRUE, "message"="Invalid scaling factor(s)! Must be vector of non-zero numbers. Vector length must be either 1 or equal to the combined number of samples in the two conditions."))
+  if (!is.na(seed) && (!is.numeric(seed) || as.integer(seed) != seed) )
+    return(list("error"=TRUE, "message"="Invalid seed! Must be integer or NA_integer_."))
+  
+  
   # Booted counts.
   if (!is.null(boot_data_A)) {
       if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
@@ -172,94 +182,16 @@ infer_bootnum <- function(boot_data_A, boot_data_B){
 
 
 #================================================================================
-#' Group samples by covariate value.
-#'
-#' *Legacy function* No longer in use, but kept for possible general utility.
-#' 
-#' Converts a table where each row is a sample and each column a variable into a
-#' lookup structure that matches each value of each variable to a vector of corresponding samples.
-#'
-#' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
-#' @return list of lists (per covariate) of vectors (per factor level).
-#'
-#' @export
-#'
-group_samples <- function(covariates) {
-  samplesByVariable <- list()
-  for(varname in names(covariates)) {
-    categories <- unique(covariates[[varname]])
-    samplesByVariable[[varname]] <- list()
-    for (x in categories) {
-      samplesByVariable[[varname]][[x]] <- which(covariates[[varname]] == x)
-    }
-  }
-  return(samplesByVariable)
-}
-
-
-#================================================================================
-#' Extract bootstrap counts into a less nested structure.
-#' 
-#' *Legacy function* 
-#' 
-#' It extracts the bootstrap data from the older-style \code{sleuth} object. 
-#' As of sleuth version 0.29, the bootstrap data is no longer kept in the object.
-#' 
-#' @param slo A sleuth object.
-#' @param annot A data.frame matching transcript identfier to gene identifiers.
-#' @param samples A numeric vector of samples to extract counts for.
-#' @param COUNTS_COL The name of the column with the counts. (Default "tpm")
-#' @param BS_TARGET_COL The name of the column with the transcript IDs. (Default "target_id")
-#' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
-#' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
-#' @param threads Number of threads. (Default 1)
-#' @return A list of data.tables, one per sample, containing all the bootstrap counts of the smaple. First column contains the transcript IDs.
-#'
-#' NA replaced with 0.
-#'
-#' Transcripts in \code{slo} that are missing from \code{annot} will be skipped completely.
-#' Transcripts in \code{annot} that are missing from \code{slo} are automatically padded with NA, which we re-assign as 0.
-#'
-#' @import parallel
-#' @import data.table
-#' @export
-#'
-denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id",
-                                TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
-  # Ensure data.table complies.
-  setDTthreads(threads)
-
-  # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
-  tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
-
-  mclapply(samples, function(smpl) {
-    # Extract counts in the order of provided transcript vector, for safety and consistency.
-    dt <- as.data.table( lapply(slo$kal[[smpl]]$bootstrap, function(boot) {
-      roworder <- match(tx, boot[[BS_TARGET_COL]])
-      boot[roworder, COUNTS_COL]
-    }))
-    # Replace any NAs with 0. Happens when annotation different from that used for DTE.
-    dt[is.na(dt)] <- 0
-    # Add transcript ID.
-    with(dt, dt[, target_id := tx])
-    nn <- names(dt)
-    ll <- length(nn)
-    # Return reordered so that IDs are in first column.
-    return(dt[, c(nn[ll], nn[seq.int(1, ll-1)]), with=FALSE])
-  }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
-}
-
-
-#================================================================================
 #' Create output structure.
 #'
 #' @param annot Pre-processed by \code{tidy_annot()}.
 #' @param full Full-sized structure or core fields only. Either "full" or "short".
+#' @param n How many scaling factors to reserve space for.
 #' @return A list.
 #'
 #' @import data.table
 #'
-alloc_out <- function(annot, full){
+alloc_out <- function(annot, full, n=1){
   # Ensure data.table complies.
   # if (packageVersion("data.table") >= "1.9.8")
     setDTthreads(1)
@@ -269,9 +201,11 @@ alloc_out <- function(annot, full){
                        "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=NA_real_,
-                       "quant_reprod_thresh"=NA_real_, "quant_boot"=NA, "quant_bootnum"=NA_integer_,
-                       "rep_reprod_thresh"=NA_real_, "rep_boot"=NA, "rep_bootnum"=NA_integer_)
+                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "correction"=NA_character_, 
+                       "abund_scaling"=numeric(length=n),
+                       "quant_boot"=NA,"quant_reprod_thresh"=NA_real_,  "quant_bootnum"=NA_integer_,
+                       "rep_boot"=NA, "rep_reprod_thresh"=NA_real_, "rep_bootnum"=NA_integer_, 
+                       "seed"=NA_integer_)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
@@ -340,7 +274,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
   #---------- PRE-ALLOCATE
 
   # Pre-allocate results object.
-  resobj <- alloc_out(tx_filter, full)
+  resobj <- alloc_out(tx_filter, full, dim(counts_A)[2] + dim(counts_B)[2])
   resobj$Parameters["num_replic_A"] <- dim(counts_A)[2]
   resobj$Parameters["num_replic_B"] <- dim(counts_B)[2]
 
@@ -383,28 +317,33 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 
     # Transcript-level test.
     if (test_transc) {
-      Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
-                                                    function(row) {
-                                                      return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )
-                                                    }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
-                                          ) ]
-      Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
-      Transcripts[(elig), sig := pval_corr < p_thresh]
-      Transcripts[(elig), DTU := sig & elig_fx]
+      if(any(Transcripts$elig)){  # Extreme case. If nothing is eligible, table subsetting by `elig` is nonsense and crashes. 
+                                  # We can just skip testing altegether, as all output fields are initialized with NA already.
+        Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
+                                                      function(row) {
+                                                        return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )
+                                                      }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
+                                            ) ]
+        Transcripts[(elig), pval_corr := p.adjust(pval, method=correction)]
+        Transcripts[(elig), sig := pval_corr < p_thresh]
+        Transcripts[(elig), DTU := sig & elig_fx]
+      }
     }
 
     # Gene-level test.
     if (test_genes) {
-      Genes[(elig), pval := t( as.data.frame( mclapply(Genes[(elig), parent_id],
-                                        function(parent) {
-                                            # Extract all relevant data to avoid repeated look ups in the large table.
-                                            subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
-                                            return( g.test.2(obsx= subdt$sumA, obsy= subdt$sumB) )
-                                        }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
-                )) ]
-      Genes[(elig), pval_corr := p.adjust(pval, method=correction)]
-      Genes[(elig), sig := pval_corr < p_thresh]
-      Genes[(elig), DTU := sig & elig_fx]
+      if(any(Genes$elig)){  # Skip testing if nothing is eligible, otherwise table subsetting by `elig` is nonsense and crashes. 
+        Genes[(elig), pval := t( as.data.frame( mclapply(Genes[(elig), parent_id],
+                                          function(parent) {
+                                              # Extract all relevant data to avoid repeated look ups in the large table.
+                                              subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
+                                              return( g.test.2(obsx= subdt$sumA, obsy= subdt$sumB) )
+                                          }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
+                  )) ]
+        Genes[(elig), pval_corr := p.adjust(pval, method=correction)]
+        Genes[(elig), sig := pval_corr < p_thresh]
+        Genes[(elig), DTU := sig & elig_fx]
+      }
     }
   })
   return(resobj)
@@ -527,3 +466,31 @@ maxabs <- function(v) {
 		return(n)
 	}
 }
+
+
+#================================================================================
+#' Group samples by covariate value.
+#'
+#' *Legacy function* No longer in use, but kept for possible general utility.
+#' 
+#' Converts a table where each row is a sample and each column a variable into a
+#' lookup structure that matches each value of each variable to a vector of corresponding samples.
+#'
+#' @param covariates A dataframe with different factor variables. Like the \code{sample_to_covariates} table of a \code{sleuth} object. Each row is a sample, each column is a covariate, each cell is a covariate value for the sample.
+#' @return list of lists (per covariate) of vectors (per factor level).
+#'
+#' @export
+#'
+group_samples <- function(covariates) {
+  samplesByVariable <- list()
+  for(varname in names(covariates)) {
+    categories <- unique(covariates[[varname]])
+    samplesByVariable[[varname]] <- list()
+    for (x in categories) {
+      samplesByVariable[[varname]][[x]] <- which(covariates[[varname]] == x)
+    }
+  }
+  return(samplesByVariable)
+}
+
+

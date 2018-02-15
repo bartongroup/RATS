@@ -5,8 +5,9 @@
 \title{Check input parameters.}
 \usage{
 parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
-  TARGET_COL, PARENT_COL, correction, testmode, scaling, threads, p_thresh,
-  abund_thresh, dprop_thresh, qboot, qbootnum, qrep_thresh, rboot, rrep_thresh)
+  TARGET_COL, PARENT_COL, correction, testmode, scaling, threads, seed,
+  p_thresh, abund_thresh, dprop_thresh, qboot, qbootnum, qrep_thresh, rboot,
+  rrep_thresh)
 }
 \arguments{
 \item{annot}{Annotation dataframe.}
@@ -15,9 +16,9 @@ parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
 
 \item{count_data_B}{A dataframe of estimated counts.}
 
-\item{boot_data_A}{A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.}
+\item{boot_data_A}{A list of dataframes, one per sample, each with all the bootstrapped estimates for the sample.}
 
-\item{boot_data_B}{A list of dataframes, one per sample, each with all the bootstrapped estimetes for the sample.}
+\item{boot_data_B}{A list of dataframes, one per sample, each with all the bootstrapped estimates for the sample.}
 
 \item{TARGET_COL}{Name of transcript id column in annotation.}
 
@@ -30,6 +31,8 @@ parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
 \item{scaling}{Abundance scaling factor.}
 
 \item{threads}{Number of threads.}
+
+\item{seed}{Seed for random engine.}
 
 \item{p_thresh}{Significance level.}
 

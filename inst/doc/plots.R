@@ -53,6 +53,10 @@ plot_gene(mydtu, "MIX6", style="byisoform")
 #  # This can also be plotted for genes, by using the largest isoform effect size as proxy.
 #  plot_overview(mydtu, type="fcVSdprop")
 
+## ------------------------------------------------------------------------
+# Matrix of pairwise Pearson's correlations among samples.
+plot_diagnostics(mydtu, type='cormat') # Default type.
+
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Start the interactive volcano plot.
 #  plot_shiny_volcano(mydtu)

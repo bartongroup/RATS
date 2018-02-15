@@ -22,7 +22,7 @@
 #' @param abund_thresh Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
 #' @param correction The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})
-#' @param scaling A scaling factor to be applied to the abundances, *prior* to any thresholding and testing. Useful for scaling TPM (transcripts per 1 million reads) abundances to the actual library size. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained. (Default 1)
+#' @param scaling A scaling factor or vector of scaling factors, to be applied to the abundances *prior* to any thresholding and testing. Useful for scaling TPMs (transcripts per 1 million reads) to the actual library sizes of the samples. If a vector is supplied, the order should correspond to the samples in group A followed by the samples in group B. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained.
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
 #' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
 #' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
@@ -32,6 +32,7 @@
 #' @param description Free-text description of the run. You can use this to add metadata to the results object.
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
+#' @param seed A numeric integer used to initialise the random number engine. Use this only if reproducible bootstrap selections are required. (Default NA)
 #' @param dbg Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
 #' @return List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 #'
@@ -45,7 +46,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      name_A= "Condition-A", name_B= "Condition-B", varname= "condition",
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
-                     description= NA_character_, verbose= TRUE, threads= 1L, dbg= 0)
+                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, dbg= "0")
 {
   #---------- PREP
 
@@ -57,7 +58,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   # Input checks.
   paramcheck <- parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
                                     TARGET_COL, PARENT_COL,
-                                    correction, testmode, scaling, threads,
+                                    correction, testmode, scaling, threads, seed,
                                     p_thresh, abund_thresh, dprop_thresh, 
                                     qboot, qbootnum, qrep_thresh, rboot, rrep_thresh)
   if (paramcheck$error)
@@ -69,10 +70,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         message(w)  # So it displays at runtime.
       }
 
+  # Set seed, if required.
+  if (!is.na(seed))
+    set.seed(as.integer(seed))
+  
+  # Use specified threads.
   threads <- as.integer(threads)  # Can't be decimal.
-  # Ensure data.table complies.
   setDTthreads(threads)
 
+  # Testing options.
   if (qbootnum == 0 && qboot)   # Use smart default.
     qbootnum = paramcheck$maxboots
   qbootnum <- as.integer(qbootnum)  # Can't be decimal.
@@ -88,7 +94,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     qboot <- FALSE  # No quantification bootstraps data was provided or no iterations required.
 
   if (dbg == "prep")
-    return(steps)
+    return(list(steps, qbootnum, test_transc, test_genes))
 
 
   #----------- LOOK-UP
@@ -116,21 +122,13 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   }
 
   if (dbg == "bootin")
-    return(list("bootA"=count_data_A, "bootB"=count_data_B))
-
+    return(list("bootA"=boot_data_A, "bootB"=boot_data_B))
+  
   # From generic bootstrapped data.
   if (steps > 1) {
     # Remove ID columns so I don't have to always subset for math operations.
     for (smpl in c(boot_data_A, boot_data_B)) {
         smpl[, 1 := NULL]
-    }
-
-    # Scale abundances before aggregating.
-    if (scaling != 1) {
-      if (verbose)
-        message("Applying scaling factor...")
-      boot_data_A <- mclapply(boot_data_A, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-      boot_data_B <- mclapply(boot_data_B, function(dt) { return(dt * scaling) }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
     }
 
     # Calculate mean count across bootstraps.
@@ -145,18 +143,52 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
     nn <- names(count_data_B)  # The number of columns may be different from A.
     count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
-
-    # Scale abundances.
-    if (scaling != 1) {
-      if (verbose)
-        message("Applying scaling factor...")
-      count_data_A <- count_data_A * scaling
-      count_data_B <- count_data_B * scaling
-    }
   }
 
-  if (dbg == "data")
+  if (dbg == "countin")
     return(list("countA"=count_data_A, "countB"=count_data_B))
+  
+  # Scale abundances.
+  if (any(scaling != 1)) {
+    if (verbose)
+      message("Applying scaling factor(s)...")
+    
+    lA <- dim(count_data_A)[2]
+    lB <- dim(count_data_B)[2]
+    sfA <- NULL
+    sfB <- NULL
+    if (length(scaling) == 1) {
+      sfA <- rep(scaling, lA)
+      sfB <- rep(scaling, lB)
+    } else {
+      sfA <- scaling[1:lA]
+      sfB <- scaling[(1+lA):(lA+lB)]
+    }
+    
+    # Scale counts.
+    count_data_A <- as.data.table( mclapply(1:lA, function(x) { 
+                        return(count_data_A[[x]] * sfA[x])  # Can't apply scaling to whole table in one step, because each column/sample can have a different scaling factor.
+                    }, mc.cores=threads, mc.allow.recursive = FALSE) )
+    count_data_B <- as.data.table( mclapply(1:lB, function(x) { 
+                        return(count_data_B[[x]] * sfB[x]) 
+                    }, mc.cores=threads, mc.allow.recursive = FALSE) )
+    # Also scale the bootstraps, if they exist.
+    if (steps > 1){
+      boot_data_A <- lapply(1:lA , function (smpl){
+                        return(as.data.table( mclapply(boot_data_A[[smpl]], function(b) { 
+                                                  return(b * sfA[smpl]) # The bootstraps table belongs to a single sample, so here I can apply the factor to the whole table.
+                                              }, mc.cores=threads, mc.allow.recursive = FALSE) ))
+                    })
+      boot_data_B <- lapply(1:lB , function (smpl){
+                        return(as.data.table( mclapply(boot_data_B[[smpl]], function(b) { 
+                                                  return(b * sfB[smpl]) # The bootstraps table belongs to a single sample, so here I can apply the factor to the whole table.
+                                              }, mc.cores=threads, mc.allow.recursive = FALSE) ))
+                    })
+    }
+  }
+  
+  if (dbg == "scale")
+    return(list("countA"=count_data_A, "countB"=count_data_B, "bootA"=boot_data_A, "bootB"=boot_data_B))
 
 
   #---------- TEST
@@ -188,25 +220,30 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   })
 
   # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)
-  resobj$Parameters["var_name"] <- varname
-  resobj$Parameters["cond_A"] <- name_A
-  resobj$Parameters["cond_B"] <- name_B
-  resobj$Parameters["p_thresh"] <- p_thresh
-  resobj$Parameters["abund_thresh"] <- abund_thresh
-  resobj$Parameters["dprop_thresh"] <- dprop_thresh
-  resobj$Parameters["abund_scaling"] <- scaling
-  resobj$Parameters["tests"] <- testmode
-  resobj$Parameters["rep_boot"] <- rboot
-  resobj$Parameters["quant_boot"] <- qboot
+  resobj$Parameters[["var_name"]] <- varname
+  resobj$Parameters[["cond_A"]] <- name_A
+  resobj$Parameters[["cond_B"]] <- name_B
+  resobj$Parameters[["p_thresh"]] <- p_thresh
+  resobj$Parameters[["abund_thresh"]] <- abund_thresh
+  resobj$Parameters[["dprop_thresh"]] <- dprop_thresh
+  resobj$Parameters[["abund_scaling"]] <- c(scaling)
+  resobj$Parameters[["tests"]] <- testmode
+  resobj$Parameters[["rep_boot"]] <- rboot
+  resobj$Parameters[["quant_boot"]] <- qboot
   if (steps==2) {
-    resobj$Parameters["data_type"] <- "bootstrapped abundance estimates"
+    resobj$Parameters[["data_type"]] <- "bootstrapped abundance estimates"
   } else  if (steps==1) {
-    resobj$Parameters["data_type"] <- "plain abundance estimates"
+    resobj$Parameters[["data_type"]] <- "plain abundance estimates"
   }
-  resobj$Parameters["num_genes"] <- length(levels(annot[[PARENT_COL]]))
-  resobj$Parameters["num_transc"] <- length(annot[[TARGET_COL]])
-  resobj$Parameters["description"] <- description
-
+  resobj$Parameters[["num_genes"]] <- length(unique(annot[[PARENT_COL]]))
+  resobj$Parameters[["num_transc"]] <- length(annot[[TARGET_COL]])
+  resobj$Parameters[["description"]] <- description
+  resobj$Parameters[["seed"]] <- seed
+  resobj$Parameters[["correction"]] <- correction
+  resobj$Parameters[["quant_reprod_thresh"]] <- qrep_thresh
+  resobj$Parameters[["quant_bootnum"]] <- qbootnum
+  resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
+  
   if (dbg == "info")
     return(resobj)
 
@@ -220,11 +257,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
-    resobj$Parameters["rep_bootnum"] <- numpairs
-    resobj$Parameters["rep_reprod_thresh"] <- rrep_thresh
+    resobj$Parameters[["rep_bootnum"]] <- numpairs
     
     if (verbose)
-      myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = "")
+      myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
 
     repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU().
                   # Update progress.
@@ -232,7 +268,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                     setTxtProgressBar(myprogress, p)
 
                   # Grab a replicate from each condition.
-    			  # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
+                  # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
                   counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] ) * resobj$Parameters$num_replic_A
                   counts_B <- as.data.table( count_data_A[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
 
@@ -247,7 +283,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                 })
 
     if (verbose)  # Forcing a new line after the progress bar.
-      print("")
+      print("", quote=FALSE)
 
     if (dbg == "rboot")
       return(repres)
@@ -289,6 +325,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     if (dbg == "rbootsum")
       return(resobj)
+  } else {
+    # No point reporting a threshold for an operation not carried out.
+    resobj$Parameters[["rep_reprod_thresh"]] <- NA_real_
   }
 
 
@@ -299,11 +338,8 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose) {
       message("Bootstrapping quantifications...")
       # Bootstrapping can take long, so showing progress is nice.
-      myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = "")
+      myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = stderr())
     }
-
-    resobj$Parameters["quant_reprod_thresh"] <- qrep_thresh
-    resobj$Parameters["quant_bootnum"] <- qbootnum
 
     #----- Iterations
 
@@ -329,7 +365,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                 "gdtu" = Genes[, DTU] )) })
               })
     if (verbose)  # Forcing a new line after the progress bar.
-      print("")
+      print("", quote=FALSE)
 
     if (dbg == "qboot")
       return(bootres)
@@ -367,6 +403,10 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
     })
+  } else {
+    # No point reporting a threshold for an operation not carried out.
+    resobj$Parameters[["quant_reprod_thresh"]] <- NA_real_
+    resobj$Parameters[["quant_bootnum"]] <- NA_integer_
   }
 
   if (dbg == "qbootsum")
@@ -412,6 +452,23 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (test_genes)
       Transcripts[, gene_DTU := merge(Genes[, .(parent_id, DTU)], Transcripts[, .(parent_id)])[, DTU] ]
 
+    # Eradicate NAs from flag columns, as they mess up sub-setting of the tables.
+    Genes[is.na(elig), elig := c(FALSE)]
+    Genes[is.na(sig), sig := c(FALSE)]
+    Genes[is.na(elig_fx), elig_fx := c(FALSE)]
+    Genes[is.na(quant_reprod), quant_reprod := c(FALSE)]
+    Genes[is.na(rep_reprod), rep_reprod := c(FALSE)]
+    Genes[is.na(DTU), DTU := c(FALSE)]
+    Genes[is.na(transc_DTU), transc_DTU := c(FALSE)]
+    Transcripts[is.na(elig_xp), elig_xp := c(FALSE)]
+    Transcripts[is.na(elig), elig := c(FALSE)]
+    Transcripts[is.na(sig), sig := c(FALSE)]
+    Transcripts[is.na(elig_fx), elig_fx := c(FALSE)]
+    Transcripts[is.na(quant_reprod), quant_reprod := c(FALSE)]
+    Transcripts[is.na(rep_reprod), rep_reprod := c(FALSE)]
+    Transcripts[is.na(DTU), DTU := c(FALSE)]
+    Transcripts[is.na(gene_DTU), gene_DTU := c(FALSE)]
+    
     # Drop the bootstrap columns, if unused.
     if (!qboot || !test_transc)
         Transcripts[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
@@ -421,14 +478,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       Transcripts[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
     if(!rboot || !test_genes)
       Genes[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
+    
   })
 
   if(verbose) {
     message("All done!")
-    print(noquote("Summary of DTU results:"))
+    cat(noquote("# Summary of DTU results:\n"))
     dtusum <- dtu_summary(resobj)
     print(dtusum)
-    print(noquote("Isoform-switching subset of DTU:"))
+    cat(noquote("\n# Isoform-switching subset of DTU:\n"))
     switchsum <- dtu_switch_summary(resobj)
     print(switchsum)
   }
