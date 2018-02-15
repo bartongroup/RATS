@@ -567,7 +567,7 @@ plot_diagnostics <- function(dtuo, type="cormat") {
       result <- ggplot() +
         geom_tile(aes(x=corels[[1]], y=corels[[2]], fill=corels[[3]])) +
         scale_fill_gradient(low="purple", high="white") +
-        xlab('Sample') + ylab('Sample') + ggtitle('Pairwise Pearson correlations') + labs(fill='corr') +
+        xlab('Sample') + ylab('Sample') + ggtitle('Pairwise Pearson\'s correlations') + labs(fill='corr') +
         theme(axis.text.x=element_text(angle=90))
     }
     
