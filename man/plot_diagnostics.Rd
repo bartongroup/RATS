@@ -8,6 +8,10 @@ plot_diagnostics(dtuo, type = "cormat")
 }
 \arguments{
 \item{dtuo}{A DTU object.}
+
+\item{type}{Type of plot. \itemize{
+  \item{"cormat" - Pairwise Pearson's correlation matrix among samples.}
+}}
 }
 \value{
 A ggplot2 object. Simply display it or you can also customize it.

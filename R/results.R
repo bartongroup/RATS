@@ -547,7 +547,7 @@ plot_overview <- function(dtuo, type="volcano") {
 #' @param dtuo A DTU object.
 #' @param type Type of plot. \itemize{
 #'   \item{"cormat" - Pairwise Pearson's correlation matrix among samples.}
-#'   
+#' }
 #' @return A ggplot2 object. Simply display it or you can also customize it.
 #' @import data.table
 #' @import ggplot2
