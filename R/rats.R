@@ -250,7 +250,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
   #---------- INTER-REPLICATE VARIABILITY BOOTSTRAP
 
-
+  
   if (rboot) {
     if (verbose)
       message("Bootstrapping replicates...")
@@ -263,6 +263,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
 
     repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU().
+      
                   # Update progress.
                   if (verbose)
                     setTxtProgressBar(myprogress, p)
@@ -270,7 +271,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   # Grab a replicate from each condition.
                   # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
                   counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] ) * resobj$Parameters$num_replic_A
-                  counts_B <- as.data.table( count_data_A[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
+                  counts_B <- as.data.table( count_data_B[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
 
                   # Do the work.
                   pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
