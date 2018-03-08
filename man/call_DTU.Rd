@@ -36,7 +36,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{p_thresh}{The p-value threshold. (Default 0.05)}
 
-\item{abund_thresh}{Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)}
+\item{abund_thresh}{Noise threshold. Minimum mean (across replicates) abundance for transcripts (and genes) to be eligible for testing. (Default 5)}
 
 \item{dprop_thresh}{Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)}
 

@@ -118,13 +118,13 @@ test_that("The output structure is correct", {
 
 #==============================================================================
 test_that("The output content is complete", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
+  sim <- sim_boot_data()
   # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
+  data_A <- sim$boots_A
+  data_B <- sim$boots_B
   # Emulate non-bootstrap data.
-  counts_A <- data_A[[1]]
-  counts_B <- data_B[[2]]
+  counts_A <- data_A[[2]]
+  counts_B <- data_B[[1]]
   
   mydtu <- list(call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, description="test"),
                 call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=TRUE, qboot=TRUE, qbootnum=2, verbose = FALSE, description="test")
@@ -227,13 +227,12 @@ test_that("The output content is complete", {
 
 #==============================================================================
 test_that("The result is consistent across input data formats", {
-  sim <- sim_sleuth_data(cnames=c("ONE","TWO"))
-  # Emulate non-sleuth bootstrap data.
-  data_A <- denest_sleuth_boots(sim$slo, sim$annot, c(1,3), "est_counts", "target_id")
-  data_B <- denest_sleuth_boots(sim$slo, sim$annot, c(2,4), "est_counts", "target_id")
+  sim <- sim_boot_data()
+  data_A <- sim$boots_A
+  data_B <- sim$boots_B
   # Emulate non-bootstrap data.
-  counts_A <- data_A[[1]]
-  counts_B <- data_B[[2]]
+  counts_A <- data_A[[2]]
+  counts_B <- data_B[[1]]
   
   mydtu <- list(call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE),
                 call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE))
@@ -245,12 +244,14 @@ test_that("The result is consistent across input data formats", {
 #==============================================================================
 test_that("Filters work correctly", {
   
-  # !!! This test is tightly dependent on the data used for the test and the default parameter values, in order to
+  # !!! This test is tightly dependent on the data used for the test and the parameter values, in order to
   # !!! ensure correct response to specific scenarios.
   
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=10, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=8, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666)
   
+  expect_equivalent(as.list(mydtu$Genes["1A1B", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
+                    list(2, 2, 2, TRUE, TRUE))
   expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(1, 1, 0, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Genes["1B1C", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
@@ -273,6 +274,10 @@ test_that("Filters work correctly", {
                     list(2, 2, 2, TRUE, FALSE))
   
   setkey(mydtu$Transcripts, target_id)
+  expect_equivalent(as.list(mydtu$Transcripts["1A1B.a", list(elig_xp, elig, elig_fx)]),
+                    list(TRUE, TRUE, TRUE))
+  expect_equivalent(as.list(mydtu$Transcripts["1A1B.b", list(elig_xp, elig, elig_fx)]),
+                    list(TRUE, TRUE, TRUE))
   expect_equivalent(as.list(mydtu$Transcripts["1A1N-2", list(elig_xp, elig, elig_fx)]),
                     list(TRUE, FALSE, FALSE))
   expect_equivalent(as.list(mydtu$Transcripts["1B1C.1", list(elig_xp, elig, elig_fx)]),

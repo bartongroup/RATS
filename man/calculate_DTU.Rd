@@ -20,7 +20,7 @@ calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, full,
 
 \item{full}{Either "full" (for complete output structure) or "short" (for bootstrapping).}
 
-\item{count_thresh}{Minimum number of counts per replicate.}
+\item{count_thresh}{Minimum average count across replicates.}
 
 \item{p_thresh}{The p-value threshold.}
 

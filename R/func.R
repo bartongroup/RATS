@@ -64,8 +64,8 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Invalid p-value threshold!"))
   if ((!is.numeric(dprop_thresh)) || dprop_thresh < 0 || dprop_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
-  if ((!is.numeric(abund_thresh)) || abund_thresh < 0)
-    return(list("error"=TRUE, "message"="Invalid abundance threshold! Must be between 0 and 1."))
+  if ((!is.numeric(abund_thresh)) || abund_thresh < 1)
+    return(list("error"=TRUE, "message"="Invalid abundance threshold! Must be a count >= 1."))
   if ((!is.numeric(qbootnum)) || qbootnum < 0)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive integer number."))
   if (!is.logical(qboot))
@@ -256,7 +256,7 @@ alloc_out <- function(annot, full, n=1){
 #' @param test_transc Whether to do transcript-level test.
 #' @param test_genes Whether to do gene-level test.
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
-#' @param count_thresh Minimum number of counts per replicate.
+#' @param count_thresh Minimum average count across replicates.
 #' @param p_thresh The p-value threshold.
 #' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
@@ -303,8 +303,11 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)]
-    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off in one condition, changes in proportion cannot be defined.
-                                                                                                      # If sum and total are equal in both conditions the gene has only one expressed isoform, or one isoform altogether.
+    Transcripts[, elig := (elig_xp &                          # isoform expressed above the noise threshold in EITHER condition
+                             totalA >= ctA & totalB >= ctB &  # at least one eligibly expressed isoform exists in EACH condition (prevent gene-on/off from creating wild proportions from low counts)
+                             totalA != 0 & totalB != 0 &      # gene expressed in BOTH conditions (failsafe, in case user sets noise threshold to 0)
+                             (propA != 1 | propB != 1) )]     # not the only isoform expressed.
+    
     # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
     Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]

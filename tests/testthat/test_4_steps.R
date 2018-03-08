@@ -87,7 +87,7 @@ test_that("Parameters are recorded", {
   expect_equal(c(param$var_name, param$cond_A, param$cond_B), c('testing', 'cA', 'cB'))
   expect_equal(c(param$data_type, param$tests), c("bootstrapped abundance estimates", 'genes'))
   expect_equal(c(param$num_replic_A, param$num_replic_B), c(2, 2))
-  expect_equal(c(param$num_genes, param$num_transc), c(10, 21))
+  expect_equal(c(param$num_genes, param$num_transc), c(11, 23))
   expect_equal(list(param$p_thresh, param$abund_thresh, param$dprop_thresh, param$correction, param$abund_scaling), list(0.001, 1, 0.15, 'bonferroni', c(1,2,3,4)))
   expect_equal(list(param$quant_boot, param$quant_bootnum, param$quant_reprod_thresh), list(TRUE, 99, 0.8))
   expect_equal(list(param$rep_boot, param$rep_bootnum, param$rep_reprod_thresh), list(TRUE, NA_integer_, 0.6))

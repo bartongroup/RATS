@@ -83,7 +83,7 @@ myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 #  # Calling DTU with custom thresholds.
 #  mydtu <- call_DTU(annot= myannot,
 #                    boot_data_A= mycond_A, boot_data_B= mycond_B,
-#                    p_thresh= 0.01, abund_thresh= 10, dprop_thres = 0.25)
+#                    p_thresh= 0.01, dprop_thres = 0.15, abund_thresh= 10)
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Bootstrap (default). Do 100 iterations.

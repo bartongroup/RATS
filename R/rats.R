@@ -19,8 +19,8 @@
 #' @param name_B The name for the other condition. (Default "Condition-B")
 #' @param varname The name of the covariate to which the two conditions belong. (Default \code{"condition"}).
 #' @param p_thresh The p-value threshold. (Default 0.05)
-#' @param abund_thresh Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
+#' @param abund_thresh Noise threshold. Minimum mean (across replicates) abundance for transcripts (and genes) to be eligible for testing. (Default 5)
 #' @param correction The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})
 #' @param scaling A scaling factor or vector of scaling factors, to be applied to the abundances *prior* to any thresholding and testing. Useful for scaling TPMs (transcripts per 1 million reads) to the actual library sizes of the samples. If a vector is supplied, the order should correspond to the samples in group A followed by the samples in group B. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained.
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
