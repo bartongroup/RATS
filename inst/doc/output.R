@@ -6,7 +6,7 @@ library(rats)
 
 ## ------------------------------------------------------------------------
 # Simulate some data.
-simdat <- sim_boot_data() 
+simdat <- sim_boot_data(clean=TRUE) 
 # For convenience let's assign the contents of the list to separate variables
 mycond_A <- simdat[[2]]   # Simulated bootstrapped data for one condition.
 mycond_B <- simdat[[3]]   # Simulated bootstrapped data for other condition.

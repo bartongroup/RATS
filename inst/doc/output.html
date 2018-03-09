@@ -11,7 +11,7 @@
 
 <meta name="author" content="Kimon Froussios" />
 
-<meta name="date" content="2018-01-05" />
+<meta name="date" content="2018-03-09" />
 
 <title>RATs: Raw Output</title>
 
@@ -219,7 +219,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">RATs: Raw Output</h1>
 <h4 class="author"><em>Kimon Froussios</em></h4>
-<h4 class="date"><em>05 JAN 2018</em></h4>
+<h4 class="date"><em>09 MAR 2018</em></h4>
 
 </div>
 
@@ -228,7 +228,7 @@ div.tocify {
 <pre class="r"><code>library(rats)</code></pre>
 <p>Set up an example.</p>
 <pre class="r"><code># Simulate some data.
-simdat &lt;- sim_boot_data() 
+simdat &lt;- sim_boot_data(clean=TRUE) 
 # For convenience let's assign the contents of the list to separate variables
 mycond_A &lt;- simdat[[2]]   # Simulated bootstrapped data for one condition.
 mycond_B &lt;- simdat[[3]]   # Simulated bootstrapped data for other condition.
@@ -253,17 +253,17 @@ mydtu &lt;- call_DTU(annot= myannot, verbose= FALSE,
 <pre class="r"><code># A really simple tally of the outcome.
 print( dtu_summary(mydtu) )</code></pre>
 <pre><code>##                           category tally
-## 1            DTU genes (gene test)     3
-## 2        non-DTU genes (gene test)     1
+## 1            DTU genes (gene test)     2
+## 2        non-DTU genes (gene test)     2
 ## 3     ineligible genes (gene test)     7
-## 4         DTU genes (transc. test)     3
-## 5     non-DTU genes (transc. test)     2
+## 4         DTU genes (transc. test)     2
+## 5     non-DTU genes (transc. test)     3
 ## 6  ineligible genes (transc. test)     6
-## 7           DTU genes (both tests)     3
-## 8       non-DTU genes (both tests)     1
+## 7           DTU genes (both tests)     2
+## 8       non-DTU genes (both tests)     2
 ## 9    ineligible genes (both tests)     7
-## 10                 DTU transcripts     7
-## 11             non-DTU transcripts     5
+## 10                 DTU transcripts     5
+## 11             non-DTU transcripts     7
 ## 12          ineligible transcripts    11</code></pre>
 <p>RATs tests for DTU at both the gene level and the transcript level. Therefore, as of v0.4.2, <code>dtu_summury()</code> will display the DTU genes according to either method as well as the intersection of the two.</p>
 <p>The <code>get_dtu_ids()</code> function lists the coresponding identifiers per category. As of <code>v0.4.2</code> it uses the same category names as <code>dtu_summury()</code> for consistency and clarity.</p>
@@ -271,37 +271,37 @@ print( dtu_summary(mydtu) )</code></pre>
 ids &lt;- get_dtu_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`DTU genes (gene test)`
-## [1] &quot;1A1B&quot; &quot;MIX6&quot; &quot;CC&quot;  
+## [1] &quot;1A1B&quot; &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (gene test)`
-## [1] &quot;NN&quot;
+## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`ineligible genes (gene test)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (transc. test)`
-## [1] &quot;1A1B&quot; &quot;MIX6&quot; &quot;CC&quot;  
+## [1] &quot;1A1B&quot; &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (transc. test)`
-## [1] &quot;LC&quot; &quot;NN&quot;
+## [1] &quot;LC&quot; &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`ineligible genes (transc. test)`
 ## [1] &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU genes (both tests)`
-## [1] &quot;1A1B&quot; &quot;MIX6&quot; &quot;CC&quot;  
+## [1] &quot;1A1B&quot; &quot;MIX6&quot;
 ## 
 ## $`non-DTU genes (both tests)`
-## [1] &quot;NN&quot;
+## [1] &quot;CC&quot; &quot;NN&quot;
 ## 
 ## $`ineligible genes (both tests)`
 ## [1] &quot;LC&quot;   &quot;1A1N&quot; &quot;1B1C&quot; &quot;1D1C&quot; &quot;ALLA&quot; &quot;ALLB&quot; &quot;NIB&quot; 
 ## 
 ## $`DTU transcripts`
-## [1] &quot;1A1B.a&quot;  &quot;1A1B.b&quot;  &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot; &quot;CC_a&quot;    &quot;CC_b&quot;   
+## [1] &quot;1A1B.a&quot;  &quot;1A1B.b&quot;  &quot;MIX6.c1&quot; &quot;MIX6.c2&quot; &quot;MIX6.c4&quot;
 ## 
 ## $`non-DTU transcripts`
-## [1] &quot;LC2&quot;     &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
+## [1] &quot;LC2&quot;     &quot;CC_a&quot;    &quot;CC_b&quot;    &quot;MIX6.c3&quot; &quot;2NN&quot;     &quot;1NN&quot;     &quot;MIX6.nc&quot;
 ## 
 ## $`ineligible transcripts`
 ##  [1] &quot;LC1&quot;      &quot;1A1N-2&quot;   &quot;1B1C.1&quot;   &quot;1B1C.2&quot;   &quot;1D1C:one&quot; &quot;1D1C:two&quot;
@@ -351,13 +351,13 @@ print( ids )</code></pre>
 <pre class="r"><code># A tally of genes switching isoform ranks.
 print( dtu_plurality_summary(mydtu) )</code></pre>
 <pre><code>##   isof_affected num_of_genes
-## 1             2            2
+## 1             2            1
 ## 2             3            1</code></pre>
 <pre class="r"><code># The gene IDs displaying isoform switching.
 ids &lt;- get_plurality_ids(mydtu)
 print( ids )</code></pre>
 <pre><code>## $`2`
-## [1] &quot;1A1B&quot; &quot;CC&quot;  
+## [1] &quot;1A1B&quot;
 ## 
 ## $`3`
 ## [1] &quot;MIX6&quot;</code></pre>
@@ -384,7 +384,7 @@ print( names(mydtu$Parameters) )</code></pre>
 ## [16] &quot;dprop_thresh&quot;        &quot;correction&quot;          &quot;abund_scaling&quot;      
 ## [19] &quot;quant_boot&quot;          &quot;quant_reprod_thresh&quot; &quot;quant_bootnum&quot;      
 ## [22] &quot;rep_boot&quot;            &quot;rep_reprod_thresh&quot;   &quot;rep_bootnum&quot;        
-## [25] &quot;seed&quot;</code></pre>
+## [25] &quot;seed&quot;                &quot;reckless&quot;</code></pre>
 <ul>
 <li><code>description</code> - (str) Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters…</li>
 <li><code>time</code> - (str) Date and time for the run. This does not represent the exact time the run started.</li>
@@ -408,9 +408,10 @@ print( names(mydtu$Parameters) )</code></pre>
 <li><code>rep_reprod_thresh</code> - (num) The value passed to the <code>rrep_thresh</code> parameter, if <code>rboot==TRUE</code>..</li>
 <li><code>rep_boot</code> - (bool) The value passed to the <code>rboot</code> parameter.</li>
 <li><code>rep_bootnum</code> - (int) The number of replicate bootstrapping iterations (currently M*N, where M and N are the numbers of samples in the two conditions), if <code>rboot==TRUE</code>.</li>
-<li><code>seed</code> - (int) Custom seed for the random generator.</li>
+<li><code>seed</code> - (int) Custom seed for the random generator. <code>NA</code> if none was specified.</li>
+<li><code>reckless</code> - (bool) The value passed to the <code>reckless</code> parameter.</li>
 </ul>
-<p><strong>Note:</strong> If bootstraps are disabled, the bootstrap-related fields may have <code>NA</code> values despite any values that were passed to their respective parameters.</p>
+<p><strong>Note:</strong> If bootstraps are disabled, the bootstrap-related fields may be <code>NA</code>, regardless of supplied values, to reflect the fact that they were not used.</p>
 </div>
 <div id="genes" class="section level2">
 <h2>Genes</h2>
@@ -521,7 +522,7 @@ print( head(mydtu$Abundances[[1]]) )</code></pre>
 ## 1: 84.33333 132.5    1A1B.a      1A1B
 ## 2:  0.00000   0.0    1A1B.b      1A1B
 ## 3: 19.66667  15.5    1A1N-2      1A1N
-## 4:       NA    NA    1B1C.1      1B1C
+## 4:  0.00000   0.0    1B1C.1      1B1C
 ## 5: 52.33333  53.5    1B1C.2      1B1C
 ## 6:  0.00000   0.0  1D1C:one      1D1C</code></pre>
 <hr />

@@ -4,6 +4,7 @@
 #' @param TARGET_COL Name for annotation column containing transcript identification.
 #' @param PARENT_COL Name for the bootdtraps column containing counts.
 #' @param errannot_inconsistent Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)
+#' @param clean Logical. Remove the intentional inconsistency of IDs between annotation and abundances.
 #' @return  A list with 3 elements. First a data.frame with the corresponding annotation. 
 #' Then, 2 lists of data.tables. One list per condition. Each data table represents a sample and contains the estimates from the bootstrap iterations.
 #' 
@@ -11,38 +12,63 @@
 #' 
 #' @export
 #'
-sim_boot_data <- function(errannot_inconsistent=FALSE, PARENT_COL="parent_id", TARGET_COL="target_id") {
+sim_boot_data <- function(errannot_inconsistent=FALSE, PARENT_COL="parent_id", TARGET_COL="target_id", clean=FALSE) {
   tx <- data.frame(target_id= c("1A1B.a", "1A1B.b", "NIB.1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.1", "1B1C.2", "CC_a", "CC_b", "1NN", "2NN", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "LC1", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
-                   parent_id= c("1A1B", "1A1B", "NIB",   "1A1N",   "1D1C",     "1D1C",     "1B1C",   "1B1C",   "CC",   "CC",   "NN",  "NN",  "MIX6",    "MIX6",    "MIX6",    "MIX6",    "MIX6",    "MIX6",   "LC",  "LC",  "ALLA",  "ALLB",  "ALLB"),
+                   parent_id= c("1A1B", "1A1B", "NIB", "1A1N", "1D1C", "1D1C", "1B1C", "1B1C", "CC", "CC", "NN", "NN", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6", "LC", "LC", "ALLA", "ALLB", "ALLB"),
                    stringsAsFactors=FALSE)
   names(tx) <- c(TARGET_COL, PARENT_COL)
   
   a <- list()
-  a[[1]] <- data.table("target"= c("1A1B.a", "1A1B.b", "LC1", "NIA1", "NIA2", "1A1N-1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.2", "CC_a", "CC_b", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
-                       "V1"= c(          69,      0,     3,    333,    666,      10,       20,       0,          76,         52,       20,     50,     103,       321,       0,         100,       90,        0,        10,    30,    4,     50,      0,       0), 
-                       "V2"= c(          96,      0,     2,    310,    680,      11,       21,       0,          80,         55,       22,     52,     165,       320,       0,         130,       80,        0,        11,    29,    5,     40,      0,       0), 
-                       "V3"= c(          88,      0,     0,    340,    610,      7,        18,       0,          72,         50,       21,     49,     150,       325,       0,         120,       70,        0,         9,    28,    4,     60,      0,       0), 
-                       stringsAsFactors=FALSE)
-  
-  a[[2]] <- data.table("target"= c("NIA1", "1A1B.a", "1A1B.b", "1A1N-2", "LC1", "NIA2", "1D1C:one", "1D1C:two", "1B1C.2", "MIX6.c1", "1A1N-1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.d", "MIX6.nc", "CC_a", "CC_b", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
-                       "V1"= c(     333,    121,         0,     20,       3,     666,    0,          76,         52,       100,       10,       360,       0,         100,       0,        180,       25,     60,     7,     27,    13,    35,      0,       0), 
-                       "V2"= c(     330,    144,         0,     11,       4,     560,    0,          80,         55,        90,       11,       380,       0,         80,        0,        240,       23,     55,     10,    31,    2,     55,      0,       0),
-                       stringsAsFactors=FALSE)
-  
   b <- list()
-  b[[1]] <- data.table("target"= c("1A1B.a", "1A1B.b", "NIA1", "LC1", "NIA2", "1A1N-1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.2", "CC_a", "CC_b", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
-                       "V1"= c(      0,         91,     333,    6,     666,    12,       23,       0,          25,         150,      15,     80,     325,       105,       40,         0,        200,        0,        15,    45,    12,     0,      80,       200), 
-                       "V2"= c(      0,        100,     323,    1,     606,    15,       22,       0,          23,         190,      20,     90,     270,       115,       30,         0,        150,        0,        20,    60,    15,     0,      120,      250), 
-                       stringsAsFactors=FALSE)
   
-  b[[2]] <- data.table("target"= c("NIA2", "1A1N-1", "NIA1", "1A1N-2", "1D1C:one", "1D1C:two", "LC1", "1B1C.2", "MIX6.c2", "MIX6.c3", "MIX6.c1", "MIX6.c4", "MIX6.nc", "MIX6.d", "CC_b", "CC_a", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2", "1A1B.b", "1A1B.a"), 
-                       "V1"= c(     666,    12,       333,    23,       0,          25,         0,     150,      155,       40,        300,       0,         33,        0,        93,     22,     22,    61,    11,     0,      110,     210,      76,        0), 
-                       "V2"= c(     656,    15,       323,    22,       0,          23,         2,     160,      120,       35,        280,       0,         95,        0,        119,    18,     19,    58,    7,     0,       150,     220,      69,        0), 
-                       "V3"= c(     676,    13,       343,    21,       0,          20,         3,     145,      133,       30,        270,       0,         55,        0,        80,     23,     17,    50,    14,    0,       130,     200,      36,        0), 
-                       stringsAsFactors=FALSE)
+  if (clean) {
+    a[[1]] <- data.table("target"= c("1A1B.a", "1A1B.b", "LC1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.2", "CC_a", "CC_b", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2", "1B1C.1", "NIB.1"), 
+                         "V1"= c(          69,      0,     3,      20,       0,          76,         52,       20,     50,     103,       321,       0,         100,       90,        0,        10,    30,    4,     50,      0,       0,      0,      0), 
+                         "V2"= c(          96,      0,     2,      21,       0,          80,         55,       22,     52,     165,       320,       0,         130,       80,        0,        11,    29,    5,     40,      0,       0,      0,      0), 
+                         "V3"= c(          88,      0,     0,      18,       0,          72,         50,       21,     49,     150,       325,       0,         120,       70,        0,         9,    28,    4,     60,      0,       0,      0,      0), 
+                         stringsAsFactors=FALSE)
+    
+    a[[2]] <- data.table("target"= c("1A1B.a", "1A1B.b", "1A1N-2", "LC1", "1D1C:one", "1D1C:two", "1B1C.2", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.d", "MIX6.nc", "CC_a", "CC_b", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2", "1B1C.1", "NIB.1"), 
+                         "V1"= c(     121,         0,     20,       3,      0,          76,         52,       100,        360,       0,         100,       0,        180,       25,     60,     7,     27,    13,    35,      0,       0,      0,      0), 
+                         "V2"= c(     144,         0,     11,       4,      0,          80,         55,        90,        380,       0,         80,        0,        240,       23,     55,     10,    31,    2,     55,      0,       0,      0,      0),
+                         stringsAsFactors=FALSE)
+    
+    b[[1]] <- data.table("target"= c("1A1B.a", "1A1B.b", "LC1",   "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.2", "CC_a", "CC_b", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2", "1B1C.1", "NIB.1"), 
+                         "V1"= c(      0,         91,       6,       23,       0,          25,         150,      15,     80,     325,       105,       40,         0,        200,        0,      15,    45,    12,     0,      80,       200,      0,      0), 
+                         "V2"= c(      0,        100,       1,       22,       0,          23,         190,      20,     90,     270,       115,       30,         0,        150,        0,      20,    60,    15,     0,      120,      250,      0,      0), 
+                         stringsAsFactors=FALSE)
+    
+    b[[2]] <- data.table("target"= c("1A1N-2", "1D1C:one", "1D1C:two", "LC1", "1B1C.2", "MIX6.c2", "MIX6.c3", "MIX6.c1", "MIX6.c4", "MIX6.nc", "MIX6.d", "CC_b", "CC_a", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2", "1A1B.b", "1A1B.a", "1B1C.1", "NIB.1"), 
+                         "V1"= c(         23,       0,          25,         0,     150,      155,       40,        300,       0,         33,        0,        93,     22,     22,    61,    11,     0,      110,     210,      76,        0,      0,      0), 
+                         "V2"= c(         22,       0,          23,         2,     160,      120,       35,        280,       0,         95,        0,        119,    18,     19,    58,    7,     0,       150,     220,      69,        0,      0,      0), 
+                         "V3"= c(         21,       0,          20,         3,     145,      133,       30,        270,       0,         55,        0,        80,     23,     17,    50,    14,    0,       130,     200,      36,        0,      0,      0), 
+                         stringsAsFactors=FALSE)
+  } else {
+    a[[1]] <- data.table("target"= c("1A1B.a", "1A1B.b", "LC1", "NIA1", "NIA2", "1A1N-1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.2", "CC_a", "CC_b", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
+                         "V1"= c(          69,      0,     3,    333,    666,      10,       20,       0,          76,         52,       20,     50,     103,       321,       0,         100,       90,        0,        10,    30,    4,     50,      0,       0), 
+                         "V2"= c(          96,      0,     2,    310,    680,      11,       21,       0,          80,         55,       22,     52,     165,       320,       0,         130,       80,        0,        11,    29,    5,     40,      0,       0), 
+                         "V3"= c(          88,      0,     0,    340,    610,      7,        18,       0,          72,         50,       21,     49,     150,       325,       0,         120,       70,        0,         9,    28,    4,     60,      0,       0), 
+                         stringsAsFactors=FALSE)
+    
+    a[[2]] <- data.table("target"= c("NIA1", "1A1B.a", "1A1B.b", "1A1N-2", "LC1", "NIA2", "1D1C:one", "1D1C:two", "1B1C.2", "MIX6.c1", "1A1N-1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.d", "MIX6.nc", "CC_a", "CC_b", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
+                         "V1"= c(     333,    121,         0,     20,       3,     666,    0,          76,         52,       100,       10,       360,       0,         100,       0,        180,       25,     60,     7,     27,    13,    35,      0,       0), 
+                         "V2"= c(     330,    144,         0,     11,       4,     560,    0,          80,         55,        90,       11,       380,       0,         80,        0,        240,       23,     55,     10,    31,    2,     55,      0,       0),
+                         stringsAsFactors=FALSE)
+    
+    b[[1]] <- data.table("target"= c("1A1B.a", "1A1B.b", "NIA1", "LC1", "NIA2", "1A1N-1", "1A1N-2", "1D1C:one", "1D1C:two", "1B1C.2", "CC_a", "CC_b", "MIX6.c1", "MIX6.c2", "MIX6.c3", "MIX6.c4", "MIX6.nc", "MIX6.d", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2"), 
+                         "V1"= c(      0,         91,     333,    6,     666,    12,       23,       0,          25,         150,      15,     80,     325,       105,       40,         0,        200,        0,        15,    45,    12,     0,      80,       200), 
+                         "V2"= c(      0,        100,     323,    1,     606,    15,       22,       0,          23,         190,      20,     90,     270,       115,       30,         0,        150,        0,        20,    60,    15,     0,      120,      250), 
+                         stringsAsFactors=FALSE)
+    
+    b[[2]] <- data.table("target"= c("NIA2", "1A1N-1", "NIA1", "1A1N-2", "1D1C:one", "1D1C:two", "LC1", "1B1C.2", "MIX6.c2", "MIX6.c3", "MIX6.c1", "MIX6.c4", "MIX6.nc", "MIX6.d", "CC_b", "CC_a", "1NN", "2NN", "LC2", "ALLA1", "ALLB1", "ALLB2", "1A1B.b", "1A1B.a"), 
+                         "V1"= c(     666,    12,       333,    23,       0,          25,         0,     150,      155,       40,        300,       0,         33,        0,        93,     22,     22,    61,    11,     0,      110,     210,      76,        0), 
+                         "V2"= c(     656,    15,       323,    22,       0,          23,         2,     160,      120,       35,        280,       0,         95,        0,        119,    18,     19,    58,    7,     0,       150,     220,      69,        0), 
+                         "V3"= c(     676,    13,       343,    21,       0,          20,         3,     145,      133,       30,        270,       0,         55,        0,        80,     23,     17,    50,    14,    0,       130,     200,      36,        0), 
+                         stringsAsFactors=FALSE)
+  }
   
   if (errannot_inconsistent)
-    a[[2]][14, 1] <- "Unexpected-name"
+    b[[1]][14, 1] <- "Unexpected-name"
   
   return(list('annot'= tx, 'boots_A'= a, 'boots_B'= b))
 }
@@ -53,134 +79,14 @@ sim_boot_data <- function(errannot_inconsistent=FALSE, PARENT_COL="parent_id", T
 #' @param PARENT_COL Name for the bootdtraps column containing counts.
 #' @param TARGET_COL Name for annotation column containing transcript identification.
 #' @param errannot_inconsistent Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)
+#' @param clean Logical. Remove the intentional inconsistency of IDs between annotation and abundances.
 #' @return A list with 3 elements. First, a data.frame with the corresponding annotation table. 
 #' Then, 2 data.tables, one per condition. Each data table contains the abundance estimates for all the samples for the respective condition.
 #' 
 #' @export
 #'
-sim_count_data <- function(errannot_inconsistent=FALSE, PARENT_COL="parent_id", TARGET_COL="target_id") {
-  sim <- sim_boot_data(errannot_inconsistent=errannot_inconsistent, PARENT_COL=PARENT_COL, TARGET_COL=TARGET_COL)
+sim_count_data <- function(errannot_inconsistent=FALSE, PARENT_COL="parent_id", TARGET_COL="target_id", clean=FALSE) {
+  sim <- sim_boot_data(errannot_inconsistent=errannot_inconsistent, PARENT_COL=PARENT_COL, TARGET_COL=TARGET_COL, clean=clean)
   
   return(list('annot'=sim$annot, 'counts_A'= sim$boots_A[[1]], 'counts_B'= sim$boots_B[[1]]))
-}
-
-
-#===============================================================================
-#' Generate artificial read-count data for simulated 2-transcript genes, 
-#' systematically covering a broad range of proportions and magnitudes.
-#' 
-#' For each level of transcript proportions in condition A, all proportion levels are
-#' generated for condition B as possible new states. Therefore the number of transcripts 
-#' generated is 2 * N^2 * M, where 2 is the number of gene isoforms per paramater combination, 
-#' N is the number of proportion levels and M the number of magnitude levels.
-#' 
-#' @param proportions Range and step of proportions for 1st transcript. Sibling transcript complemented from these.
-#' @param magnitudes vector of read-count sizes to use.
-#' @return list containing: \code{data} a minimal sleuth-like object.
-#'                          \code{anno} a dataframe matching \code{target_id} to \code{parent_id}.
-#'                          \code{sim} a dataframe with the simulation parameters per transcript.
-#'
-# @export
-countrange_sim <- function(proportions= seq(0, 1, 0.01),
-                           magnitudes= c(1,5,10,30,100,500,1000)) {
-  # Combine proportions and magnitudes.
-  # Start by grid-ing the values for easier visualization and naming, instead of computing the outer products directly.
-  grd <- expand.grid(c("t1", "t2"), proportions, proportions, magnitudes)
-  names(grd) <- c("sibl", "propA", "propB", "mag")
-  # Name the "transcripts".
-  opts <- options()
-  options(scipen=0, digits=3)
-  grd["parent_id"] <- paste(grd$mag, "_a", grd$propA,"_b", grd$propB, sep="")
-  grd["target_id"] <- paste(grd$parent_id, grd$sibl, sep="_")
-  options(scipen=opts$scipen, digits=opts$digits)
-  # Complementary proportions
-  grd[grd$sibl == "t2", c("propA", "propB")] <- c(1-grd$propA[grd$sibl == "t2"], 1-grd$propB[grd$sibl == "t2"])
-  
-  # Make a sleuth-like object.
-  sl <- list()
-  sl["kal"] <- list()
-  sl[["sample_to_covariates"]] <- data.frame("sample"=c("A-1", "B-1"), "condition"=c("A", "B"))
-  # condition A
-  sl$kal[[1]] <- list()
-  sl$kal[[1]]["bootstrap"] <- list()
-  sl$kal[[1]]$bootstrap[[1]] <- data.frame("target_id"=grd$target_id, "est_counts"=grd$propA * grd$mag)
-  # condition B
-  sl$kal[[2]] <- list()
-  sl$kal[[2]]["bootstrap"] <- list()
-  sl$kal[[2]]$bootstrap[[1]] <- data.frame("target_id"=grd$target_id, "est_counts"=grd$propB * grd$mag)
-  
-  # Create annotation:
-  anno <- data.frame("target_id"=grd$target_id, "parent_id"=grd$parent_id)
-  
-  # Store simulation for ease.
-  results <- list("data"=sl, "anno"=anno, "sim"=grd)
-  
-  return(results)
-}
-
-
-#===============================================================================
-#' Combine simulation details with DTU calls, in preparation for plotting.
-#' 
-#' @param sim An object generated with countrange_sim(), containing the simulated data details with which the \code{dtu} object was calculated.
-#' @param dtuo The object with the DTU results corresponding to the \code{sim} object's data.
-#' @return dataframe
-#'
-#' @import data.table
-# @export
-combine_sim_dtu <- function(sim, dtuo) {
-  with(dtuo, {
-    results <- data.table(Genes[, list(parent_id, pval_AB,  pval_BA, dtu_AB, dtu_BA, dtu, pval_prop_min, dtu_prop)])
-    setkey(results, parent_id)
-    tmp <- data.table(sim$sim[sim$sim["sibl"]=="t2", c("parent_id", "propA", "mag", "propB")])
-    setkey(tmp, parent_id)
-    results <- merge(results, tmp, by="parent_id")
-    return(results)
-  })
-}
-
-
-#===============================================================================
-#' Plot relationship of parameters.
-#' 
-#' @param data the output from combine_sim_dtu()
-#' @param type (str) "AvBvM", "B/AvM", "AvBvMprop", "B/AvMprop", "B-AvM"
-#' 
-#' @import ggplot2
-#' @import data.table
-# @export
-plot_sim <- function(data, type = "AvBvM") {
-  with(data, {
-    if(type =="AvBvM"){
-      return(
-        ggplot(data[order(dtu, propA, propB), ], aes(x=propA, y=propB, color=dtu)) +
-          labs(x="Prop t1 in A", y = "Prop t1 in B") +
-          scale_color_manual(values=c("lightblue","red")) +
-          geom_point() + 
-          facet_grid(. ~ mag)
-      )
-    } else if(type == "B/AvM") {
-      return(
-        ggplot(data[order(dtu, mag), ], aes(x=propB/propA, y=mag, color=dtu)) +
-          labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
-          scale_color_manual(values=c("lightblue","red")) +
-          geom_point()
-        )
-    } else if(type =="AvBvMprop"){
-      return(
-        ggplot(data[order(dtu_prop, propA, propB), ], aes(x=propA, y=propB, color=dtu_prop)) +
-          labs(x="Prop t1 in A", y = "Prop t1 in B") +
-          scale_color_manual(values=c("lightblue","red")) +
-          geom_point() + 
-          facet_grid(. ~ mag)
-      )
-    } else if(type == "B/AvMprop") {
-      return(
-        ggplot(data[order(dtu_prop, mag), ], aes(x=propB/propA, y=mag, color=dtu_prop)) +
-          labs(x="Prop t1 in B / Prop t1 in A", y = "Gene magnitude") +
-          scale_color_manual(values=c("lightblue","red")) +
-          geom_point()
-      )
-    }
-  })
 }

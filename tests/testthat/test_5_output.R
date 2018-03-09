@@ -4,7 +4,7 @@ context("DTU Output")
 
 #==============================================================================
 test_that("The output structure is correct", {
-  sim <- sim_boot_data()
+  sim <- sim_boot_data(clean=TRUE)
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, qboot=TRUE, rboot=TRUE, verbose = FALSE)
   
   expect_type(mydtu, "list")
@@ -12,12 +12,12 @@ test_that("The output structure is correct", {
   expect_named(mydtu, c("Parameters", "Genes", "Transcripts", "Abundances"))
   
   expect_type(mydtu$Parameters, "list")
-  expect_length(mydtu$Parameters, 25)
+  expect_length(mydtu$Parameters, 26)
   expect_named(mydtu$Parameters, c("description", "time", "rats_version", "R_version",
                                    "var_name", "cond_A", "cond_B", "data_type", "num_replic_A", "num_replic_B", "num_genes", "num_transc",
                                    "tests", "p_thresh", "abund_thresh", "dprop_thresh", "correction", "abund_scaling",
                                    "quant_boot", "quant_reprod_thresh", "quant_bootnum",
-                                   "rep_boot", "rep_reprod_thresh", "rep_bootnum", "seed"))
+                                   "rep_boot", "rep_reprod_thresh", "rep_bootnum", "seed", "reckless"))
   
   expect_true(is.data.frame(mydtu$Genes))
   expect_equal(dim(mydtu$Genes)[2], 26)
@@ -126,8 +126,8 @@ test_that("The output content is complete", {
   counts_A <- data_A[[2]]
   counts_B <- data_B[[1]]
   
-  mydtu <- list(call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, description="test"),
-                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=TRUE, qboot=TRUE, qbootnum=2, verbose = FALSE, description="test")
+  mydtu <- list(call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, description="test", reckless=TRUE),
+                call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=TRUE, qboot=TRUE, qbootnum=2, verbose = FALSE, description="test", reckless=TRUE)
                 )
   
   for (x in length(mydtu)) {
@@ -150,6 +150,8 @@ test_that("The output content is complete", {
     expect_false(is.na(mydtu[[x]]$Parameters$"time"))
     expect_false(is.na(mydtu[[x]]$Parameters$"rep_boot"))
     expect_false(is.na(mydtu[[x]]$Parameters$"quant_boot"))
+    # expect_false(is.na(mydtu[[x]]$Parameters$"seed"))  # Actually it may be NA, if no specific seed is given.
+    expect_false(is.na(mydtu[[x]]$Parameters$"reckless"))
     if (x>1) {
       expect_false(is.na(mydtu[[x]]$Parameters$"rep_bootnum"))
       expect_false(is.na(mydtu[[x]]$Parameters$"quant_bootnum"))
@@ -234,8 +236,8 @@ test_that("The result is consistent across input data formats", {
   counts_A <- data_A[[2]]
   counts_B <- data_B[[1]]
   
-  mydtu <- list(call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE),
-                call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE))
+  mydtu <- list(call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, reckless=TRUE),
+                call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, reckless=TRUE))
   
   expect_equal(mydtu[[1]][[2]][, seq(1,7), with=FALSE], mydtu[[2]][[2]][, seq(1,7), with=FALSE])
   expect_equal(mydtu[[1]][[3]][, seq(1,4), with=FALSE], mydtu[[2]][[3]][, seq(1,4), with=FALSE])
@@ -248,7 +250,7 @@ test_that("Filters work correctly", {
   # !!! ensure correct response to specific scenarios.
   
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=8, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=8, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666, reckless=TRUE)
   
   expect_equivalent(as.list(mydtu$Genes["1A1B", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
                     list(2, 2, 2, TRUE, TRUE))

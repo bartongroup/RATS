@@ -4,8 +4,8 @@ context("RATs main")
 
 #==============================================================================
 test_that("The paramater interpretations are correct", {
-  sim1 <- sim_boot_data()
-  sim2 <- sim_count_data()
+  sim1 <- sim_boot_data(clean=TRUE)
+  sim2 <- sim_count_data(clean=TRUE)
   
   # Bootstraps or counts?
   expect_equal(2, call_DTU(dbg='prep', annot= sim1$annot, boot_data_A= sim1$boots_A, boot_data_B= sim1$boots_B, verbose = FALSE)[[1]])
@@ -33,7 +33,7 @@ test_that("The index is received", {
   sim <- sim_boot_data()
   # tidy_annot() should be tested separately.
   expect_equal(tidy_annot(sim$annot), 
-               call_DTU(dbg='indx', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE))
+               call_DTU(dbg='indx', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, reckless=TRUE))
   
 })
 
@@ -43,9 +43,9 @@ test_that("Scaling is applied", {
   
   # Single factor.
   S <- 10
-  bdt <- call_DTU(dbg='bootin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S)
-  cdt <- call_DTU(dbg='countin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S)
-  sdt <- call_DTU(dbg='scale', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S)
+  bdt <- call_DTU(dbg='bootin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
+  cdt <- call_DTU(dbg='countin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
+  sdt <- call_DTU(dbg='scale', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   expect_equal(S * cdt[[1]], sdt[[1]])
   expect_equal(S * cdt[[2]], sdt[[2]])
   for (b in 1:length(bdt$bootA)) {
@@ -57,9 +57,9 @@ test_that("Scaling is applied", {
   
   # Vector.
   S <- c(10, 20, 30, 40)
-  bdt <- call_DTU(dbg='bootin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S)
-  cdt <- call_DTU(dbg='countin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S)
-  sdt <- call_DTU(dbg='scale', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S)
+  bdt <- call_DTU(dbg='bootin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
+  cdt <- call_DTU(dbg='countin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
+  sdt <- call_DTU(dbg='scale', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   
   expect_equal(S[1] * cdt[[1]]$V1, sdt[[1]]$V1)
   expect_equal(S[2] * cdt[[1]]$V2, sdt[[1]]$V2)
@@ -78,7 +78,7 @@ test_that("Parameters are recorded", {
                     description='Test.',name_A='cA', name_B='cB', varname='testing',
                     p_thresh=0.001, abund_thresh=1, dprop_thresh=0.15, correction='bonferroni',
                     qboot=TRUE, qbootnum=99, qrep_thresh=0.8, rboot=TRUE, rrep_thresh=0.6, 
-                    testmode="genes", seed=666, verbose = FALSE)$Parameters
+                    testmode="genes", seed=666, verbose = FALSE, reckless=TRUE)$Parameters
   
   expect_equal(param$description, 'Test.')
   expect_true(!is.na(param$time))

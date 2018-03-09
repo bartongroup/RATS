@@ -5,7 +5,7 @@
 \title{Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.}
 \usage{
 sim_boot_data(errannot_inconsistent = FALSE, PARENT_COL = "parent_id",
-  TARGET_COL = "target_id")
+  TARGET_COL = "target_id", clean = FALSE)
 }
 \arguments{
 \item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)}
@@ -13,6 +13,8 @@ sim_boot_data(errannot_inconsistent = FALSE, PARENT_COL = "parent_id",
 \item{PARENT_COL}{Name for the bootdtraps column containing counts.}
 
 \item{TARGET_COL}{Name for annotation column containing transcript identification.}
+
+\item{clean}{Logical. Remove the intentional inconsistency of IDs between annotation and abundances.}
 }
 \value{
 A list with 3 elements. First a data.frame with the corresponding annotation. 

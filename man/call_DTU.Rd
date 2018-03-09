@@ -11,7 +11,7 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
   dprop_thresh = 0.2, correction = "BH", scaling = 1, testmode = "both",
   qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95, rboot = TRUE,
   rrep_thresh = 0.85, description = NA_character_, verbose = TRUE,
-  threads = 1L, seed = NA_integer_, dbg = "0")
+  threads = 1L, seed = NA_integer_, reckless = FALSE, dbg = "0")
 }
 \arguments{
 \item{annot}{A data.table matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.}
@@ -64,7 +64,9 @@ call_DTU(annot = NULL, TARGET_COL = "target_id", PARENT_COL = "parent_id",
 
 \item{seed}{A numeric integer used to initialise the random number engine. Use this only if reproducible bootstrap selections are required. (Default NA)}
 
-\item{dbg}{Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
+\item{reckless}{RATs normally aborts if any inconsistency is detected among the transcript IDs found in the annotation and the quantifications. Enabling reckless mode will downgrade this error to a warning and allow RATs to continue the run. Not recommended unless you know why the inconsistency exists and how it will affect the results. (Default FALSE)}
+
+\item{dbg}{Debugging mode only. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)}
 }
 \value{
 List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
