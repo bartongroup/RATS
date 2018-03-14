@@ -21,6 +21,7 @@
 #' @param threads Number of threads.
 #' @param seed Seed for random engine.
 #' @param scaling Abundance scaling factor.
+#' @param reckless whether to ignore detected annotation discrepancies
 #'
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -36,7 +37,7 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
                                 TARGET_COL, PARENT_COL,
                                 correction, testmode, scaling, threads, seed,
                                 p_thresh, abund_thresh, dprop_thresh, 
-                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh) {
+                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless) {
   warnmsg <- list()
 
   # Input format.
@@ -48,14 +49,16 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="You must specify (the same type of) data for both conditions!"))
   
   # Annotation.
+  if (!is.logical(reckless) || is.na(reckless))
+    return(list("error"=TRUE, "message"="Invalid value to reckless!"))
   if (!is.data.frame(annot))
     return(list("error"=TRUE, "message"="The provided annot is not a data.frame!"))
   if (any(!c(TARGET_COL, PARENT_COL) %in% names(annot)))
     return(list("error"=TRUE, "message"="The specified target and/or parent IDs field names do not exist in annot!"))
-  if (length(annot$target_id) != length(unique(annot$target_id)))
+  if (length(annot[[TARGET_COL]]) != length(unique(annot[[TARGET_COL]])))
     return(list("error"=TRUE, "message"="Some transcript identifiers are not unique!"))
-
-  # Parameters.
+  
+  # Simple parameters.
   if (!correction %in% p.adjust.methods)
     return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods ."))
   if (!testmode %in% c("genes", "transc", "both"))
@@ -65,7 +68,7 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   if ((!is.numeric(dprop_thresh)) || dprop_thresh < 0 || dprop_thresh > 1)
     return(list("error"=TRUE, "message"="Invalid proportion difference threshold! Must be between 0 and 1."))
   if ((!is.numeric(abund_thresh)) || abund_thresh < 0)
-    return(list("error"=TRUE, "message"="Invalid abundance threshold! Must be between 0 and 1."))
+    return(list("error"=TRUE, "message"="Invalid abundance threshold! Must be a count >= 0."))
   if ((!is.numeric(qbootnum)) || qbootnum < 0)
     return(list("error"=TRUE, "message"="Invalid number of bootstraps! Must be a positive integer number."))
   if (!is.logical(qboot))
@@ -80,6 +83,8 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
+  
+  # Scaling
   nsmpl <- NULL
   if (!is.null(count_data_A)){
     nsmpl <- dim(count_data_A)[2] + dim(count_data_B)[2]
@@ -103,8 +108,20 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     if(is.null(boot_data_A)) {
       if (!is.data.table(count_data_A) | !is.data.table(count_data_B))
         return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
-      if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] ))
-        return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs between conditions!"))
+      if ( !all(count_data_A[[1]] %in% annot[[TARGET_COL]]) && !all(annot[[TARGET_COL]] %in% count_data_A[[1]]) ) {
+        if(reckless){
+          warnmsg["annotation-mismatch"] <- "The transcript IDs in the quantifications and the annotation do not match completely! Did you use different annotations? Reckless mode enabled, continuing at your own risk..."
+        } else {
+          return(list("error"=TRUE, "message"="The transcript IDs in the quantifications and the annotation do not match completely! Did you use different annotations?"))
+        }
+      }
+      if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] )) {
+        if (reckless) {
+          warnmsg["countIDs"] <- "Transcript IDs do not match completely between conditions! Did you use different annotations? Reckless mode enabled, continuing at your own risk..."
+        } else {
+          return(list("error"=TRUE, "message"="Transcript IDs do not match completely between conditions! Did you use different annotations?"))
+        }
+      }
     } else {
       warnmsg["cnts&boots"] <- "Received multiple input formats! Only the bootstrapped data will be used."
     }
@@ -119,17 +136,33 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   }
   maxmatrix <- 2^31 - 1
   if (qboot) {
-    # Consistency,
     if (!is.null(boot_data_A)) {
-      # Direct data.
+      # Compared to annotation.
+      if ( !all(boot_data_A[[1]][[1]] %in% annot[[TARGET_COL]]) && !all(annot[[TARGET_COL]] %in% boot_data_A[[1]][[1]]) ) {
+        if(reckless){
+          warnmsg["annotation-mismatch"] <- "The transcript IDs in the quantifications and the annotation do not match completely! Did you use different annotations? Reckless mode enabled, continuing at your own risk..."
+        } else {
+          return(list("error"=TRUE, "message"="The transcript IDs in the quantifications and the annotation do not match completely! Did you use different annotations?"))
+        }
+      }
+      # Among samples
       tx <- boot_data_A[[1]][[1]][order(boot_data_A[[1]][[1]])]
       for (k in 2:length(boot_data_A)){
-        if (!all( tx == boot_data_A[[k]][[1]][order(boot_data_A[[k]][[1]])] ))
-          return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
+        if (!all( tx == boot_data_A[[k]][[1]][order(boot_data_A[[k]][[1]])] )) {
+          if (reckless) {
+            warnmsg[paste0("bootIDs-A", k)] <- paste0("Inconsistent set of transcript IDs across samples (A", k, ")! Did you use different annotations? Reckless mode enabled, continuing at your own risk...")
+          } else {
+            return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples! Did you use different annotations?"))
+          }
+        }
       }
       for (k in 1:length(boot_data_B)){
         if (!all( tx == boot_data_B[[k]][[1]][order(boot_data_B[[k]][[1]])] ))
-          return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples!"))
+          if (reckless) {
+            warnmsg[paste0("bootIDs-B", k)] <- paste0("Inconsistent set of transcript IDs across samples (B", k, ")! Did you use different annotations? Reckless mode enabled, continuing at your own risk...")
+          } else {
+            return(list("error"=TRUE, "message"="Inconsistent set of transcript IDs across samples! Did you use different annotations?"))
+          }
       }
     
       # Number of iterations.
@@ -156,7 +189,7 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   if (rboot & any( length(samples_by_condition[[1]]) * length(samples_by_condition[[2]]) > maxmatrix/dim(annot)[1],
   				         length(boot_data_A)               * length(boot_data_B)               > maxmatrix/dim(annot)[1] ) )
     warnmsg["toomanyreplicates"] <- "The number of replicates is too high. Exhaustive 1vs1 would exceed maximum capacity of an R matrix."
-
+  
   return(list("error"=FALSE, "message"="All good!", "maxboots"=minboots, "warn"=(length(warnmsg) > 0), "warnings"= warnmsg))
 }
 
@@ -205,7 +238,7 @@ alloc_out <- function(annot, full, n=1){
                        "abund_scaling"=numeric(length=n),
                        "quant_boot"=NA,"quant_reprod_thresh"=NA_real_,  "quant_bootnum"=NA_integer_,
                        "rep_boot"=NA, "rep_reprod_thresh"=NA_real_, "rep_bootnum"=NA_integer_, 
-                       "seed"=NA_integer_)
+                       "seed"=NA_integer_, "reckless"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
@@ -256,7 +289,7 @@ alloc_out <- function(annot, full, n=1){
 #' @param test_transc Whether to do transcript-level test.
 #' @param test_genes Whether to do gene-level test.
 #' @param full Either "full" (for complete output structure) or "short" (for bootstrapping).
-#' @param count_thresh Minimum number of counts per replicate.
+#' @param count_thresh Minimum average count across replicates.
 #' @param p_thresh The p-value threshold.
 #' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
@@ -303,8 +336,11 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
     ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
     Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)]
-    Transcripts[, elig := (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))]  # If the entire gene is shut off in one condition, changes in proportion cannot be defined.
-                                                                                                      # If sum and total are equal in both conditions the gene has only one expressed isoform, or one isoform altogether.
+    Transcripts[, elig := (elig_xp &                          # isoform expressed above the noise threshold in EITHER condition
+                             totalA >= ctA & totalB >= ctB &  # at least one eligibly expressed isoform exists in EACH condition (prevent gene-on/off from creating wild proportions from low counts)
+                             totalA != 0 & totalB != 0 &      # gene expressed in BOTH conditions (failsafe, in case user sets noise threshold to 0)
+                             (propA != 1 | propB != 1) )]     # not the only isoform expressed.
+    
     # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
     Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
     Genes[, elig := elig_transc >= 2]
@@ -494,3 +530,4 @@ group_samples <- function(covariates) {
 }
 
 
+#EOF

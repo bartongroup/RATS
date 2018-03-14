@@ -7,7 +7,7 @@
 parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
   TARGET_COL, PARENT_COL, correction, testmode, scaling, threads, seed,
   p_thresh, abund_thresh, dprop_thresh, qboot, qbootnum, qrep_thresh, rboot,
-  rrep_thresh)
+  rrep_thresh, reckless)
 }
 \arguments{
 \item{annot}{Annotation dataframe.}
@@ -49,6 +49,8 @@ parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
 \item{rboot}{Whether to bootstrap against samples.}
 
 \item{rrep_thresh}{Confidence threshold.}
+
+\item{reckless}{whether to ignore detected annotation discrepancies}
 }
 \value{
 List: \itemize{

@@ -19,8 +19,8 @@
 #' @param name_B The name for the other condition. (Default "Condition-B")
 #' @param varname The name of the covariate to which the two conditions belong. (Default \code{"condition"}).
 #' @param p_thresh The p-value threshold. (Default 0.05)
-#' @param abund_thresh Noise threshold. Minimum mean abundance for transcripts to be eligible for testing. (Default 5)
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
+#' @param abund_thresh Noise threshold. Minimum mean (across replicates) abundance for transcripts (and genes) to be eligible for testing. (Default 5)
 #' @param correction The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})
 #' @param scaling A scaling factor or vector of scaling factors, to be applied to the abundances *prior* to any thresholding and testing. Useful for scaling TPMs (transcripts per 1 million reads) to the actual library sizes of the samples. If a vector is supplied, the order should correspond to the samples in group A followed by the samples in group B. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained.
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
@@ -33,7 +33,8 @@
 #' @param verbose Display progress updates and warnings. (Default \code{TRUE})
 #' @param threads Number of threads to use. (Default 1) Multi-threading will be ignored on non-POSIX systems.
 #' @param seed A numeric integer used to initialise the random number engine. Use this only if reproducible bootstrap selections are required. (Default NA)
-#' @param dbg Debugging mode. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
+#' @param reckless RATs normally aborts if any inconsistency is detected among the transcript IDs found in the annotation and the quantifications. Enabling reckless mode will downgrade this error to a warning and allow RATs to continue the run. Not recommended unless you know why the inconsistency exists and how it will affect the results. (Default FALSE)
+#' @param dbg Debugging mode only. Interrupt execution at the specified flag-point. Used to speed up code-tests by avoiding irrelevant downstream processing. (Default 0: do not interrupt)
 #' @return List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 #'
 #' @import utils
@@ -46,7 +47,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                      name_A= "Condition-A", name_B= "Condition-B", varname= "condition",
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
                      testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
-                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, dbg= "0")
+                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, reckless=FALSE, dbg= "0")
 {
   #---------- PREP
 
@@ -60,7 +61,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                     TARGET_COL, PARENT_COL,
                                     correction, testmode, scaling, threads, seed,
                                     p_thresh, abund_thresh, dprop_thresh, 
-                                    qboot, qbootnum, qrep_thresh, rboot, rrep_thresh)
+                                    qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless)
   if (paramcheck$error)
     stop(paramcheck$message)
   if (verbose)
@@ -243,6 +244,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters[["quant_reprod_thresh"]] <- qrep_thresh
   resobj$Parameters[["quant_bootnum"]] <- qbootnum
   resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
+  resobj$Parameters[["reckless"]] <- reckless
   
   if (dbg == "info")
     return(resobj)
@@ -469,6 +471,19 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     Transcripts[is.na(rep_reprod), rep_reprod := c(FALSE)]
     Transcripts[is.na(DTU), DTU := c(FALSE)]
     Transcripts[is.na(gene_DTU), gene_DTU := c(FALSE)]
+    # Eradicate NAs from count columns, as they mess up plotting. These would be caused by inconsistencies between annotation and quantifications, and would only exist in "reckless" mode.
+    for (i in 1:Parameters$num_replic_A){
+      idx <- is.na(Abundances[[1]][[paste0('V',i)]])
+      Abundances[[1]][idx, paste0('V',i) := 0]
+    }
+    for (i in 1:Parameters$num_replic_B){
+      idx <- is.na(Abundances[[2]][[paste0('V',i)]])
+      Abundances[[2]][idx, paste0('V',i) := 0]
+    }
+    Transcripts[is.na(meanA), meanA := c(0)]
+    Transcripts[is.na(meanB), meanB := c(0)]
+    Transcripts[is.na(propA), propA := c(0)]
+    Transcripts[is.na(propB), propB := c(0)]
     
     # Drop the bootstrap columns, if unused.
     if (!qboot || !test_transc)
@@ -495,4 +510,4 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   return(resobj)
 }
 
-
+#EOF

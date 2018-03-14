@@ -5,7 +5,7 @@ context("DTU Reports")
 #==============================================================================
 test_that("The summaries work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, reckless=TRUE)
   
   expect_silent(ids <- get_dtu_ids(mydtu))
   expect_type(ids, "list")
@@ -16,16 +16,16 @@ test_that("The summaries work", {
   for (v in ids) {
     expect_false(any(is.na(v)))
   }
-  expect_equal(ids[[1]], c("MIX6"))
+  expect_equal(ids[[1]], c("1A1B", "MIX6"))
   expect_equal(ids[[2]], c("CC", "NN"))
   expect_equal(ids[[3]], c("LC", "1A1N", "1B1C",  "1D1C",  "ALLA", "ALLB", "NIB"))
-  expect_equal(ids[[4]], c("MIX6"))
+  expect_equal(ids[[4]], c("1A1B", "MIX6"))
   expect_equal(ids[[5]], c("LC", "CC", "NN"))
   expect_equal(ids[[6]], c("1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
-  expect_equal(ids[[7]], c("MIX6"))
+  expect_equal(ids[[7]], c("1A1B", "MIX6"))
   expect_equal(ids[[8]], c("CC", "NN"))
   expect_equal(ids[[9]], c("LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
-  expect_equal(ids[[10]], c("MIX6.c1", "MIX6.c2"))
+  expect_equal(ids[[10]], c("1A1B.a", "1A1B.b", "MIX6.c1", "MIX6.c2"))
   expect_equal(ids[[11]], c("MIX6.c4", "LC2", "CC_a", "CC_b", "MIX6.c3", "2NN", "1NN", "MIX6.nc"))
   expect_equal(ids[[12]], c("LC1", "1A1N-2", "1B1C.1", "1B1C.2", "1D1C:one", "1D1C:two", "MIX6.d", "ALLA1", "ALLB1", "ALLB2", "NIB.1"))
   
@@ -36,35 +36,35 @@ test_that("The summaries work", {
                         "DTU genes (both tests)", "non-DTU genes (both tests)", "ineligible genes (both tests)", 
                         "DTU transcripts", "non-DTU transcripts", "ineligible transcripts"))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
-  expect_equal(tally[[2]],  c(1, 2, 7, 1, 3, 6, 1, 2, 7, 2, 8, 11)) 
+  expect_equal(tally[[2]],  c(2, 2, 7, 2, 3, 6, 2, 2, 7, 4, 8, 11)) 
   expect_false(any(is.na(tally)))
   
   # Lower effect size threshold to verify that DTU changes accordingly.
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE)
   
   expect_silent(ids <- get_dtu_ids(mydtu))
-  expect_equal(ids[[1]], c("MIX6", "CC"))
+  expect_equal(ids[[1]], c("1A1B", "MIX6", "CC"))
   expect_equal(ids[[2]], c("NN"))
   expect_equal(ids[[3]], c("LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
-  expect_equal(ids[[4]], c("MIX6", "CC"))
+  expect_equal(ids[[4]], c("1A1B", "MIX6", "CC"))
   expect_equal(ids[[5]], c("LC", "NN"))
   expect_equal(ids[[6]], c("1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
-  expect_equal(ids[[7]], c("MIX6", "CC"))
+  expect_equal(ids[[7]], c("1A1B", "MIX6", "CC"))
   expect_equal(ids[[8]], c("NN"))
   expect_equal(ids[[9]], c("LC", "1A1N", "1B1C", "1D1C", "ALLA", "ALLB", "NIB"))
-  expect_equal(ids[[10]], c("MIX6.c1",  "MIX6.c2", "MIX6.c4", "CC_a", "CC_b"))
+  expect_equal(ids[[10]], c("1A1B.a", "1A1B.b", "MIX6.c1",  "MIX6.c2", "MIX6.c4", "CC_a", "CC_b"))
   expect_equal(ids[[11]], c("LC2", "MIX6.c3", "2NN", "1NN", "MIX6.nc"))
   expect_equal(ids[[12]], c("LC1", "1A1N-2", "1B1C.1", "1B1C.2", "1D1C:one", "1D1C:two", "MIX6.d", "ALLA1", "ALLB1", "ALLB2", "NIB.1"))
   
   expect_silent(tally <- dtu_summary(mydtu))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
-  expect_equal(tally[[2]],  c(2, 1, 7, 2, 2, 6, 2, 1, 7, 5, 5, 11)) 
+  expect_equal(tally[[2]],  c(3, 1, 7, 3, 2, 6, 3, 1, 7, 7, 5, 11)) 
 })
 
 #==============================================================================
 test_that("The isoform switching summaries work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE)
   
   expect_silent(ids <- get_switch_ids(mydtu))
   expect_type(ids, "list")
@@ -74,7 +74,7 @@ test_that("The isoform switching summaries work", {
   for (v in ids) {
     expect_false(any(is.na(v)))
   }
-  expect_equal(as.vector(unlist(ids)), c("MIX6", "MIX6", "MIX6", "MIX6", "MIX6", "MIX6"))
+  expect_equal(as.vector(unlist(ids)), c("1A1B", "MIX6", "MIX6", "1A1B", "MIX6", "MIX6", "1A1B", "MIX6", "MIX6"))
   
   expect_silent(tally <- dtu_switch_summary(mydtu))
   expect_true(is.data.frame(tally))
@@ -82,7 +82,7 @@ test_that("The isoform switching summaries work", {
                         "Primary switch (transc. test)", "Non-primary switch (transc. test)", 
                         "Primary switch (both tests)", "Non-primary switch (both tests)"))
   expect_false(any(is.na(tally)))
-  expect_equal(tally[[2]], c(1, 1, 1, 1, 1, 1))
+  expect_equal(tally[[2]], c(2, 1, 2, 1, 2, 1))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
  })
 
@@ -90,7 +90,7 @@ test_that("The isoform switching summaries work", {
 #==============================================================================
 test_that("The plurality summaries work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE)
   
   expect_silent(ids <- get_plurality_ids(mydtu))
   expect_type(ids, "list")
@@ -98,28 +98,28 @@ test_that("The plurality summaries work", {
   for (v in ids) {
     expect_false(any(is.na(v)))
   }
-  expect_equal(as.vector(unlist(ids)), c("CC", "MIX6"))
+  expect_equal(as.vector(unlist(ids)), c("1A1B", "CC", "MIX6"))
   
   expect_silent(tally <- dtu_plurality_summary(mydtu))
   expect_true(is.data.frame(tally))
   expect_equal(tally[[1]], c("2", "3"))
   expect_false(any(is.na(tally)))
-  expect_equal(tally[[2]], c(1, 1))
+  expect_equal(tally[[2]], c(2, 1))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
   
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.3)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.3, reckless=TRUE)
   expect_silent(ids <- get_plurality_ids(mydtu))
   expect_silent(tally <- dtu_plurality_summary(mydtu))
-  expect_named(ids, c("1"))
-  expect_equal(as.vector(unlist(ids)), c("MIX6"))
-  expect_equal(tally[[2]], c(1))
+  expect_named(ids, c("2", "1"))
+  expect_equal(as.vector(unlist(ids)), c("1A1B", "MIX6"))
+  expect_equal(tally[[2]], c(1, 1))
 })
 
 
 #==============================================================================
 test_that("The gene plotting commands work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE, reckless=TRUE)
   
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX6", style="bycondition"))
@@ -156,9 +156,27 @@ test_that("The gene plotting commands work", {
 })
 
 #==============================================================================
+test_that("The all gene scenarios can be plotted", {
+  sim <- sim_boot_data()
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, qbootnum=2, verbose = FALSE, reckless=TRUE)
+  
+  expect_silent(plot_gene(dtuo=mydtu, pid="1A1B"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="1A1N")) #
+  expect_silent(plot_gene(dtuo=mydtu, pid="1B1C")) ##
+  expect_silent(plot_gene(dtuo=mydtu, pid="1D1C"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="ALLA"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="ALLB"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="CC"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="LC"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="MIX6"))
+  expect_silent(plot_gene(dtuo=mydtu, pid="NIB"))  ##
+  expect_silent(plot_gene(dtuo=mydtu, pid="NN"))
+})
+
+#==============================================================================
 test_that("The overview plotting commands work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE, reckless=TRUE)
   
   expect_silent(plot_overview(mydtu))
   expect_silent(plot_overview(dtuo=mydtu, type="tvolcano"))

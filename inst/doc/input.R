@@ -21,7 +21,7 @@ head(sim_count_data()[[1]])
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Simulate some data.
-#  simdat <- sim_count_data()
+#  simdat <- sim_count_data(clean=TRUE)
 #  # For convenience let's assign the contents of the list to separate variables
 #  mycond_A <- simdat[[2]]       # Simulated abundances for one condition.
 #  mycond_B <- simdat[[3]]       # Simulated abundances for other condition.
@@ -39,7 +39,7 @@ head(sim_count_data()[[1]])
 
 ## ------------------------------------------------------------------------
 # Simulate some data. (Notice it is a different function than before.)
-simdat <- sim_boot_data()
+simdat <- sim_boot_data(clean=TRUE)
 
 # For convenience let's assign the contents of the list to separate variables
 mycond_A <- simdat[[2]]   # Simulated bootstrapped data for one condition.
@@ -83,7 +83,7 @@ myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 #  # Calling DTU with custom thresholds.
 #  mydtu <- call_DTU(annot= myannot,
 #                    boot_data_A= mycond_A, boot_data_B= mycond_B,
-#                    p_thresh= 0.01, abund_thresh= 10, dprop_thres = 0.25)
+#                    p_thresh= 0.01, dprop_thres = 0.15, abund_thresh= 10)
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Bootstrap (default). Do 100 iterations.
@@ -168,4 +168,9 @@ myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 #  mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A,
 #                    boot_data_B= mydata$boot_data_B,
 #                    scaling=c(25, 26.7, 23, 50.0, 45, 48.46, 52.36))
+
+## ---- eval=FALSE---------------------------------------------------------
+#  mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A,
+#                    boot_data_B= mydata$boot_data_B,
+#                    reckless=TRUE, verbose=TRUE)
 
