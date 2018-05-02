@@ -45,8 +45,6 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
 #' @return A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
 #'
-#' @import wasabi
-#' @import rhdf5
 #' @import data.table
 #' @import parallel
 #'
@@ -62,7 +60,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 
   # Wasabi?
   if (!half_cooked) {
-    prepare_fish_for_sleuth(c(A_paths, B_paths))
+    wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths))
   }
 
   # Sort out scaling.
@@ -82,9 +80,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   boots_A <- mclapply(1:lA, function(x) {
     fil <- A_paths[x]
     sf <- sfA[x]
-    ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
-    counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
+    ids <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
+    counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+    effl <- rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
       tcpb <- sf / sum(cpb)
@@ -101,9 +99,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   boots_B <- mclapply(1:lB, function(x) {
     fil <- B_paths[x]
     sf <- sfB[x]
-    ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
-    counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
+    ids <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
+    counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+    effl <- rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
       tcpb <- sf / sum(cpb)
