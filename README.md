@@ -51,19 +51,19 @@ if they are not present already:
 * Packages needed for computation (mandatory)
 
 ```
-install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
+install.packages(c("data.table", "matrixStats"))
 ```
 
 * Package needed only for plotting (recommended)
 
 ```
-install.packages("ggplot2", dependencies=TRUE)
+install.packages("ggplot2")
 ```
 
 * Packages needed only for importing abundances from Salmon/Kallisto output (recommended) - 
 
 ```
-install.packages("devtools", dependencies=TRUE)
+install.packages("devtools")
 
 source("http://bioconductor.org/biocLite.R")
 
@@ -77,7 +77,7 @@ biocLite("rhdf5")
 * Package needed only for interactive visualisation feature (optional)
 
 ```
-install.packages("shiny", dependencies=TRUE)
+install.packages("shiny")
 ```
 
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
