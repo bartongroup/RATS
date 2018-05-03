@@ -60,7 +60,7 @@ install.packages(c("data.table", "matrixStats"))
 install.packages("ggplot2")
 ```
 
-* Packages needed only for importing abundances from Salmon/Kallisto output (recommended) - 
+* Packages needed only for importing abundances from Salmon/Kallisto output (recommended)
 
 ```
 install.packages("devtools")
