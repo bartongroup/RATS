@@ -45,22 +45,22 @@ We recommend studying the vignettes before using RATs.
 
 ### Dependencies
 
-The package depends on a few third-party packages, which you may need to install first, 
-if they are not present already:
+The package depends on a few third-party packages, which you may need to install first, if they are not present already. 
+At present these are all required in order to install RATs, but most of them will be made optional in the next release:
 
-* Packages needed for computation (mandatory)
+* Packages needed for computation
 
 ```
 install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
 ```
 
-* Package needed only for plotting (recommended)
+* Package needed for plotting results
 
 ```
 install.packages("ggplot2", dependencies=TRUE)
 ```
 
-* Packages needed only for importing abundances from Salmon/Kallisto output (recommended) - 
+* Packages needed for importing abundances from Salmon/Kallisto output
 
 ```
 install.packages("devtools", dependencies=TRUE)
@@ -70,18 +70,17 @@ source("http://bioconductor.org/biocLite.R")
 # Format converter from Salmon/Sailfish to Kallisto.
 biocLite("COMBINE-lab/wasabi")
 
-# Compressed format parser.
+# Compressed format parser, for Kallisto.
 biocLite("rhdf5")
 ```
 
-* Package needed only for interactive visualisation feature (optional)
+* Package needed for interactive visualisation feature
 
 ```
 install.packages("shiny", dependencies=TRUE)
 ```
 
-If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, 
-which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual or respective package manuals for help.
+If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual or the respective package documentation for help.
 
 
 ### Installation
