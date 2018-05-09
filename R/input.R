@@ -80,9 +80,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   boots_A <- mclapply(1:lA, function(x) {
     fil <- A_paths[x]
     sf <- sfA[x]
-    ids <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
+    ids <- as.character( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
     counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
+    effl <- as.numeric( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths") )
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
       tcpb <- sf / sum(cpb)
@@ -99,9 +99,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   boots_B <- mclapply(1:lB, function(x) {
     fil <- B_paths[x]
     sf <- sfB[x]
-    ids <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
+    ids <- as.character( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
     counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
+    effl <- as.numeric( rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths") )
     tpm <- as.data.table( lapply(counts, function (y) {
       cpb <- y / effl
       tcpb <- sf / sum(cpb)
