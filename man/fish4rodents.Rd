@@ -5,8 +5,8 @@
 \title{Import abundances directly from salmon and kallisto output.}
 \usage{
 fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
-  PARENT_COL = "parent_id", half_cooked = FALSE, threads = 1L,
-  scaleto = 1e+06)
+  PARENT_COL = "parent_id", half_cooked = FALSE, beartext = FALSE,
+  threads = 1L, scaleto = 1e+06)
 }
 \arguments{
 \item{A_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate. The directory name should be a unique identifier for the sample.}
@@ -21,6 +21,8 @@ fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
 
 \item{half_cooked}{(logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)}
 
+\item{beartext}{(logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstraps} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.}
+
 \item{threads}{(integer) For parallel processing. (Default 1)}
 
 \item{scaleto}{(double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.}
@@ -34,6 +36,7 @@ then applies TPM normalisation using the info available from the abundance.h5 fi
 }
 \details{
 Converting, normalising and importing multiple bootstrapped abundance files takes a bit of time.
+IMPORTANT: This function is currently not intended to be used to import non-bootstrapped quantifications.
 
 \code{wasabi} automatically skips format conversion if a folder already contains an \code{abundance.h5} file.
 }
