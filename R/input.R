@@ -79,13 +79,22 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   }
 
   # Load and convert.
-  res <- lapply(list(A_paths, B_paths), function(cond) {
+  res <- lapply(c('A', 'B'), function(cond) {
     boots_A <- mclapply(1:lA, function(x) {
-      fil <- cond[x]
-      sf <- sfA[x]
+      fil <- NA_character_
+      sf <- NA_real_
+      # Get the correct files and scaling factors.
+      if (cond=='A') {
+        fil <- A_paths[x]
+        sf <- sfA[x]
+      } else {
+        fil <- B_paths[x]
+        sf <- sfB[x]
+      }
       ids <- NULL
       counts <- NULL
       effl <- NULL
+      # If data from Kallisto plaintext...
       if (beartext) {
         # list the bootstrap files
         bfils <- list.files(path=file.path(fil, "bootstraps"), full.names=TRUE, no..=TRUE)
@@ -95,16 +104,20 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
             # the IDs should all come out in the same order in every iteration file of a given sample, 
             # and the transcript lengths should not change either.
         counts <- as.data.table( lapply(bfils, function(bf){ fread(bf, header=TRUE)[['est_counts']] }) )  # plaintext already has TPMs computed, but I stick with the raw counts
-                                                                                                                        # for consistency with the .h5 mode and to allow normalisation to other target sizes 
+                                                                                                          # for consistency with the .h5 mode and to allow normalisation to other target sizes 
+      # If data from Salmon/Wasabi or Kallisto abundance.h5...
       } else {
-        meta <- as.data.table(list( target_id=as.character(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids")), eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
+        meta <- as.data.table(list( target_id=as.character(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
+                                    eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
         counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
       }
+      # Normalise raw counts.
       tpm <- as.data.table( lapply(counts, function (y) {
         cpb <- y / meta$eff_length
         tcpb <- sf / sum(cpb)
         return(cpb * tcpb)
       }) )
+      # Structure.
       dt <- as.data.table( cbind(meta$target_id, tpm) )
       with(dt, setkey(dt, V1) )
       names(dt)[1] <- TARGET_COL
