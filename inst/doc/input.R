@@ -136,6 +136,8 @@ myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 #                    TARGET_COL="transcript", PARENT_COL="gene")
 
 ## ---- eval=FALSE---------------------------------------------------------
+#  # The following are equivalent.
+#  
 #  # 1:
 #  # Scale directly to library sizes at the import step.
 #  mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B,
@@ -167,7 +169,7 @@ myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 #  # Scale TPMs to actual library sizes.
 #  mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A,
 #                    boot_data_B= mydata$boot_data_B,
-#                    scaling=c(25, 26.7, 23, 50.0, 45, 48.46, 52.36))
+#                    scaling=c(25.123456, 26.65431, 23.131313, 50.0, 45.123132, 48.456654, 52.363636))
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A,

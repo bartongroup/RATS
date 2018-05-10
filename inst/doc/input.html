@@ -381,6 +381,8 @@ mydata &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B,
 <h4>Optional arguments</h4>
 <ul>
 <li><code>scaleto</code> allows you to control the normalisation factor. (Default 1000000 gives TPM values).</li>
+<li><code>half_cooked</code> indicates whether a kallisto-style abundance.h5 file already exists. (Default <code>FALSE</code>). <code>wasabi</code> automatically detects the presence of an abundance.h5 file, so this option is actually redundant and pointless.</li>
+<li><code>beartext</code> rirects rats to read bootstrap data from plain-text files in a <code>bootstraps</code> subdirectory in each sample (<code>kallisto</code> has the option to return plaintext results or to extract results from an existing <code>abundance.h5</code> file to plaintext using the <code>h5dump</code> subcommand).</li>
 </ul>
 <p>And finally run DTU in the way already shown:</p>
 <pre class="r"><code># 3. Run RATs with the bootstrapped table data format. 
@@ -531,7 +533,9 @@ mydtu &lt;- call_DTU(annot = myannot,
 <p>To counter this, RATs provides the option to scale abundaces either equally by a single factor (such as average library size among samples) or by a vector of factors (one per sample). The former maintains any pre-existing library-size normalisation among samples. This is necessary for fold-change based methods, but RATs does not require it. Instead, using the respective actual library sizes of the samples allows the higher-throughput samples to have a bigger influence than the lower-throughput samples. This is particularly relevant if your samples have very dissimilar library sizes.</p>
 <p>For flexibility with different types of input, these scaling options can be applied in either of two stages: The data import step by <code>fish4rodents()</code>, or the actual testing step by <code>call_DTU()</code>. In the example examined previously, <code>fish4rodents()</code> was instructed to create TPM abundances, by normalising to <code>1000000</code> reads. Such values are useful with certain other tools that a user may also intend to use. Subsequently, these TPMs were re-scaled to meet the library size of each sample, thus providing RATs with count-like abundance values that retain the normalisation by isoform length. However, it is not necessary to scale in two separate steps.</p>
 <p>Both <code>fish4rodents()</code> and <code>call_DTU()</code> support scaling by a single value or a vector of values. If you don’t need the TPMs, you can scale directly to the desired library size(s), as in the examples below:</p>
-<pre class="r"><code># 1:
+<pre class="r"><code># The following are equivalent.
+
+# 1:
 # Scale directly to library sizes at the import step.
 mydata &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
                        annot= myannot, 
@@ -562,7 +566,7 @@ mydata &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B,
 # Scale TPMs to actual library sizes.
 mydtu &lt;- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A, 
                   boot_data_B= mydata$boot_data_B,
-                  scaling=c(25, 26.7, 23, 50.0, 45, 48.46, 52.36))</code></pre>
+                  scaling=c(25.123456, 26.65431, 23.131313, 50.0, 45.123132, 48.456654, 52.363636))</code></pre>
 <p>You can mix and match scaling options as per your needs, so take care to ensure that the scaling you apply is appropriate. <em>It is important to note</em>, that if you simply run both methods with their respective defaults, you’ll effectively run RATs on TPM values, which is extremely underpowered and not recommended. Please, provide appropriate scaling factors for your data.</p>
 </div>
 <div id="annotation-discrepancies" class="section level2">
