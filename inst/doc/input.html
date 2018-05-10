@@ -382,7 +382,7 @@ mydata &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B,
 <ul>
 <li><code>scaleto</code> allows you to control the normalisation factor. (Default 1000000 gives TPM values).</li>
 <li><code>half_cooked</code> indicates whether a kallisto-style abundance.h5 file already exists. (Default <code>FALSE</code>). <code>wasabi</code> automatically detects the presence of an abundance.h5 file, so this option is actually redundant and pointless.</li>
-<li><code>beartext</code> rirects rats to read bootstrap data from plain-text files in a <code>bootstraps</code> subdirectory in each sample (<code>kallisto</code> has the option to return plaintext results or to extract results from an existing <code>abundance.h5</code> file to plaintext using the <code>h5dump</code> subcommand).</li>
+<li><code>beartext</code> directs <code>fish4rodents()</code> to read bootstrap data from plain-text files in a <code>bootstraps</code> subdirectory in each sample instead of parsing the abundance.h5 file of the sample. <code>kallisto</code> has the option to return plaintext results or to extract results from an existing abundance.h5 file to plaintext using its <code>h5dump</code> subcommand. (Default FALSE)</li>
 </ul>
 <p>And finally run DTU in the way already shown:</p>
 <pre class="r"><code># 3. Run RATs with the bootstrapped table data format. 
