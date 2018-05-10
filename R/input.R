@@ -118,11 +118,13 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
       names(dt)[1] <- TARGET_COL
       # Order transcripts to match annotation.
       dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
+  
       return (dt)
     }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
   })
   
-  return(list("boot_data_A"= res[[1]], "boot_data_B"= res[[2]]))
+  names(res) <- c("boot_data_A", "boot_data_B")
+  return(res)
 }
 
 
