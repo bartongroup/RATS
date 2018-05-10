@@ -9,9 +9,9 @@ fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
   threads = 1L, scaleto = 1e+06)
 }
 \arguments{
-\item{A_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate. The directory name should be a unique identifier for the sample.}
+\item{A_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate, without trailing path dividers. The directory name should be a unique identifier for the sample.}
 
-\item{B_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate. The directory name should be a unique identifier for the sample.}
+\item{B_paths}{(character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate, without trailing path dividers.. The directory name should be a unique identifier for the sample.}
 
 \item{annot}{(data.frame) A table matching transcript identifiers to gene identifiers. This should be the same that you used for quantification and that you will use with \code{call_DTU()}. It is used to order the transcripts consistently throughout RATs.}
 

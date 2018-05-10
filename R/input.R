@@ -36,8 +36,8 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #'
 #' \code{wasabi} automatically skips format conversion if a folder already contains an \code{abundance.h5} file.
 #'
-#' @param A_paths (character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate. The directory name should be a unique identifier for the sample.
-#' @param B_paths (character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate. The directory name should be a unique identifier for the sample.
+#' @param A_paths (character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate, without trailing path dividers. The directory name should be a unique identifier for the sample.
+#' @param B_paths (character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate, without trailing path dividers.. The directory name should be a unique identifier for the sample.
 #' @param annot (data.frame) A table matching transcript identifiers to gene identifiers. This should be the same that you used for quantification and that you will use with \code{call_DTU()}. It is used to order the transcripts consistently throughout RATs.
 #' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
 #' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)
@@ -81,8 +81,6 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   # Load and convert.
   res <- lapply(c('A', 'B'), function(cond) {
     boots_A <- mclapply(1:lA, function(x) {
-      fil <- NA_character_
-      sf <- NA_real_
       # Get the correct files and scaling factors.
       if (cond=='A') {
         fil <- A_paths[x]
@@ -91,9 +89,6 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
         fil <- B_paths[x]
         sf <- sfB[x]
       }
-      ids <- NULL
-      counts <- NULL
-      effl <- NULL
       # If data from Kallisto plaintext...
       if (beartext) {
         # list the bootstrap files
