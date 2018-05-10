@@ -218,8 +218,9 @@ mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B,
                        annot= myannot, scaleto=100000000)
 ```
 
-The return value of `fish4rodents` is a list with two items: `$boot_data_A` and `$boot_data_B`. These two items are
-formatted for RATs' generic bootstrapped input. The abundaces are normalised for isoform length and library-size.
+The return value of `fish4rodents()` is a list with two items: `$boot_data_A` and `$boot_data_B`. These two items are
+formatted for RATs' generic bootstrapped input. This helper function works *only* with bootstrapped quantifications.
+The abundaces are normalised for isoform length and library-size.
 Scaling to 1M reads provides TPMs, which can be used by other tools as well. Other scaling options are discussed in a
 dedicated section later in this vignette.
 
@@ -230,7 +231,7 @@ last segments of each path should be a directory with a unique identifying name 
 2. `annot` - The annotation table that you will use for calling DTU (and that was used for the quantification).
 This is needed to enforce consistent order of the transcripts in the tables, enabling efficient processing.
 
-#### Optional arguments
+#### Optional arguments (`fish4rodents`):
 
 * `scaleto` allows you to control the normalisation factor. (Default 1000000 gives TPM values).
 * `half_cooked` indicates whether a kallisto-style abundance.h5 file already exists. (Default `FALSE`). `wasabi` automatically detects the presence of an abundance.h5 file, so this option is actually redundant and pointless.

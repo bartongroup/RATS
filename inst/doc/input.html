@@ -369,7 +369,7 @@ samples_B &lt;- c(&quot;your/path/SAMPLE2&quot;, &quot;your/path/SAMPLE3&quot;,&
 #    Scale them to 1M reads for TPM values.
 mydata &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
                        annot= myannot, scaleto=100000000)</code></pre>
-<p>The return value of <code>fish4rodents</code> is a list with two items: <code>$boot_data_A</code> and <code>$boot_data_B</code>. These two items are formatted for RATs’ generic bootstrapped input. The abundaces are normalised for isoform length and library-size. Scaling to 1M reads provides TPMs, which can be used by other tools as well. Other scaling options are discussed in a dedicated section later in this vignette.</p>
+<p>The return value of <code>fish4rodents()</code> is a list with two items: <code>$boot_data_A</code> and <code>$boot_data_B</code>. These two items are formatted for RATs’ generic bootstrapped input. This helper function works <em>only</em> with bootstrapped quantifications. The abundaces are normalised for isoform length and library-size. Scaling to 1M reads provides TPMs, which can be used by other tools as well. Other scaling options are discussed in a dedicated section later in this vignette.</p>
 <div id="mandatory-arguments-fish4rodents" class="section level4">
 <h4>Mandatory arguments (<code>fish4rodents</code>):</h4>
 <ol style="list-style-type: decimal">
@@ -377,8 +377,8 @@ mydata &lt;- fish4rodents(A_paths= samples_A, B_paths= samples_B,
 <li><code>annot</code> - The annotation table that you will use for calling DTU (and that was used for the quantification). This is needed to enforce consistent order of the transcripts in the tables, enabling efficient processing.</li>
 </ol>
 </div>
-<div id="optional-arguments" class="section level4">
-<h4>Optional arguments</h4>
+<div id="optional-arguments-fish4rodents" class="section level4">
+<h4>Optional arguments (<code>fish4rodents</code>):</h4>
 <ul>
 <li><code>scaleto</code> allows you to control the normalisation factor. (Default 1000000 gives TPM values).</li>
 <li><code>half_cooked</code> indicates whether a kallisto-style abundance.h5 file already exists. (Default <code>FALSE</code>). <code>wasabi</code> automatically detects the presence of an abundance.h5 file, so this option is actually redundant and pointless.</li>

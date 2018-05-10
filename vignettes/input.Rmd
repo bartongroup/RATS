@@ -219,7 +219,8 @@ mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B,
 ```
 
 The return value of `fish4rodents()` is a list with two items: `$boot_data_A` and `$boot_data_B`. These two items are
-formatted for RATs' generic bootstrapped input. The abundaces are normalised for isoform length and library-size.
+formatted for RATs' generic bootstrapped input. This helper function works *only* with bootstrapped quantifications.
+The abundaces are normalised for isoform length and library-size.
 Scaling to 1M reads provides TPMs, which can be used by other tools as well. Other scaling options are discussed in a
 dedicated section later in this vignette.
 
