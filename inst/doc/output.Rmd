@@ -237,7 +237,7 @@ print( names(mydtu$Transcripts) )
 * `elig` - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). `= (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))`.
 * `sig` - (bool) Statistically significant. `= (pval_corr < Parameters$p_thresh)`.
 * `elig_fx` - (bool) Eligible effect size. Proxy for biological significance. `= (Dprop > Parameters$dprop_thresh)`.
-7. `quant_reprod` - (bool) Quantification reproducible.
+*. `quant_reprod` - (bool) Quantification reproducible.
 For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for non-DTU `= (quant_dtu_freq <= 1 - Parameters$quant_reprod_thresh)`.
 * `rep_reprod` - (bool) Replication reproducible.
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`.

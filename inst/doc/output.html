@@ -475,12 +475,7 @@ print( names(mydtu$Transcripts) )</code></pre>
 <li><code>elig_xp</code> - (bool) Eligible expression level. <code>= (meanA &gt;= Parameters$abund_thresh | meanB &gt;= Parameters$abund_thresh)</code>.</li>
 <li><code>elig</code> - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). <code>= (elig_xp &amp; totalA != 0 &amp; totalB != 0 &amp; (sumA != totalA | sumB != totalB))</code>.</li>
 <li><code>sig</code> - (bool) Statistically significant. <code>= (pval_corr &lt; Parameters$p_thresh)</code>.</li>
-<li><code>elig_fx</code> - (bool) Eligible effect size. Proxy for biological significance. <code>= (Dprop &gt; Parameters$dprop_thresh)</code>.</li>
-</ul>
-<ol start="7" style="list-style-type: decimal">
-<li><code>quant_reprod</code> - (bool) Quantification reproducible. For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code>.</li>
-</ol>
-<ul>
+<li><code>elig_fx</code> - (bool) Eligible effect size. Proxy for biological significance. <code>= (Dprop &gt; Parameters$dprop_thresh)</code>. *. <code>quant_reprod</code> - (bool) Quantification reproducible. For positive DTU, <code>= (quant_dtu_freq &gt;= Parameters$quant_reprod_thresh)</code>, for non-DTU <code>= (quant_dtu_freq &lt;= 1 - Parameters$quant_reprod_thresh)</code>.</li>
 <li><code>rep_reprod</code> - (bool) Replication reproducible. For positive DTU, <code>= (rep_dtu_freq &gt;= Parameters$rep_reprod_thresh)</code>, for non-DTU <code>= (rep_dtu_freq &lt;= 1 - Parameters$rep_reprod_thresh)</code>.</li>
 <li><code>DTU</code> - (bool) The Transcript is Differentially Used. <code>= (sig &amp; elig_fx &amp; quant_reprod &amp; rep_reprod)</code>. *. <code>gene_DTU</code> - (bool) Expanded from <code>Genes$DTU</code>. Indicates that the gene as a whole shows significant change in isoform ratios. <code>= (Genes[parent_id, DTU])</code>.</li>
 <li><code>meanA</code> and <code>meanB</code> - (num) The mean abundance across replicates, for each condition.</li>
