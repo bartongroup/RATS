@@ -281,6 +281,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   with(pout, {
                     return(list("pp" = Transcripts[, pval_corr],
                                 "pdtu" = Transcripts[, DTU],
+                                "py" = Transcripts[, Dprop],
                                 "gp" = Genes[, pval_corr],
                                 "gdtu" = Genes[, DTU] )) })
                 })
@@ -299,28 +300,38 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     with(resobj, {
       if (test_transc) {
         eltr <- Transcripts[, elig]
+        
         pd <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         Transcripts[(elig), rep_dtu_freq := rowCounts(pd[eltr, ], value = TRUE, na.rm=TRUE) / numpairs]
+        
         pp <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-        Transcripts[(elig), rep_p_mean := rowMeans(pp[eltr, ], na.rm = TRUE)]
-        Transcripts[(elig), rep_p_stdev := rowSds(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_p_median := rowMedians(pp[eltr, ], na.rm = TRUE)]
         Transcripts[(elig), rep_p_min := rowMins(pp[eltr, ], na.rm = TRUE)]
         Transcripts[(elig), rep_p_max := rowMaxs(pp[eltr, ], na.rm = TRUE)]
         Transcripts[(elig), rep_na_freq := rowCounts(pp[eltr, ], value = NA, na.rm=FALSE) / numpairs]
+        
+        py <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["py"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), rep_Dprop_mean := rowMeans(py[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_Dprop_stdev := rowSds(py[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_Dprop_min := rowMins(py[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_Dprop_max := rowMaxs(py[eltr, ], na.rm = TRUE)]
+        
         Transcripts[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
         Transcripts[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
 
       if (test_genes) {
         elge <- Genes[, elig]
-        gres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        
         gdres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         Genes[(elig), rep_dtu_freq := rowCounts(gdres[elge, ], value = TRUE, na.rm = TRUE) / numpairs]
-        Genes[(elig), rep_p_mean := rowMeans(gres[elge, ], na.rm = TRUE)]
-        Genes[(elig), rep_p_stdev := rowSds(gres[elge, ], na.rm = TRUE)]
+        
+        gres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elig), rep_p_median := rowMedians (gres[elge, ], na.rm = TRUE)]
         Genes[(elig), rep_p_min := rowMins(gres[elge, ], na.rm = TRUE)]
         Genes[(elig), rep_p_max := rowMaxs(gres[elge, ], na.rm = TRUE)]
-        Genes[(elig), rep_na_freq := rowCounts(gres[elge, ], value = NA, na.rm = FALSE) / numpairs]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+        Genes[(elig), rep_na_freq := rowCounts(gres[elge, ], value = NA, na.rm = FALSE) / numpairs]
+        
         Genes[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
         Genes[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
@@ -364,6 +375,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                   with(bout, {
                     return(list("pp" = Transcripts[, pval_corr],
                                 "pdtu" = Transcripts[, DTU],
+                                "py" = Transcripts[, Dprop],
                                 "gp" = Genes[, pval_corr],
                                 "gdtu" = Genes[, DTU] )) })
               })
@@ -383,25 +395,33 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
         pd <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         Transcripts[(elig), quant_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / qbootnum]
+        
         pp <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-        Transcripts[(elig), quant_p_mean := rowMeans(pp[Transcripts[, elig], ], na.rm = TRUE)]
-        Transcripts[(elig), quant_p_stdev := rowSds(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_p_median := rowMedians(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), quant_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), quant_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
         Transcripts[(elig), quant_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
+        
+        py <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["py"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), quant_Dprop_mean := rowMeans(py[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_Dprop_stdev := rowSds(py[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_Dprop_min := rowMins(py[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_Dprop_max := rowMaxs(py[Transcripts[, elig], ], na.rm = TRUE)]
+        
         Transcripts[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
         Transcripts[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
       if (test_genes) {
         # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
-        gres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         gdres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         Genes[(elig), quant_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / qbootnum]
-        Genes[(elig), quant_p_mean := rowMeans(gres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), quant_p_stdev := rowSds(gres[Genes[, elig], ], na.rm = TRUE)]
+        
+        gres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elig), quant_p_median := rowMedians(gres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), quant_p_min := rowMins(gres[Genes[, elig], ], na.rm = TRUE)]
         Genes[(elig), quant_p_max := rowMaxs(gres[Genes[, elig], ], na.rm = TRUE)]
-        Genes[(elig), quant_na_freq := rowCounts(gres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]  # It doesn't matter if AB or BA, affected identically by gene eligibility.
+        Genes[(elig), quant_na_freq := rowCounts(gres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]
+        
         Genes[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
         Genes[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
@@ -487,13 +507,13 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
     # Drop the bootstrap columns, if unused.
     if (!qboot || !test_transc)
-        Transcripts[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
+        Transcripts[, c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max", "quant_na_freq", "quant_reprod") := NULL]
     if(!qboot || !test_genes)
-      Genes[, c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
+      Genes[, c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
     if (!rboot || !test_transc)
-      Transcripts[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
+      Transcripts[, c("rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max", "rep_na_freq", "rep_reprod") := NULL]
     if(!rboot || !test_genes)
-      Genes[, c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
+      Genes[, c("rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
     
   })
 

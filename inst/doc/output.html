@@ -422,8 +422,8 @@ print( names(mydtu$Genes) )</code></pre>
 <pre><code>##  [1] &quot;parent_id&quot;      &quot;elig&quot;           &quot;sig&quot;            &quot;elig_fx&quot;       
 ##  [5] &quot;quant_reprod&quot;   &quot;DTU&quot;            &quot;transc_DTU&quot;     &quot;known_transc&quot;  
 ##  [9] &quot;detect_transc&quot;  &quot;elig_transc&quot;    &quot;maxDprop&quot;       &quot;pval&quot;          
-## [13] &quot;pval_corr&quot;      &quot;quant_p_mean&quot;   &quot;quant_p_stdev&quot;  &quot;quant_p_min&quot;   
-## [17] &quot;quant_p_max&quot;    &quot;quant_na_freq&quot;  &quot;quant_dtu_freq&quot;</code></pre>
+## [13] &quot;pval_corr&quot;      &quot;quant_p_median&quot; &quot;quant_p_min&quot;    &quot;quant_p_max&quot;   
+## [17] &quot;quant_na_freq&quot;  &quot;quant_dtu_freq&quot;</code></pre>
 <p>The first few columns show the result of each decision step. The remaining columns list the values based on which the decisions were made. Pseudo-code formulas are shown to help understand how the different fields interact when making decisions.</p>
 <ul>
 <li><code>parent_id</code> - (str) Gene identifier.</li>
@@ -439,14 +439,12 @@ print( names(mydtu$Genes) )</code></pre>
 <li><code>elig_transc</code> - (int) Number of eligible transcripts, aggregated from <code>Transcripts$elig</code>.</li>
 <li><code>pval</code> - (num) G test of independence p-value for the isoform ratios.</li>
 <li><code>pval_corr</code> - (num) Multiple testing corrected p-value. <code>pval_corr= p.adjust(pval, Parameters$correction)</code>.</li>
-<li><code>quant_p_mean</code> - (num) Mean p-value across quantification bootstraps.</li>
-<li><code>quant_p_stdev</code> - (num) Standard deviation of p-values across quantification bootstraps.</li>
-<li><code>quant_p_min</code> - (num) Minimum observed p-value across quantification bootstraps.</li>
-<li><code>quant_p_max</code> - (num) Maximum observed p-value across quantification bootstraps.</li>
+<li><code>quant_p_median</code> - (num) Median of corrected p-values across quantification bootstraps.</li>
+<li><code>quant_p_min</code> - (num) Minimum observed (corrected) p-value across quantification bootstraps.</li>
+<li><code>quant_p_max</code> - (num) Maximum observed (corrected) p-value across quantification bootstraps.</li>
 <li><code>quant_na_freq</code> - (num) Fraction of quantification iterations in which <code>DTU</code> could not be determined (not meeting pre-filtering criteria).</li>
 <li><code>quant_dtu_freq</code> - (num) Fraction of replicate iterations that support a positive <code>DTU</code> classification.</li>
-<li><code>rep_p_mean</code> - (num) Mean p-value across replication bootstraps.</li>
-<li><code>rep_p_stdev</code> - (num) Standard deviation of p-values across replication bootstraps.</li>
+<li><code>rep_p_median</code> - (num) Median p-value across replication bootstraps.</li>
 <li><code>rep_p_min</code> - (num) Minimum observed p-value across replication bootstraps.</li>
 <li><code>rep_p_max</code> - (num) Maximum observed p-value across replication bootstraps.</li>
 <li><code>rep_na_freq</code> - (num) Fraction of replication iterations in which <code>DTU</code> could not be determined (not meeting pre-filtering criteria).</li>
@@ -460,14 +458,17 @@ print( names(mydtu$Genes) )</code></pre>
 <p>The maximum likelihood-based G-test of independence is used to compare each given isoform’s proportions in the two conditions.</p>
 <pre class="r"><code># Transcripts table's fields.
 print( names(mydtu$Transcripts) )</code></pre>
-<pre><code>##  [1] &quot;target_id&quot;      &quot;parent_id&quot;      &quot;elig_xp&quot;        &quot;elig&quot;          
-##  [5] &quot;sig&quot;            &quot;elig_fx&quot;        &quot;quant_reprod&quot;   &quot;DTU&quot;           
-##  [9] &quot;gene_DTU&quot;       &quot;meanA&quot;          &quot;meanB&quot;          &quot;stdevA&quot;        
-## [13] &quot;stdevB&quot;         &quot;sumA&quot;           &quot;sumB&quot;           &quot;log2FC&quot;        
-## [17] &quot;totalA&quot;         &quot;totalB&quot;         &quot;propA&quot;          &quot;propB&quot;         
-## [21] &quot;Dprop&quot;          &quot;pval&quot;           &quot;pval_corr&quot;      &quot;quant_p_mean&quot;  
-## [25] &quot;quant_p_stdev&quot;  &quot;quant_p_min&quot;    &quot;quant_p_max&quot;    &quot;quant_na_freq&quot; 
-## [29] &quot;quant_dtu_freq&quot;</code></pre>
+<pre><code>##  [1] &quot;target_id&quot;         &quot;parent_id&quot;         &quot;elig_xp&quot;          
+##  [4] &quot;elig&quot;              &quot;sig&quot;               &quot;elig_fx&quot;          
+##  [7] &quot;quant_reprod&quot;      &quot;DTU&quot;               &quot;gene_DTU&quot;         
+## [10] &quot;meanA&quot;             &quot;meanB&quot;             &quot;stdevA&quot;           
+## [13] &quot;stdevB&quot;            &quot;sumA&quot;              &quot;sumB&quot;             
+## [16] &quot;log2FC&quot;            &quot;totalA&quot;            &quot;totalB&quot;           
+## [19] &quot;propA&quot;             &quot;propB&quot;             &quot;Dprop&quot;            
+## [22] &quot;pval&quot;              &quot;pval_corr&quot;         &quot;quant_p_median&quot;   
+## [25] &quot;quant_p_min&quot;       &quot;quant_p_max&quot;       &quot;quant_Dprop_mean&quot; 
+## [28] &quot;quant_Dprop_stdev&quot; &quot;quant_Dprop_min&quot;   &quot;quant_Dprop_max&quot;  
+## [31] &quot;quant_na_freq&quot;     &quot;quant_dtu_freq&quot;</code></pre>
 <ul>
 <li><code>target_id</code> - (str) Transcript identifier.</li>
 <li><code>parent_id</code> - (str) Gene identifier.</li>
@@ -491,16 +492,22 @@ print( names(mydtu$Transcripts) )</code></pre>
 <li><code>Dprop</code> - (num) The difference in the proportion of the transcript between the two conditions (effect size). <code>= (probB - propA)</code>.</li>
 <li><code>pval</code> - (num) The proportion equality test P-value for the transcript.</li>
 <li><code>pval_corr</code> - (num) Multiple testing corrected p-value. <code>= p.adjust(pval, Parameters$correction)</code>.</li>
-<li><code>quant_p_mean</code> - (num) Mean p-value across quantification bootstraps.</li>
-<li><code>quant_p_stdev</code> - (num) Standard deviation of p-values across quantification bootstraps.</li>
-<li><code>quant_p_min</code> - (num) Minimum observed p-value across quantification bootstraps.</li>
-<li><code>quant_p_max</code> - (num) Maximum observed p-value across quantification bootstraps.</li>
+<li><code>quant_p_median</code> - (num) Median of corrected p-value across quantification bootstraps.</li>
+<li><code>quant_p_min</code> - (num) Minimum observed (corrected) p-value across quantification bootstraps.</li>
+<li><code>quant_p_max</code> - (num) Maximum observed (corrected) p-value across quantification bootstraps.</li>
+<li><code>quant_Dprop_mean</code> - (num) Mean effect size across quantification bootstraps.</li>
+<li><code>quant_Dprop_stdev</code> - (num) Standard deviation of effect size across quantification bootstraps.</li>
+<li><code>quant_Dprop_min</code> - (num) Minimum observed effect size across quantification bootstraps.</li>
+<li><code>quant_Dprop_max</code> - (num) Maximum observed effect size across quantification bootstraps.</li>
 <li><code>quant_na_freq</code> - (num) Fraction of quantification iterations in which <code>DTU</code> could not be determined (not meeting pre-filtering criteria).</li>
 <li><code>quant_dtu_freq</code> - (num) Fraction of quantification iterations that support a positive <code>DTU</code> classification.</li>
-<li><code>rep_p_mean</code> - (num) Mean p-value across replication bootstraps.</li>
-<li><code>rep_p_stdev</code> - (num) Standard deviation of p-values across replication bootstraps.</li>
-<li><code>rep_p_min</code> - (num) Minimum observed p-value across replication bootstraps.</li>
-<li><code>rep_p_max</code> - (num) Maximum observed p-value across replication bootstraps.</li>
+<li><code>rep_p_median</code> - (num) Median of corrected p-value across replication bootstraps.</li>
+<li><code>rep_p_min</code> - (num) Minimum observed (corrected) p-value across replication bootstraps.</li>
+<li><code>rep_p_max</code> - (num) Maximum observed (corrected) p-value across replication bootstraps.</li>
+<li><code>rep_Dprop_mean</code> - (num) Mean effect size across replication bootstraps.</li>
+<li><code>rep_Dprop_stdev</code> - (num) Standard deviation of effect size across replication bootstraps.</li>
+<li><code>rep_Dprop_min</code> - (num) Minimum observed effect size across replication bootstraps.</li>
+<li><code>rep_Dprop_max</code> - (num) Maximum observed effect size across replication bootstraps.</li>
 <li><code>rep_na_freq</code> - (num) Fraction of replication iterations in which <code>DTU</code> could not be determined (not meeting pre-filtering criteria).</li>
 <li><code>rep_dtu_freq</code> - (num) Fraction of replication iterations that support a positive <code>DTU</code> classification.</li>
 </ul>

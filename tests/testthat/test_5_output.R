@@ -20,26 +20,24 @@ test_that("The output structure is correct", {
                                    "rep_boot", "rep_reprod_thresh", "rep_bootnum", "seed", "reckless"))
   
   expect_true(is.data.frame(mydtu$Genes))
-  expect_equal(dim(mydtu$Genes)[2], 26)
+  expect_equal(dim(mydtu$Genes)[2], 24)
   expect_named(mydtu$Genes, c("parent_id", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "transc_DTU",
                               "known_transc", "detect_transc", "elig_transc", "maxDprop", "pval", "pval_corr", 
-                              "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_dtu_freq",
-                              "rep_p_mean",  "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_dtu_freq") )
+                              "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_dtu_freq",
+                              "rep_p_median", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.numeric(mydtu$Genes[["known_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["detect_transc"]]))
   expect_true(is.numeric(mydtu$Genes[["maxDprop"]]))
   expect_true(is.numeric(mydtu$Genes[["pval"]]))
   expect_true(is.numeric(mydtu$Genes[["pval_corr"]]))
   expect_true(is.numeric(mydtu$Genes[["quant_dtu_freq"]]))
-  expect_true(is.numeric(mydtu$Genes[["quant_p_mean"]]))
-  expect_true(is.numeric(mydtu$Genes[["quant_p_stdev"]]))
+  expect_true(is.numeric(mydtu$Genes[["quant_p_median"]]))
   expect_true(is.numeric(mydtu$Genes[["quant_p_min"]]))
   expect_true(is.numeric(mydtu$Genes[["quant_p_max"]]))
   expect_true(is.numeric(mydtu$Genes[["quant_na_freq"]]))
   expect_true(is.logical(mydtu$Genes[["quant_reprod"]]))
   expect_true(is.numeric(mydtu$Genes[["rep_dtu_freq"]]))
-  expect_true(is.numeric(mydtu$Genes[["rep_p_mean"]]))
-  expect_true(is.numeric(mydtu$Genes[["rep_p_stdev"]]))
+  expect_true(is.numeric(mydtu$Genes[["rep_p_median"]]))
   expect_true(is.numeric(mydtu$Genes[["rep_p_min"]]))
   expect_true(is.numeric(mydtu$Genes[["rep_p_max"]]))
   expect_true(is.numeric(mydtu$Genes[["rep_na_freq"]]))
@@ -51,11 +49,11 @@ test_that("The output structure is correct", {
   expect_true(is.logical(mydtu$Genes[["transc_DTU"]]))
   
   expect_true(is.data.frame(mydtu$Transcripts))
-  expect_equal(dim(mydtu$Transcripts)[2], 36)
+  expect_equal(dim(mydtu$Transcripts)[2], 42)
   expect_named(mydtu$Transcripts, c("target_id", "parent_id", "elig_xp", "elig", "sig", "elig_fx", "quant_reprod", "rep_reprod", "DTU", "gene_DTU", 
                                     "meanA", "meanB", "stdevA", "stdevB", "sumA", "sumB", "log2FC", "totalA", "totalB", "propA", "propB", "Dprop", "pval", "pval_corr", 
-                                    "quant_p_mean", "quant_p_stdev", "quant_p_min","quant_p_max", "quant_na_freq", "quant_dtu_freq",
-                                    "rep_p_mean", "rep_p_stdev", "rep_p_min","rep_p_max", "rep_na_freq", "rep_dtu_freq") )
+                                    "quant_p_median", "quant_p_min","quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min","quant_Dprop_max", "quant_na_freq", "quant_dtu_freq",
+                                    "rep_p_median", "rep_p_min","rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min","rep_Dprop_max", "rep_na_freq", "rep_dtu_freq") )
   expect_true(is.logical(mydtu$Transcripts[["elig_xp"]]))
   expect_true(is.logical(mydtu$Transcripts[["elig"]]))
   expect_true(is.logical(mydtu$Transcripts[["elig_fx"]]))
@@ -75,44 +73,49 @@ test_that("The output structure is correct", {
   expect_true(is.numeric(mydtu$Transcripts[["pval"]]))
   expect_true(is.numeric(mydtu$Transcripts[["pval_corr"]]))
   expect_true(is.numeric(mydtu$Transcripts[["quant_dtu_freq"]]))
-  expect_true(is.numeric(mydtu$Transcripts[["quant_p_mean"]]))
-  expect_true(is.numeric(mydtu$Transcripts[["quant_p_stdev"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["quant_p_median"]]))
   expect_true(is.numeric(mydtu$Transcripts[["quant_p_min"]]))
   expect_true(is.numeric(mydtu$Transcripts[["quant_p_max"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["quant_Dprop_mean"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["quant_Dprop_stdev"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["quant_Dprop_min"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["quant_Dprop_max"]]))
   expect_true(is.numeric(mydtu$Transcripts[["quant_na_freq"]]))
   expect_true(is.logical(mydtu$Transcripts[["quant_reprod"]]))
   expect_true(is.numeric(mydtu$Transcripts[["rep_dtu_freq"]]))
-  expect_true(is.numeric(mydtu$Transcripts[["rep_p_mean"]]))
-  expect_true(is.numeric(mydtu$Transcripts[["rep_p_stdev"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["rep_p_median"]]))
   expect_true(is.numeric(mydtu$Transcripts[["rep_p_min"]]))
   expect_true(is.numeric(mydtu$Transcripts[["rep_p_max"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["rep_Dprop_mean"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["rep_Dprop_stdev"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["rep_Dprop_min"]]))
+  expect_true(is.numeric(mydtu$Transcripts[["rep_Dprop_max"]]))
   expect_true(is.numeric(mydtu$Transcripts[["rep_na_freq"]]))
   expect_true(is.logical(mydtu$Transcripts[["rep_reprod"]]))
-  
   expect_true(is.list(mydtu$Abundances))
   expect_true(is.data.frame(mydtu$Abundances[[1]]))
   expect_true(is.data.frame(mydtu$Abundances[[2]]))
   
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", verbose = FALSE, qboot = FALSE)  
-  expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Genes)))
-  expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Transcripts)))
+  expect_false(any(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Genes)))
+  expect_false(any(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Transcripts)))
   
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", verbose = FALSE, rboot = FALSE)  
-  expect_false(any(c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
-  expect_false(any(c("rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
+  expect_false(any(c("rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
+  expect_false(any(c("rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
   
   
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", testmode="transc", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE)
-  expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
-                     "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
-  expect_true(all(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
-                    "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
+  expect_false(any(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
+                     "rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
+  expect_true(all(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max", "quant_na_freq", "quant_reprod",
+                    "rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
   
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", testmode="genes", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE)
-  expect_false(any(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
-                     "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
-  expect_true(all(c("quant_dtu_freq", "quant_p_mean", "quant_p_stdev", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
-                    "rep_dtu_freq", "rep_p_mean", "rep_p_stdev", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
+  expect_false(any(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max", "quant_na_freq", "quant_reprod",
+                     "rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
+  expect_true(all(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod",
+                    "rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") %in% names(mydtu$Genes)))
   
 })
 
@@ -171,15 +174,13 @@ test_that("The output content is complete", {
     expect_false(all(is.na(mydtu[[x]]$Genes[["transc_DTU"]])))
     if (x>1) {
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_dtu_freq"]])))
-      expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_mean"]])))
-      expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_stdev"]])))
+      expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_median"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_min"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_p_max"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_na_freq"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["quant_reprod"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["rep_dtu_freq"]])))
-      expect_false(all(is.na(mydtu[[x]]$Genes[["rep_p_mean"]])))
-      expect_false(all(is.na(mydtu[[x]]$Genes[["rep_p_stdev"]])))
+      expect_false(all(is.na(mydtu[[x]]$Genes[["rep_p_median"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["rep_p_min"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["rep_p_max"]])))
       expect_false(all(is.na(mydtu[[x]]$Genes[["rep_na_freq"]])))
@@ -207,17 +208,23 @@ test_that("The output content is complete", {
     expect_false(all(is.na(mydtu[[x]]$Transcripts[["sig"]])))
     if (x>1) {
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_dtu_freq"]])))
-      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_mean"]])))
-      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_stdev"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_median"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_min"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_p_max"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_Dprop_mean"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_Dprop_stdev"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_Dprop_min"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_Dprop_max"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_na_freq"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["quant_reprod"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_dtu_freq"]])))
-      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_p_mean"]])))
-      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_p_stdev"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_p_median"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_p_min"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_p_max"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_Dprop_mean"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_Dprop_stdev"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_Dprop_min"]])))
+      expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_Dprop_max"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_na_freq"]])))
       expect_false(all(is.na(mydtu[[x]]$Transcripts[["rep_reprod"]])))
     }

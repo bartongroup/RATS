@@ -205,14 +205,12 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 * `elig_transc` - (int) Number of eligible transcripts, aggregated from `Transcripts$elig`.
 * `pval` - (num) G test of independence p-value for the isoform ratios.
 * `pval_corr` - (num) Multiple testing corrected p-value. `pval_corr= p.adjust(pval, Parameters$correction)`.
-* `quant_p_mean` - (num) Mean p-value across quantification bootstraps.
-* `quant_p_stdev` - (num) Standard deviation of p-values across quantification bootstraps.
-* `quant_p_min` - (num) Minimum observed p-value across quantification bootstraps.
-* `quant_p_max` - (num) Maximum observed p-value across quantification bootstraps.
+* `quant_p_median` - (num) Median of corrected p-values across quantification bootstraps.
+* `quant_p_min` - (num) Minimum observed (corrected) p-value across quantification bootstraps.
+* `quant_p_max` - (num) Maximum observed (corrected) p-value across quantification bootstraps.
 * `quant_na_freq` - (num) Fraction of quantification iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `quant_dtu_freq` - (num) Fraction of replicate iterations that support a positive `DTU` classification.
-* `rep_p_mean` - (num) Mean p-value across replication bootstraps.
-* `rep_p_stdev` - (num) Standard deviation of p-values across replication bootstraps.
+* `rep_p_median` - (num) Median p-value across replication bootstraps.
 * `rep_p_min` - (num) Minimum observed p-value across replication bootstraps.
 * `rep_p_max` - (num) Maximum observed p-value across replication bootstraps.
 * `rep_na_freq` - (num) Fraction of replication iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
@@ -254,16 +252,22 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 * `Dprop` - (num) The difference in the proportion of the transcript between the two conditions (effect size). `= (probB - propA)`.
 * `pval` - (num) The proportion equality test P-value for the transcript.
 * `pval_corr` - (num) Multiple testing corrected p-value. `= p.adjust(pval, Parameters$correction)`.
-* `quant_p_mean` - (num) Mean p-value across quantification bootstraps.
-* `quant_p_stdev` - (num) Standard deviation of p-values across quantification bootstraps.
-* `quant_p_min` - (num) Minimum observed p-value across quantification bootstraps.
-* `quant_p_max` - (num) Maximum observed p-value across quantification bootstraps.
+* `quant_p_median` - (num) Median of corrected p-value across quantification bootstraps.
+* `quant_p_min` - (num) Minimum observed (corrected) p-value across quantification bootstraps.
+* `quant_p_max` - (num) Maximum observed (corrected) p-value across quantification bootstraps.
+* `quant_Dprop_mean` - (num) Mean effect size across quantification bootstraps.
+* `quant_Dprop_stdev` - (num) Standard deviation of effect size across quantification bootstraps.
+* `quant_Dprop_min` - (num) Minimum observed effect size across quantification bootstraps.
+* `quant_Dprop_max` - (num) Maximum observed effect size across quantification bootstraps.
 * `quant_na_freq` - (num) Fraction of quantification iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `quant_dtu_freq` - (num) Fraction of quantification iterations that support a positive `DTU` classification.
-* `rep_p_mean` - (num) Mean p-value across replication bootstraps.
-* `rep_p_stdev` - (num) Standard deviation of p-values across replication bootstraps.
-* `rep_p_min` - (num) Minimum observed p-value across replication bootstraps.
-* `rep_p_max` - (num) Maximum observed p-value across replication bootstraps.
+* `rep_p_median` - (num) Median of corrected p-value across replication bootstraps.
+* `rep_p_min` - (num) Minimum observed (corrected) p-value across replication bootstraps.
+* `rep_p_max` - (num) Maximum observed (corrected) p-value across replication bootstraps.
+* `rep_Dprop_mean` - (num) Mean effect size across replication bootstraps.
+* `rep_Dprop_stdev` - (num) Standard deviation of effect size across replication bootstraps.
+* `rep_Dprop_min` - (num) Minimum observed effect size across replication bootstraps.
+* `rep_Dprop_max` - (num) Maximum observed effect size across replication bootstraps.
 * `rep_na_freq` - (num) Fraction of replication iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `rep_dtu_freq` - (num) Fraction of replication iterations that support a positive `DTU` classification.
 
