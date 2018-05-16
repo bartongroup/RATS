@@ -355,8 +355,8 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 
     # Transcript-level test.
     if (test_transc) {
-      if(any(Transcripts$elig)){  # Extreme case. If nothing is eligible, table subsetting by `elig` is nonsense and crashes. 
-                                  # We can just skip testing altegether, as all output fields are initialized with NA already.
+      if(any(Transcripts$elig)){  # If nothing is eligible, table subsetting by `elig` is nonsense and crashes. 
+                                  # In that case we can just skip testing altegether, as all output fields are initialized with NA already.
         Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
                                                       function(row) {
                                                         return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )

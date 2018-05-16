@@ -264,7 +264,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
 
-    repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU().
+    repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
       
                   # Update progress.
                   if (verbose)
@@ -357,7 +357,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     #----- Iterations
 
-    bootres <- lapply(1:qbootnum, function(b) {  # Single-threaded. Forking happens within calculate_DTU().
+    bootres <- lapply(1:qbootnum, function(b) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
                   # Update progress.
                   if (verbose)
                     setTxtProgressBar(myprogress, b)
