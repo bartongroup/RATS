@@ -46,24 +46,24 @@ We recommend studying the vignettes before using RATs.
 ### Dependencies
 
 The package depends on a few third-party packages, which you may need to install first, if they are not present already. 
-At present these are all required in order to install RATs, but most of them will be made optional in the next release:
+Most of these relate to specific functionality that you may not wish to use, thus are optional:
 
 * Packages needed for computation
 
 ```
-install.packages(c("data.table", "matrixStats"), dependencies=TRUE)
+install.packages(c("data.table", "matrixStats"))
 ```
 
-* Package needed for plotting results
+* Package needed for plotting results (optional, recommended)
 
 ```
-install.packages("ggplot2", dependencies=TRUE)
+install.packages("ggplot2")
 ```
 
-* Packages needed for importing abundances from Salmon/Kallisto output
+* Packages needed for importing abundances from Salmon/Kallisto output (optional, recommended)
 
 ```
-install.packages("devtools", dependencies=TRUE)
+install.packages("devtools")
 
 source("http://bioconductor.org/biocLite.R")
 
@@ -74,10 +74,10 @@ biocLite("COMBINE-lab/wasabi")
 biocLite("rhdf5")
 ```
 
-* Package needed for interactive visualisation feature
+* Package needed for interactive visualisation feature (optional)
 
 ```
-install.packages("shiny", dependencies=TRUE)
+install.packages("shiny")
 ```
 
 If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual or the respective package documentation for help.

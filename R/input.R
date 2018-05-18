@@ -32,27 +32,27 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #' then applies TPM normalisation using the info available from the abundance.h5 files.
 #'
 #' Converting, normalising and importing multiple bootstrapped abundance files takes a bit of time.
+#' IMPORTANT: This function is currently not intended to be used to import non-bootstrapped quantifications.
 #'
 #' \code{wasabi} automatically skips format conversion if a folder already contains an \code{abundance.h5} file.
 #'
-#' @param A_paths (character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate. The directory name should be a unique identifier for the sample.
-#' @param B_paths (character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate. The directory name should be a unique identifier for the sample.
+#' @param A_paths (character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate, without trailing path dividers. The directory name should be a unique identifier for the sample.
+#' @param B_paths (character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate, without trailing path dividers.. The directory name should be a unique identifier for the sample.
 #' @param annot (data.frame) A table matching transcript identifiers to gene identifiers. This should be the same that you used for quantification and that you will use with \code{call_DTU()}. It is used to order the transcripts consistently throughout RATs.
+#' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
+#' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)
+#' @param beartext (logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstraps} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
-#' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)
 #' @param threads (integer) For parallel processing. (Default 1)
-#' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
 #' @return A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
 #'
-#' @import wasabi
-#' @import rhdf5
 #' @import data.table
 #' @import parallel
 #'
 #' @export
 
-fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", half_cooked=FALSE, threads= 1L, scaleto= 1000000)
+fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", half_cooked=FALSE, beartext=FALSE, threads= 1L, scaleto= 1000000)
 {
   threads <- as.integer(threads)  # Can't be decimal.
   setDTthreads(1)  # Not a typo. Threads used for larger mclapply blocks instead of single table operations.
@@ -62,7 +62,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 
   # Wasabi?
   if (!half_cooked) {
-    prepare_fish_for_sleuth(c(A_paths, B_paths))
+    wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths))
   }
 
   # Sort out scaling.
@@ -78,46 +78,53 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
     sfB <- scaleto[(1+lA):(lA+lB)]
   }
 
-  # Load and convert manually.
-  boots_A <- mclapply(1:lA, function(x) {
-    fil <- A_paths[x]
-    sf <- sfA[x]
-    ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
-    counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
-    tpm <- as.data.table( lapply(counts, function (y) {
-      cpb <- y / effl
-      tcpb <- sf / sum(cpb)
-      return(cpb * tcpb)
-    }) )
-    dt <- as.data.table( cbind(ids, tpm) )
-    with(dt, setkey(dt, V1) )
-    names(dt)[1] <- TARGET_COL
-    # Order transcripts to match annotation.
-    dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
-    return (dt)
-  }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-
-  boots_B <- mclapply(1:lB, function(x) {
-    fil <- B_paths[x]
-    sf <- sfB[x]
-    ids <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/aux/ids") )
-    counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
-    effl <- h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")
-    tpm <- as.data.table( lapply(counts, function (y) {
-      cpb <- y / effl
-      tcpb <- sf / sum(cpb)
-      return(cpb * tcpb)
-    }) )
-    dt <- as.data.table( cbind(ids, tpm) )
-    with(dt, setkey(dt, V1) )
-    names(dt)[1] <- TARGET_COL
-    # Order transcripts to match annotation.
-    dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
-    return (dt)
-  }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
-
-  return(list("boot_data_A"= boots_A, "boot_data_B"= boots_B))
+  # Load and convert.
+  res <- lapply(c('A', 'B'), function(cond) {
+    boots_A <- mclapply(1:lA, function(x) {
+      # Get the correct files and scaling factors.
+      if (cond=='A') {
+        fil <- A_paths[x]
+        sf <- sfA[x]
+      } else {
+        fil <- B_paths[x]
+        sf <- sfB[x]
+      }
+      # If data from Kallisto plaintext...
+      if (beartext) {
+        # list the bootstrap files
+        bfils <- list.files(path=file.path(fil, "bootstraps"), full.names=TRUE, no..=TRUE)
+        bfils <- bfils[ grepl('bs_abundance', bfils) ]
+        # parse info.
+        meta <- fread(bfils[[1]], header=TRUE)[, c('target_id', 'eff_length'), with=FALSE]  
+            # the IDs should all come out in the same order in every iteration file of a given sample, 
+            # and the transcript lengths should not change either.
+        counts <- as.data.table( lapply(bfils, function(bf){ fread(bf, header=TRUE)[['est_counts']] }) )  # plaintext already has TPMs computed, but I stick with the raw counts
+                                                                                                          # for consistency with the .h5 mode and to allow normalisation to other target sizes 
+      # If data from Salmon/Wasabi or Kallisto abundance.h5...
+      } else {
+        meta <- as.data.table(list( target_id=as.character(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
+                                    eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
+        counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+      }
+      # Normalise raw counts.
+      tpm <- as.data.table( lapply(counts, function (y) {
+        cpb <- y / meta$eff_length
+        tcpb <- sf / sum(cpb)
+        return(cpb * tcpb)
+      }) )
+      # Structure.
+      dt <- as.data.table( cbind(meta$target_id, tpm) )
+      with(dt, setkey(dt, V1) )
+      names(dt)[1] <- TARGET_COL
+      # Order transcripts to match annotation.
+      dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
+  
+      return (dt)
+    }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+  })
+  
+  names(res) <- c("boot_data_A", "boot_data_B")
+  return(res)
 }
 
 

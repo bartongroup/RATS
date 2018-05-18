@@ -188,3 +188,12 @@ test_that("The overview plotting commands work", {
   expect_silent(plot_overview(dtuo=mydtu, type="reprod"))
   expect_silent(plot_overview(dtuo=mydtu, type="reprodVSdprop"))
 })
+
+#==============================================================================
+test_that("The diagnostic plots commands work", {
+  sim <- sim_boot_data()
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, verbose = FALSE, reckless=TRUE)
+  
+  expect_silent(plot_diagnostics(mydtu))
+  expect_silent(plot_diagnostics(dtuo=mydtu, type="cormat"))
+})

@@ -218,8 +218,9 @@ mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B,
                        annot= myannot, scaleto=100000000)
 ```
 
-The return value of `fish4rodents` is a list with two items: `$boot_data_A` and `$boot_data_B`. These two items are
-formatted for RATs' generic bootstrapped input. The abundaces are normalised for isoform length and library-size.
+The return value of `fish4rodents()` is a list with two items: `$boot_data_A` and `$boot_data_B`. These two items are
+formatted for RATs' generic bootstrapped input. This helper function works *only* with bootstrapped quantifications.
+The abundaces are normalised for isoform length and library-size.
 Scaling to 1M reads provides TPMs, which can be used by other tools as well. Other scaling options are discussed in a
 dedicated section later in this vignette.
 
@@ -230,9 +231,11 @@ last segments of each path should be a directory with a unique identifying name 
 2. `annot` - The annotation table that you will use for calling DTU (and that was used for the quantification).
 This is needed to enforce consistent order of the transcripts in the tables, enabling efficient processing.
 
-#### Optional arguments
+#### Optional arguments (`fish4rodents`):
 
 * `scaleto` allows you to control the normalisation factor. (Default 1000000 gives TPM values).
+* `half_cooked` indicates whether a kallisto-style abundance.h5 file already exists. (Default `FALSE`). `wasabi` automatically detects the presence of an abundance.h5 file, so this option is actually redundant and pointless.
+* `beartext` directs `fish4rodents()` to read bootstrap data from plain-text files in a `bootstraps` subdirectory in each sample instead of parsing the abundance.h5 file of the sample. `kallisto` has the option to return plaintext results or to extract results from an existing abundance.h5 file to plaintext using its `h5dump` subcommand. (Default FALSE)
 
 And finally run DTU in the way already shown:
 
@@ -462,6 +465,8 @@ Both `fish4rodents()` and `call_DTU()` support scaling by a single value or a ve
 directly to the desired library size(s), as in the examples below:
 
 ```{r, eval=FALSE}
+# The following are equivalent.
+
 # 1:
 # Scale directly to library sizes at the import step.
 mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
@@ -493,7 +498,7 @@ mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B,
 # Scale TPMs to actual library sizes.
 mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A, 
                   boot_data_B= mydata$boot_data_B,
-                  scaling=c(25, 26.7, 23, 50.0, 45, 48.46, 52.36))
+                  scaling=c(25.123456, 26.65431, 23.131313, 50.0, 45.123132, 48.456654, 52.363636))
 ```
 
 You can mix and match scaling options as per your needs, so take care to ensure that the scaling you apply is appropriate.
