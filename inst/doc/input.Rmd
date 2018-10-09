@@ -368,6 +368,25 @@ The number of iterations for 3 samples per condition is `3 * 3 = 9`.
 So the minimum possible error rate is `1 / 9 = 0.111111...`. 
 The corresponding threshold is `1-0.1111111... = 0.8888888...`, hence the default threshold of 0.85.
 
+### Extra bootstrapping info
+
+Additional insight on the variance across bootstraps can be obtained if desired. 
+Up to RATs version `0.6.4` this informatioin was alsways included. Calculating this information requires several columns each with length equal to the number of genes for each bootstrap iteration to be kept in memory. This caused a considerable memory footprint for bootstrapped runs and posed a physical constraint in scalability. `lean` mode removes this contraint, and results in the memory needed by RATs remaining low and constant regardless of number of iterations. 
+
+1. `lean` - Default TRUE will only report the frequency of DTU call in the iterations, frequency of NA and whether the frequency of DTU passes the threshold. FALSE will additionally report the median/mean/max/min values of `Dprop` and `pval_corr` per gene across iterations. 
+
+```{r, eval=FALSE}
+# Lean run (default).
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  lean =TRUE)
+
+# Extra info on variance across iterations.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  lean = FALSE)
+```
+
 
 ## Multi-threading
 
