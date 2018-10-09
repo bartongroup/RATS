@@ -10,7 +10,7 @@ test_that("No false alarms", {
   sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=FALSE, TARGET_COL= "target", PARENT_COL= "parent")
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, abund_thresh= 10,
                          rrep_thresh = 0.6, qrep_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, rboot= FALSE, qboot=TRUE,
-                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21)))
+                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21), lean=FALSE))
   
   sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=FALSE)
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, dbg= "prep", scaling=30))
@@ -195,10 +195,14 @@ test_that("General behaviour parameters are checked", {
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE), verbose= FALSE, dbg= "prep"))
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE) + 1, verbose= FALSE, dbg= "prep"),
                "threads exceed", fixed= TRUE)
-
+  
   # Verbose is bool.
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, verbose="yes", dbg= "prep"),
-               "not interpretable as logical", fixed= TRUE)
+               "Must be TRUE/FALSE", fixed= TRUE)
+  
+  # Lean is bool.
+  expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, lean="yes", dbg= "prep"),
+               "Must be TRUE/FALSE", fixed= TRUE)
 })
 
 #EOF
