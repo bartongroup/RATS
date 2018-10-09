@@ -471,22 +471,6 @@ mydtu &lt;- call_DTU(annot = myannot,
                   rboot = FALSE)</code></pre>
 <p><strong>Note</strong> that for few replicates, the reproducibility values are highly discrete: The number of iterations for 3 samples per condition is <code>3 * 3 = 9</code>. So the minimum possible error rate is <code>1 / 9 = 0.111111...</code>. The corresponding threshold is <code>1-0.1111111... = 0.8888888...</code>, hence the default threshold of 0.85.</p>
 </div>
-<div id="extra-bootstrapping-info" class="section level3">
-<h3>Extra bootstrapping info</h3>
-<p>Additional insight on the variance across bootstraps can be obtained if desired. Up to RATs version <code>0.6.4</code> this informatioin was alsways included. Calculating this information requires several columns each with length equal to the number of genes for each bootstrap iteration to be kept in memory. This caused a considerable memory footprint for bootstrapped runs and posed a physical constraint in scalability. <code>lean</code> mode removes this contraint, and results in the memory needed by RATs remaining low and constant regardless of number of iterations.</p>
-<ol style="list-style-type: decimal">
-<li><code>lean</code> - Default TRUE will only report the frequency of DTU call in the iterations, frequency of NA and whether the frequency of DTU passes the threshold. FALSE will additionally report the median/mean/max/min values of <code>Dprop</code> and <code>pval_corr</code> per gene across iterations.</li>
-</ol>
-<pre class="r"><code># Lean run (default).
-mydtu &lt;- call_DTU(annot = myannot, 
-                  boot_data_A= mycond_A, boot_data_B= mycond_B,
-                  lean =TRUE)
-
-# Extra info on variance across iterations.
-mydtu &lt;- call_DTU(annot = myannot, 
-                  boot_data_A= mycond_A, boot_data_B= mycond_B,
-                  lean = FALSE)</code></pre>
-</div>
 </div>
 <div id="multi-threading" class="section level2">
 <h2>Multi-threading</h2>

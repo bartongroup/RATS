@@ -156,7 +156,7 @@ test_that("The gene plotting commands work", {
 })
 
 #==============================================================================
-test_that("All gene scenarios can be plotted", {
+test_that("The all gene scenarios can be plotted", {
   sim <- sim_boot_data()
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, qbootnum=2, verbose = FALSE, reckless=TRUE)
   

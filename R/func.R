@@ -21,9 +21,7 @@
 #' @param threads Number of threads.
 #' @param seed Seed for random engine.
 #' @param scaling Abundance scaling factor.
-#' @param reckless whether to ignore detected annotation discrepancies.
-#' @param lean whether to report descriptive statistics for Dprop and pval.
-#' @param verbose Verbose status.
+#' @param reckless whether to ignore detected annotation discrepancies
 #'
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -39,7 +37,7 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
                                 TARGET_COL, PARENT_COL,
                                 correction, testmode, scaling, threads, seed,
                                 p_thresh, abund_thresh, dprop_thresh, 
-                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose) {
+                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless) {
   warnmsg <- list()
 
   # Input format.
@@ -85,10 +83,6 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
     return(list("error"=TRUE, "message"="Number of threads exceeds system's reported capacity."))
-  if (!is.logical(lean))
-    return(list("error"=TRUE, "message"="Invalid value for lean! Must be TRUE/FALSE."))
-  if (!is.logical(verbose))
-    return(list("error"=TRUE, "message"="Invalid value for verbose! Must be TRUE/FALSE."))
   
   # Scaling
   nsmpl <- NULL
@@ -244,7 +238,7 @@ alloc_out <- function(annot, full, n=1){
                        "abund_scaling"=numeric(length=n),
                        "quant_boot"=NA,"quant_reprod_thresh"=NA_real_,  "quant_bootnum"=NA_integer_,
                        "rep_boot"=NA, "rep_reprod_thresh"=NA_real_, "rep_bootnum"=NA_integer_, 
-                       "seed"=NA_integer_, "reckless"=NA, "lean"=NA)
+                       "seed"=NA_integer_, "reckless"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
@@ -268,14 +262,15 @@ alloc_out <- function(annot, full, n=1){
     CountData <- list()
   } else {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
-    Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
+    Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)), "DTU"=NA,
                         "elig_transc"=NA_integer_, "elig"=NA, "elig_fx"=NA,
-                        "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, DTU=NA)
-    Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
+                        "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
+    Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id, "DTU"=NA,
                               "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_,  #log2FC currently not used in decision making and bootstrapping, but maybe in the future.
-                              "totalA"=NA_real_, "totalB"=NA_real_, "elig_xp"=NA, "elig"=NA,
+                              "totalA"=NA_real_, "totalB"=NA_real_,
+                              "elig_xp"=NA, "elig"=NA,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
-                              "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, "DTU"=NA)
+                              "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA)
     CountData <- NULL
   }
   with(Genes,

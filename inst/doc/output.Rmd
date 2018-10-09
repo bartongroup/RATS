@@ -165,12 +165,11 @@ print( names(mydtu$Parameters) )
 * `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter, if `qboot==TRUE`.
 * `quant_boot` - (bool) The value passed to the `qboots` parameter.
 * `quant_bootnum` - (int) The value passed to the `qbootnum` parameter, if `qboot==TRUE`.
-* `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter, if `rboot==TRUE`.
+* `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter, if `rboot==TRUE`..
 * `rep_boot` - (bool) The value passed to the `rboot` parameter.
 * `rep_bootnum` - (int) The number of replicate bootstrapping iterations (currently  M*N, where M and N are the numbers of samples in the two conditions), if `rboot==TRUE`.
 * `seed` - (int) Custom seed for the random generator. `NA` if none was specified.
 * `reckless` - (bool) The value passed to the `reckless` parameter.
-* `lean` - (bool) The value passed to the `lean` parameter.
 
 **Note:** If bootstraps are disabled, the bootstrap-related fields may be `NA`, regardless of supplied values, to reflect the fact that they were not used.
 

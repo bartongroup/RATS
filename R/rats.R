@@ -24,7 +24,6 @@
 #' @param correction The p-value correction to apply, as defined in  \code{\link[stats]{p.adjust.methods}}. (Default \code{"BH"})
 #' @param scaling A scaling factor or vector of scaling factors, to be applied to the abundances *prior* to any thresholding and testing. Useful for scaling TPMs (transcripts per 1 million reads) to the actual library sizes of the samples. If a vector is supplied, the order should correspond to the samples in group A followed by the samples in group B. WARNING: Improper use of the scaling factor will artificially inflate/deflate the significances obtained.
 #' @param testmode One of \itemize{\item{"genes"}, \item{"transc"}, \item{"both" (default)}}.
-#' @param lean Reduce memory footprint by not tracking mean/median/max/min/stdev for Dprop and pval across bootstrap iterations. The respective columns will be absent from the output structure. (Default TRUE)
 #' @param qboot Bootstrap the DTU robustness against bootstrapped quantifications data. (Default \code{TRUE}) Ignored if input is \code{count_data}.
 #' @param qbootnum Number of iterations for \code{qboot}. (Default 0) If 0, RATs will try to infer a value from the data.
 #' @param qrep_thresh Reproducibility threshold for quantification bootsrapping. (Default 0.95)
@@ -44,33 +43,33 @@
 #' @import matrixStats
 #' @export
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
-                     count_data_A= NULL, count_data_B= NULL, boot_data_A= NULL, boot_data_B= NULL,
+                     count_data_A = NULL, count_data_B = NULL, boot_data_A = NULL, boot_data_B = NULL,
                      name_A= "Condition-A", name_B= "Condition-B", varname= "condition",
                      p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1,
-                     testmode= "both", lean= TRUE, qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
-                     description= NA_character_, verbose= TRUE, threads= 1L, seed= NA_integer_, reckless= FALSE, dbg= "0")
+                     testmode= "both", qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
+                     description= NA_character_, verbose= TRUE, threads= 1L, seed=NA_integer_, reckless=FALSE, dbg= "0")
 {
+  #---------- PREP
+
+
+  if (verbose) {
+    message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
+    message("Checking parameters...")
+  }
   # Input checks.
   paramcheck <- parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
                                     TARGET_COL, PARENT_COL,
                                     correction, testmode, scaling, threads, seed,
                                     p_thresh, abund_thresh, dprop_thresh, 
-                                    qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose)
+                                    qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless)
   if (paramcheck$error)
     stop(paramcheck$message)
-  
-  #---------- PREP
-  
-  if (verbose) {
-    message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
-    message("Checking parameters...")
-
+  if (verbose)
     if(paramcheck$warn)
       for (w in paramcheck$warnings) {
         warning(w)  # So it displays as warning at the end of the run.
         message(w)  # So it displays at runtime.
       }
-  }
 
   # Set seed, if required.
   if (!is.na(seed))
@@ -246,7 +245,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   resobj$Parameters[["quant_bootnum"]] <- qbootnum
   resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
   resobj$Parameters[["reckless"]] <- reckless
-  resobj$Parameters[["lean"]] <- lean
   
   if (dbg == "info")
     return(resobj)
@@ -262,125 +260,82 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
     resobj$Parameters[["rep_bootnum"]] <- numpairs
-    T
+    
     if (verbose)
       myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
 
-    if (lean){
-      # Use simple counters incremented in-place.
-      with(resobj, {
-        if (test_genes)
-          Genes[(elig), rep_dtu_freq := 0]
-        if (test_transc)
-          Transcripts[(elig), rep_dtu_freq := 0]
-      })
+    repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
       
-      for (i in 1:numpairs) {
-        if (verbose)
-          setTxtProgressBar(myprogress, i)
+                  # Update progress.
+                  if (verbose)
+                    setTxtProgressBar(myprogress, p)
+
+                  # Grab a replicate from each condition.
+                  # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
+                  counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] ) * resobj$Parameters$num_replic_A
+                  counts_B <- as.data.table( count_data_B[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
+
+                  # Do the work.
+                  pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
+
+                  with(pout, {
+                    return(list("pp" = Transcripts[, pval_corr],
+                                "pdtu" = Transcripts[, DTU],
+                                "py" = Transcripts[, Dprop],
+                                "gp" = Genes[, pval_corr],
+                                "gdtu" = Genes[, DTU] )) })
+                })
+
+    if (verbose)  # Forcing a new line after the progress bar.
+      print("", quote=FALSE)
+
+    if (dbg == "rboot")
+      return(repres)
+
+    #----- Stats
+
+    if (verbose)
+      message("Summarising bootstraps...")
+
+    with(resobj, {
+      if (test_transc) {
+        eltr <- Transcripts[, elig]
         
-        # Grab a replicate from each condition.
-        # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
-        counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[i]][1]] ]] ) * resobj$Parameters$num_replic_A
-        counts_B <- as.data.table( count_data_B[[ names(count_data_B)[pairs[[i]][2]] ]] ) * resobj$Parameters$num_replic_B
+        pd <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), rep_dtu_freq := rowCounts(pd[eltr, ], value = TRUE, na.rm=TRUE) / numpairs]
         
-        # Do the work.
-        pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
+        pp <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), rep_p_median := rowMedians(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_p_min := rowMins(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_p_max := rowMaxs(pp[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_na_freq := rowCounts(pp[eltr, ], value = NA, na.rm=FALSE) / numpairs]
         
-        # Update tallies.
-        with(resobj, {
-          if (test_genes)
-            Genes[(elig), rep_dtu_freq := rep_dtu_freq + ifelse(pout$Genes$DTU[resobj$Genes$elig], 1, 0)]
-          if (test_transc)
-            Transcripts[(elig), rep_dtu_freq := rep_dtu_freq + ifelse(pout$Transcripts$DTU[resobj$Transcripts$elig], 1, 0)]
-        })
+        py <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["py"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), rep_Dprop_mean := rowMeans(py[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_Dprop_stdev := rowSds(py[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_Dprop_min := rowMins(py[eltr, ], na.rm = TRUE)]
+        Transcripts[(elig), rep_Dprop_max := rowMaxs(py[eltr, ], na.rm = TRUE)]
+        
+        Transcripts[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
+        Transcripts[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
       }
-      
-      if (verbose)  # Forcing a new line after the progress bar.
-        print("", quote=FALSE)
-      
-      # Normalise
-      with(resobj, {
-        if (test_genes)
-          Genes[(elig), rep_dtu_freq := rep_dtu_freq / numpairs]
-        if (test_transc)
-          Transcripts[(elig), rep_dtu_freq := rep_dtu_freq / numpairs]
-      })
-    } else {
-      # Keep multiple columns per iteration for later calculation of descriptive statistics.
-      repres <- lapply(1:numpairs, function(p) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
+
+      if (test_genes) {
+        elge <- Genes[, elig]
         
-                    # Update progress.
-                    if (verbose)
-                      setTxtProgressBar(myprogress, p)
-  
-                    # Grab a replicate from each condition.
-                    # Scale it up for the number of samples. A.K.A. "what if all my samples were identical and like this one".
-                    counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[p]][1]] ]] ) * resobj$Parameters$num_replic_A
-                    counts_B <- as.data.table( count_data_B[[ names(count_data_B)[pairs[[p]][2]] ]] ) * resobj$Parameters$num_replic_B
-  
-                    # Do the work.
-                    pout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
-  
-                    with(pout, {
-                      return(list("pp" = Transcripts[, pval_corr],
-                                  "pdtu" = Transcripts[, DTU],
-                                  "py" = Transcripts[, Dprop],
-                                  "gp" = Genes[, pval_corr],
-                                  "gdtu" = Genes[, DTU] )) })
-                  })
-      
-      if (verbose)  # Forcing a new line after the progress bar.
-        print("", quote=FALSE)
-  
-      if (dbg == "rboot")
-        return(repres)
-  
-      #----- Stats
-  
-      if (verbose)
-        message("Summarising bootstraps...")
-  
-      with(resobj, {
-        if (test_transc) {
-          eltr <- Transcripts[, elig]
-          
-          pd <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Transcripts[(elig), rep_dtu_freq := rowCounts(pd[eltr, ], value = TRUE, na.rm=TRUE) / numpairs]
-          
-          pp <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Transcripts[(elig), rep_p_median := rowMedians(pp[eltr, ], na.rm = TRUE)]
-          Transcripts[(elig), rep_p_min := rowMins(pp[eltr, ], na.rm = TRUE)]
-          Transcripts[(elig), rep_p_max := rowMaxs(pp[eltr, ], na.rm = TRUE)]
-          Transcripts[(elig), rep_na_freq := rowCounts(pp[eltr, ], value = NA, na.rm=FALSE) / numpairs]
-          
-          py <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["py"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Transcripts[(elig), rep_Dprop_mean := rowMeans(py[eltr, ], na.rm = TRUE)]
-          Transcripts[(elig), rep_Dprop_stdev := rowSds(py[eltr, ], na.rm = TRUE)]
-          Transcripts[(elig), rep_Dprop_min := rowMins(py[eltr, ], na.rm = TRUE)]
-          Transcripts[(elig), rep_Dprop_max := rowMaxs(py[eltr, ], na.rm = TRUE)]
-          
-          Transcripts[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
-          Transcripts[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
-        }
-  
-        if (test_genes) {
-          elge <- Genes[, elig]
-          
-          gdres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Genes[(elig), rep_dtu_freq := rowCounts(gdres[elge, ], value = TRUE, na.rm = TRUE) / numpairs]
-          
-          gres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Genes[(elig), rep_p_median := rowMedians (gres[elge, ], na.rm = TRUE)]
-          Genes[(elig), rep_p_min := rowMins(gres[elge, ], na.rm = TRUE)]
-          Genes[(elig), rep_p_max := rowMaxs(gres[elge, ], na.rm = TRUE)]
-          Genes[(elig), rep_na_freq := rowCounts(gres[elge, ], value = NA, na.rm = FALSE) / numpairs]
-          
-          Genes[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
-          Genes[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
-        }
-      })
-    }
+        gdres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elig), rep_dtu_freq := rowCounts(gdres[elge, ], value = TRUE, na.rm = TRUE) / numpairs]
+        
+        gres <- as.matrix(as.data.table(mclapply(repres, function(p) { p[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elig), rep_p_median := rowMedians (gres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_min := rowMins(gres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_p_max := rowMaxs(gres[elge, ], na.rm = TRUE)]
+        Genes[(elig), rep_na_freq := rowCounts(gres[elge, ], value = NA, na.rm = FALSE) / numpairs]
+        
+        Genes[(elig & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
+        Genes[(elig & !DTU), rep_reprod := (rep_dtu_freq <= 1-rrep_thresh)]
+      }
+    })
 
     if (dbg == "rbootsum")
       return(resobj)
@@ -402,119 +357,75 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
 
     #----- Iterations
 
-    if (lean){
-      # Use simple counters incremented in-place.
-      with(resobj, {
-        if (test_genes)
-          Genes[(elig), quant_dtu_freq := 0]
-        if (test_transc)
-          Transcripts[(elig), quant_dtu_freq := 0]
-      })
-      
-      for (i in 1:qbootnum) {
-        if (verbose)
-          setTxtProgressBar(myprogress, i)
+    bootres <- lapply(1:qbootnum, function(b) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
+                  # Update progress.
+                  if (verbose)
+                    setTxtProgressBar(myprogress, b)
+
+                  # Grab a bootstrap from each replicate.
+                  counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
+                  counts_B <- as.data.table(lapply(boot_data_B, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
+                  # I have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+                  # Also, the first column is the target_id, so I leave it out.
+
+                  # Do the work.
+                  # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
+                  bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
+
+                  with(bout, {
+                    return(list("pp" = Transcripts[, pval_corr],
+                                "pdtu" = Transcripts[, DTU],
+                                "py" = Transcripts[, Dprop],
+                                "gp" = Genes[, pval_corr],
+                                "gdtu" = Genes[, DTU] )) })
+              })
+    if (verbose)  # Forcing a new line after the progress bar.
+      print("", quote=FALSE)
+
+    if (dbg == "qboot")
+      return(bootres)
+
+    #----- Stats
+
+    if (verbose)
+      message("Summarising bootstraps...")
+
+    with(resobj, {
+      if (test_transc) {
+        # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
+        pd <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), quant_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / qbootnum]
         
-        # Grab a bootstrap from each replicate.
-        counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
-        counts_B <- as.data.table(lapply(boot_data_B, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
-        # I have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
-        # Also, the first column is the target_id, so I leave it out.
+        pp <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), quant_p_median := rowMedians(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
         
-        # Do the work.
-        bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
+        py <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["py"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(elig), quant_Dprop_mean := rowMeans(py[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_Dprop_stdev := rowSds(py[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_Dprop_min := rowMins(py[Transcripts[, elig], ], na.rm = TRUE)]
+        Transcripts[(elig), quant_Dprop_max := rowMaxs(py[Transcripts[, elig], ], na.rm = TRUE)]
         
-        # Update tallies.
-        with(resobj, {
-          if (test_genes)
-            Genes[(elig), quant_dtu_freq := quant_dtu_freq + ifelse(bout$Genes$DTU[resobj$Genes$elig], 1, 0)]
-          if (test_transc)
-            Transcripts[(elig), quant_dtu_freq := quant_dtu_freq + ifelse(bout$Transcripts$DTU[resobj$Transcripts$elig], 1, 0)]
-        })
+        Transcripts[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
+        Transcripts[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
       }
-      
-      if (verbose)  # Forcing a new line after the progress bar.
-        print("", quote=FALSE)
-      
-      # Normalise
-      with(resobj, {
-        if (test_genes)
-          Genes[(elig), quant_dtu_freq := quant_dtu_freq / qbootnum]
-        if (test_transc)
-          Transcripts[(elig), quant_dtu_freq := quant_dtu_freq / qbootnum]
-      })
-    } else {
-      # Keep multiple columns per iteration for later calculation of descriptive statistics.
-      bootres <- lapply(1:qbootnum, function(b) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
-                    # Update progress.
-                    if (verbose)
-                      setTxtProgressBar(myprogress, b)
-  
-                    # Grab a bootstrap from each replicate.
-                    counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
-                    counts_B <- as.data.table(lapply(boot_data_B, function(smpl) { smpl[[sample( names(smpl)[2:(dim(smpl)[2])], 1)]] }))
-                    # I have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
-                    # Also, the first column is the target_id, so I leave it out.
-  
-                    # Do the work.
-                    # Ignore warning. Chi-square test generates warnings for counts <5. This is expected behaviour. Transcripts changing between off and on are often culprits.
-                    bout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", abund_thresh, p_thresh, dprop_thresh, correction, threads)
-  
-                    with(bout, {
-                      return(list("pp" = Transcripts[, pval_corr],
-                                  "pdtu" = Transcripts[, DTU],
-                                  "py" = Transcripts[, Dprop],
-                                  "gp" = Genes[, pval_corr],
-                                  "gdtu" = Genes[, DTU] )) })
-                })
-      if (verbose)  # Forcing a new line after the progress bar.
-        print("", quote=FALSE)
-  
-      if (dbg == "qboot")
-        return(bootres)
-  
-      #----- Stats
-  
-      if (verbose)
-        message("Summarising bootstraps...")
-  
-      with(resobj, {
-        if (test_transc) {
-          # !!! POSSIBLE source of ERRORS if bootstraps * transcripts exceed R's maximum matrix size. (due to number of either) !!!
-          pd <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Transcripts[(elig), quant_dtu_freq := rowCounts(pd[Transcripts[, elig], ], value = TRUE, na.rm=TRUE) / qbootnum]
-          
-          pp <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["pp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Transcripts[(elig), quant_p_median := rowMedians(pp[Transcripts[, elig], ], na.rm = TRUE)]
-          Transcripts[(elig), quant_p_min := rowMins(pp[Transcripts[, elig], ], na.rm = TRUE)]
-          Transcripts[(elig), quant_p_max := rowMaxs(pp[Transcripts[, elig], ], na.rm = TRUE)]
-          Transcripts[(elig), quant_na_freq := rowCounts(pp[Transcripts[, elig], ], value = NA, na.rm=FALSE) / qbootnum]
-          
-          py <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["py"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Transcripts[(elig), quant_Dprop_mean := rowMeans(py[Transcripts[, elig], ], na.rm = TRUE)]
-          Transcripts[(elig), quant_Dprop_stdev := rowSds(py[Transcripts[, elig], ], na.rm = TRUE)]
-          Transcripts[(elig), quant_Dprop_min := rowMins(py[Transcripts[, elig], ], na.rm = TRUE)]
-          Transcripts[(elig), quant_Dprop_max := rowMaxs(py[Transcripts[, elig], ], na.rm = TRUE)]
-          
-          Transcripts[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
-          Transcripts[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
-        }
-        if (test_genes) {
-          # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
-          gdres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Genes[(elig), quant_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / qbootnum]
-          
-          gres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
-          Genes[(elig), quant_p_median := rowMedians(gres[Genes[, elig], ], na.rm = TRUE)]
-          Genes[(elig), quant_p_min := rowMins(gres[Genes[, elig], ], na.rm = TRUE)]
-          Genes[(elig), quant_p_max := rowMaxs(gres[Genes[, elig], ], na.rm = TRUE)]
-          Genes[(elig), quant_na_freq := rowCounts(gres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]
-          
-          Genes[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
-          Genes[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
-        }
-      })
-    }
+      if (test_genes) {
+        # !!! POSSIBLE source of ERRORS if bootstraps * genes exceed R's maximum matrix size. (due to number of bootstraps) !!!
+        gdres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gdtu"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elig), quant_dtu_freq := rowCounts(gdres[Genes[, elig], ], value = TRUE, na.rm = TRUE) / qbootnum]
+        
+        gres <- as.matrix(as.data.table(mclapply(bootres, function(b) { b[["gp"]] }, mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elig), quant_p_median := rowMedians(gres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_min := rowMins(gres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_p_max := rowMaxs(gres[Genes[, elig], ], na.rm = TRUE)]
+        Genes[(elig), quant_na_freq := rowCounts(gres[Genes[, elig], ], value = NA, na.rm = FALSE) / qbootnum]
+        
+        Genes[(elig & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
+        Genes[(elig & !DTU), quant_reprod := (quant_dtu_freq <= 1-qrep_thresh)]
+      }
+    })
   } else {
     # No point reporting a threshold for an operation not carried out.
     resobj$Parameters[["quant_reprod_thresh"]] <- NA_real_
@@ -580,7 +491,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     Transcripts[is.na(rep_reprod), rep_reprod := c(FALSE)]
     Transcripts[is.na(DTU), DTU := c(FALSE)]
     Transcripts[is.na(gene_DTU), gene_DTU := c(FALSE)]
-    
     # Eradicate NAs from count columns, as they mess up plotting. These would be caused by inconsistencies between annotation and quantifications, and would only exist in "reckless" mode.
     for (i in 1:Parameters$num_replic_A){
       idx <- is.na(Abundances[[1]][[paste0('V',i)]])
@@ -595,25 +505,15 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     Transcripts[is.na(propA), propA := c(0)]
     Transcripts[is.na(propB), propB := c(0)]
     
-    # Drop unused bootstrap columns.
+    # Drop the bootstrap columns, if unused.
     if (!qboot || !test_transc)
-      Transcripts[, c("quant_dtu_freq", "quant_reprod") := NULL]
+        Transcripts[, c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max", "quant_na_freq", "quant_reprod") := NULL]
     if(!qboot || !test_genes)
-      Genes[, c("quant_dtu_freq", "quant_reprod") := NULL]
+      Genes[, c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") := NULL]
     if (!rboot || !test_transc)
-      Transcripts[, c("rep_dtu_freq", "rep_reprod") := NULL]
+      Transcripts[, c("rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max", "rep_na_freq", "rep_reprod") := NULL]
     if(!rboot || !test_genes)
-      Genes[, c("rep_dtu_freq", "rep_reprod") := NULL]
-    
-    # Drop unused bootstrap statistics columns.
-    if (lean || !qboot || !test_transc)
-      Transcripts[, c("quant_na_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max") := NULL]
-    if(lean || !qboot || !test_genes)
-      Genes[, c("quant_na_freq", "quant_p_median", "quant_p_min", "quant_p_max") := NULL]
-    if (lean || !rboot || !test_transc)
-      Transcripts[, c("rep_na_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max") := NULL]
-    if(lean || !rboot || !test_genes)
-      Genes[, c("rep_na_freq", "rep_p_median", "rep_p_min", "rep_p_max") := NULL]
+      Genes[, c("rep_dtu_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_na_freq", "rep_reprod") := NULL]
     
   })
 

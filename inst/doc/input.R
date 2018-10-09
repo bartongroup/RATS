@@ -107,17 +107,6 @@ myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
 #                    boot_data_A= mycond_A, boot_data_B= mycond_B,
 #                    rboot = FALSE)
 
-## ---- eval=FALSE---------------------------------------------------------
-#  # Lean run (default).
-#  mydtu <- call_DTU(annot = myannot,
-#                    boot_data_A= mycond_A, boot_data_B= mycond_B,
-#                    lean =TRUE)
-#  
-#  # Extra info on variance across iterations.
-#  mydtu <- call_DTU(annot = myannot,
-#                    boot_data_A= mycond_A, boot_data_B= mycond_B,
-#                    lean = FALSE)
-
 ## ----eval=FALSE----------------------------------------------------------
 #  # Using 8 threads/cores for parallel computing.
 #  mydtu <- call_DTU(annot = myannot,
