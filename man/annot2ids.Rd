@@ -18,5 +18,4 @@ A data.table with two columns, matching transcript IDs to gene IDs.
 }
 \description{
 This function performs no file format validation. Please use the appropriate type.
-It is NOT compatible GFF3, as there is no rigid specification for ID attributes.
 }

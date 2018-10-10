@@ -2,7 +2,7 @@
 % Please edit documentation in R/input.R
 \name{annot2models}
 \alias{annot2models}
-\title{Prepare GTF/GFF3 for gene model plotting.}
+\title{Prepare GTF for gene model plotting.}
 \usage{
 annot2models(annotfile, threads = detectCores())
 }
@@ -17,8 +17,4 @@ A list (by gene) of GRangeLists (by transcript).
 \description{
 Create GRanges for each transcript and bind them into a GRangeList for each gene.
 Then one can easily `ggbio::autoplot()` a gene's models by its gene ID.
-}
-\details{
-For GFF3, genes must have type 'gene' or 'SO:0000704' in order to be recognised.
-For GTF, genes are infered as the unique values of gene_id.
 }
