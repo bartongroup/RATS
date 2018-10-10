@@ -1,7 +1,7 @@
 #================================================================================
 #' Extract matching transcript and gene IDs from a GTF file.
 #'
-#' This function performs no file format validation. Please use the appropriate type.
+#' GFF3 is currently not supported.
 #'
 #' @param annotfile A GTF file.
 #' @param transc_header The title for the transcripts column in the output. (target_id)
@@ -32,7 +32,7 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #================================================================================
 #' Prepare GTF for gene model plotting.
 #' 
-#' Create GRanges for each transcript and bind them into a GRangeList for each gene.
+#' Create GRanges objects for each transcript and bind them into a GRangeList for each gene.
 #' Then one can easily `ggbio::autoplot()` a gene's models by its gene ID.
 #' 
 #' @param annotfile A GTF file.
