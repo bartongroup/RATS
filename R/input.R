@@ -5,8 +5,8 @@
 #' It is NOT compatible GFF3, as there is no rigid specification for ID attributes.
 #'
 #' @param annotfile A GTF file.
-#' @param transc_header The tile for the transcripts column in the output. (target_id)
-#' @param gene_header The tile for the genes column in the output. (parent_id)
+#' @param transc_header The title for the transcripts column in the output. (target_id)
+#' @param gene_header The title for the genes column in the output. (parent_id)
 #' @return A data.table with two columns, matching transcript IDs to gene IDs.
 #'
 #' @export
@@ -22,6 +22,75 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
   names(t2g) <- c(transc_header, gene_header)
 
   return(t2g)
+}
+
+
+#================================================================================
+#' Prepare GTF/GFF3 for gene model plotting.
+#' 
+#' Create GRanges for each transcript and bind them into a GRangeList for each gene.
+#' Then one can easily `ggbio::autoplot()` a gene's models by its gene ID.
+#' 
+#' For GFF3, genes must have type 'gene' or 'SO:0000704' in order to be recognised.
+#' For GTF, genes are infered as the unique values of gene_id.
+#' 
+#' @param annotfile A GTF file.
+#' @param threads Number of processing threads (all available).
+#' @return A list (by gene) of GRangeLists (by transcript).
+#'
+#' @import utils
+#' @import parallel
+#' @import rtracklayer
+#' @import data.table
+#' @export
+#'
+annot2models <- function(annotfile, threads= detectCores())
+{
+  message('This will probably take several minutes...')
+  gr <- import(annotfile)
+  
+  # Split entries by gene and then by transcript.
+  lg <- list()
+  
+  # If GTF style...
+  if ('transcript_id' %in% names(mcols(gr))) {
+    genes <- unique(gr$gene_id)
+    lg <- mclapply(genes, function(g){
+      features <- gr[gr$gene_id == g]
+      isoforms <- makeGRangesListFromDataFrame(as.data.frame(features), split.field='transcript_id', keep.extra.columns=TRUE)
+      
+      return(isoforms)
+    }, mc.cores = threads)
+    names(lg) <- genes
+  # If GFF3 style...
+  } else {
+    genes <- gr[gr$type %in% c('gene', 'SO:0000704')]
+    lg <- mclapply(genes, function(g){
+      # Find the relevant elements by range overlap.
+      features <- gr[from(findOverlaps(gr, g, maxgap=-1L, minoverlap=0L, type='within', select='all', ignore.strand=FALSE))]
+      features <- as.data.table(features[!features$type %in% c('gene', 'SO:0000704')])  # The overlap includes the gene itself. Don't need that.
+                                                                                        # Also data.tables are easier to edit and restructure.
+
+      # Isolate features directly parented by the gene (hopefully mostly RNAs, possibly other things).
+      # Assume multiple parentage might be possible, even at this level, and account for the gene ID being embedded among comma-separated values.
+      # Making the star/end explicit prevents the pattern from matching derivative IDs.
+      rna <- c(features[grepl(paste0("^", g$ID, "$"), Parent), ID])
+
+      # Collect all the features per rna ID. Some features may be present in multiple rnas, so they will appear multiple times in the table.
+      features <- rbindlist( lapply(rna, function(r){
+                    sel <- rbind(features[ID==r, ], features[grepl(r, Parent)]) # Include the RNA itself
+                    # Need a column identifying all these rows as part of the same group.
+                    sel[, transcript_id := c(r)]
+                    return(sel)
+        }) )
+      isoforms <- makeGRangesListFromDataFrame(as.data.frame(features), split.field='transcript_id', keep.extra.columns=TRUE)
+      
+      return(isoforms)
+    }, mc.cores = threads)
+    names(lg) <- genes$ID
+  }
+  
+  return(lg)
 }
 
 

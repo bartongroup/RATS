@@ -9,9 +9,9 @@ annot2ids(annotfile, transc_header = "target_id", gene_header = "parent_id")
 \arguments{
 \item{annotfile}{A GTF file.}
 
-\item{transc_header}{The tile for the transcripts column in the output. (target_id)}
+\item{transc_header}{The title for the transcripts column in the output. (target_id)}
 
-\item{gene_header}{The tile for the genes column in the output. (parent_id)}
+\item{gene_header}{The title for the genes column in the output. (parent_id)}
 }
 \value{
 A data.table with two columns, matching transcript IDs to gene IDs.
