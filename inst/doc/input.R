@@ -17,7 +17,9 @@ head(sim_count_data()[[1]])
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Extract transcript ID to gene ID index from a GTF annotation.
-#  myannot <- annot2ids("my_annotation_file.gtf")
+#  myannot <- gtf2ids("my_annotation_file.gtf")
+#  
+#  # !! gtf2ids() was previosuly called annot2ids(). The old name is still available but will eventally be discontinued.
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Simulate some data.

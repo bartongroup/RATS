@@ -32,6 +32,12 @@ plot_gene(mydtu, "MIX6", style="bycondition")
 # Grouping by isoform:
 plot_gene(mydtu, "MIX6", style="byisoform")
 
+## ----eval=FALSE----------------------------------------------------------
+#  models <- annot2models('/my/annotation/file.gtf')
+#  library(ggbio)
+#  # This will plot the structure described by the 3rd entry for the given gene.
+#  autoplot(models[['mygeneID']][[3]])
+
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Proportion change VS transcript-level significance. Each point is a transcript
 #  plot_overview(mydtu, type="tvolcano")

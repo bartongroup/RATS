@@ -4,10 +4,10 @@
 \alias{parameters_are_good}
 \title{Check input parameters.}
 \usage{
-parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
-  TARGET_COL, PARENT_COL, correction, testmode, scaling, threads, seed,
-  p_thresh, abund_thresh, dprop_thresh, qboot, qbootnum, qrep_thresh, rboot,
-  rrep_thresh, reckless, lean, verbose)
+parameters_are_good(annot, count_data_A, count_data_B, boot_data_A,
+  boot_data_B, TARGET_COL, PARENT_COL, correction, testmode, scaling,
+  threads, seed, p_thresh, abund_thresh, dprop_thresh, qboot, qbootnum,
+  qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose)
 }
 \arguments{
 \item{annot}{Annotation dataframe.}

@@ -106,6 +106,18 @@ When there are many replicates or many isoforms, it may be preferable to group a
 plot_gene(mydtu, "MIX6", style="byisoform")
 ```
 
+### Structure of a given gene
+
+With the use of the third-party `ggbio` package, one can plot gene models from GRanges/GRangesList objects. This can be useful in interpreting transcript expression and DTU, but getting an annotation sliced up in a suitable way can be a little tedious. RATs offers a helper function to create an appropriate collection of GRanges/GRangesList objects from a GTF/GFF3 file. The collection is structured as a list (indexed by gene ID), where each element is a GRangesList object containing a GRange per transcript of that gene.
+
+```{r eval=FALSE}
+models <- annot2models('/my/annotation/file.gtf')
+library(ggbio)
+# This will plot the structure described by the 3rd entry for the given gene.
+autoplot(models[['mygeneID']][[3]])
+```
+
+For more options and more refined plots, refer to the `ggbio` documentation.
 
 ## Overview plots
 

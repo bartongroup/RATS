@@ -6,10 +6,11 @@
 \usage{
 plot_gene(dtuo, pid, style = "bycondition", fillby = NA_character_,
   colourby = NA_character_, shapeby = NA_character_,
-  isofcolvec = c("tomato", "lightblue", "forestgreen", "purple", "hotpink",
-  "gold3"), dtucolvec = c(`TRUE` = "firebrick1", `FALSE` = "dodgerblue", `NA`
-  = "gold"), condcolvec = c("grey80", "grey15"), replcolvec = c("red",
-  "blue", "green", "violet", "pink", "orange"), nonecol = "grey50")
+  isofcolvec = c("tomato", "lightblue", "forestgreen", "purple",
+  "hotpink", "gold3"), dtucolvec = c(`TRUE` = "firebrick1", `FALSE` =
+  "dodgerblue", `NA` = "gold"), condcolvec = c("grey80", "grey15"),
+  replcolvec = c("red", "blue", "green", "violet", "pink", "orange"),
+  nonecol = "grey50")
 }
 \arguments{
 \item{dtuo}{A DTU object.}

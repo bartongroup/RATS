@@ -15,6 +15,6 @@ annot2models(annotfile, threads = detectCores())
 A list (by gene) of GRangeLists (by transcript).
 }
 \description{
-Create GRanges for each transcript and bind them into a GRangeList for each gene.
+Create GRanges objects for each transcript and bind them into a GRangeList for each gene.
 Then one can easily `ggbio::autoplot()` a gene's models by its gene ID.
 }

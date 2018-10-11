@@ -95,6 +95,9 @@ img {
 .tabbed-pane {
   padding-top: 12px;
 }
+.html-widget {
+  margin-bottom: 20px;
+}
 button.code-folding-btn:focus {
   outline: none;
 }
@@ -269,7 +272,9 @@ div.tocify {
 ## 6  1D1C:two      1D1C</code></pre>
 <p>Such a table can be compiled with a variety of methods and from a variety of resources. RATs provides functionality to create this table from a GTF file. (<strong>Note:</strong> GFF3 is not supported for this)</p>
 <pre class="r"><code># Extract transcript ID to gene ID index from a GTF annotation.
-myannot &lt;- annot2ids(&quot;my_annotation_file.gtf&quot;)</code></pre>
+myannot &lt;- gtf2ids(&quot;my_annotation_file.gtf&quot;)
+
+# !! gtf2ids() was previosuly called annot2ids(). The old name is still available but will eventally be discontinued.</code></pre>
 <hr />
 </div>
 </div>
@@ -473,9 +478,9 @@ mydtu &lt;- call_DTU(annot = myannot,
 </div>
 <div id="extra-bootstrapping-info" class="section level3">
 <h3>Extra bootstrapping info</h3>
-<p>Additional insight on the variance across bootstraps can be obtained if desired. Up to RATs version <code>0.6.4</code> this informatioin was alsways included. Calculating this information requires several columns each with length equal to the number of genes for each bootstrap iteration to be kept in memory. This caused a considerable memory footprint for bootstrapped runs and posed a physical constraint in scalability. <code>lean</code> mode removes this contraint, and results in the memory needed by RATs remaining low and constant regardless of number of iterations.</p>
+<p>Additional insight on the variance across bootstraps can be obtained if desired. Up to RATs version <code>0.6.4</code> this information was alsways included. Calculating this information requires several columns each with length equal to the number of genes for each bootstrap iteration to be kept in memory. This caused a considerable memory footprint for bootstrapped runs and posed a physical constraint in scalability. <code>lean</code> mode removes this contraint, and results in the memory needed by RATs remaining low and constant regardless of number of iterations.</p>
 <ol style="list-style-type: decimal">
-<li><code>lean</code> - Default TRUE will only report the frequency of DTU call in the iterations, frequency of NA and whether the frequency of DTU passes the threshold. FALSE will additionally report the median/mean/max/min values of <code>Dprop</code> and <code>pval_corr</code> per gene across iterations.</li>
+<li><code>lean</code> - Default TRUE will only report the frequency of DTU call per gene in the iterations and whether that frequency passes the threshold. FALSE will additionally report the median/mean/max/min values of <code>Dprop</code> and <code>pval_corr</code> per gene across iterations, and the frequency with which the gene was not eligible for testing due to low expression in the selected subset.</li>
 </ol>
 <pre class="r"><code># Lean run (default).
 mydtu &lt;- call_DTU(annot = myannot, 
