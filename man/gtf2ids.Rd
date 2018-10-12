@@ -18,9 +18,8 @@ gtf2ids(annotfile, transc_header = "target_id",
 A data.table with two columns, matching transcript IDs to gene IDs.
 }
 \description{
-This was previously called `annot2ids()`. The change to a more explicitly descriptive name follows the addition of
-other annotation-related helper functions. Support for the old name will eventually be withdrawn.
+Previously named annot2ids(). The old name will be discontinued.
 }
 \details{
-GFF3 is currently not supported.
+GFF3 not supported.
 }

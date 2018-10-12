@@ -2,7 +2,7 @@
 % Please edit documentation in R/input.R
 \name{annot2ids}
 \alias{annot2ids}
-\title{Extract matching transcript and gene IDs from a GTF file.}
+\title{(deprecated) Extract matching transcript and gene IDs from a GTF file.}
 \usage{
 annot2ids(annotfile, transc_header = "target_id",
   gene_header = "parent_id")
@@ -18,5 +18,8 @@ annot2ids(annotfile, transc_header = "target_id",
 A data.table with two columns, matching transcript IDs to gene IDs.
 }
 \description{
-This function has been renamed to `gtf2ids()`.
+This function has been renamed to gtf2ids(). The old name will be discontinued.
+}
+\details{
+GFF3 not supported.
 }

@@ -270,11 +270,17 @@ div.tocify {
 ## 4    1A1N-2      1A1N
 ## 5  1D1C:one      1D1C
 ## 6  1D1C:two      1D1C</code></pre>
-<p>Such a table can be compiled with a variety of methods and from a variety of resources. RATs provides functionality to create this table from a GTF file. (<strong>Note:</strong> GFF3 is not supported for this)</p>
+<p>Such a table can be compiled with a variety of methods and from a variety of resources. RATs provides functionality to create this table from a GTF file or a GRanges object with GTF-style metadata columns. (<strong>Note:</strong> GFF3 is not supported for this)</p>
 <pre class="r"><code># Extract transcript ID to gene ID index from a GTF annotation.
 myannot &lt;- gtf2ids(&quot;my_annotation_file.gtf&quot;)
+# !! gtf2ids() was previosuly called annot2ids(). The old name is still available but will eventally be discontinued.
 
-# !! gtf2ids() was previosuly called annot2ids(). The old name is still available but will eventally be discontinued.</code></pre>
+# Extract transcript ID and gene ID from a GRanges object. It must have GTF-style metadata columns &quot;gene_id&quot; and &quot;transcript_id&quot;.
+myannot &lt;- granges2ids(mygranges)</code></pre>
+<p>Extracting the ID pairs from a TxDb is simpler and does not require a dedicated helper function:</p>
+<pre class="r"><code>myannot &lt;- select(mytxdb, keys(mytxdb), &quot;TXNAME&quot;, &quot;GENEID&quot;)
+# Rename the columns to match what RATs expects, or remember to tell call_DTU() what the column names are.
+names(myannot) &lt;- c('gene_id', 'target_id')</code></pre>
 <hr />
 </div>
 </div>

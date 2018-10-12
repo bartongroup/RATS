@@ -18,8 +18,15 @@ head(sim_count_data()[[1]])
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Extract transcript ID to gene ID index from a GTF annotation.
 #  myannot <- gtf2ids("my_annotation_file.gtf")
-#  
 #  # !! gtf2ids() was previosuly called annot2ids(). The old name is still available but will eventally be discontinued.
+#  
+#  # Extract transcript ID and gene ID from a GRanges object. It must have GTF-style metadata columns "gene_id" and "transcript_id".
+#  myannot <- granges2ids(mygranges)
+
+## ----eval=FALSE----------------------------------------------------------
+#  myannot <- select(mytxdb, keys(mytxdb), "TXNAME", "GENEID")
+#  # Rename the columns to match what RATs expects, or remember to tell call_DTU() what the column names are.
+#  names(myannot) <- c('gene_id', 'target_id')
 
 ## ---- eval=FALSE---------------------------------------------------------
 #  # Simulate some data.

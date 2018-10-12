@@ -1,26 +1,24 @@
 #================================================================================
-#' Extract matching transcript and gene IDs from a GTF file.
+#' Extract matching transcript and gene IDs from a GRanges object.
 #'
-#' This was previously called `annot2ids()`. The change to a more explicitly descriptive name follows the addition of
-#' other annotation-related helper functions. Support for the old name will eventually be withdrawn.
-#' 
-#' GFF3 is currently not supported.
+#' The GRanges must have at least the following metadata columsn: `gene_id` and `transcript_id` (such as GRanges imported from GTF).
+#' GFF3-style metadata columns are currently not supported.
 #'
-#' @param annotfile A GTF file.
+#' @param annot A GRanges object that was imported from a GTF file and retains all the metadata columns.
 #' @param transc_header The title for the transcripts column in the output. (target_id)
 #' @param gene_header The title for the genes column in the output. (parent_id)
 #' @return A data.table with two columns, matching transcript IDs to gene IDs.
 #'
 #' @import data.table
-#' @import rtracklayer
+#' @import S4Vectors
 #' @export
 #'
-gtf2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_id")
+granges2ids <- function(annot, transc_header= "target_id", gene_header= "parent_id")
 {
-  annot <- import(annotfile)
   # If GTF style...
   if ('transcript_id' %in% names(mcols(annot))) {
     t2g <- unique(data.table(transcript_id=annot$transcript_id, gene_id=annot$gene_id))
+  # If GFF3 style...
   } else {
     stop('It seems you supplied a GFF3 file. This is currenlty not implemented. Please convert to GTF using available tools and try again.')
   }
@@ -35,7 +33,31 @@ gtf2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_
 #================================================================================
 #' Extract matching transcript and gene IDs from a GTF file.
 #'
-#' This function has been renamed to `gtf2ids()`.
+#'Previously named annot2ids(). The old name will be discontinued.
+#'
+#' GFF3 not supported.
+#'
+#' @param annotfile A GTF file.
+#' @param transc_header The title for the transcripts column in the output. (target_id)
+#' @param gene_header The title for the genes column in the output. (parent_id)
+#' @return A data.table with two columns, matching transcript IDs to gene IDs.
+#'
+#' @import rtracklayer
+#' @export
+#'
+gtf2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_id")
+{
+  annot <- import(annotfile)
+  granges2ids(annot, transc_header, gene_header)
+}
+
+
+#================================================================================
+#' (deprecated) Extract matching transcript and gene IDs from a GTF file.
+#'
+#' This function has been renamed to gtf2ids(). The old name will be discontinued.
+#' 
+#' GFF3 not supported.
 #'
 #' @param annotfile A GTF file.
 #' @param transc_header The title for the transcripts column in the output. (target_id)
@@ -46,7 +68,7 @@ gtf2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_
 #'
 annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_id")
 {
-  warning('annot2ids() has been renamed to gtf2ids(). Support for the old name will be discontinued eventually.')
+  warning("This function has been renamed to 'gtf2ids()' for clarity. The old name 'annot2ids()' will be discontinued.")
   gtf2ids(annotfile, transc_header, gene_header)
 }
 
