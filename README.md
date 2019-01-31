@@ -45,42 +45,38 @@ We recommend studying the vignettes before using RATs.
 
 ### Dependencies
 
-The package depends on a few third-party packages, which you may need to install first, if they are not present already. 
-Most of these relate to specific functionality that you may not wish to use, thus are optional:
+The package depends on a few third-party packages, which you may need to install first, if they are not present already.
+The following instruction assume the new Bioconductor (>=3.5) syntax. Consult [Bioconductor](https://bioconductor.org/install/) for the old syntax.
 
-* Packages needed for computation
+* Direct dependencies
 
 ```
+# Needed for computation.
 install.packages(c("data.table", "matrixStats"))
-```
 
-* Package needed for plotting results (optional, recommended)
-
-```
+# Plots.
 install.packages("ggplot2")
+
+# Data imports.
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("COMBINE-lab/wasabi")
+BiocManager::install("rhdf5")
+
+# Annotation imports.
+BiocManager::install("rtracklayer")
 ```
 
-* Packages needed for importing abundances from Salmon/Kallisto output (optional, recommended)
-
-```
-install.packages("devtools")
-
-source("http://bioconductor.org/biocLite.R")
-
-# Format converter from Salmon/Sailfish to Kallisto.
-biocLite("COMBINE-lab/wasabi")
-
-# Compressed format parser, for Kallisto.
-biocLite("rhdf5")
-```
-
-* Package needed for interactive visualisation feature (optional)
+* Optional dependencies
 
 ```
 install.packages("shiny")
 ```
 
-If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual or the respective package documentation for help.
+* Indirect dependencies
+
+You may also be prompted to install the Bioconductor package `remotes`.
+
 
 
 ### Installation
@@ -90,15 +86,15 @@ Download the package file and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
-The latest release can also be installed directly from Github, using the `devtools` package (but this option has a tendency to install exhaustive minor dependencies or update existing packages, so it can take a while to complete):
+The latest release can also be installed directly from Github, using the `devtools` package:
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
-For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
+For testing purposes (bug resolutions, new features), you can install the on-going developmental version from Github:
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas developmental versions now have a 4-part version number. Despite having version numbers, developmental versions are not archived and are **not suitable** for reproducible/critical/publishable analyses. They may also temporarily not work correctly or at all. For critical analyses you should use the latest release version.
+From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas development versions now have a 4-part version number. Development versions are not archived and are **not suitable** for reproducible/publishable analyses. They may also temporarily not work correctly or not work at all. For important analyses you should use the latest release version.
 
 Eventually, we aim to make the package also available through Bioconductor.
 
@@ -123,8 +119,8 @@ The `rats` R package was developed within [The Barton Group](http://www.compbio.
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To report **problems** or ask for **assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
-Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
-the support forum before posting a new issue, in case your question is already answered there.
+Providing a *small reproducible working example* that demonstrates your issue is strongly encouraged. 
+Also, be sure to **read the vignette(s)**, and browse/search the support forum before posting a new issue.
 
 Enjoy!
 

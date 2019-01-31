@@ -1,7 +1,7 @@
 #================================================================================
 #' Extract matching transcript and gene IDs from a GRanges object.
 #'
-#' The GRanges must have at least the following metadata columsn: `gene_id` and `transcript_id` (such as GRanges imported from GTF).
+#' The GRanges must have at least the following metadata columns: `gene_id` and `transcript_id` (such as GRanges imported from GTF).
 #' GFF3-style metadata columns are currently not supported.
 #'
 #' @param annot A GRanges object that was imported from a GTF file and retains all the metadata columns.
@@ -9,8 +9,8 @@
 #' @param gene_header The title for the genes column in the output. (parent_id)
 #' @return A data.table with two columns, matching transcript IDs to gene IDs.
 #'
+#' @importFrom S4Vectors mcols
 #' @import data.table
-#' @import S4Vectors
 #' @export
 #'
 granges2ids <- function(annot, transc_header= "target_id", gene_header= "parent_id")
@@ -22,7 +22,7 @@ granges2ids <- function(annot, transc_header= "target_id", gene_header= "parent_
   } else {
     stop('It seems you supplied a GFF3 file. This is currenlty not implemented. Please convert to GTF using available tools and try again.')
   }
-  # Don't want any unpaired IDs (genes withoutt transcripts are irrelevant, transcripts without gene are unusable).
+  # Don't want any unpaired IDs (genes without transcripts are irrelevant, transcripts without gene are unusable).
   t2g <- t2g[!is.na(gene_id) & !is.na(transcript_id), ]
   
   names(t2g) <- c(transc_header, gene_header)
@@ -42,7 +42,7 @@ granges2ids <- function(annot, transc_header= "target_id", gene_header= "parent_
 #' @param gene_header The title for the genes column in the output. (parent_id)
 #' @return A data.table with two columns, matching transcript IDs to gene IDs.
 #'
-#' @import rtracklayer
+#' @importFrom rtracklayer import
 #' @export
 #'
 gtf2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_id")
@@ -77,16 +77,17 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #' Prepare GTF for gene model plotting.
 #' 
 #' Create GRanges objects for each transcript and bind them into a GRangeList for each gene.
-#' Then one can easily `ggbio::autoplot()` a gene's models by its gene ID.
+#' Then one can easily \code{ggbio::autoplot()} a gene's models by its gene ID.
 #' 
 #' @param annotfile A GTF file.
 #' @param threads Number of processing threads (all available).
 #' @return A list (by gene) of GRangeLists (by transcript).
 #'
+#' @importFrom rtracklayer import
+#' @importFrom GenomicRanges makeGRangesListFromDataFrame
+#' @import data.table
 #' @import utils
 #' @import parallel
-#' @import rtracklayer
-#' @import data.table
 #' @export
 #'
 annot2models <- function(annotfile, threads= detectCores())
@@ -98,7 +99,7 @@ annot2models <- function(annotfile, threads= detectCores())
   lg <- list()
   
   # If GTF style...
-  if ('transcript_id' %in% names(mcols(gr))) {
+  if ('transcript_id' %in% names(S4Vectors::mcols(gr))) {
     genes <- unique(gr$gene_id)
     lg <- mclapply(genes, function(g){
       features <- gr[gr$gene_id == g]
@@ -143,8 +144,8 @@ annot2models <- function(annotfile, threads= detectCores())
 #================================================================================
 #' Import abundances directly from salmon and kallisto output.
 #'
-#' Uses \code{wasabi} to convert Salmon read counts format to Kallisto RHDF5 format,
-#' then applies TPM normalisation using the info available from the abundance.h5 files.
+#' Convert Salmon read counts format to Kallisto RHDF5 format,
+#' then apply TPM normalisation using the info available from the abundance.h5 files.
 #'
 #' Converting, normalising and importing multiple bootstrapped abundance files takes a bit of time.
 #' IMPORTANT: This function is currently not intended to be used to import non-bootstrapped quantifications.
@@ -164,6 +165,7 @@ annot2models <- function(annotfile, threads= detectCores())
 #'
 #' @import data.table
 #' @import parallel
+#' @import wasabi
 #'
 #' @export
 
@@ -177,7 +179,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 
   # Wasabi?
   if (!half_cooked) {
-    wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths))
+    prepare_fish_for_sleuth(c(A_paths, B_paths))
   }
 
   # Sort out scaling.

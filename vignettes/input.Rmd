@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Input and Settings'
 author: "Kimon Froussios"
-date: "08 MAR 2018"
+date: "10 JAN 2019"
 output:
   html_document:
     keep_md: yes
@@ -326,16 +326,12 @@ Three parameters control bootstrapping of DTU calls against the quantification u
 2. `qbootnum` - How many bootstrap iterations to do. Preferably at least 100. (Default 0) If 0, 
 RATs will try to infer a value from the data (currently equal to the number of bootstraps in the data).
 3. `qrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. (Default 0.95)
-If you want to calculate the reproducibility but don't want it to weigh in on the DTU classifications, set the threshold to 0.
+If you want to calculate the reproducibility but don't want to factor it as a criterion in the DTU classifications, set the threshold to 0.
 
-In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. This will be repeated `qbootnum` times. Because the
-number of replicates remains the same, the statistical power is not compromised. Therefore, the reproducibility will be **used as a criterion** in calling DTU, along with
-statistical significance and effect size. The process is **stochastic**; the quantifications are randomly sampled, so runs on the same data may yield slight differences in DTU. 
-Using higher `qbootnum` improves reproducibility between runs on the same dataset.
+In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. 
+This will be repeated `qbootnum` times.
 
-Low reproducibility indicates that the quantification tool found it hard to distinguish these transcripts. This can be caused by high similarity of the isoforms, genes with a large
-number of isoforms, and/or poor read coverage in the regions differentiating the isoforms from one another. In these cases, skepticism is required about the quantifications and any 
-potential differential expression regarding these transcripts.
+Low reproducibility indicates that the quantification values are too inconsistent.
 
 Warnings will be generated if `qbootnum` is too low or too high, but in most cases RATs will continue with the analysis. The warnings will not be shown if `verbose = FALSE`.
 
@@ -358,11 +354,11 @@ Three parameters control bootstrapping of DTU calls agaisnt the samples:
 
 1. `rboot` - Whether to bootstrap the replicates or not. (Default TRUE)
 2. `rrep_thresh` - Reproducibility threshold. What fraction of the iterations has to agree on a result to consider it confident. (Default 0.85)
-If you want to calculate the reproducibility but don't want it to weigh in on the DTU classifications, set the threshold to 0.
+If you want to calculate the reproducibility but don't want it to factor it as a criterion in the DTU classifications, set the threshold to 0.
 
-Unlike bootstrapping the quantifications, bootstrapping the replicates is currently **not stochastic**. RATs will do ALL the 1 vs 1 combinations of samples, one from each condition.
+Unlike bootstrapping the quantifications, bootstrapping the replicates is not done by subsetting the data, but instead by exhaustively testing all the 1 vs 1 combinations of samples, one from each condition.
 This behaviour may be changed if in the future there is demand for high replication that reaches the capacity limits of R matrices.
-To maintain comparable statistical significance to the actual experimental design, because only one replicate is used each time, the abundances are scaled up by the number of replicates in the condition. This is equivalent to the idealised scenario of all the replicates being extremely consistent and similar to the chosen one.
+To maintain comparable statistical significance to the actual experimental design, since only one replicate is used from each condition each time, the abundances are scaled up by the number of replicates in the condition. This is equivalent to the idealised scenario of all the replicates being extremely consistent and similar to the chosen one.
 
 ```{r, eval=FALSE}
 # Bootstrap (default).
@@ -376,15 +372,15 @@ mydtu <- call_DTU(annot = myannot,
                   rboot = FALSE)
 ```
 
-**Note** that for few replicates, the reproducibility values are highly discrete:
-The number of iterations for 3 samples per condition is `3 * 3 = 9`. 
-So the minimum possible error rate is `1 / 9 = 0.111111...`. 
-The corresponding threshold is `1-0.1111111... = 0.8888888...`, hence the default threshold of 0.85.
+**Note** that for few replicates per condition, the reproducibility values are highly discrete, which affects what threshold
+values are meaningful. For example, the number of iterations for 3 samples per condition is `3 * 3 = 9`. 
+So the minimum possible disagreement rate is `1 / 9 = 0.111...`, with a corresponding agreement rate of `8 / 9 = 0.888...`, 
+hence the default threshold value of 0.85.
 
 ### Extra bootstrapping info
 
 Additional insight on the variance across bootstraps can be obtained if desired. 
-Up to RATs version `0.6.4` this information was alsways included. Calculating this information requires several columns each with length equal to the number of genes for each bootstrap iteration to be kept in memory. This caused a considerable memory footprint for bootstrapped runs and posed a physical constraint in scalability. `lean` mode removes this contraint, and results in the memory needed by RATs remaining low and constant regardless of number of iterations. 
+Up to RATs version `0.6.4` this information was alsways included. Calculating this information requires several columns each with length equal to the number of genes for each bootstrap iteration to be kept in memory. This caused a considerable memory footprint for bootstrapped runs and posed a physical constraint in scalability. `lean` mode removes this contraint and results in a low and constant memory footprint for RATs, regardless of number of iterations. 
 
 1. `lean` - Default TRUE will only report the frequency of DTU call per gene in the iterations and whether that frequency passes the threshold. FALSE will additionally report the median/mean/max/min values of `Dprop` and `pval_corr` per gene across iterations, and the frequency with which the gene was not eligible for testing due to low expression in the selected subset. 
 
