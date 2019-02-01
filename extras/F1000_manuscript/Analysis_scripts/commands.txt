@@ -1,0 +1,333 @@
+#
+# These commands do not form an automated reproduction of the entire analyses from scratch. 
+# All important commands and parameters are present, 
+# however several paths, both in the commands and in shell and R scripts, will need to be updated to reflect the location of the scripts, data files and third party binaries in your own setup.
+#
+
+######## Arabidopsis false positives
+
+
+# Change Araport11's chromosome naming format to match the sequence names in the FASTQ FILES. (GTF/GFF and genome FASTA already present in /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/).
+
+mkdir /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr
+perl -e 'while(<>){~s/^Chr//g;print}' /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/Araport11_genes.20151202.gff3 > /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11//no-Chr/Araport11_genes.20151202_noChr.gff3
+perl -e 'while(<>){~s/^C/Pt/g;print}' /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/Araport11_genes.20151202_noChr.gff3 > /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/tmp
+perl -e 'while(<>){~s/^M/Mt/g;print}' /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/tmp > /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/Araport11_genes.20151202_noChr.gff3
+rm /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/tmp
+
+
+# Build transcript sequences (cufflinks-2.2.1.Linux_x86_64).
+
+gffread -w /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/Araport11_transcripts.20151202.fa -g /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/At_tair10.fa /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/Araport11_genes.20151202_noChr.gff3
+
+
+# Build transcript-to-gene ID look-up tables.
+
+Rscript -e 'library(rats); araport11 <- annot2ids("/homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/no-Chr/Araport11_genes.20151202_noChr.gtf"); save(araport11, file="/homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/Araport11_t2g.rda")'
+
+
+# Build Salmon index. (Salmon-0.7.1)
+
+mkdir /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Salmon/At_araport11_k31
+salmon index -t /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/Araport11_transcripts.20151202.fa -i /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Salmon/At_araport11_k31 --type quasi -k 31
+
+
+# Bring annotations and indices into the project.
+
+ln -s /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Annotations/Araport-11/Araport11_t2g.rda ./genome/
+ln -s /homes/kfroussios/GENOMES/Arabidopsis_thaliana/Salmon/At_araport11_k31 ./salmon_index/
+
+
+# Quantify arabidopsis data.
+
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_1_R1.fastq.gz -2 ./fastq/AtWT_1_R2.fastq.gz -o ./salmon_quant/AtWT_1 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_2_R1.fastq.gz -2 ./fastq/AtWT_2_R2.fastq.gz -o ./salmon_quant/AtWT_2 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_3_R1.fastq.gz -2 ./fastq/AtWT_3_R2.fastq.gz -o ./salmon_quant/AtWT_3 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_4_R1.fastq.gz -2 ./fastq/AtWT_4_R2.fastq.gz -o ./salmon_quant/AtWT_4 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_5_R1.fastq.gz -2 ./fastq/AtWT_5_R2.fastq.gz -o ./salmon_quant/AtWT_5 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_6_R1.fastq.gz -2 ./fastq/AtWT_6_R2.fastq.gz -o ./salmon_quant/AtWT_6 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_7_R1.fastq.gz -2 ./fastq/AtWT_7_R2.fastq.gz -o ./salmon_quant/AtWT_7 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_8_R1.fastq.gz -2 ./fastq/AtWT_8_R2.fastq.gz -o ./salmon_quant/AtWT_8 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_9_R1.fastq.gz -2 ./fastq/AtWT_9_R2.fastq.gz -o ./salmon_quant/AtWT_9 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_10_R1.fastq.gz -2 ./fastq/AtWT_10_R2.fastq.gz -o ./salmon_quant/AtWT_10 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_11_R1.fastq.gz -2 ./fastq/AtWT_11_R2.fastq.gz -o ./salmon_quant/AtWT_11 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_12_R1.fastq.gz -2 ./fastq/AtWT_12_R2.fastq.gz -o ./salmon_quant/AtWT_12 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_13_R1.fastq.gz -2 ./fastq/AtWT_13_R2.fastq.gz -o ./salmon_quant/AtWT_13 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_14_R1.fastq.gz -2 ./fastq/AtWT_14_R2.fastq.gz -o ./salmon_quant/AtWT_14 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_15_R1.fastq.gz -2 ./fastq/AtWT_15_R2.fastq.gz -o ./salmon_quant/AtWT_15 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_16_R1.fastq.gz -2 ./fastq/AtWT_16_R2.fastq.gz -o ./salmon_quant/AtWT_16 --numBootstraps 100 --seqBias --gcBias -p 8
+qsub -V -cwd -b y -R y -pe smp 8 salmon quant -i ./salmon_index/At_araport11_k31 -l A -1 ./fastq/AtWT_17_R1.fastq.gz -2 ./fastq/AtWT_17_R2.fastq.gz -o ./salmon_quant/AtWT_17 --numBootstraps 100 --seqBias --gcBias -p 8
+
+
+# Prepare FDR output directories.
+
+mkdir FDR
+fileutilities T 3:8 --loop R mkdir './FDR/***core***'
+
+
+# 100-fold permutation sampling and DTU calculation per replication level.
+
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N three +-b y Rscript ./scripts/ratsDTU_FDR_single.R 3 8 'FDR/3/***core***.rats.RDS' '3***core***'
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N four +-b y +-b y Rscript ./scripts/ratsDTU_FDR_single.R 4 8 'FDR/4/***core***.rats.RDS' '4***core***'
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N five Rscript ./scripts/ratsDTU_FDR_single.R 5 8 'FDR/5/***core***.rats.RDS' '5***core***'
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N six +-b y Rscript ./scripts/ratsDTU_FDR_single.R 6 8 'FDR/6/***core***.rats.RDS' '6***core***'
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N seven +-b y Rscript ./scripts/ratsDTU_FDR_single.R 7 8 'FDR/7/***core***.rats.RDS' '7***core***'
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N eight +-b y Rscript ./scripts/ratsDTU_FDR_single.R 8 8 'FDR/8/***core***.rats.RDS' '8***core***'
+
+
+# Gather up the results of the FDR bootstraps.
+
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N three +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/3/***core***.rats.RDS' ./FDR/3/***core***.fp.RDS' 8
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N four +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/4/***core***.rats.RDS' '.'/FDR/4/***core***.fp.RDS' 8
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N five +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/5/***core***.rats.RDS' './FDR/5/***core***.fp.RDS' 8
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N six +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/6/***core***.rats.RDS' './FDR/6/***core***.fp.RDS' 8
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N seven +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/7/***core***.rats.RDS' './FDR/7/***core***.fp.RDS' 8
+python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N eight +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/8/***core***.rats.RDS' './FDR/8/***core***.fp.RDS' 8
+
+
+# Continued in Supplementary Analysis 1.
+
+
+######## Benchmarks on simulated datasets
+
+
+# Obtain simulated data
+
+mkdir ./soneson
+qsub -V -cwd -t 1-24 -b y wget 'https://www.ebi.ac.uk/arrayexpress/files/E-MTAB-3766/E-MTAB-3766.raw.${SGE_TASK_ID}.zip' -O './soneson/E-MTAB-3766.raw.${SGE_TASK_ID}.zip'
+qsub -V -cwd -b y wget 'http://imlspenticton.uzh.ch/robinson_lab/splicing_comparison/supplementary_data_ms/diff_splicing_comparison_drosophila.zip' -O ./soneson/diff_splicing_comparison_drosophila.zip
+qsub -V -cwd -b y wget 'http://imlspenticton.uzh.ch/robinson_lab/splicing_comparison/supplementary_data_ms/diff_splicing_comparison_human.zip' -O ./soneson/diff_splicing_comparison_human.zip
+
+qsub -cwd -V -t 1-24 -b y unzip './soneson/E-MTAB-3766.raw.${SGE_TASK_ID}.zip' -d ./soneson/
+unzip soneson/diff_splicing_comparison_drosophila.zip -d ./soneson/
+unzip soneson/diff_splicing_comparison_human.zip -d ./soneson/
+
+# Obtain genomes
+
+cd ./genome/
+wget ftp://ftp.ensembl.org/pub/release-70/gtf//drosophila_melanogaster/Drosophila_melanogaster.BDGP5.70.gtf.gz
+gunzip Drosophila_melanogaster.BDGP5.70.gtf.gz
+wget ftp://ftp.ensembl.org/pub/release-70/fasta/drosophila_melanogaster/dna//Drosophila_melanogaster.BDGP5.70.dna.toplevel.fa.gz
+qsub -V -cwd -b y gunzip Drosophila_melanogaster.BDGP5.70.dna.toplevel.fa.gz
+qsub -V -cwd -b y /sw/opt/cufflinks-2.2.1.Linux_x86_64/gffread -w ./BDGP5.70_transcripts.fa -g ./Drosophila_melanogaster.BDGP5.70.dna.toplevel.fa ./Drosophila_melanogaster.BDGP5.70.gtf
+
+wget ftp://ftp.ensembl.org/pub/release-71/gtf//homo_sapiens/Homo_sapiens.GRCh37.71.gtf.gz
+gunzip Homo_sapiens.GRCh37.71.gtf.gz
+wget ftp://ftp.ensembl.org/pub/release-71/fasta/homo_sapiens/dna//Homo_sapiens.GRCh37.71.dna.toplevel.fa.gz
+qsub -V -cwd -b y gunzip Homo_sapiens.GRCh37.71.dna.toplevel.fa.gz
+qsub -V -cwd -b y /sw/opt/cufflinks-2.2.1.Linux_x86_64/gffread -w ./GRCh37.71_transcripts.fa -g ./Homo_sapiens.GRCh37.71.dna.toplevel.fa ./Homo_sapiens.GRCh37.71.gtf
+
+# Create gene-transcript ID lookup tables.
+
+python3 ../sequtilities.py T Homo_sapiens.GRCh37.71.gtf --t2g header > Homo_sapiens.GRCh37.71.t2g.tsv
+python3 ../sequtilities.py T Drosophila_melanogaster.BDGP5.70.gtf --t2g header > Drosophila_melanogaster.BDGP5.70.t2g.tsv
+cd ../
+
+# Salmon, Kallisto and SUPPA2 genomic indices
+
+cd ./kallisto_index
+qsub -V -cwd -b y ~/bin/kallisto-0.44 index -i Dm_BDGP5.70_k31_0.44 -k 31 ../genome/Ensembl70_BDGP5/BDGP5.70_transcripts.fa
+cd ../salmon_index
+qsub -cwd -V -b y -R y -pe smp 8 ~/bin/salmon-0.9.1 index -t ../genome/Ensembl70_BDGP5/BDGP5.70_transcripts.fa -i ./Dm_BDGP5.70_k31_0.9.1/ --type quasi -k 31 -p 8
+cd ../suppa_index
+python3 ~/bin/suppa.py generateEvents -f ioi -i ../genome/Ensembl70_BDGP5/Drosophila_melanogaster.BDGP5.70.gtf -o Dm_BDGP5.70
+cd ../
+
+# Quantify
+
+qsub -V -cwd -b y -R y -N sHs -t 1-6 -pe smp 8 ~/bin/salmon-0.9.1 quant -i ./salmon_index/Hs_GRCh37.71_k31_0.9.1 -l A -1 './soneson/Hs_sample_${SGE_TASK_ID}_1.fq.gz' -2 './soneson/Hs_sample_${SGE_TASK_ID}_2.fq.gz' -o './salmon_quant/Hs_GRCh37.71.${SGE_TASK_ID}' --numBootstraps 100 --seqBias --gcBias -p 8
+
+qsub -V -cwd -b y -R y -N sDm -t 1-6 -pe smp 8 ~/bin/salmon-0.9.1 quant -i ./salmon_index/Dm_BDGP5.70_k31_0.9.1 -l A -1 './soneson/Dm_sample_${SGE_TASK_ID}_1.fq.gz' -2 './soneson/Dm_sample_${SGE_TASK_ID}_2.fq.gz' -o './salmon_quant/Dm_BDGP5.70.${SGE_TASK_ID}' --numBootstraps 100 --seqBias --gcBias -p 8
+
+qsub -V -cwd -b y -R y -N kHs -t 1-6 -pe smp 8 ~/bin/kallisto-0.44 quant -i ./kallisto_index/Hs_GRCh37.71_k31_0.44 -o './kallisto_quant/Hs_GRCh37.71.${SGE_TASK_ID}' --bias -b 100 -t 8 './soneson/Hs_sample_${SGE_TASK_ID}_1.fq.gz' './soneson/Hs_sample_${SGE_TASK_ID}_2.fq.gz'
+
+qsub -V -cwd -b y -R y -N kDm -t 1-6 -pe smp 8 ~/bin/kallisto-0.44 quant -i ./kallisto_index/Dm_BDGP5.70_k31_0.44 -o './kallisto_quant/Dm_BDGP5.70.${SGE_TASK_ID}' --bias -b 100 -t 8 './soneson/Dm_sample_${SGE_TASK_ID}_1.fq.gz' './soneson/Dm_sample_${SGE_TASK_ID}_2.fq.gz'
+
+# Decompress Kallisto output to plain text
+
+qsub -V -cwd -b y -R y -N k5Dm -t 1-6 ~/bin/kallisto-0.44 h5dump -o './kallisto_quant/Dm_BDGP5.70.${SGE_TASK_ID}/bootstraps' './kallisto_quant/Dm_BDGP5.70.${SGE_TASK_ID}/abundance.h5'
+qsub -V -cwd -b y -R y -N k5Hs -t 1-6 ~/bin/kallisto-0.44 h5dump -o './kallisto_quant/Hs_GRCh37.71.${SGE_TASK_ID}/bootstraps' './kallisto_quant/Hs_GRCh37.71.${SGE_TASK_ID}/abundance.h5'
+
+# Collect quantifications into text tables for SUPPA2 and DRIMSeq
+
+python3 fileutilities.py T salmon_quant/Hs_GRCh37.71.1/quant.sf salmon_quant/Hs_GRCh37.71.2/quant.sf salmon_quant/Hs_GRCh37.71.3/quant.sf --cols TPM -il > salmon_quant/sonesonHs71-A_merged.tsv
+python3 fileutilities.py T salmon_quant/Hs_GRCh37.71.4/quant.sf salmon_quant/Hs_GRCh37.71.5/quant.sf salmon_quant/Hs_GRCh37.71.6/quant.sf --cols TPM -il > salmon_quant/sonesonHs71-B_merged.tsv
+python3 fileutilities.py T salmon_quant/Dm_BDGP5.70.1/quant.sf salmon_quant/Dm_BDGP5.70.2/quant.sf salmon_quant/Dm_BDGP5.70.3/quant.sf --cols TPM -il > salmon_quant/sonesonDm70-A_merged.tsv
+python3 fileutilities.py T salmon_quant/Dm_BDGP5.70.4/quant.sf salmon_quant/Dm_BDGP5.70.5/quant.sf salmon_quant/Dm_BDGP5.70.6/quant.sf --cols TPM -il > salmon_quant/sonesonDm70-B_merged.tsv
+python3 fileutilities.py T kallisto_quant/Hs_GRCh37.71.1/abundance.tsv kallisto_quant/Hs_GRCh37.71.2/abundance.tsv kallisto_quant/Hs_GRCh37.71.3/abundance.tsv --cols tpm -il > kallisto_quant/sonesonHs71-A_merged.tsv
+python3 fileutilities.py T kallisto_quant/Hs_GRCh37.71.4/abundance.tsv kallisto_quant/Hs_GRCh37.71.5/abundance.tsv kallisto_quant/Hs_GRCh37.71.6/abundance.tsv --cols tpm -il > kallisto_quant/sonesonHs71-B_merged.tsv
+python3 fileutilities.py T kallisto_quant/Dm_BDGP5.70.1/abundance.tsv kallisto_quant/Dm_BDGP5.70.2/abundance.tsv kallisto_quant/Dm_BDGP5.70.3/abundance.tsv --cols tpm -il > kallisto_quant/sonesonDm70-A_merged.tsv
+python3 fileutilities.py T kallisto_quant/Dm_BDGP5.70.4/abundance.tsv kallisto_quant/Dm_BDGP5.70.5/abundance.tsv kallisto_quant/Dm_BDGP5.70.6/abundance.tsv --cols tpm -il > kallisto_quant/sonesonDm70-B_merged.tsv
+
+# Tidy up the table headers for import into R
+
+perl -e 'while(<>){~s/^Name\t//g;print}' ./salmon_quant/sonesonHs71-A_merged.tsv > tmp && mv tmp ./salmon_quant/sonesonHs71-A_merged.tsv
+perl -e 'while(<>){~s/^Name\t//g;print}' ./salmon_quant/sonesonHs71-B_merged.tsv > tmp && mv tmp ./salmon_quant/sonesonHs71-B_merged.tsv
+perl -e 'while(<>){~s/^Name\t//g;print}' ./salmon_quant/sonesonDm70-A_merged.tsv > tmp && mv tmp ./salmon_quant/sonesonDm70-A_merged.tsv
+perl -e 'while(<>){~s/^Name\t//g;print}' ./salmon_quant/sonesonDm70-B_merged.tsv > tmp && mv tmp ./salmon_quant/sonesonDm70-B_merged.tsv
+perl -e 'while(<>){~s/^target_id\t//g;print}' ./kallisto_quant/sonesonHs71-A_merged.tsv > tmp && mv tmp ./kallisto_quant/sonesonHs71-A_merged.tsv
+perl -e 'while(<>){~s/^target_id\t//g;print}' ./kallisto_quant/sonesonHs71-B_merged.tsv > tmp && mv tmp ./kallisto_quant/sonesonHs71-B_merged.tsv
+perl -e 'while(<>){~s/^target_id\t//g;print}' ./kallisto_quant/sonesonDm70-A_merged.tsv > tmp && mv tmp ./kallisto_quant/sonesonDm70-A_merged.tsv
+perl -e 'while(<>){~s/^target_id\t//g;print}' ./kallisto_quant/sonesonDm70-B_merged.tsv > tmp && mv tmp ./kallisto_quant/sonesonDm70-B_merged.tsv
+
+# Scale from TPMs to library size for DRIMSeq
+
+Rscript scale_table.R ./salmon_quant/sonesonHs71-A_merged.tsv 40
+Rscript scale_table.R ./salmon_quant/sonesonHs71-B_merged.tsv 40
+Rscript scale_table.R ./salmon_quant/sonesonDm70-A_merged.tsv 25
+Rscript scale_table.R ./salmon_quant/sonesonDm70-B_merged.tsv 25
+Rscript scale_table.R ./kallisto_quant/sonesonHs71-A_merged.tsv 40
+Rscript scale_table.R ./kallisto_quant/sonesonHs71-B_merged.tsv 40
+Rscript scale_table.R ./kallisto_quant/sonesonDm70-A_merged.tsv 25
+Rscript scale_table.R ./kallisto_quant/sonesonDm70-B_merged.tsv 25
+
+# DTU with SUPPA2
+
+qsub -V -cwd -b y -N supHs-sA python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh37.71.gtf -e ./salmon_quant/sonesonHs71-A_merged.tsv -o ./salmon_quant/suppa_sonesonHs71-A
+qsub -V -cwd -b y -N supHs-sB python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh37.71.gtf -e ./salmon_quant/sonesonHs71-B_merged.tsv -o ./salmon_quant/suppa_sonesonHs71-B
+qsub -V -cwd -b y -N supHs-kA python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh37.71.gtf -e ./kallisto_quant/sonesonHs71-A_merged.tsv -o ./kallisto_quant/suppa_sonesonHs71-A
+qsub -V -cwd -b y -N supHs-kB python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh37.71.gtf -e ./kallisto_quant/sonesonHs71-B_merged.tsv -o ./kallisto_quant/suppa_sonesonHs71-B
+qsub -V -cwd -b y -N supDm-sA python3 suppa.py psiPerIsoform -g ./genome/Drosophila_melanogaster.BDGP5.70.gtf -e ./salmon_quant/sonesonDm70-A_merged.tsv -o ./salmon_quant/suppa_sonesonDm70-A
+qsub -V -cwd -b y -N supDm-sB python3 suppa.py psiPerIsoform -g ./genome/Drosophila_melanogaster.BDGP5.70.gtf -e ./salmon_quant/sonesonDm70-B_merged.tsv -o ./salmon_quant/suppa_sonesonDm70-B
+qsub -V -cwd -b y -N supDm-kA python3 suppa.py psiPerIsoform -g ./genome/Drosophila_melanogaster.BDGP5.70.gtf -e ./kallisto_quant/sonesonDm70-A_merged.tsv -o ./kallisto_quant/suppa_sonesonDm70-A
+qsub -V -cwd -b y -N supDm-kB python3 suppa.py psiPerIsoform -g ./genome/Drosophila_melanogaster.BDGP5.70.gtf -e ./kallisto_quant/sonesonDm70-B_merged.tsv -o ./kallisto_quant/suppa_sonesonDm70-B
+
+qsub -V -cwd -N supDm-s python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./salmon_quant/suppa_sonesonDm70-A_isoform.psi ./salmon_quant/suppa_sonesonDm70-B_isoform.psi -e ./salmon_quant/sonesonDm70-A_merged.tsv ./salmon_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Dm70-salmon.tsv
+
+qsub -V -cwd -N supDm-k python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./kallisto_quant/suppa_sonesonDm70-A_isoform.psi ./kallisto_quant/suppa_sonesonDm70-B_isoform.psi -e ./kallisto_quant/sonesonDm70-A_merged.tsv ./kallisto_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Dm70-kallisto.tsv
+
+qsub -V -cwd -N supHs-s python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./salmon_quant/suppa_sonesonHs71-A_isoform.psi ./salmon_quant/suppa_sonesonHs71-B_isoform.psi -e ./salmon_quant/sonesonHs71-A_merged.tsv ./salmon_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Hs71-salmon.tsv
+
+qsub -V -cwd -N supHs-k python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./kallisto_quant/suppa_sonesonHs71-A_isoform.psi ./kallisto_quant/suppa_sonesonHs71-B_isoform.psi -e ./kallisto_quant/sonesonHs71-A_merged.tsv ./kallisto_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Hs71-kallisto.tsv
+
+# DTU with DRIMSeq
+
+qsub -cwd -V -N drimDm-s Rscript drimseqDTU.R ./salmon_quant/sonesonDm70-A_merged.tsv_f25 ./salmon_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq_soneson_Dm70-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
+qsub -cwd -V -N drimDm-k Rscript drimseqDTU.R ./kallisto_quant/sonesonDm70-A_merged.tsv_f25 ./kallisto_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq_soneson_Dm70-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
+qsub -cwd -V -N drimHs-s Rscript drimseqDTU.R ./salmon_quant/sonesonHs71-A_merged.tsv_f40 ./salmon_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq_soneson_Hs71-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
+qsub -cwd -V -N drimHs-k Rscript drimseqDTU.R ./kallisto_quant/sonesonHs71-A_merged.tsv_f40 ./kallisto_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq_soneson_Hs71-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
+
+# DTU with RATs
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kdef Rscript ./scripts/ratsDTU_sonesonHs71-k_def.R
+qsub -V -cwd -pe smp 6 -b y -N rd70kdef Rscript ./scripts/ratsDTU_sonesonDm70-k_def.R
+qsub -V -cwd -pe smp 6 -b y -N rh71sdef Rscript ./scripts/ratsDTU_sonesonHs71-s_def.R
+qsub -V -cwd -pe smp 6 -b y -N rd70sdef Rscript ./scripts/ratsDTU_sonesonDm70-s_def.R
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kth4 Rscript ./scripts/ratsDTU_sonesonHs71-k_th4.R
+qsub -V -cwd -pe smp 6 -b y -N rd70kth4 Rscript ./scripts/ratsDTU_sonesonDm70-k_th4.R
+qsub -V -cwd -pe smp 6 -b y -N rh71sth4 Rscript ./scripts/ratsDTU_sonesonHs71-s_th4.R
+qsub -V -cwd -pe smp 6 -b y -N rd70sth4 Rscript ./scripts/ratsDTU_sonesonDm70-s_th4.R
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kth5 Rscript ./scripts/ratsDTU_sonesonHs71-k_th5.R
+qsub -V -cwd -pe smp 6 -b y -N rd70kth5 Rscript ./scripts/ratsDTU_sonesonDm70-k_th5.R
+qsub -V -cwd -pe smp 6 -b y -N rh71sth5 Rscript ./scripts/ratsDTU_sonesonHs71-s_th5.R
+qsub -V -cwd -pe smp 6 -b y -N rd70sth5 Rscript ./scripts/ratsDTU_sonesonDm70-s_th5.R
+
+# Continued in Supplementary analysis 2.
+
+
+
+######## Case study
+
+
+
+# Obtain human dataset.
+
+qsub -cwd -V -b y wget -O ./fastq/SRR393010.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR393/SRR393010/SRR393010.fastq.gz
+qsub -cwd -V -b y wget -O ./fastq/SRR393011.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR393/SRR393011/SRR393011.fastq.gz
+qsub -cwd -V -b y wget -O ./fastq/SRR393012.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR393/SRR393012/SRR393012.fastq.gz
+qsub -cwd -V -b y wget -O ./fastq/SRR393013.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR393/SRR393013/SRR393013.fastq.gz
+qsub -cwd -V -b y wget -O ./fastq/SRR393014.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR393/SRR393014/SRR393014.fastq.gz
+qsub -cwd -V -b y wget -O ./fastq/SRR393015.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR393/SRR393015/SRR393015.fastq.gz
+
+
+# Fix Ensembl60's format-breaking extraneous space character in the attributed field. (GTF and FASTA already present in /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/).
+
+perl -e 'while(<>){~s/\t /\t/g;print}' /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.60.gtf > /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.fixed.gtf
+
+
+# Build transcript sequences (cufflinks-2.2.1.Linux_x86_64).
+
+qsub -cwd -V -b y gffread -w /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.transcripts.fa -g /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.60.dna.toplevel.fa /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.60.gtf
+
+
+# Build transcript-to-gene ID look-up tables.
+
+Rscript -e 'library(rats); t2g <- annot2ids("/homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.60.gtf"); write.table(t2g, file="/homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.60.t2g.tsv", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE)'
+Rscript -e 'library(rats); t2g <- annot2ids("/homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl87_GRCh38/Homo_sapiens.GRCh38.87.gtf"); write.table(t2g, file="/homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl87_GRCh38/Homo_sapiens.GRCh38.87.t2g.tsv", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE)'
+
+# Build Salmon index. (Salmon-0.7.1)
+
+qsub -cwd -V -b y -R y -l ram=4G -pe smp 8 salmon index -t /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.transcripts.fa -i /homes/kfroussios/GENOMES/Homo_sapiens/Salmon/Hs_ensembl60-GRCh37_k21/ --type quasi -k 21 -p 8
+qsub -cwd -V -b y -R y -l ram=4G -pe smp 8 salmon index -t /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl87_GRCh38/Homo_sapiens.GRCh38.transcripts.fa -i /homes/kfroussios/GENOMES/Homo_sapiens/Salmon/Hs_ensembl87-GRCh38_k21/ --type quasi -k 21 -p 8
+
+
+# Bring annotations and indices into the project.
+
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.fixed.gtf ./genome/Homo_sapiens.GRCh37.60.gtf
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl87_GRCh38/Homo_sapiens.GRCh38.87.gtf ./genome/
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl60_GRCh37/Homo_sapiens.GRCh37.60.t2g.tsv ./genome/
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/Annotations/Ensembl87_GRCh38/Homo_sapiens.GRCh38.87.t2g.tsv ./genome/
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/Salmon/Hs_ensembl60-GRCh37_k21/ ./salmon_index/
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/Salmon/Hs_ensembl87-GRCh38_k21/ ./salmon_index/
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/SUPPA/Hs_ensembl60.ioi ./genome/
+ln -s /homes/kfroussios/GENOMES/Homo_sapiens/SUPPA/Hs_ensembl87.ioi ./genome/
+
+
+# Quantify human data.
+
+qsub -V -cwd -b y -R y -pe smp 8 -t 10-15 salmon quant -i ./salmon_index/Hs_ensembl60-GRCh37_k21 -l A -r ./fastq/SRR3930\${SGE_TASK_ID}.fastq.gz -o ./salmon_quant/SRR3930\${SGE_TASK_ID} --numBootstraps 100 --seqBias --writeUnmappedNames -p 8
+qsub -V -cwd -b y -R y -pe smp 8 -t 10-15 salmon quant -i ./salmon_index/Hs_ensembl87-GRCh38_k21 -l A -r ./fastq/SRR3930\${SGE_TASK_ID}.fastq.gz -o ./salmon_quant/SRR3930\${SGE_TASK_ID}_87 --numBootstraps 100 --seqBias --writeUnmappedNames -p 8
+
+
+# Gather up TPM quantifications from the replicates into tables.
+
+python3 fileutilities.py T salmon_quant/SRR393010/quant.sf salmon_quant/SRR393011/quant.sf salmon_quant/SRR393012/quant.sf --cols TPM -il > salmon_quant/wt_merged.tsv
+python3 fileutilities.py T salmon_quant/SRR393013/quant.sf salmon_quant/SRR393014/quant.sf salmon_quant/SRR393015/quant.sf --cols TPM -il > salmon_quant/ipf_merged.tsv
+python3 fileutilities.py T salmon_quant/SRR393010_87/quant.sf salmon_quant/SRR393011_87/quant.sf salmon_quant/SRR393012_87/quant.sf --cols TPM -il > salmon_quant/wt_87_merged.tsv
+python3 fileutilities.py T salmon_quant/SRR393013_87/quant.sf salmon_quant/SRR393014_87/quant.sf salmon_quant/SRR393015_87/quant.sf --cols TPM -il > salmon_quant/ipf_87_merged.tsv
+perl -e 'while(<>){~s/Name\t//g;print}' ./salmon_quant/wt_merged.tsv > tmp
+mv tmp ./salmon_quant/wt_merged.tsv
+perl -e 'while(<>){~s/Name\t//g;print}' ./salmon_quant/wt_87_merged.tsv > tmp
+mv tmp ./salmon_quant/wt_87_merged.tsv
+perl -e 'while(<>){~s/Name\t//g;print}' ./salmon_quant/ipf_87_merged.tsv > tmp
+mv tmp ./salmon_quant/ipf_87_merged.tsv
+perl -e 'while(<>){~s/Name\t//g;print}' ./salmon_quant/ipf_merged.tsv > tmp
+mv tmp ./salmon_quant/ipf_merged.tsv
+
+
+# Scale TPMs to average library size.
+
+Rscript ./scripts/scale_table.R ./salmon_quant/wt_merged.tsv 25
+Rscript ./scripts/scale_table.R ./salmon_quant/ipf_merged.tsv 25
+Rscript ./scripts/scale_table.R ./salmon_quant/ipf_87_merged.tsv 25
+Rscript ./scripts/scale_table.R ./salmon_quant/wt_87_merged.tsv 25
+
+
+# Calculate DTU with RATs, using and scaling the TPMs.
+
+qsub -V -cwd -pe smp 16 -b y Rscript ./scripts/ratsDTU_human_60.R
+qsub -V -cwd -pe smp 16 -b y Rscript ./scripts/ratsDTU_human_87.R
+
+
+# Calculate DTU with SUPPA2, using the TPMs.
+
+qsub -b y -V -cwd python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh37.60.gtf -e ./salmon_quant/wt_merged.tsv -o ./salmon_quant/suppa_wt60
+qsub -b y -V -cwd python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh38.87.gtf -e ./salmon_quant/wt_87_merged.tsv -o ./salmon_quant/suppa_wt87
+qsub -b y -V -cwd python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh37.60.gtf -e ./salmon_quant/ipf_merged.tsv -o ./salmon_quant/suppa_ipf60
+qsub -b y -V -cwd python3 suppa.py psiPerIsoform -g ./genome/Homo_sapiens.GRCh38.87.gtf -e ./salmon_quant/ipf_87_merged.tsv -o ./salmon_quant/suppa_ipf87
+qsub -b y -V -cwd python3 suppa.py diffSplice -m empirical -i ./genome/Hs_ensembl60.ioi -p ./salmon_quant/suppa_wt60_isoform.psi ./salmon_quant/suppa_ipf60_isoform.psi -e ./salmon_quant/wt_merged.tsv ./salmon_quant/ipf_merged.tsv --area 1000 --lower-bound 0 -al 0.05 -gc -o ./DE/suppa60.tsv
+qsub -b y -V -cwd python3 suppa.py diffSplice -m empirical -i ./genome/Hs_ensembl87.ioi -p ./salmon_quant/suppa_wt87_isoform.psi ./salmon_quant/suppa_ipf87_isoform.psi -e ./salmon_quant/wt_87_merged.tsv ./salmon_quant/ipf_87_merged.tsv --area 1000 --lower-bound 0 -al 0.05 -gc -o ./DE/suppa87.tsv
+
+
+# Calculate DTU with DRIM-seq, using the pre-scaled TPMs.
+
+qsub -cwd -V -b y Rscript ./scripts/drimseq_human.R salmon_quant/wt_merged.tsv_f25 salmon_quant/ipf_merged.tsv_f25 genome/Homo_sapiens.GRCh37.60.t2g.tsv DE/drimseq60
+qsub -cwd -V -b y Rscript ./scripts/drimseq_human.R salmon_quant/wt_87_merged.tsv_f25 salmon_quant/ipf_87_merged.tsv_f25 genome/Homo_sapiens.GRCh38.87.t2g.tsv DE/drimseq87
+
+
+# Continued in Supplementary analysis 3.
+
+
+########

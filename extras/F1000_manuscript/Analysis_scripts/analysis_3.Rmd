@@ -1,0 +1,1220 @@
+---
+title: "RATS validation analysis and comparison to SUPPA2 and DRIMSEQ"
+author: "Kimon Froussios"
+date: "21/02/2018"
+output:
+  html_document:
+    keep_md: no
+    theme: readable
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+# Comparison of RATs against http://dx.plos.org/10.1371/journal.pone.0068352:
+
+Deng,N. et al. (2013) Detecting Splicing Variants in Idiopathic Pulmonary Fibrosis from Non-Differentially Expressed Genes. PLoS One, 8, e68352.
+
+
+# Set up
+
+```{r}
+library(rats)
+library(data.table)
+library(ggplot2)
+library(matrixStats)
+library(assertthat)
+
+#basedir <- "/homes/kfroussios/PROJECTS/rats"
+basedir <- "/Volumes/kfroussios/PROJECTS/rats"
+```
+
+
+## Load rats results
+
+```{r}
+rat_ipf_60 <- readRDS(file.path(basedir,"DE/rats_human_60.RDS"))
+rat_ipf_87 <- readRDS(file.path(basedir,"DE/rats_human_87.RDS"))
+```
+
+### Parameters/Thresholds used
+
+```{r}
+print( rat_ipf_60$Parameters[c('rats_version', 'R_version', 'abund_scaling', 'abund_thresh', 'p_thresh',
+							   'dprop_thresh', 'quant_boot', 'quant_reprod_thresh', 'quant_bootnum', 
+							   'rep_boot', 'rep_reprod_thresh')] )
+print( rat_ipf_87$Parameters[c('rats_version', 'R_version', 'abund_scaling', 'abund_thresh', 'p_thresh',
+							   'dprop_thresh', 'quant_boot', 'quant_reprod_thresh', 'quant_bootnum', 
+							   'rep_boot', 'rep_reprod_thresh')] )
+```
+
+### Set thresholds for the other tools same as for RATs.
+
+```{R}
+# and assert that the thresholds used were the same between the annotations
+print( are_equal(rat_ipf_60$Parameters$p_thresh, rat_ipf_87$Parameters$p_thresh) )
+pthresh <- rat_ipf_60$Parameters$p_thresh
+print( are_equal(rat_ipf_60$Parameters$dprop_thresh, rat_ipf_87$Parameters$dprop_thresh) )
+dythresh <- rat_ipf_60$Parameters$dprop_thresh
+print( are_equal(rat_ipf_60$Parameters$quant_reprod_thresh, rat_ipf_87$Parameters$quant_reprod_thresh) )
+repthresh <- rat_ipf_60$Parameters$quant_reprod_thresh
+print( are_equal(rat_ipf_60$Parameters$abund_thresh, rat_ipf_87$Parameters$abund_thresh) )
+print( are_equal(rat_ipf_60$Parameters$rep_reprod_thresh, rat_ipf_87$Parameters$rep_reprod_thresh) )
+```
+
+## Load paper results
+
+```{r}
+deds <- as.data.table(read.csv(file.path(basedir,"supplementary/Deng2013_DE+DS.txt"), header = TRUE, sep = "\t"))
+names(deds) <- c("Gene", "DE_fold", "DS_p", "DS_fdr", "_lnfdr", "Region")
+setkey(deds, Gene)
+
+dge <- as.data.table(read.csv(file.path(basedir,"supplementary/Deng2013_DGE.txt"), header = TRUE, sep = "\t"))
+names(dge) <- c("Gene", "fold", "p", "fdr", "A", "B")
+dge[, A:= NULL]
+dge[, B:= NULL]
+setkey(dge, Gene)
+
+dte <- as.data.table(read.csv(file.path(basedir,"supplementary/Deng2013_DTE.txt"), header = TRUE, sep = "\t"))
+names(dte) <- c("target_id", "Gene", "parent_id", "fold", "p", "fdr")
+setkey(dte, Gene)
+
+gn2gid <- unique(dte[, .(Gene, parent_id)])
+setkey(gn2gid, Gene)
+```
+
+## Load SUPPA2 results
+
+```{r}
+suppa60 <- as.data.table(read.delim(file.path(basedir,"DE/suppa60.tsv.dpsi.temp.0"), header = TRUE))
+suppa87 <- as.data.table(read.delim(file.path(basedir,"DE/suppa87.tsv.dpsi.temp.0"), header = TRUE))
+names(suppa60) <- c("event","dpsi","pval")
+names(suppa87) <- c("event","dpsi","pval")
+
+# Split SUPPA event IDs into gene ID and transcript ID
+suppa60[, gene_id := sapply(as.character(suppa60$event), function (x) strsplit(x, ";")[[1]][1])]
+suppa60[, transc_id := sapply(as.character(suppa60$event), function (x) strsplit(x, ";")[[1]][2])]
+setkey(suppa60, gene_id)
+suppa87[, gene_id := sapply(as.character(suppa87$event), function (x) strsplit(x, ";")[[1]][1])]
+suppa87[, transc_id := sapply(as.character(suppa87$event), function (x) strsplit(x, ";")[[1]][2])]
+setkey(suppa87, gene_id)
+```
+
+### Flag DTU
+
+```{r}
+suppa60[, DTU := (pval < pthresh  &  abs(dpsi) >= dythresh)]
+suppa87[, DTU := (pval < pthresh  &  abs(dpsi) >= dythresh)]
+```
+
+
+## Load DRIMseq results
+
+```{r}
+drim60 <- as.data.table(read.table(file.path(basedir, 'DE/drimseq60.results.tsv'), header=TRUE))
+setkey(drim60,gene_id)
+drim87 <- as.data.table(read.table(file.path(basedir, 'DE/drimseq87.results.tsv'), header=TRUE))
+setkey(drim87,gene_id)
+```
+
+### Flag DTU
+
+```{r}
+drim60[, DTU := adj_pvalue < pthresh]
+drim87[, DTU := adj_pvalue < pthresh]
+```
+
+## Set ggplot2 theme
+
+... so that I don't clutter every new plot command.
+
+```{r}
+gth <- theme(axis.line.x= element_line(),
+	         axis.line.y= element_line(),
+	         strip.background= element_rect(fill= "grey95"),
+	         strip.text.y= element_text(size= rel(1.2)),
+	         strip.text.x= element_text(size= rel(1.1)),
+	         panel.grid.major.x= element_blank(),
+	         panel.grid.major.y= element_line(colour='grey90'),
+	         panel.grid.minor= element_blank(),
+	         panel.background= element_rect(fill = "white"),
+	         legend.key = element_rect(fill = 'white')
+)
+```
+
+# Context of things tested
+
+## Overlap between annotations
+
+```{r}
+# Overlap between annotations.
+refcom <- intersect(rat_ipf_60$Genes$parent_id, rat_ipf_87$Genes$parent_id)
+print( length(refcom) )
+
+# Gene IDs unique to the new annotation, not present in the old.
+gained <- setdiff(rat_ipf_87$Genes$parent_id, rat_ipf_60$Genes$parent_id)
+print( length(gained) )
+
+# Gene IDs unique to the old annoation, not present in the new.
+lost <- setdiff(rat_ipf_60$Genes$parent_id, rat_ipf_87$Genes$parent_id)
+print( length(lost) )
+```
+
+# Raw results
+
+## RATs tally
+
+```{r}
+# Ensembl 60
+print( dtu_summary(rat_ipf_60) )
+print( dtu_switch_summary(rat_ipf_60) )
+
+# Ensembl 87
+print( dtu_summary(rat_ipf_87) )
+print( dtu_switch_summary(rat_ipf_87) )
+```
+
+Get corresponding IDs
+
+```{r}
+allids <- get_dtu_ids(rat_ipf_60)
+allids_87 <- get_dtu_ids(rat_ipf_87)
+# Gene level
+rids60 <- allids[[1]]
+rids87 <- allids_87[[1]]
+# Genes aggregated from transcript level
+rids60_2 <- allids[[4]]
+rids87_2 <- allids_87[[4]]
+# Genes reported by both methods
+rids60_3 <- allids[[7]]
+rids87_3 <- allids_87[[7]]
+# Transcripts
+rids60_4 <- allids[[10]]
+rids87_4 <- allids_87[[10]]
+```
+
+Most conservative set of genes (both methods, both annotations)
+
+```{r}
+print( length(intersect(allids[[7]], allids_87[[7]])) )
+```
+
+Save ID lists to files.
+
+```{r}
+write.csv(allids[[7]], file=file.path(basedir,'results', 'dtu60_gene_ids.txt'), row.names=FALSE, col.names=FALSE, quote=FALSE)
+write.csv(allids_87[[7]], file=file.path(basedir,'results', 'dtu87_gene_ids.txt'), row.names=FALSE, col.names=FALSE, quote=FALSE)
+```
+
+### Overlap of results between Ensembl versions.
+
+```{r}
+# Genes, Genes aggregated from transcript predictions, Genes by both methods, Transcripts.
+print(c( length(intersect(rids60, rids87)), length(intersect(rids60_2, rids87_2)), length(intersect(rids60_3, rids87_3)), length(intersect(rids60_4, rids87_4)) ))
+```
+
+## SUPPA2 tally
+
+```{r}
+# Genes (aggregated from transcripts)
+sids60 <- unique(as.character(suppa60$gene_id[ !is.na(suppa60$DTU) & suppa60$DTU]) )
+sids87 <- unique(as.character(suppa87$gene_id[ !is.na(suppa87$DTU) & suppa87$DTU]) )
+print( c(length(sids60), length(sids87)) )
+# Transcripts
+sids60_2 <- as.character(suppa60$transc_id[ !is.na(suppa60$DTU) & suppa60$DTU])
+sids87_2 <- as.character(suppa87$transc_id[ !is.na(suppa87$DTU) & suppa87$DTU])
+print(c( count(!is.na(suppa60$DTU) & suppa60$DTU), count(!is.na(suppa87$DTU) & suppa87$DTU) ))
+```
+
+### Overlap between annotations (genes, transcripts)
+
+```{r}
+# Genes aggregated from transcript predictions, Transcripts.
+print(c( length(intersect(sids60, sids87)), length(intersect(sids60_2, sids87_2)) ))
+```
+
+## DRIMSeq tally
+
+```{r}
+# Genes
+dids60 <- as.character( drim60$gene_id[!is.na(drim60$DTU) & drim60$DTU] )
+dids87 <- as.character( drim87$gene_id[!is.na(drim87$DTU) & drim87$DTU] )
+print( c(length(dids60), length(dids87)) )
+```
+
+### Overlap between annotations
+
+```{r}
+print( length(intersect(dids60, dids87)) )
+```
+
+## Paper tally
+
+These are only the genes with DTU but no DGE. This is not directly comparable to the output of the tools, as DGE is not taken into account there.
+However, the instersection of the sets is still informative, as the non-DGE DTU genes should be a subset of all the DTU genes.
+
+```{r}
+# Verify number of DTU genes according to main article: 248
+assert_that( 248 == length(deds[(DS_fdr < 0.05), Gene]) )
+
+# DTU gene IDs
+pgids <- as.character(gn2gid[ as.character(deds[(DS_fdr < 0.05), Gene]), parent_id])
+```
+
+# Overlap among tools
+
+## Overlap
+
+### Shared predictions RATs/SUPPA2 (genes aggregated from transcripts)
+
+```{r}
+rs60 <- intersect(rids60_2, sids60)
+rs87 <- intersect(rids87_2, sids87)
+# Relative to RATs
+print( c(length(rs60)/length(rids60_2), length(rs87)/length(rids87_2)) )
+# Relative to SUPPA2
+print( c(length(rs60)/length(sids60), length(rs87)/length(sids87)) )
+```
+
+### Shared predictions RATs/SUPPA (transcripts)
+
+```{r}
+rs60_2 <- intersect(rids60_4, sids60_2)
+rs87_2 <- intersect(rids87_4, sids87_2)
+# Relative to RATs
+print( c(length(rs60_2)/length(rids60_4), length(rs87_2)/length(rids87_4)) )
+# Relative to SUPPA2
+print( c(length(rs60_2)/length(sids60_2), length(rs87_2)/length(sids87_2)) )
+```
+
+### Shared predictions RATs(genes)/ SUPPA2(aggregated)
+
+```{r}
+rs60_3 <- intersect(rids60, sids60)
+rs87_3 <- intersect(rids87, sids87)
+# Relative to RATs
+print( c(length(rs60_3)/length(rids60), length(rs87_3)/length(rids87)) )
+# Relative to SUPPA2
+print( c(length(rs60_3)/length(sids60), length(rs87_3)/length(sids87)) )
+```
+
+### Shared predictions RATs(genes)/DRIMSEQ
+
+```{r}
+rd60 <- intersect(rids60, dids60)
+rd87 <- intersect(rids87, dids87)
+# Relative to RATs
+print( c(length(rd60)/length(rids60), length(rs87)/length(rids87)) )
+# Relative to DRIM-seq
+print( c(length(rs60)/length(dids60), length(rs87)/length(dids87)) )
+```
+
+### Shared predictions RATs(aggreg.)/DRIMSEQ
+
+```{r}
+print( c(length(intersect(rids60_2, dids60)), length(intersect(rids87_2, dids87))) )
+rd60_2 <- intersect(rids60_2, dids60)
+rd87_2 <- intersect(rids87_2, dids87)
+# Relative to RATs
+print( c(length(rd60_2)/length(rids60_2), length(rd87_2)/length(rids87_2)) )
+# Relative to DRIM-seq
+print( c(length(rd60_2)/length(dids60), length(rd87_2)/length(dids87)) )
+```
+
+### Shared predictions SUPPA(aggreg.)/DRIMSEQ
+
+```{r}
+sd60 <- intersect(sids60, dids60)
+sd87 <- intersect(sids87, dids87)
+# Relative to RATs
+print( c(length(sd60)/length(sids60), length(sd87)/length(sids87)) )
+# Relative to DRIM-seq
+print( c(length(sd60)/length(dids60), length(sd87)/length(dids87)) )
+```
+
+### Shared predictions among all 3.
+
+```{r}
+rsd60 <- intersect(rs60, sd60)
+rsd87 <- intersect(rs87, sd87)
+# Relative to RATs (gene-level)
+print( c(length(rsd60)/length(rids60), length(rsd87)/length(rids87)) )
+# Relative to SUPPA2 (aggregated to genes)
+print( c(length(rsd60)/length(sids60), length(rsd87)/length(sids87)) )
+# Relative to DRIM-seq
+print( c(length(rsd60)/length(dids60), length(rsd87)/length(dids87)) )
+```
+
+## Overlap as a function of thresholds
+
+One threshold is swept through its range, while all the others are kept at the default values.
+Default values for significance (all three tools), effect size (RATs and SUPPA2), and techninal reproducibility (RATs only) are:
+
+```{r}
+print( rat_ipf_87$Parameters[c('p_thresh', 'dprop_thresh', 'quant_reprod_thresh')] )
+```
+
+### RATs & SUPPA2
+
+SUPPA2 reports per isoform significances. For equivalence it is compared to the RATs transcript-level predictions.
+For both tools, the predictions were made by applying thresholds to the statistical significance and the effect size.
+
+```{r}
+# P-value (transcript level)
+pvec <- seq(0, 1, 0.01)
+xlen <- length(pvec)
+r87t <- copy(rat_ipf_87$Transcripts)
+s87t <- copy(suppa87)
+ovec <- sapply(pvec, function(p) {
+	r87t[(elig), sig := pval_corr < p ]
+	r87t[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87t$target_id[ !is.na(r87t$DTU) & r87t$DTU ] )
+
+	s87t[, DTU := (pval < p  &  abs(dpsi) >= dythresh)]
+	s87 <- as.character(s87t$transc_id[ !is.na(s87t$DTU) & s87t$DTU])
+	
+	rs <- intersect(r87, s87)
+	return(length(rs))
+})
+s87t <- copy(suppa87)
+svec <- sapply(pvec, function(p) {
+	s87t[, DTU := (pval < p  &  abs(dpsi) >= dythresh)]
+	s87 <- as.character(s87t$transc_id[ !is.na(s87t$DTU) & s87t$DTU])
+	return(length(s87))
+})
+r87t <- copy(rat_ipf_87$Transcripts)
+rvec <- sapply(pvec, function(p) {
+	r87t[(elig), sig := pval_corr < p ]
+	r87t[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87t$target_id[ !is.na(r87t$DTU) & r87t$DTU ] )
+	return(length(r87))
+})
+
+# Set up data
+df1 <- data.frame(p_cutoff=rep(pvec, times=2), 
+				 transcripts=c(svec, rvec), 
+				 tool=c(rep('SUPPA2', times=xlen), rep('RATs', times=xlen) ))
+df2 <- data.frame(p_cutoff=rep(pvec, times=2), 
+				 overlap=c(ovec/rvec, ovec/svec), 
+				 tool=c(rep('RATs', times=xlen), rep('SUPPA2', times=xlen) ))
+# Totals
+ggplot(df1) + gth +
+	geom_vline(xintercept=pthresh, colour='grey50') +
+	geom_line(aes(p_cutoff, y=log10(transcripts + 1), colour=tool)) +
+	ggtitle('RATs & SUPPA2 totals VS significance cutoff') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple'))+
+	coord_cartesian(xlim=c(0, 1), ylim=c(0, 4))
+# Overlap
+ggplot(df2) + gth +
+	geom_vline(xintercept=pthresh, colour='grey50') +
+	geom_line(aes(p_cutoff, y=overlap, colour=tool)) +
+	ggtitle('RATs & SUPPA2 overlap VS significance cutoff') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple'))+
+	coord_cartesian(xlim=c(0, 1), ylim=c(0, 1))
+```
+
+RATs' response saturates very quickly, remains steady for a section,  and then rises again slowly as the cutoff goes through low abundance transcripts with low p-values
+(this second increase stage disappears if abundances below 5 reads are filtered out). SUPPA2's number of reported DTU transcripts rises quickly and levels off for 
+significances over 0.25 while having reached an order of magnitude more DTU transcripts than RATs, at which point the overlap encompasses the large majority of RAT's results. 
+Near the default cutoff of 0.05, RATs and SUPPA2 almost coincide in terms of output volume and in terms of overlap.
+The ability of RATs to overlap with SUPPA2 is highest for the strictest of significances and drops continuously at a rate matching SUPPA2's rising totals.
+In return, SUPPA2 recaptures most of RATs' reported transcripts when the cutoff isaround 0.3. Just below the default cutoff of 0.05, the overlap is equally poor for both tools.
+
+```{r}
+# Effect size (transcript level)
+dvec <- seq(0, 1, 0.01)
+xlen <- length(dvec)
+r87t <- copy(rat_ipf_87$Transcripts)
+s87t <- copy(suppa87)
+ovec <- sapply(dvec, function(d) {
+	r87t[(elig), elig_fx := abs(Dprop) >= d ]
+	r87t[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87t$target_id[ !is.na(r87t$DTU) & r87t$DTU ] )
+
+	s87t[, DTU := (pval < pthresh  &  abs(dpsi) >= d)]
+	s87 <- as.character(s87t$transc_id[ !is.na(s87t$DTU) & s87t$DTU])
+	
+	rs <- intersect(r87, s87)
+	return(length(rs))
+})
+s87t <- copy(suppa87)
+svec <- sapply(dvec, function(d) {
+	s87t[, DTU := (pval < pthresh  &  abs(dpsi) >= d)]
+	s87 <- as.character(s87t$transc_id[ !is.na(s87t$DTU) & s87t$DTU])
+	return(length(s87))
+})
+r87t <- copy(rat_ipf_87$Transcripts)
+rvec <- sapply(dvec, function(d) {
+	r87t[(elig), elig_fx := abs(Dprop) >= d ]
+	r87t[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87t$target_id[ !is.na(r87t$DTU) & r87t$DTU ] )
+	return(length(r87))
+})
+
+# Set up data
+df1 <- data.frame(Dprop_threshold=rep(pvec, times=2), 
+				 transcripts=c(svec, rvec), 
+				 tool=c(rep('SUPPA2', times=xlen), rep('RATs',times=xlen) ))
+df2 <- data.frame(Dprop_threshold=rep(pvec, times=2), 
+				 overlap=c(ovec/svec, ovec/rvec), 
+				 tool=c(rep('SUPPA2', times=xlen), rep('RATs',times=xlen) ))
+# Totals
+ggplot(df1) + gth +
+	geom_vline(xintercept=dythresh, colour='grey50') +
+	geom_line(aes(Dprop_threshold, y=log10 (transcripts + 1), colour=tool)) +
+	ggtitle('RATs & SUPPA2 totals VS effect size threshold') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple')) +
+	coord_cartesian(xlim=c(0,1), ylim=c(0,5))
+# Overlap
+ggplot(df2) + gth +
+	geom_vline(xintercept=dythresh, colour='grey50') +
+	geom_line(aes(Dprop_threshold, y=overlap, colour=tool)) +
+	ggtitle('RATs & SUPPA2 overlap VS effect size threshold') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple'))+
+	coord_cartesian(xlim=c(0, 1), ylim=c(0, 1))
+```
+
+SUPPA2 shows a uniform response up to the default threshold value of 0.20. This flat section may be attributable to small effect sizes receiving low p-values. 
+On the other hand, RATs shows a very high level of overpredictions at low effect sizes, but drops rapidly until the default threshold. From there onwards RATs 
+and SUPPA2 show very similar totals.
+The overlap between the two tools is comparable and decreases between the 0.25 and 0.65. Beyond that point the extent of overlap becomes quite noisy as the
+absolute number of transcripts is fairly small. The maximum overlap relative to RATs results comes around the default threshold values of 0.2. Relative to
+SUPPA2's results, the maximum overlap is achieved slightly higher at 0.3, ignoring for the noisy upper part of the effect size range.
+
+Overall, from these two plots, RATs appears to be controlled more by the effect size, whereas SUPPA2 is controlled more by the p-value.
+
+```{r}
+# Quantification reroducibility (transcript level)
+# SUPPA2 does not have this feature, so the response will be a uniform line across the range.
+qvec <- seq(0, 1, 0.01)
+r87t <- copy(rat_ipf_87$Transcripts)
+ovec <- sapply(qvec, function(q) {
+	r87t[(elig), quant_reprod := quant_dtu_freq >= q ]
+	r87t[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87t$target_id[ !is.na(r87t$DTU) & r87t$DTU ] )
+
+	rs87 <- intersect(r87, sids87_2)
+	return(length(rs87))
+})
+svec <- rep(length(sids87_2), length(qvec))
+r87t <- copy(rat_ipf_87$Transcripts)
+rvec <- sapply(qvec, function(q) {
+	r87t[(elig), quant_reprod := quant_dtu_freq >= q ]
+	r87t[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87t$target_id[ !is.na(r87t$DTU) & r87t$DTU ] )
+	return(length(r87))
+})
+
+# Set up data
+df1 <- data.frame(reprod_threshold=rep(pvec, times=2), 
+				 transcripts=c(svec, rvec), 
+				 tool=c(rep('SUPPA2', times=xlen), rep('RATs',times=xlen) ))
+df2 <- data.frame(reprod_threshold=rep(pvec, times=2), 
+				 overlap=c(ovec/svec, ovec/rvec), 
+				 tool=c(rep('SUPPA2', times=xlen), rep('RATs',times=xlen) ))
+# Totals
+ggplot(df1) + gth +
+	geom_vline(xintercept=repthresh, colour='grey50') +
+	geom_line(aes(reprod_threshold, y=log10 (transcripts + 1), colour=tool)) +
+	ggtitle('RATs & SUPPA2 totals VS reproducibility threshold') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple')) +
+	coord_cartesian(xlim=c(0,1), ylim=c(0,5))
+# Overlap
+ggplot(df2) + gth +
+	geom_vline(xintercept=repthresh, colour='grey50') +
+	geom_line(aes(reprod_threshold, y=overlap, colour=tool)) +
+	ggtitle('RATs & SUPPA2 overlap VS reproducibility threshold') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple'))+
+	coord_cartesian(xlim=c(0, 1), ylim=c(0, 1))
+```
+
+RATs' number of reported transcripts is steady up to 0.5 (50% of iterations lead to positive DTU). After this point, RATs starts rejecting transcripts at
+a steady logarithmic pace until the top end of the range, where the rejection rate steeply increases. 
+Until the 0.5 point, the overlap of the two tools encompasses the majority of SUPPA2's results. Above the middle, the overlap decreases relative to SUPPA2
+and increases relative to RATs.
+
+### RATs & DRIMSeq
+
+DRIMSeq reports significance at the gene level. For equivalence, we use RATs' gene-level predictions.
+
+```{r}
+# P-value (gene level)
+pvec <- seq(0, 1, 0.01)
+r87g <- copy(rat_ipf_87$Genes)
+d87g <- copy(drim87)
+ovec <- sapply(pvec, function(p) {
+	r87g[(elig), sig := pval_corr < p ]
+	r87g[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87g$parent_id[ !is.na(r87g$DTU) & r87g$DTU ] )
+
+	d87g[, DTU := adj_pvalue < p]
+	d87 <- as.character( d87g$gene_id[!is.na(d87g$DTU) & d87g$DTU] )
+	
+	rd <- intersect(r87, d87)
+	return(length(rd))
+})
+d87g <- copy(drim87)
+dvec <- sapply(pvec, function(p) {
+	d87g[, DTU := adj_pvalue < p]
+	d87 <- as.character( d87g$gene_id[!is.na(d87g$DTU) & d87g$DTU] )
+	return(length(d87))
+})
+r87g <- copy(rat_ipf_87$Genes)
+rvec <- sapply(pvec, function(p) {
+	r87g[(elig), sig := pval_corr < p ]
+	r87g[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87g$parent_id[ !is.na(r87g$DTU) & r87g$DTU ] )
+	return(length(r87))
+})
+
+# Set up data
+df1 <- data.frame(p_cutoff=rep(pvec, times=2), 
+				 genes=c(dvec, rvec), 
+				 tool=c(rep('DRIMseq', times=xlen), rep('RATs',times=xlen) ))
+df2 <- data.frame(p_cutoff=rep(pvec, times=2), 
+				 overlap=c(ovec/dvec, ovec/rvec), 
+				 tool=c(rep('DRIMseq', times=xlen), rep('RATs',times=xlen) ))
+# Totals
+ggplot(df1) + gth +
+	geom_vline(xintercept=pthresh, colour='grey50') +
+	geom_line(aes(p_cutoff, y=log10 (genes + 1), colour=tool)) +
+	ggtitle('RATs & DRIM-seq totals VS significance cutoff') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple')) +
+	coord_cartesian(xlim=c(0,1), ylim=c(0,5))
+# Overlap
+ggplot(df2) + gth +
+	geom_vline(xintercept=pthresh, colour='grey50') +
+	geom_line(aes(p_cutoff, y=overlap, colour=tool)) +
+	ggtitle('RATs & DRIM-seq overlap VS significance cutoff') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple'))+
+	coord_cartesian(xlim=c(0, 1), ylim=c(0, 1))
+```
+
+RATs behaves the same way at the gene level as it did at the transcript level: a sharp rise in reported genes followed by
+plateau and then a second phase of increase as low abundance genes come into play. The number of genes reported by
+DRIM-seq rises continuously through the range, reaching over an order of magnitude more genes than RATs. Unlike SUPPA2,
+DRIM-seq does not reach a saturation point.
+With regards to RATs' results, the overlap increases until 0.3 and then levels off. With regards to DRIM-seq, the overlap decreases
+through the entire range. They both start around a 20% overlap for the strictest significance cutoff.
+
+```{r}
+# Quantification reproducibility (gene level)
+# DRIMSeq dos not have this feature, so the response will be a uniform line across the range.
+qvec <- seq(0, 1, 0.01)
+r87g <- copy(rat_ipf_87$Genes)
+ovec <- sapply(qvec, function(q) {
+	r87g[(elig), quant_reprod := quant_dtu_freq >= q ]
+	r87g[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87g$parent_id[ !is.na(r87g$DTU) & r87g$DTU ] )
+
+	rd87g <- intersect(r87, dids87)
+	return(length(rd87g))
+})
+dvec <- rep(length(dids87), length(qvec))
+r87g <- copy(rat_ipf_87$Genes)
+rvec <- sapply(qvec, function(q) {
+	r87g[(elig), quant_reprod := quant_dtu_freq >= q ]
+	r87g[(elig), DTU := elig & sig & elig_fx & quant_reprod]
+	r87 <- as.character( r87g$parent_id[ !is.na(r87g$DTU) & r87g$DTU ] )
+	return(length(r87))
+})
+
+# Set up data
+df1 <- data.frame(reprod_threshold=rep(pvec, times=2), 
+				 genes=c(dvec, rvec), 
+				 tool=c(rep('DRIMseq', times=xlen), rep('RATs',times=xlen) ))
+df2 <- data.frame(reprod_threshold=rep(pvec, times=2), 
+				 overlap=c(ovec/dvec, ovec/rvec), 
+				 tool=c(rep('DRIMseq', times=xlen), rep('RATs',times=xlen) ))
+# Totals
+ggplot(df1) + gth +
+	geom_vline(xintercept=repthresh, colour='grey50') +
+	geom_line(aes(reprod_threshold, y=log10 (genes + 1), colour=tool)) +
+	ggtitle('RATs & DRIM-seq totals VS reproducibility threshold') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple')) +
+	coord_cartesian(xlim=c(0,1), ylim=c(0,5))
+# Overlap
+ggplot(df2) + gth +
+	geom_vline(xintercept=repthresh, colour='grey50') +
+	geom_line(aes(reprod_threshold, y=overlap, colour=tool)) +
+	ggtitle('RATs & DRIM-seq overlap VS reproducibility threshold') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(values=c(RATs='red', SUPPA2='blue', DRIMseq='purple'))+
+	coord_cartesian(xlim=c(0, 1), ylim=c(0, 1))
+```
+
+RATs starts with more genes reported than DRIMSeq, until the threshold reaches 0.85 where the relationship inverses.
+The overlap stays well below either tool's results through the whole range. The overlap increases relative to RATs'
+results, and decreases relative to DRIM-seq's and the two trends meet around 0.85 with an overlap just over 30% for both tools.
+
+# Agreement between tools and paper
+
+## Overlaps
+
+All proportions are relative to the genes reported in the original study.
+
+### RATs
+
+```{r}
+# gene-level calls
+rp60 <- intersect(rids60, pgids)
+rp87 <- intersect(rids87, pgids)
+print( c(length(rp60)/length(pgids), length(rp87)/length(pgids)) )
+
+# genes aggregated from transcript-level calls
+rp60 <- intersect(rids60_2, pgids)
+rp87 <- intersect(rids87_2, pgids)
+print( c(length(rp60)/length(pgids), length(rp87)/length(pgids)) )
+
+# genes found by both methods
+rp60 <- intersect(rids60_3, pgids)
+rp87 <- intersect(rids87_3, pgids)
+print( c(length(rp60)/length(pgids), length(rp87)/length(pgids)) )
+```
+
+### SUPPA2
+
+```{r}
+sp60 <- intersect(sids60, pgids)
+sp87 <- intersect(sids87, pgids)
+print( c(length(sp60)/length(pgids), length(sp87)/length(pgids)) )
+```
+
+### DRIMSeq
+
+```{r}
+dp60 <- intersect(dids60, pgids)
+dp87 <- intersect(dids87, pgids)
+print( c(length(dp60)/length(pgids), length(dp87)/length(pgids)) )
+```
+
+
+## Results for the 3 validated genes
+
+Match gene IDs to the gene names
+
+```{r}
+ex1 <- as.character(gn2gid["TOM1L1", parent_id])
+ex2 <- as.character(gn2gid["CMTM4", parent_id])
+ex3 <- as.character(gn2gid["PEX11B", parent_id])
+print( c(ex1, ex2, ex3) )
+```
+
+### Ensembl 60
+
+```{r}
+# RATs Gene level
+print( rat_ipf_60$Genes[c(ex1,ex2,ex3), .(parent_id, known_transc, elig_transc, DTU, pval_corr, maxDprop, quant_dtu_freq)] )
+
+# RATs Transcript level
+print( rat_ipf_60$Transcripts[c(ex1,ex2,ex3), .(target_id, parent_id, DTU, pval_corr, Dprop, quant_dtu_freq)] )
+
+# SUPPA2
+print( suppa60[c(ex1,ex2,ex3), ] )
+
+# DRIMSEQ
+print( drim60[c(ex1,ex2,ex3), ] )
+```
+
+Plot abundances
+
+```{r}
+# TOM1L1
+print( plot_gene(rat_ipf_60, ex1) )
+# Cleaner version
+print( plot_gene(rat_ipf_60, ex1, style="byisoform", shapeby='none', colourby='condition', condcolvec=c('red','blue')) 
+	   # +
+	   	# guides(colour="none", fill='none') + 
+	   	# scale_x_discrete(labels=seq.int(1,rat_ipf_60$Genes[ex1, known_transc])) + 
+	   	# theme(axis.text.x=element_text(angle=0)) +
+	   	# scale_y_continuous(position='right', sec.axis=waiver())
+)
+# CMTM4
+print( plot_gene(rat_ipf_60, ex2) )
+# Cleaner version
+print( plot_gene(rat_ipf_60, ex2, style="byisoform", shapeby='none', colourby='condition', condcolvec=c('red','blue')) 
+	   # +
+	   	# guides(colour="none", fill='none') + 
+	   	# scale_x_discrete(labels=seq.int(1,rat_ipf_60$Genes[ex2, known_transc])) + 
+	   	# theme(axis.text.x=element_text(angle=0)) +
+	   	# scale_y_continuous(position='right', sec.axis=waiver())
+)
+# PEX11B
+print( plot_gene(rat_ipf_60, ex3) )
+# Cleaner version
+print( plot_gene(rat_ipf_60, ex3, style="byisoform", shapeby='none', colourby='condition', condcolvec=c('red','blue')) 
+	   # +
+	   	# guides(colour="none", fill='none') + 
+	   	# scale_x_discrete(labels=seq.int(1,rat_ipf_60$Genes[ex3, known_transc])) + 
+	   	# theme(axis.text.x=element_text(angle=0)) +
+	   	# scale_y_continuous(position='right', sec.axis=waiver())
+)
+```
+
+### Ensembl 87
+
+```{r}
+# RATs Gene level
+print( rat_ipf_87$Genes[c(ex1,ex2,ex3), .(parent_id, known_transc, elig_transc, DTU, pval_corr, maxDprop, quant_dtu_freq)] )
+
+# RATs Transcript level
+print( rat_ipf_87$Transcripts[c(ex1,ex2,ex3), .(target_id, parent_id, DTU, pval_corr, Dprop, quant_dtu_freq)] )
+
+# SUPPA2
+print( suppa87[c(ex1,ex2,ex3), .(transc_id, gene_id, DTU, pval, dpsi)] )
+
+# DRIMSEQ
+print( drim87[c(ex1,ex2,ex3), .(gene_id, DTU, adj_pvalue, lr)] )
+```
+
+Plot abundances
+
+```{r}
+# TOM1L1
+print( plot_gene(rat_ipf_87, ex1) )
+# Cleaner version
+print( plot_gene(rat_ipf_87, ex1, style="byisoform", shapeby='none', colourby='condition', condcolvec=c('red','blue')) 
+	   # +
+	   	# guides(colour="none", fill='none') + 
+	   	# scale_x_discrete(labels=seq.int(1,rat_ipf_87$Genes[ex1, known_transc])) + 
+	   	# theme(axis.text.x=element_text(angle=0)) +
+	   	# scale_y_continuous(position='right', sec.axis=waiver())
+)
+# CMTM4
+print( plot_gene(rat_ipf_87, ex2) )
+# Cleaner version
+print( plot_gene(rat_ipf_87, ex2, style="byisoform", shapeby='none', colourby='condition', condcolvec=c('red','blue')) 
+	   # +
+	   	# guides(colour="none", fill='none') + 
+	   	# scale_x_discrete(labels=seq.int(1,rat_ipf_87$Genes[ex2, known_transc])) + 
+	   	# theme(axis.text.x=element_text(angle=0)) +
+	   	# scale_y_continuous(position='right', sec.axis=waiver())
+)
+# PEX11B
+print( plot_gene(rat_ipf_87, ex3) )
+# Cleaner version
+print( plot_gene(rat_ipf_87, ex3, style="byisoform", shapeby='none', colourby='condition', condcolvec=c('red','blue'))
+	   # +
+	   	# guides(colour="none", fill='none') + 
+	   	# scale_x_discrete(labels=seq.int(1,rat_ipf_87$Genes[ex3, known_transc])) + 
+	   	# theme(axis.text.x=element_text(angle=0)) +
+	   	# scale_y_continuous(position='right', sec.axis=waiver())
+)
+```
+
+
+# Further analysis
+
+Can I make sense of the differences between the tools' reports?
+
+## At which point does RATs reject the features that are unique to the other tools?
+
+RATs criteria are applied sequentially. Thus we can trace back which criteria are responsible for filtering out features that other tools report as positive hits.
+
+```{r}
+# SUPPA2 (transcript level)
+lrs <- length(rs87_2)
+# Transcripts reported by SUPPA2 that are not reported by RATs.
+ids <- rat_ipf_87$Transcripts$target_id %in% setdiff(sids87_2, rs87_2)
+# Cumulative pass rate, as percentage of SUPPA2's total results, for the given thresholds. 
+df1 <- data.frame(value=c( lrs + dim(rat_ipf_87$Transcripts[ids,])[1],
+						   lrs + count(rat_ipf_87$Transcripts[ids, elig_xp]),
+						   lrs + count(rat_ipf_87$Transcripts[ids & elig_xp, elig]),
+						   lrs + count(rat_ipf_87$Transcripts[ids & elig_xp & elig, sig]),
+						   lrs + count(rat_ipf_87$Transcripts[ids & elig_xp & elig & sig, elig_fx]),
+						   lrs + count(rat_ipf_87$Transcripts[ids & elig_xp & elig & sig & elig_fx, quant_reprod]) ) / length(sids87_2) * 100,
+				 criterion=factor( c('before filters', 'abundance', '#_isoforms', 'significance', 'effect size', 'reproducibility'), 
+				 				 levels=c('before filters', 'abundance', '#_isoforms', 'significance', 'effect size', 'reproducibility') ) )
+ggplot(df1) + gth +
+	geom_line(aes(x=criterion, y=value, group=1), colour='blue') +
+	ggtitle('Pass rate of unique SUPPA2 results through RATs') +
+	ylab('% SUPPA2 transcripts') +
+	xlab('RATs filter') +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0, 101)) +
+	theme(axis.text.x=element_text(hjust=1, angle=30))
+# Individual contributions, as percentage of SUPPA2's total results, for the given thresholds. 
+df2 <- data.frame(value=c( count(rat_ipf_87$Transcripts[ids, !elig_xp]),
+						   count(rat_ipf_87$Transcripts[ids & elig_xp, !elig]),
+						   count(rat_ipf_87$Transcripts[ids & elig_xp & elig, !sig]),
+						   count(rat_ipf_87$Transcripts[ids & elig_xp & elig & sig, !elig_fx]),
+						   count(rat_ipf_87$Transcripts[ids & elig_xp & elig & sig & elig_fx, !quant_reprod]) ) / length(sids87_2) * 100,
+				 criterion=factor( c('abundance', '#_isoforms', 'significance', 'effect size', 'reproducibility'), 
+				 				 levels=c('abundance', '#_isoforms', 'significance', 'effect size', 'reproducibility') ),
+				 dummy=rep('dummy',5) )
+print( df2[,c(1,2)] )
+ggplot(df2) + gth +
+	geom_bar(aes(x=dummy, y=value, fill=criterion), stat='identity', position='stack', width=0.7) +
+	ggtitle('Cause of rejection of SUPPA2 results by RATs') +
+	ylab('% SUPPA2 transcripts') +
+	xlab('') +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0, 100)) +
+	theme(axis.text.x=element_blank(),
+		  axis.ticks.x=element_blank()) +
+	scale_fill_manual(values=c('green', 'purple','red','orange', 'blue'))
+
+# Manuscript version of the above
+df2 <- data.frame(value=c( count(rat_ipf_87$Transcripts[ids & elig_xp & elig, !sig]),
+						   count(rat_ipf_87$Transcripts[ids & elig_xp & elig & sig, !elig_fx]),
+						   count(rat_ipf_87$Transcripts[ids & elig_xp & elig & sig & elig_fx, !quant_reprod]) ) / length(sids87_2) * 100,
+				 criterion=factor( c('significance', 'effect size', 'reproducibility'),
+				 				 levels=c('reproducibility', 'effect size', 'significance') ),
+				 dummy=rep('dummy',3) )
+ggplot(df2) + gth +
+	geom_bar(aes(x=dummy, y=value, fill=criterion), stat='identity', position='stack', width=0.7) +
+	ggtitle('Cause of rejection of SUPPA2 results by RATs') +
+	ylab('% SUPPA2 transcripts') +
+	xlab('') +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0, 100)) +
+	theme(axis.text.x=element_blank(),
+		  axis.ticks.x=element_blank()) +
+	scale_fill_manual(values=c('blue','orange', 'red'))
+```
+
+Most SUPPA2-only hits are statistically significant also according to RATs. However a substantial fraction of them has effect sizes smaller than the threshold,
+as indicated by the drop in the number of transcripts. The remaining two thirds of the transcripts are eliminated at the reproducibility stage.
+
+```{r}
+# RATs / SUPPA2 (transcripts)
+ggplot() + gth +
+	geom_freqpoly(data=rat_ipf_87$Transcripts[target_id %in% rs87_2,], aes(x=quant_dtu_freq, colour='Overlap'), breaks=seq(0, 1, 0.01), alpha=0.8) + 
+	geom_freqpoly(data=rat_ipf_87$Transcripts[target_id %in% setdiff(rids87_4, rs87_2),], aes(x=quant_dtu_freq, colour='RATs_only'), breaks=seq(0, 1, 0.01), alpha=0.8) +
+	geom_freqpoly(data=rat_ipf_87$Transcripts[target_id %in% setdiff(sids87_2, rs87_2),], aes(x=quant_dtu_freq, colour='SUPPA2_only'), breaks=seq(0, 1, 0.01), alpha=0.8) +
+	ggtitle('Number of DTU transcripts in common between RATs and SUPPA2') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(name='DTU', values=c(Overlap='red', RATs_only='green', SUPPA2_only='blue', DRIMSeq_only='purple')) +
+	ylab('Transcripts') +
+	ggtitle('Distribution of RATs reproducibility')
+```
+
+Although there is a small spike with 0% reproducibility that RATs consistently finds as non-DTU, most transcripts have various reproducibility through
+the entire range, with a slight increasing trend for higher reproducibility.
+
+Together these plots tell us that for two thirds of SUPPA2's uniquely reported transcripts, the quantifications are unstable. As a result,
+although they appear significant and of sufficient effect size when their respective bootstrapped estimates are averaged together, they in
+fact give conflicting results when considered individually. Lowering the reproducibility threshold from 95% to 50% would pick up many of these
+transcripts, but when quantifications are so variable they should probably not be trusted without scrutiny.
+
+```{r}
+# DRIM-seq (gene level)
+lrd <- length(rd87)
+# Genes reported by DRIM-seq that are not reported by RATs.
+ids <- rat_ipf_87$Genes$parent_id %in% setdiff(dids87, rd87)
+# Cumulative pass rate, as percentage of DRIM-seq's total results, for the given thresholds. 
+df1 <- data.frame(value=c(lrd + dim(rat_ipf_87$Genes[ids,])[1],
+						  lrd + count(rat_ipf_87$Genes[ids , elig]),
+						  lrd + count(rat_ipf_87$Genes[ids & elig, sig]),
+					 	  lrd + count(rat_ipf_87$Genes[ids & elig & sig, elig_fx]),
+				 		  lrd + count(rat_ipf_87$Genes[ids & elig & sig & elig_fx, quant_reprod]) ) / length(dids87) * 100,
+				criterion=factor( c('origin','#_abund_isoforms','significance','effect size','reproducibility'), 
+				 				 levels=c('origin', '#_abund_isoforms','significance','effect size','reproducibility') ) )
+ggplot(df1) + gth +
+	geom_line(aes(x=criterion, y=value, group=1), colour='purple') +
+	ggtitle('Pass rate of unique DRIMseq results through RATs') +
+	ylab('% DRIM-seq genes') +
+	xlab('RATs filter') +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0,101)) +
+	theme(axis.text.x=element_text(hjust=1, angle=30))
+# Individual contributions, as percentage of DRIM-seq's total results, for the given thresholds. 
+df2 <- data.frame(value=c(count(rat_ipf_87$Genes[ids , !elig]),
+						  count(rat_ipf_87$Genes[ids & elig, !sig]),
+					 	  count(rat_ipf_87$Genes[ids & elig & sig, !elig_fx]),
+				 		  count(rat_ipf_87$Genes[ids & elig & sig & elig_fx, !quant_reprod]) ) / length(dids87) * 100,
+				 criterion=factor( c('#_abund_isoforms','significance','effect size','reproducibility'), 
+				 				  levels=c('#_abund_isoforms','significance','effect size','reproducibility') ),
+				 dummy=rep('dummy',4) )
+print( df2[,c(1,2)] )
+ggplot(df2) + gth +
+	geom_bar(aes(x=dummy, y=value, fill=criterion), stat='identity', position='stack', width=0.7) +
+	ggtitle('Cause of rejection of DRIM-seq results by RATs ') +
+	ylab('% DRIM-seq genes') +
+	xlab('') +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0,100)) +
+	theme(axis.text.x=element_blank(),
+		  axis.ticks.x=element_blank()) +
+	scale_fill_manual(values=c('purple','red','orange', 'blue'))
+
+# Manuscript version of the above.
+df2 <- data.frame(value=c(count(rat_ipf_87$Genes[ids & elig, !sig]),
+					 	  count(rat_ipf_87$Genes[ids & elig & sig, !elig_fx]),
+				 		  count(rat_ipf_87$Genes[ids & elig & sig & elig_fx, !quant_reprod]) ) / length(dids87) * 100,
+				 criterion=factor( c('significance','effect size','reproducibility'),
+				 				  levels=c('reproducibility','effect size','significance') ),
+				 dummy=rep('dummy',3) )
+ggplot(df2) + gth +
+	geom_bar(aes(x=dummy, y=value, fill=criterion), stat='identity', position='stack', width=0.7) +
+	ggtitle('Cause of rejection of DRIM-seq results by RATs ') +
+	ylab('% DRIM-seq genes') +
+	xlab('') +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0,100)) +
+	theme(axis.text.x=element_blank(),
+		  axis.ticks.x=element_blank()) +
+	scale_fill_manual(values=c('blue','orange', 'red'))
+```
+
+RATs finds virtually all of DRIM-seq's uniquely reported genes to be significant, however there is a major drop when the effect size is considered,
+with the remaining genes being rejected due to unstable quantifications.
+
+```{r}
+# RATs / DRIMSeq (genes)
+ggplot() + gth +
+	geom_freqpoly(data=rat_ipf_87$Genes[rd87,], aes(x=quant_dtu_freq, colour='Overlap'), breaks=seq(0, 1, 0.01), alpha=0.8) + 
+	geom_freqpoly(data=rat_ipf_87$Genes[setdiff(rids87, rd87),], aes(x=quant_dtu_freq, colour='RATs_only'), breaks=seq(0, 1, 0.01), alpha=0.8) +
+	geom_freqpoly(data=rat_ipf_87$Genes[setdiff(dids87, rd87),], aes(x=quant_dtu_freq, colour='DRIMSeq_only'), breaks=seq(0, 1, 0.01), alpha=0.8) +
+	ggtitle('Number of DTU genes in common between RATs and DRIMSeq') +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_colour_manual(name='DTU', values=c(Overlap='red', RATs_only='green', SUPPA2_only='blue', DRIMSeq_only='purple')) +
+	ylab('Transcripts') +
+	ggtitle('Distribution of RATs reproducibility') +
+	coord_cartesian(ylim=c(0,400))
+```
+
+The distribution of reproducibility shows that most of DRIM-seq's uniquely reported genes have 0% reproducibility in RATs,
+indicating confident classification as non-DTU. There are is also a fraction of genes that are uniformly spread across the reproducibility range,
+indicating genes with very variable quantifications that should probably not be considered trustworthy.
+
+DRIM-seq uses ratios, whereas RATs uses difference. These two do not correlate, especially when talking about percentages. 
+This is clearly reflected in that there are many genes that DRIM-seq considers DTU that RATs confidently rejects.
+
+## Why do the other tools reject predictions by RATs?
+
+### What are the p/effect values for the features predicted by RATs, but not SUPPA2?
+
+```{r}
+ids <- setdiff(rids87_4, rs87_2)
+# Significance distribution according to SUPPA2 and RATs, of genes predicted by RATs, but not by SUPPA2
+ggplot() + gth +
+	geom_vline(xintercept=pthresh, colour='grey50') +
+	geom_freqpoly(data=suppa87[transc_id %in% ids,], aes(x=pval, colour=c('SUPPA2')), breaks=seq(0,1,0.01), alpha=0.8) +
+	geom_freqpoly(data=rat_ipf_87$Transcripts[target_id %in% ids,], aes(x=pval_corr, colour=c('RATs')), breaks=seq(0,1,0.01), alpha=0.8) +
+	ggtitle('SUPPA2 significance of RATs-only results') +
+	ylab('Number of Transcripts') +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_colour_manual(name='DTU', values=c(Overlap='red', RATs='green', SUPPA2='blue', DRIMSeq='purple')) +
+	coord_cartesian(ylim=c(0,400))
+```
+
+RAT's assigns very high significance to all of these genes, while SUPPA2's p-values hint at 
+being the tail of a right-skewed significance distribution, trailing just above the cutoff point. We can consider these to be marginal misses reflecting the methodological
+differences in how DTU is tested, rather than the product of fundamental differences in concept.
+
+```{r}
+# Effect Size distribution according to SUPPA2 and RATs, of genes predicted by RATs, but not by SUPPA2
+ggplot() + gth +
+	geom_vline(xintercept=dythresh, colour='grey50') +
+	geom_freqpoly(data=suppa87[transc_id %in% ids,], aes(x=dpsi, colour='SUPPA2'), breaks=seq(0,1,0.01), alpha=0.8) +
+	geom_freqpoly(data=rat_ipf_87$Transcripts[target_id %in% ids,], aes(x=Dprop, colour=c('RATs')), breaks=seq(0,1,0.01), alpha=0.8) +
+	ggtitle('SUPPA2 effect size of RATs-only results') +
+	ylab('Number of Transcripts') +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(xlim=c(0,1), ylim=c(0,20)) +
+	scale_colour_manual(name='DTU', values=c(Overlap='red', RATs='green', SUPPA2='blue', DRIMSeq='purple'))
+```
+
+A subset of the transcripts predicted only by RATs are reported as below the effect size threshold by SUPPA2. Considering
+the input data is based on the same TPM quantifications, and that the effect size is defined in a similar way, this difference
+is harder to explain. But the majority of transcripts do pass the threshold and the distributions of SUPPA2 and RATs are similar 
+for them.
+
+### What are the p/effect values for the features only predicted by RATs, but not SUPPA2?
+
+```{r}
+ids <- setdiff(rids87, rd87)
+# Significance distribution according to DRIMSeq and RATs, of genes predicted by RATs, but not by DRIMSeq
+ggplot() + gth +
+	geom_vline(xintercept=pthresh, colour='grey50') +
+	geom_freqpoly(data=drim87[ids,], aes(x=adj_pvalue, colour='DRIMSeq'), breaks=seq(0,1,0.01), alpha=0.8) +
+	geom_freqpoly(data=rat_ipf_87$Genes[ids,], aes(x=pval_corr, colour=c('RATs')), breaks=seq(0,1,0.01), alpha=0.8) +
+	ggtitle('Significance of RATs-only results') +
+	ylab('Number of Genes') +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_y_continuous(expand=c(0,0)) +
+	scale_colour_manual(name='DTU', values=c(Overlap='red', RATs='green', SUPPA2='blue', DRIMSeq='purple')) +
+	coord_cartesian(ylim=c(0,500))
+```
+
+The genes reported only by RATs are spread out over the pvalue range in DRIMSeq's results, but do appear to 
+be the right tail of right-skewed distribution, trailing above the cutoff point.
+From RATs' perspective, these are all highly significant genes that do not approach the cutoff point at all.
+
+```{r}
+# Effect size distribution according to DRIMSeq and RATs, of genes predicted by RATs, but not by DRIMSeq
+ggplot(drim87[ids,]) + gth +
+	geom_freqpoly(aes(x=lr), colour='purple', breaks=seq.int(0,30,1)) +
+	ggtitle('DRIMSeq likelihood ratios of RATs-only results') +
+	ylab('Number of Genes') +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_y_continuous(expand=c(0,0)) +
+	coord_cartesian(ylim=c(0,50))
+ggplot(rat_ipf_87$Genes[ids, ]) + gth +
+	geom_freqpoly(aes(x=abs(maxDprop)), colour='green', breaks=seq(0,1,0.01)) +
+	ggtitle('RATs difference in proportions for RATs-only results') +
+	ylab('Number of Genes') +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_y_continuous(expand=c(0,0))
+```
+
+RATs and DRIM-seq use incompatible effect size measures, so they cannot be plotted on the same axes.
+Most of the RATs-only predicted DTU genes have likelihood ratios greater than 2 with some being greater than 10. 
+Similarly, these genes contain isoforms that change in relative abundance by over 20 percentile points, 
+with a few even changing by over 50 percentile points.
+
+
+## RATs vs paper
+
+Genes reported across methods and annotations:
+
+```{r}
+# Overlap of reported genes between paper results and RATs results.
+# Both Ensembl 60 and 87: both gene-level and transcript-level
+gids <- intersect(intersect(rids60_3, rids87_3), pgids)
+print( length(gids) )
+```
+
+Which are these genes and what do they look like?
+
+```{r}
+for( g in gids ){
+	print(as.character(gn2gid[parent_id==g , Gene]))
+	print( plot_gene(rat_ipf_60, g, style="lines") )
+	print( plot_gene(rat_ipf_87, g, style="lines") )
+}
+```
+
+They are mostly genes whose annotation does not change much between the two Ensembl versions.
+
+Why are all the other genes from the paper not picked up by RATs?
+For this we'll focus on the gene-level predictions, in order to be able to sensibly plot specific properties.
+
+```{r}
+# Gene IDs of genes reported by Deng et al., but not reported by RATs with either annotation.
+ngids <- setdiff(pgids, union(rids60, rids87))
+print(length(ngids))
+```
+
+Is it the reproducibility?
+
+```{r}
+# Ensembl 60
+print( 
+	ggplot(data= rat_ipf_60$Genes[ngids, .(parent_id, quant_dtu_freq)]) +
+		geom_histogram(aes(x=quant_dtu_freq), fill="darkgreen", breaks=seq(0,1,0.02)) +
+		xlab("Reproducibility") + 
+		ylab("Genes") +
+		geom_vline(xintercept=rat_ipf_60$Parameters$quant_reprod_thresh, colour="grey50") +
+		theme(axis.line.x=element_line()) + 
+		scale_y_continuous(expand=c(0,0)) +
+		scale_x_continuous(expand=c(0,0)) +
+		coord_cartesian(ylim=c(0,100))
+)
+# Ensembl 87
+print( 
+	ggplot(data= rat_ipf_87$Genes[ngids, .(parent_id, quant_dtu_freq)]) +
+		geom_histogram(aes(x=quant_dtu_freq), fill="darkgreen", breaks=seq(0,1,0.02)) +
+		xlab("Reproducibility") + 
+		ylab("Genes") +
+		geom_vline(xintercept=rat_ipf_87$Parameters$quant_reprod_thresh, colour="grey50") +
+		theme(axis.line.x=element_line()) + 
+		scale_y_continuous(expand=c(0,0)) +
+		scale_x_continuous(expand=c(0,0)) +
+		coord_cartesian(ylim=c(0,100))
+)
+```
+
+With each annotation, the majority of genes reported by Deng at al. are reproducibly non-DTU, 
+with several more genes spread out through the range of reproducibility indicating unstable quantifications.
+
+Are they failing because of the p-values?
+
+```{r}
+# Ensembl 60
+print( 
+	ggplot(data= rat_ipf_60$Genes[ngids, .(parent_id, pval_corr)]) +
+		geom_histogram(aes(x=pval_corr), fill="darkblue", breaks=seq(0,1,0.02)) +
+		xlab("Significance") + 
+		ylab("Genes") +
+		geom_vline(xintercept=rat_ipf_60$Parameters$p_thresh, colour="grey50") +
+		theme(axis.line.x=element_line()) + 
+		scale_y_continuous(expand=c(0,0), trans='sqrt') +
+		scale_x_continuous(expand=c(0,0)) +
+		coord_cartesian(ylim=c(0,250))
+)
+# Ensembl 87
+print( 
+	ggplot(data= rat_ipf_87$Genes[ngids, .(parent_id, pval_corr)]) +
+		geom_histogram(aes(x=pval_corr), fill="darkblue", breaks=seq(0,1,0.02)) +
+		xlab("Significance") + 
+		ylab("Genes") +
+		geom_vline(xintercept=rat_ipf_87$Parameters$p_thresh, colour="grey50") +
+		theme(axis.line.x=element_line()) + 
+		scale_y_continuous(expand=c(0,0), trans='sqrt') +
+		scale_x_continuous(expand=c(0,0)) +
+		coord_cartesian(ylim=c(0,250))
+)
+```
+
+The vast majority of these genes are statistically significant, so this is not the limiting factor.
+
+Are they failing because of the effect size then?
+
+```{r}
+# Ensembl 60
+print(
+	ggplot(data= rat_ipf_60$Genes[ngids, .(maxDprop, parent_id)]) +
+		geom_histogram(aes(x=maxDprop), fill="darkred", breaks=seq(-1,1,0.02)) + 
+		xlab("Largest difference in isoform proportion") + 
+		ylab("Genes") +
+		geom_vline(xintercept=rat_ipf_60$Parameters$dprop_thresh, colour="grey50") + 
+		geom_vline(xintercept=-rat_ipf_60$Parameters$dprop_thresh, colour="grey50") +
+		theme(axis.line.x=element_line()) + 
+		scale_y_continuous(expand=c(0,0)) +
+		coord_cartesian(ylim=c(0,20))
+)
+# Ensembl 87
+print( 
+	ggplot(data= rat_ipf_87$Genes[ngids, .(maxDprop, parent_id)]) +
+		geom_histogram(aes(x=maxDprop), fill="darkred", breaks=seq(-1,1,0.02)) + 
+		xlab("Largest difference in isoform proportion") + 
+		ylab("Genes") +
+		geom_vline(xintercept=rat_ipf_87$Parameters$dprop_thresh, colour="grey50") + 
+		geom_vline(xintercept=-rat_ipf_87$Parameters$dprop_thresh, colour="grey50") +
+		theme(axis.line.x=element_line()) + 
+		scale_y_continuous(expand=c(0,0)) +
+		coord_cartesian(ylim=c(0,20))
+)
+```
+
+Indeed, in the majority of genes reported by Deng et al, the largest change observed among their isoforms is smaller 20 percentile points of relative abundance, which is the limit used in our analysis.
+
+
+
+***

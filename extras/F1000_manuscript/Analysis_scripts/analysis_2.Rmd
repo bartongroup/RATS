@@ -1,0 +1,1991 @@
+---
+title: "DTU on simulated datasets"
+author: "Kimon Froussios"
+date: "26/05/2018"
+output:
+  html_document:
+    keep_md: yes
+    theme: readable
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Origin of simulated datasets
+
+Soneson et al., Genom Biol 2016 17:12 : https://doi.org/10.1186/s13059-015-0862-3
+ArrayExpress repository of the simulated datasets: https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-3766/
+
+# Prelims
+
+```{r libraries}
+# libraries
+library(rats)
+library(data.table)
+library(ggplot2)
+library(matrixStats)
+library(parallel)
+
+# ggplot2 themes
+gth <- theme(axis.line.x= element_line(),
+	         axis.line.y= element_line(),
+	         strip.background= element_rect(fill= "grey95"),
+	         strip.text.y= element_text(size= rel(1.2)),
+	         strip.text.x= element_text(size= rel(1.1)),
+	         panel.grid.major.x= element_blank(),
+			 panel.grid.minor.x= element_blank(),
+	         panel.grid.major.y= element_line(colour='grey90'),
+			 panel.grid.minor.y= element_blank(),
+	         panel.background= element_rect(fill = "white"),
+	         legend.key = element_rect(fill = 'white'),
+			 panel.spacing = unit(1, "lines") )
+gth2 <- theme(axis.line.x= element_line(),
+			  axis.text.x=element_text(angle=90),
+	         axis.line.y= element_line(),
+	         strip.background= element_rect(fill= "grey95"),
+	         strip.text.y= element_text(size= rel(1.2)),
+	         strip.text.x= element_text(size= rel(1.1)),
+	         panel.grid.major.x= element_line(colour='grey90'),
+			 panel.grid.minor.x= element_line(colour='grey95'),
+	         panel.grid.major.y= element_line(colour='grey90'),
+			 panel.grid.minor.y= element_line(colour='grey95'),
+	         panel.background= element_rect(fill = "white"),
+	         legend.key = element_rect(fill = 'white'),
+			 panel.spacing = unit(1, "lines") )
+gth3 <- theme(axis.line.x= element_line(),
+			  axis.text.x=element_text(angle=90, hjust=1),
+	         axis.line.y= element_line(),
+	         strip.background= element_rect(fill= "grey95"),
+	         strip.text.y= element_text(size= rel(1.2)),
+	         strip.text.x= element_text(size= rel(1.1)),
+	         panel.grid.major.x= element_line(colour='grey95'),
+			 panel.grid.minor.x= element_blank(),
+	         panel.grid.major.y= element_line(colour='grey95'),
+			 panel.grid.minor.y= element_line(colour='grey95'),
+	         panel.background= element_rect(fill = "white"),
+	         legend.key = element_rect(fill = 'white'),
+			 panel.spacing = unit(1, "lines"),
+		  	 strip.placement = "outside")
+```
+
+## Import data
+
+```{r data}
+basedir <- file.path('/Volumes', 'kfroussios', 'PROJECTS', 'rats')
+
+# Import SUPPA2 results
+sdk <- fread(file.path(basedir,'DE', 'suppa_soneson_Dm70-kallisto.tsv.dpsi.temp.0'))
+sds <- fread(file.path(basedir,'DE', 'suppa_soneson_Dm70-salmon.tsv.dpsi.temp.0'))
+shk <- fread(file.path(basedir,'DE', 'suppa_soneson_Hs71-kallisto.tsv.dpsi.temp.0'))
+shs <- fread(file.path(basedir,'DE', 'suppa_soneson_Hs71-salmon.tsv.dpsi.temp.0'))
+
+# Import DRIMSeq results
+ddk <- fread(file.path(basedir, 'DE', 'drimseq_soneson_Dm70-kallisto.results.tsv'))
+dds <- fread(file.path(basedir, 'DE', 'drimseq_soneson_Dm70-salmon.results.tsv'))
+dhk <- fread(file.path(basedir, 'DE', 'drimseq_soneson_Hs71-kallisto.results.tsv'))
+dhs <- fread(file.path(basedir, 'DE', 'drimseq_soneson_Hs71-salmon.results.tsv'))
+
+# Import ground truth
+dtruth <- fread(file.path(basedir, 'soneson', 'diff_splicing_comparison_drosophila', 'truth_drosophila_non_null_missing20_ms.txt'))
+htruth <- fread(file.path(basedir, 'soneson', 'diff_splicing_comparison_human', 'truth_human_non_null_missing20_ms.txt'))
+
+# Import RATs results with 0.6.4 default thresholds
+rdk <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Dm70-kallisto_def.RDS'))
+rds <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Dm70-salmon_def.RDS'))
+rhk <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Hs71-kallisto_def.RDS'))
+rhs <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Hs71-salmon_def.RDS'))
+
+# Import RATs results with different thresholds.
+rdkth <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Dm70-kallisto_th4.RDS'))
+rdsth <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Dm70-salmon_th4.RDS'))
+rhkth <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Hs71-kallisto_th4.RDS'))
+rhsth <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Hs71-salmon_th4.RDS'))
+
+rdkth2 <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Dm70-kallisto_th5.RDS'))
+rdsth2 <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Dm70-salmon_th5.RDS'))
+rhkth2 <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Hs71-kallisto_th5.RDS'))
+rhsth2 <- readRDS(file.path(basedir, 'DE', 'rats_soneson_Hs71-salmon_th5.RDS'))
+```
+
+## Preprocess and structure
+
+```{r preprocess}
+# Index DRIMSeq by gene
+setkey(ddk, gene_id)
+setkey(dds, gene_id)
+setkey(dhk, gene_id)
+setkey(dhs, gene_id)
+
+# Give shorter names to SUPPA2 columns, for ease of typing
+names(sdk) <- c("event","dpsi","pval")
+names(sds) <- c("event","dpsi","pval")
+names(shk) <- c("event","dpsi","pval")
+names(shs) <- c("event","dpsi","pval")
+
+# Split SUPPA2 event IDs, to obtain the gene ID and transcript ID
+sdk[, gene_id := sapply(as.character(sdk$event), function (x) strsplit(x, ";")[[1]][1])]
+sds[, gene_id := sapply(as.character(sds$event), function (x) strsplit(x, ";")[[1]][1])]
+shk[, gene_id := sapply(as.character(shk$event), function (x) strsplit(x, ";")[[1]][1])]
+shs[, gene_id := sapply(as.character(shs$event), function (x) strsplit(x, ";")[[1]][1])]
+
+sdk[, transc_id := sapply(as.character(sdk$event), function (x) strsplit(x, ";")[[1]][2])]
+sds[, transc_id := sapply(as.character(sds$event), function (x) strsplit(x, ";")[[1]][2])]
+shk[, transc_id := sapply(as.character(shk$event), function (x) strsplit(x, ";")[[1]][2])]
+shs[, transc_id := sapply(as.character(shs$event), function (x) strsplit(x, ";")[[1]][2])]
+
+# Index SUPPA2 by gene
+setkey(sdk, gene_id)
+setkey(sds, gene_id)
+setkey(shk, gene_id)
+setkey(shs, gene_id)
+```
+
+
+# Pre-DTU general overview
+
+A feel for the results, prior to applying any thresholds to define DTU.
+
+
+## Overview of truth
+
+```{r truth}
+# Verify which field defines the 1000 transcripts that were intentionally altered
+print( dtruth[, unique(ds_status)] )
+print(dim(dtruth)[1])
+print( dim(dtruth[ds_status==1,]) )
+dtg <- dtruth[ds_status==1, gene]  # tweaked genes in fly
+dcg <- dtruth[ds_status==0, gene]  # control genes in fly
+
+print( htruth[, unique(ds_status)] )
+print(dim(htruth)[1])
+print( dim(htruth[ds_status==1,]) )
+htg <- htruth[ds_status==1, gene]  # tweaked genes in human
+hcg <- htruth[ds_status==0, gene]  # control genes in human
+
+dxg <- rdk$Genes[!parent_id %in% dtruth$gene, parent_id]
+print(length(dxg))
+hxg <- rhk$Genes[!parent_id %in% htruth$gene, parent_id]
+print(length(hxg))
+
+```
+
+These lists of genes will serve as the basis for the evaluation of the tools. 
+It is worth noting that the simulated sets are restricted to protein-coding genes, 
+whereas the quantification and DTU tools were run with the respective full annotations. 
+One would expect the expression levels of the excluded genes to be 0. RATs reports on
+every gene found in the annotation, thus the excluded genes can be infered and listed:
+
+Not much info is given about the expression level and effect size of the genes making up the truth.
+RATs stores input info, so we can use this to get an idea of how the truth is distributed.
+
+
+### Flag truth status in DTU outputs
+
+```{r truPreprocess}
+# Add flag fields, to mark the rows that are genes among the selected 1000 or the excluded.
+# This prevents repeated subsetting and lookup later on.
+
+# DRIMSeq
+ddk[, selected := gene_id %in% dtg]
+dds[, selected := gene_id %in% dtg]
+dhk[, selected := gene_id %in% htg]
+dhs[, selected := gene_id %in% htg]
+ddk[, excluded := gene_id %in% dxg]
+dds[, excluded := gene_id %in% dxg]
+dhk[, excluded := gene_id %in% hxg]
+dhs[, excluded := gene_id %in% hxg]
+
+# SUPPA2
+sdk[, selected := gene_id %in% dtg]
+sds[, selected := gene_id %in% dtg]
+shk[, selected := gene_id %in% htg]
+shs[, selected := gene_id %in% htg]
+sdk[, excluded := gene_id %in% dxg]
+sds[, excluded := gene_id %in% dxg]
+shk[, excluded := gene_id %in% hxg]
+shs[, excluded := gene_id %in% hxg]
+
+# RATs
+rdk$Genes[, selected := parent_id %in% dtg]
+rds$Genes[, selected := parent_id %in% dtg]
+rhk$Genes[, selected := parent_id %in% htg]
+rhs$Genes[, selected := parent_id %in% htg]
+rdk$Transcripts[, selected := parent_id %in% dtg]
+rds$Transcripts[, selected := parent_id %in% dtg]
+rhk$Transcripts[, selected := parent_id %in% htg]
+rhs$Transcripts[, selected := parent_id %in% htg]
+rdk$Genes[, excluded := parent_id %in% dxg]
+rds$Genes[, excluded := parent_id %in% dxg]
+rhk$Genes[, excluded := parent_id %in% hxg]
+rhs$Genes[, excluded := parent_id %in% hxg]
+rdk$Transcripts[, excluded := parent_id %in% dxg]
+rds$Transcripts[, excluded := parent_id %in% dxg]
+rhk$Transcripts[, excluded := parent_id %in% hxg]
+rhs$Transcripts[, excluded := parent_id %in% hxg]
+
+rdkth$Genes[, selected := parent_id %in% dtg]
+rdsth$Genes[, selected := parent_id %in% dtg]
+rhkth$Genes[, selected := parent_id %in% htg]
+rhsth$Genes[, selected := parent_id %in% htg]
+rdkth$Transcripts[, selected := parent_id %in% dtg]
+rdsth$Transcripts[, selected := parent_id %in% dtg]
+rhkth$Transcripts[, selected := parent_id %in% htg]
+rhsth$Transcripts[, selected := parent_id %in% htg]
+rdkth$Genes[, excluded := parent_id %in% dxg]
+rdsth$Genes[, excluded := parent_id %in% dxg]
+rhkth$Genes[, excluded := parent_id %in% hxg]
+rhsth$Genes[, excluded := parent_id %in% hxg]
+rdkth$Transcripts[, excluded := parent_id %in% dxg]
+rdsth$Transcripts[, excluded := parent_id %in% dxg]
+rhkth$Transcripts[, excluded := parent_id %in% hxg]
+rhsth$Transcripts[, excluded := parent_id %in% hxg]
+
+rdkth2$Genes[, selected := parent_id %in% dtg]
+rdsth2$Genes[, selected := parent_id %in% dtg]
+rhkth2$Genes[, selected := parent_id %in% htg]
+rhsth2$Genes[, selected := parent_id %in% htg]
+rdkth2$Transcripts[, selected := parent_id %in% dtg]
+rdsth2$Transcripts[, selected := parent_id %in% dtg]
+rhkth2$Transcripts[, selected := parent_id %in% htg]
+rhsth2$Transcripts[, selected := parent_id %in% htg]
+rdkth2$Genes[, excluded := parent_id %in% dxg]
+rdsth2$Genes[, excluded := parent_id %in% dxg]
+rhkth2$Genes[, excluded := parent_id %in% hxg]
+rhsth2$Genes[, excluded := parent_id %in% hxg]
+rdkth2$Transcripts[, excluded := parent_id %in% dxg]
+rdsth2$Transcripts[, excluded := parent_id %in% dxg]
+rhkth2$Transcripts[, excluded := parent_id %in% hxg]
+rhsth2$Transcripts[, excluded := parent_id %in% hxg]
+```
+
+### Distribution of gene expression
+
+```{r truXdist}
+# Gene expression level of genes selected to be true DTU events.
+df <- data.table(expression= c(rdk$Transcripts[, unique(totalA), by=parent_id]$V1, 
+							   rds$Transcripts[, unique(totalA), by=parent_id]$V1,
+							   rhk$Transcripts[, unique(totalA), by=parent_id]$V1,
+							   rhs$Transcripts[, unique(totalA), by=parent_id]$V1),
+				 selected= c(rdk$Transcripts[, unique(selected), by=parent_id]$V1, 
+							   rds$Transcripts[, unique(selected), by=parent_id]$V1,
+							   rhk$Transcripts[, unique(selected), by=parent_id]$V1,
+							   rhs$Transcripts[, unique(selected), by=parent_id]$V1),
+				  cond= c(rep('Fruitfly', dim(rdk$Genes)[1] + dim(rds$Genes)[1]), 
+				  		rep('Human', dim(rhk$Genes)[1] + dim(rhs$Genes)[1])), 
+				  quant= c(rep('Kallisto', dim(rdk$Genes)[1]),  rep('Salmon', dim(rds$Genes)[1]), 
+				  		 rep('Kallisto', dim(rhk$Genes)[1]),  rep('Salmon', dim(rhs$Genes)[1])) )
+p <- ggplot(df) + gth +
+	facet_grid(cond ~ quant, scales='fixed') +
+	geom_histogram(aes(x=expression, fill= selected), position=position_dodge()) +
+	labs(x='total # isoform-length-normalised reads', title='Gene expression levels in truth subset')
+print(p)
+# Zoom in
+print( p + scale_x_continuous(limits=c(0, 50000)) + coord_cartesian(ylim=c(0,1500)) )
+print( p + scale_x_continuous(limits=c(0, 1000)) + coord_cartesian(ylim=c(0,250)))
+```
+
+* "High expression" translates into genes with at least ~500 reads.
+* The exact shape of the distribution is equivalent between the quantification tools, but not identical.
+* The high expression genes may still contain non-expressed isoforms, so plotting the distribution of isoform expression without knowing which specific isoforms were selected withing each selected gene would not be informative.
+
+### Distribution of effect size in truth
+
+How's the effect size distributed between the genes selected for abundance editing, versus all the remaining genes 
+(including the genes excluded from the simulation of abundances).
+
+```{r truFXdist}
+# Obtain FX size from RATs output.
+df <- data.table(expression= c(rdk$Transcripts[, Dprop], 
+							   rds$Transcripts[, Dprop],
+							   rhk$Transcripts[, Dprop],
+							   rhs$Transcripts[, Dprop]),
+				 edited= c(rdk$Transcripts[, selected], 
+							   rds$Transcripts[, selected],
+							   rhk$Transcripts[, selected],
+							   rhs$Transcripts[, selected]),
+				  cond= c(rep('Fruitfly', dim(rdk$Transcripts)[1] + dim(rds$Transcripts)[1]), 
+				  		rep('Human', dim(rhk$Transcripts)[1] + dim(rhs$Transcripts)[1])), 
+				  quant= c(rep('Kallisto', dim(rdk$Transcripts)[1]),  rep('Salmon', dim(rds$Transcripts)[1]), 
+				  		 rep('Kallisto', dim(rhk$Transcripts)[1]),  rep('Salmon', dim(rhs$Transcripts)[1])) )
+p <- ggplot(df) + gth +
+	facet_grid(cond ~ quant, scales='fixed') +
+	geom_histogram(aes(x=expression, fill= edited), position=position_dodge()) +
+	labs(x='Dprop', title='RATs effect size distribution (edited VS unedited)')
+print(p)
+# Zoom in
+print( p + coord_cartesian(ylim=c(0, 500)) )
+
+# Obtain FX size from SUPPA2 output.
+df <- data.table(expression= c(sdk[, dpsi], 
+							   sds[, dpsi],
+							   shk[, dpsi],
+							   shs[, dpsi]),
+				 edited= c(sdk[, selected], 
+							   sds[, selected],
+							   shk[, selected],
+							   shs[, selected]),
+				  cond= c(rep('Fruitfly', dim(sdk)[1] + dim(sds)[1]), 
+				  		rep('Human', dim(shk)[1] + dim(shs)[1])), 
+				  quant= c(rep('Kallisto', dim(sdk)[1]),  rep('Salmon', dim(sds)[1]), 
+				  		 rep('Kallisto', dim(shk)[1]),  rep('Salmon', dim(shs)[1])) )
+p <- ggplot(df) + gth +
+	facet_grid(cond ~ quant, scales='fixed') +
+	geom_histogram(aes(x=expression, fill= edited), position=position_dodge()) +
+	labs(x='dPSI', title='SUPPA2 effect size distribution (edited VS unedited)')
+print(p)
+# Zoom in
+print( p + coord_cartesian(ylim=c(0, 500)) )
+
+# Obtain FX size from DRIMSeq output.
+df <- data.table(expression= c(ddk[, lr], 
+							   dds[, lr],
+							   dhk[, lr],
+							   dhs[, lr]),
+				 edited= c(ddk[, selected], 
+							 dds[, selected],
+							 dhk[, selected],
+							 dhs[, selected]),
+				  cond= c(rep('Fruitfly', dim(ddk)[1] + dim(dds)[1]), 
+				  		rep('Human', dim(dhk)[1] + dim(dhs)[1])), 
+				  quant= c(rep('Kallisto', dim(ddk)[1]),  rep('Salmon', dim(dds)[1]), 
+				  		 rep('Kallisto', dim(dhk)[1]),  rep('Salmon', dim(dhs)[1])) )
+p <- ggplot(df) + gth +
+	facet_grid(cond ~ quant, scales='fixed') +
+	geom_histogram(aes(x=expression, fill= edited), position=position_dodge()) +
+	labs(x='LR', title='DRIMSeq effect size distribution (edited VS unedited)')
+print(p)
+# Zoom in
+print( p + coord_cartesian(ylim=c(0, 500)) )
+print( p + scale_x_continuous(limits=c(0, 100)) + coord_cartesian(ylim=c(0, 500)) )
+```
+
+* The selected genes contain more than 2 isoforms, but only 2 were edited to create DTU, so the high abundance of 0 effect size in RATS and SUPPA2 is not surprising.
+* There is a healthily wide distribution of non-zero effect sizes in the selected genes.
+* The Dprop/dPSI should theoretically be summetrical, by nature of how the datasets were created. Deviation from symmetry reflects the stochasticity in read simulation and quantification.
+
+# Individual comparisons to truth
+
+The truth consists of swapping abundance for the two most abundant isoforms of 1000 well-expressed genes in each dataset.
+Ideally, tools are expected to identify these 1000 genes or 2000 transcripts.
+As all genes were selected to have high expression, *false negatives* are expected only for very small effect sizes (no limit was imposed to effect size in the selection process).
+As all other genes and transcripts should be completely unchanged, all *false positives* must be attributed to random fluctuations in the simulation and quantification processes: The datasets were simulated to identical final abundances, except for the 1000 selected genes, but the reads were created independently for each set. Thus, the exact set of reads would influence the quantification. However, all DTU tools received the exact same quantifications, so the level of input noise was the same.
+
+
+We track the following values:
+
+* TP - true positives (designed to be DTU and found to be DTU).
+* FP - false positives (designed to be DTU but not found to be DTU).
+* TN - true negatives (designed not to be DTU and found not to be DTU).
+* FN - false negatives (designed not to be DTU but found to be DTU).
+* TNA - an excluded gene (and therefore not "expressed") that is found not to be DTU. This is a type of True Negative, in that we should expect no DTU for the genes excluded from the simulation.
+* FNA - an excluded gene falsely found to be DTU. This is a type of False Positive, in that we should expect no DTU for the genes excluded from the simulation.
+
+```{r colors}
+# Colour code
+col <- c('TP'='green', 'FP'='red', 'TN'='blue', 'FN'='darkorange', 'TNA'='grey50', 'FNA'='pink')
+```
+
+## Effect of p-value 
+
+### DRIMSeq
+
+```{r drimPthresh}
+thr = seq(0, 0.1, 0.001)  # alpha values above 0.1 are unlikely to be used or useful
+l <- length(thr)
+# Hits
+# NA logical values mess up subsetting. We'll consider NAs as a case of negatives.
+# '<=' allows for both 0 and 1 to be included without special treatment, even if strictly a hit should be only '<'
+dk <- lapply(thr, function(x) { !is.na(ddk$adj_pvalue) & ddk$adj_pvalue <= x })
+ds <- lapply(thr, function(x) { !is.na(dds$adj_pvalue) & dds$adj_pvalue <= x }) 
+hk <- lapply(thr, function(x) { !is.na(dhk$adj_pvalue) & dhk$adj_pvalue <= x }) 
+hs <- lapply(thr, function(x) { !is.na(dhs$adj_pvalue) & dhs$adj_pvalue <= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(ddk[hits & selected, TRUE])[1] }),  # hits already filtered for NA
+				 	  sapply(ds, function(hits) { dim(dds[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(ddk[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(ddk[(!hits) & !(selected | excluded), TRUE])[1] }), 
+				 	  sapply(ds, function(hits) { dim(dds[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(ddk[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(ddk[hits & excluded, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[hits & excluded, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[hits & excluded, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(ddk[(!hits) & excluded, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[(!hits) & excluded, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[(!hits) & excluded, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[(!hits) & excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='p-val cutoff', title='DRIMSeq p-val cut-off')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 1000)) )
+print(p + coord_cartesian(ylim=c(0, 150)) )
+```
+
+* Kallisto estimations have a marginally higher TP and lower FN than Salmon estimations.
+* Higher TP and lower FN in fruitfly, compared to human.
+* ~50% of selected genes receive very low p-values. 
+* Additional relaxation of cutoff improves TPs only a little and adds nearly as many FPs as TPs
+* The vast majority of the excluded genes are not present in the DTU reports of DRIMSeq in either species. 
+  More of them are present in human, but there are many more excluded genes to begin with.
+* The majority of genes excluded from the simulation were not reported by DRIMSeq. Out of the few reported, most were not significant.
+More excluded genes appear for the human datasets (there are more excluded genes to begin with) than the fruitfly.
+Also, more excluded genes appear with the Kallisto estimates and this applies to both DTU and non-DTU.
+
+### SUPPA2
+
+```{r supPthresh}
+# SUPPA2 reports transcripts, but the truth is limited to genes, so results must be aggregated by gene.
+
+thr = seq(0, 0.1, 0.001)  # alpha values above 0.1 are unlikely to be used or useful
+l <- length(thr)
+
+# Hits.
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = sdk$gene_id, sel = sdk$selected, xcl = sdk$excluded,
+					  thit = sdk$pval <= x & !is.na(sdk$pval), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = sds$gene_id, sel = sds$selected, xcl = sds$excluded,
+					  thit = sds$pval <= x & !is.na(sds$pval), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = shk$gene_id, sel = shk$selected, xcl = shk$excluded,
+					  thit = shk$pval <= x & !is.na(shk$pval), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = shs$gene_id, sel = shs$selected, xcl = shs$excluded,
+					  thit = shs$pval <= x & !is.na(shs$pval), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='p-val cutoff', title='SUPPA2 p-val cut-off')
+print(p)
+# Zoom in the lower parts
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+```
+
+* The number of excluded genes matches the expected magnitudes.
+* In human several genes that excluded and should have 0 expression as reported as DTU, more so with the kallisto quantifications.
+* In human the FP rise very fast and surpass TPs by cutoff value 0.025. Rise less steep in fruitfly.
+* In human, TP rise faster than fly and  approach the maximum 1000 for significance cutoff 0.1. 
+* Conversely, FN lower in human.
+* At the strictest cutoff, with no FPs, it is a 50-50 chance for an expected gene to be identified (TP) or missed (FN) in both species.
+  TP and FN diverge symmatrically from the 50-50 mark as the cutoff relaxes.
+* FP rise marginally faster with kallisto quantifications in both species.
+* TP and FN differences are negligible between Kallisto and Salmon estimates.
+
+
+### RATs
+
+```{r ratPthreshg}
+# Gene-level test
+thr = seq(0, 0.1, 0.001)  # alpha values above 0.1 are unlikely to be used or useful
+l <- length(thr)
+# Hits
+# '<=' allows for both 0 and 1 to be included without special treatment, even if strictly a hit should be only '<'
+dk <- lapply(thr, function(x) { !is.na(rdk$Genes$pval_corr) & rdk$Genes$pval_corr <= x })
+ds <- lapply(thr, function(x) { !is.na(rds$Genes$pval_corr) & rds$Genes$pval_corr <= x })  # checking NA at pval, because Dprop is always calculated
+hk <- lapply(thr, function(x) { !is.na(rhk$Genes$pval_corr) & rhk$Genes$pval_corr <= x }) 
+hs <- lapply(thr, function(x) { !is.na(rhs$Genes$pval_corr) & rhs$Genes$pval_corr <= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & excluded, TRUE])[1] }), 
+				 	   sapply(ds, function(hits) { dim(rds$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhk$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhs$Genes[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(ds, function(hits) { dim(rds$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='p-val cutoff', title='RATs (gene-level) p-val cut-off')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 1050)) )
+```
+
+* Full TPs from the start.
+* Almost no FN.
+* Extremely high FPs from the start.
+* Many excluded genes get reported as DTU in human, more so with the Kallisto quantifications.
+
+```{r rathPthresht}
+# Transcript-level test
+thr = seq(0, 0.1, 0.001)  # alpha values above 0.1 are unlikely to be used or useful
+l <- length(thr)
+# Hits
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdk$Transcript$parent_id, sel = rdk$Transcript$selected, xcl = rdk$Transcript$excluded,
+					  thit = rdk$Transcript$pval_corr <= x & !is.na(rdk$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rds$Transcript$parent_id, sel = rds$Transcript$selected, xcl = rds$Transcript$excluded,
+					  thit = rds$Transcript$pval_corr <= x & !is.na(rds$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhk$Transcript$parent_id, sel = rhk$Transcript$selected, xcl = rhk$Transcript$excluded,
+					  thit = rhk$Transcript$pval_corr <= x & !is.na(rhk$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhs$Transcript$parent_id, sel = rhs$Transcript$selected, xcl = rhs$Transcript$excluded,
+					  thit = rhs$Transcript$pval_corr <= x & !is.na(rhs$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='p-val cutoff', title='RATs (transcript-level) p-val cut-off')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+```
+
+* Very similar to gene-level. TPs full from the start, FPs through the roof, many excluded genes in human reported as DTU.
+* More excluded genes called DTU than the gene-level test.
+
+## Effect of effect size 
+
+### DRIMSeq
+
+```{r drimFXthresh}
+thr = seq(0, 500, 0.5)
+l <- length(thr)
+# Hits
+dk <- lapply(thr, function(x) { !is.na(ddk$lr) & ddk$lr >= x })
+ds <- lapply(thr, function(x) { !is.na(dds$lr) & dds$lr >= x }) 
+hk <- lapply(thr, function(x) { !is.na(dhk$lr) & dhk$lr >= x }) 
+hs <- lapply(thr, function(x) { !is.na(dhs$lr) & dhs$lr >= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(ddk[hits & selected, TRUE])[1] }),  # hits already filtered for NA
+				 	  sapply(ds, function(hits) { dim(dds[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(ddk[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(ddk[(!hits) & !(selected | excluded), TRUE])[1] }), 
+				 	  sapply(ds, function(hits) { dim(dds[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(ddk[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(ddk[hits & excluded, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[hits & excluded, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[hits & excluded, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(ddk[(!hits) & excluded, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(dds[(!hits) & excluded, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(dhk[(!hits) & excluded, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(dhs[(!hits) & excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='likelihood ratio threshold', title='DRIMSeq LR threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000), xlim=c(0,100)) )
+```
+
+* TP, FP, TN very similar between Kallisto and Salmon quantifications.
+* More FP in human
+* FPs eliminated by LR 25 (fly) or 50 (human).
+* FNs surpass TPs by LR 25
+* Some excluded genes in human show up as DTU, more so with the kallisto quantifications. Almost eliminated by LR 15.
+* Different number of excluded genes present in the DRIMSeq reports between Salmon and Kallisto (more in Kallisto).
+* Even with 0 requirement, TP max out around 850 for human, 950 for fly.
+
+### SUPPA2
+
+```{r supFXthresh}
+# SUPPA2 reports transcripts, but the truth is limited to genes, so results must be aggregated by gene.
+
+thr = seq(0, 0.5, 0.01)
+l <- length(thr)
+# Hits
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = sdk$gene_id, sel = sdk$selected, xcl = sdk$excluded,
+					  thit = sdk$dpsi >= x & !is.na(sdk$dpsi), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = sds$gene_id, sel = sds$selected, xcl = sds$excluded,
+					  thit = sds$dpsi >= x & !is.na(sds$dpsi), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = shk$gene_id, sel = shk$selected, xcl = shk$excluded,
+					  thit = shk$dpsi >= x & !is.na(shk$dpsi), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = shs$gene_id, sel = shs$selected, xcl = shs$excluded,
+					  thit = shs$dpsi >= x & !is.na(shs$dpsi), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='dPSI threshold', title='SUPPA2 dPSI threshold')
+print(p)
+# Zoom in the lower parts
+print(p + coord_cartesian(ylim=c(0, 2000), xlim=c(0, 0.4)) )
+```
+
+* More FPs in human than fruitfly
+* Loads of FP from the very start.
+* FP exceed TP until dPSI 0.05 in fly and 0.2 in  human.
+* Many excluded genes in human come up as DTU, more so with the Kallisto estimations.
+* No other notable difference between Kallisto and Salmon.
+* FN exceed TP around dPSI 0.3.
+* With 0 requirement, TP max out at the full 1000 for both fly and human.
+
+### RATs
+
+```{r ratFXthreshg}
+# RATs
+
+# Gene-level test
+thr = seq(0, 0.5, 0.01)
+l <- length(thr)
+# Hits
+dk <- lapply(thr, function(x) { !is.na(rdk$Genes$maxDprop) & rdk$Genes$maxDprop >= x })
+ds <- lapply(thr, function(x) { !is.na(rds$Genes$maxDprop) & rds$Genes$maxDprop >= x })
+hk <- lapply(thr, function(x) { !is.na(rhk$Genes$maxDprop) & rhk$Genes$maxDprop >= x })
+hs <- lapply(thr, function(x) { !is.na(rhs$Genes$maxDprop) & rhs$Genes$maxDprop >= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & excluded, TRUE])[1] }), 
+				 	   sapply(ds, function(hits) { dim(rds$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhk$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhs$Genes[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(ds, function(hits) { dim(rds$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Dprop threshold', title='RATs (gene-level) Dprop threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+```
+
+* More FP in human.
+* FPs exceed TPs until Dprop 0.08 (fly) or 0.3 (human).
+* FN surpass TP at Dprop 0.05
+* Even with 0 requirement, TP max out around only 500, for either species.
+* maxDprop is not a very good criterion as the DTU events reported may not be those with the largest effect sizes. 
+  Often large effect sizes correlate with low abundance (more stochastic noise). maxDprop is just included in this analysis for completeness.
+* A number of exceeded human genes appear as DTU, more so with Kallisto estimates.
+
+```{r ratFXthresht}
+# RATs
+
+# Transcript-level test
+thr = seq(0, 0.5, 0.01)
+l <- length(thr)
+# Hits
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdk$Transcript$parent_id, sel = rdk$Transcript$selected, xcl = rdk$Transcript$excluded,
+					  thit = rdk$Transcript$Dprop >= x & !is.na(rdk$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rds$Transcript$parent_id, sel = rds$Transcript$selected, xcl = rds$Transcript$excluded,
+					  thit = rds$Transcript$Dprop >= x & !is.na(rds$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhk$Transcript$parent_id, sel = rhk$Transcript$selected, xcl = rhk$Transcript$excluded,
+					  thit = rhk$Transcript$Dprop >= x & !is.na(rhk$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhs$Transcript$parent_id, sel = rhs$Transcript$selected, xcl = rhs$Transcript$excluded,
+					  thit = rhs$Transcript$Dprop >= x & !is.na(rhs$Transcript$pval_corr), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Dprop threshold', title='RATs (transcript-level) Dprop threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+```
+
+* More FPs in human.
+* FN exceed TP around Dprop 0.3 in both species.
+* FP exceed TP until 0.8 (fly) or 0.25 (human)
+* Many excluded human genes appear as DTU, more so with kallisto estimates.
+
+
+## Effect of quantification reproducibility
+
+This feature of RATs measures the fraction of iterations in a permutation/bootstrap process that result in a positive DTU classification.
+A DTU classification requires thresholds to be defined. Here we have two sets of thresholds: the defaults in RATs version 0.6.4, and a set of more relaxed ones.
+
+### RATs gene-level
+
+```{r qbootg}
+# RATs Gene-level test
+
+# 0.6.4 Default thresholds
+print(unlist(rdk$Parameters[c('p_thresh', 'abund_thresh', 'dprop_thresh')]))
+thr = seq(0, 1, 0.001)
+l <- length(thr)
+# Hits
+dk <- lapply(thr, function(x) { !is.na(rdk$Genes$quant_dtu_freq) & rdk$Genes$quant_dtu_freq >= x })
+ds <- lapply(thr, function(x) { !is.na(rds$Genes$quant_dtu_freq) & rds$Genes$quant_dtu_freq >= x })
+hk <- lapply(thr, function(x) { !is.na(rhk$Genes$quant_dtu_freq) & rhk$Genes$quant_dtu_freq >= x })
+hs <- lapply(thr, function(x) { !is.na(rhs$Genes$quant_dtu_freq) & rhs$Genes$quant_dtu_freq >= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rds$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhs$Genes[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(rdk$Genes[hits & excluded, TRUE])[1] }), 
+				 	   sapply(ds, function(hits) { dim(rds$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhk$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhs$Genes[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(rdk$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(ds, function(hits) { dim(rds$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhk$Genes[(!hits) & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhs$Genes[(!hits) &  excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Quantification reproducibility threshold', title='RATs (gene-level) reproducibility threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+
+# More sensitive thresholds
+print(unlist(rdkth$Parameters[c('p_thresh', 'abund_thresh', 'dprop_thresh')]))
+thr = seq(0, 1, 0.001)
+l <- length(thr)
+# Hits
+dk <- lapply(thr, function(x) { !is.na(rdkth$Genes$quant_dtu_freq) & rdkth$Genes$quant_dtu_freq >= x })
+ds <- lapply(thr, function(x) { !is.na(rdsth$Genes$quant_dtu_freq) & rdsth$Genes$quant_dtu_freq >= x })
+hk <- lapply(thr, function(x) { !is.na(rhkth$Genes$quant_dtu_freq) & rhkth$Genes$quant_dtu_freq >= x })
+hs <- lapply(thr, function(x) { !is.na(rhsth$Genes$quant_dtu_freq) & rhsth$Genes$quant_dtu_freq >= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(rdkth$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth$Genes[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(rdkth$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth$Genes[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(rdkth$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth$Genes[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(rdkth$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth$Genes[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(rdkth$Genes[hits & excluded, TRUE])[1] }), 
+				 	   sapply(ds, function(hits) { dim(rdsth$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhkth$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhsth$Genes[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(rdkth$Genes[(!hits) & !excluded, TRUE])[1] }),
+				 	   sapply(ds, function(hits) { dim(rdsth$Genes[(!hits) & !excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhkth$Genes[(!hits) & !excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhsth$Genes[(!hits) & !excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Quantification reproducibility threshold', title='RATs (gene-level) reproducibility threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+
+# Same sensitive thresholds but with higher noise threshold
+print(unlist(rdkth2$Parameters[c('p_thresh', 'abund_thresh', 'dprop_thresh')]))
+thr = seq(0, 1, 0.001)
+l <- length(thr)
+# Hits
+dk <- lapply(thr, function(x) { !is.na(rdkth2$Genes$quant_dtu_freq) & rdkth2$Genes$quant_dtu_freq >= x })
+ds <- lapply(thr, function(x) { !is.na(rdsth2$Genes$quant_dtu_freq) & rdsth2$Genes$quant_dtu_freq >= x })
+hk <- lapply(thr, function(x) { !is.na(rhkth2$Genes$quant_dtu_freq) & rhkth2$Genes$quant_dtu_freq >= x })
+hs <- lapply(thr, function(x) { !is.na(rhsth2$Genes$quant_dtu_freq) & rhsth2$Genes$quant_dtu_freq >= x })
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp= c(sapply(dk, function(hits) { dim(rdkth2$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth2$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth2$Genes[hits & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth2$Genes[hits & selected, TRUE])[1] }) ),
+				 fp= c(sapply(dk, function(hits) { dim(rdkth2$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth2$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth2$Genes[hits & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth2$Genes[hits & !(selected | excluded), TRUE])[1] }) ),
+				 tn= c(sapply(dk, function(hits) { dim(rdkth2$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth2$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth2$Genes[(!hits) & !(selected | excluded), TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth2$Genes[(!hits) & !(selected | excluded), TRUE])[1] }) ),
+				 fn= c(sapply(dk, function(hits) { dim(rdkth2$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(ds, function(hits) { dim(rdsth2$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hk, function(hits) { dim(rhkth2$Genes[(!hits) & selected, TRUE])[1] }),
+				 	  sapply(hs, function(hits) { dim(rhsth2$Genes[(!hits) & selected, TRUE])[1] }) ),
+				 fna= c(sapply(dk, function(hits) { dim(rdkth2$Genes[hits & excluded, TRUE])[1] }), 
+				 	   sapply(ds, function(hits) { dim(rdsth2$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhkth2$Genes[hits & excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhsth2$Genes[hits & excluded, TRUE])[1] }) ),
+				 tna= c(sapply(dk, function(hits) { dim(rdkth2$Genes[(!hits) & !excluded, TRUE])[1] }),
+				 	   sapply(ds, function(hits) { dim(rdsth2$Genes[(!hits) & !excluded, TRUE])[1] }),
+				 	   sapply(hk, function(hits) { dim(rhkth2$Genes[(!hits) & !excluded, TRUE])[1] }),
+				 	   sapply(hs, function(hits) { dim(rhsth2$Genes[(!hits) & !excluded, TRUE])[1] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Quantification reproducibility threshold', title='RATs (gene-level) reproducibility threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+```
+
+* The decline of TP is steady throughout the range of values. It indicates that the effect of stochasticity in simulation and quantification
+  of even high-abundance isoforms can result in differences large enough to change the DTU outcome at any given thresholds. By comparison, FP drop and can be even eliminated. This makes the case   for setting the quantification threshold to a high value, such as the default 0.95.
+* The point were TP exceed FP can be well below or above 0.5 (50% of the iterations are classified as DTU), depending on the number of genes being tested.
+  It is thus higher in human and shifts to lower values with a high minimum abundance threshold.
+* The addition of a high noise threshold, reduces FP without cost to TP. That is because all the DTU events are in high abundance isoforms by design.
+* The high noise threshold also eliminates the false DTU classification of genes that were excluded from the read simulations,
+
+### RATs transcript-level
+
+```{r qboott}
+# RATs transcript-level
+
+# 0.6.4 defaults
+print(unlist(rdk$Parameters[c('p_thresh', 'abund_thresh', 'dprop_thresh')]))
+thr = seq(0, 01, 0.001)
+l <- length(thr)
+# Hits
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdk$Transcript$parent_id, sel = rdk$Transcript$selected, xcl = rdk$Transcript$excluded,
+					  thit = rdk$Transcript$quant_dtu_freq >= x & !is.na(rdk$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rds$Transcript$parent_id, sel = rds$Transcript$selected, xcl = rds$Transcript$excluded,
+					  thit = rds$Transcript$quant_dtu_freq >= x & !is.na(rds$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhk$Transcript$parent_id, sel = rhk$Transcript$selected, xcl = rhk$Transcript$excluded,
+					  thit = rhk$Transcript$quant_dtu_freq >= x & !is.na(rhk$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhs$Transcript$parent_id, sel = rhs$Transcript$selected, xcl = rhs$Transcript$excluded,
+					  thit = rhs$Transcript$quant_dtu_freq >= x & !is.na(rhs$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Quantification reproducibility threshold', title='RATs (transcript-level) reproducibility threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+
+# Relaxed thresholds
+print(unlist(rdkth$Parameters[c('p_thresh', 'abund_thresh', 'dprop_thresh')]))
+thr = seq(0, 01, 0.001)
+l <- length(thr)
+# Hits
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdkth$Transcript$parent_id, sel = rdkth$Transcript$selected, xcl = rdkth$Transcript$excluded,
+					  thit = rdkth$Transcript$quant_dtu_freq >= x & !is.na(rdkth$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdsth$Transcript$parent_id, sel = rdsth$Transcript$selected, xcl = rdsth$Transcript$excluded,
+					  thit = rdsth$Transcript$quant_dtu_freq >= x & !is.na(rdsth$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhkth$Transcript$parent_id, sel = rhkth$Transcript$selected, xcl = rhkth$Transcript$excluded,
+					  thit = rhkth$Transcript$quant_dtu_freq >= x & !is.na(rhkth$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhsth$Transcript$parent_id, sel = rhsth$Transcript$selected, xcl = rhsth$Transcript$excluded,
+					  thit = rhsth$Transcript$quant_dtu_freq >= x & !is.na(rhsth$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Quantification reproducibility threshold', title='RATs (transcript-level) reproducibility threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+
+# Same relaxed thresholds but with high noise filter
+print(unlist(rdkth2$Parameters[c('p_thresh', 'abund_thresh', 'dprop_thresh')]))
+thr = seq(0, 01, 0.001)
+l <- length(thr)
+# Hits
+dk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdkth2$Transcript$parent_id, sel = rdkth2$Transcript$selected, xcl = rdkth2$Transcript$excluded,
+					  thit = rdkth2$Transcript$quant_dtu_freq >= x & !is.na(rdkth2$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+ds <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rdsth2$Transcript$parent_id, sel = rdsth2$Transcript$selected, xcl = rdsth2$Transcript$excluded,
+					  thit = rdsth2$Transcript$quant_dtu_freq >= x & !is.na(rdsth2$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hk <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhkth2$Transcript$parent_id, sel = rhkth2$Transcript$selected, xcl = rhkth2$Transcript$excluded,
+					  thit = rhkth2$Transcript$quant_dtu_freq >= x & !is.na(rhkth2$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+hs <- mclapply(thr, function(x) {
+	tmp <- data.table(gene = rhsth2$Transcript$parent_id, sel = rhsth2$Transcript$selected, xcl = rhsth2$Transcript$excluded,
+					  thit = rhsth2$Transcript$quant_dtu_freq >= x & !is.na(rhsth2$Transcript$quant_dtu_freq), ghit = NA)
+	tmp[, ghit := any(thit), by= gene]
+	return ( res = c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+			 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+			 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+			 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+			 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+			 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) ) ) }, mc.cores=7)
+# Structure data.
+df <- data.table(thresh= c(thr, thr, thr, thr),
+				 tp=c(sapply(dk, function(counts) { counts['tp'] }),
+				 	  sapply(ds, function(counts) { counts['tp'] }),
+				 	  sapply(hk, function(counts) { counts['tp'] }),
+				 	  sapply(hs, function(counts) { counts['tp'] }) ),
+				 fp= c(sapply(dk, function(counts) { counts['fp'] }),
+				 	  sapply(ds, function(counts) { counts['fp'] }),
+				 	  sapply(hk, function(counts) { counts['fp'] }),
+				 	  sapply(hs, function(counts) { counts['fp'] }) ),
+				 tn= c(sapply(dk, function(counts) { counts['tn'] }),
+				 	  sapply(ds, function(counts) { counts['tn'] }),
+				 	  sapply(hk, function(counts) { counts['tn'] }),
+				 	  sapply(hs, function(counts) { counts['tn'] }) ),
+				 fn= c(sapply(dk, function(counts) { counts['fn'] }),
+				 	  sapply(ds, function(counts) { counts['fn'] }),
+				 	  sapply(hk, function(counts) { counts['fn'] }),
+				 	  sapply(hs, function(counts) { counts['fn'] }) ),
+				 fna= c(sapply(dk, function(counts) { counts['fna'] }),
+				 	   sapply(ds, function(counts) { counts['fna'] }),
+				 	   sapply(hk, function(counts) { counts['fna'] }),
+				 	   sapply(hs, function(counts) { counts['fna'] }) ),
+				 tna= c(sapply(dk, function(counts) { counts['tna'] }),
+				 	   sapply(ds, function(counts) { counts['tna'] }),
+				 	   sapply(hk, function(counts) { counts['tna'] }),
+				 	   sapply(hs, function(counts) { counts['tna'] }) ),
+				 set= c(rep('Fruitfly',l), rep('Fruitfly',l), rep('Human',l), rep('Human',l)),
+				 quant= c(rep('Kallisto',l), rep('Salmon',l), rep('Kallisto',l), rep('Salmon',l)) )
+p <- ggplot(df) + gth2 +
+	facet_grid(set ~ quant, scales='fixed') +
+	geom_line(aes(x= thresh, y=tp, colour='TP')) +
+	geom_line(aes(x= thresh, y=fp, colour='FP')) +
+	geom_line(aes(x= thresh, y=tn, colour='TN')) +
+	geom_line(aes(x= thresh, y=fn, colour='FN')) +
+	geom_line(aes(x= thresh, y=tna, colour='TNA')) +
+	geom_line(aes(x= thresh, y=fna, colour='FNA')) +
+	scale_colour_manual(values=col) +
+	scale_y_continuous(expand=c(0,0)) + scale_x_continuous(expand=c(0,0)) +
+	labs(y='genes', x='Quantification reproducibility threshold', title='RATs (transcript-level) reproducibility threshold')
+print(p)
+# Zoom in
+print(p + coord_cartesian(ylim=c(0, 2000)) )
+
+```
+
+
+
+# Comparison between the tools at given thresholds, ignoring genes excluded from the simulations.
+
+SUPPA2 and DRIMSeq do not apply thresholds or classify DTU events. They return the test results raw. RATs also reports the raw results, but the reproducibility feature requires that specific significance, effect size and noise thresholds be defined in advance, and any post-hoc change of these thresholds invalidates the reproducibility measurements. However, the reproducibility thresholds can be adjusted post-hoc, with no need for a rerun.
+
+The simulated sets were focused on coding genes only. Non-coding genes would be expected to appear as non-expressed and could be added to the FP and TN.
+Here, we opted to calculate the performance metrics using only the genes explicitly designated as either positive or negative.
+
+## Assistant functions
+
+```{r functions}
+# Count TP, FP, TN, FN
+# Not used directly.
+countup <- function(x, tool, fx, qt=0.95, rt=0.85) {
+	if (tool=='RATs(gene)') {  # RATs Gene level
+		# Re-classify DTU
+		dk <- x[[1]]$Gene[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt]
+		ds <- x[[2]]$Gene[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt]
+		hk <- x[[3]]$Gene[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt]
+		hs <- x[[4]]$Gene[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt]
+		# Structure.
+		return( data.table(tp= c(dim( x[[1]]$Genes[dk & selected, TRUE])[1],
+						 	  dim(x[[2]]$Genes[ds & selected, TRUE])[1],
+						 	  dim(x[[3]]$Genes[hk & selected, TRUE])[1],
+						 	  dim(x[[4]]$Genes[hs & selected, TRUE])[1] ),
+						 fp= c(dim(x[[1]]$Genes[dk & !(selected | excluded), TRUE])[1],
+						 	  dim(x[[2]]$Genes[ds & !(selected | excluded), TRUE])[1],
+						 	  dim(x[[3]]$Genes[hk & !(selected | excluded), TRUE])[1],
+						 	  dim(x[[4]]$Genes[hs & !(selected | excluded), TRUE])[1] ),
+						 tn= c(dim(x[[1]]$Genes[(!dk) & !(selected | excluded), TRUE])[1],
+						 	  dim(x[[2]]$Genes[(!ds) & !(selected | excluded), TRUE])[1],
+						 	  dim(x[[3]]$Genes[(!hk) & !(selected | excluded), TRUE])[1],
+						 	  dim(x[[4]]$Genes[(!hs) & !(selected | excluded), TRUE])[1] ),
+						 fn= c(dim(x[[1]]$Genes[(!dk) & selected, TRUE])[1],
+						 	  dim(x[[2]]$Genes[(!ds) & selected, TRUE])[1],
+						 	  dim(x[[3]]$Genes[(!hk) & selected, TRUE])[1],
+						 	  dim(x[[4]]$Genes[(!hs) & selected, TRUE])[1] ),
+						 fna= c(dim(x[[1]]$Genes[dk & excluded, TRUE])[1], 
+						 	   dim(x[[2]]$Genes[ds & excluded, TRUE])[1],
+						 	   dim(x[[3]]$Genes[hk & excluded, TRUE])[1],
+						 	   dim(x[[4]]$Genes[hs & excluded, TRUE])[1] ),
+						 tna= c(dim(x[[1]]$Genes[(!dk) & !excluded, TRUE])[1],
+						 	   dim(x[[2]]$Genes[(!ds) & !excluded, TRUE])[1],
+						 	   dim(x[[3]]$Genes[(!hk) & !excluded, TRUE])[1],
+						 	   dim(x[[4]]$Genes[(!hs) & !excluded, TRUE])[1] ),
+						 set= c('Fruitfly', 'Fruitfly', 'Human', 'Human'),
+						 quant= c('Kallisto', 'Salmon', 'Kallisto', 'Salmon') ) )
+	} else if (tool=='RATs(transc)') {  # RATs transcript level
+		# Reclassify DTU.
+		tmp <- data.table(gene = x[[1]]$Transcript$parent_id, sel = x[[1]]$Transcript$selected, xcl = x[[1]]$Transcript$excluded, 
+				  thit = x[[1]]$Transcripts[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt], ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		dk <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		tmp <- data.table(gene = x[[2]]$Transcript$parent_id, sel = x[[2]]$Transcript$selected, xcl = x[[2]]$Transcript$excluded, 
+						  thit = x[[2]]$Transcripts[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt], ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		ds <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		tmp <- data.table(gene = x[[3]]$Transcript$parent_id, sel = x[[3]]$Transcript$selected, xcl = x[[3]]$Transcript$excluded, 
+						  thit = x[[3]]$Transcript[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt], ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		hk <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		tmp <- data.table(gene = x[[4]]$Transcript$parent_id, sel = x[[4]]$Transcript$selected, xcl = x[[4]]$Transcript$excluded, 
+						  thit = x[[4]]$Transcript[, !is.na(quant_dtu_freq) & quant_dtu_freq >= qt & !is.na(rep_dtu_freq) & rep_dtu_freq >= rt], ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		hs <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		# Structure.
+		return( data.table(tp= c(dk['tp'], ds['tp'], hk['tp'], hs['tp']),
+						 fp= c(dk['fp'], ds['fp'], hk['fp'], hs['fp']),
+						 fn= c(dk['fn'], ds['fn'], hk['fn'], hs['fn']),
+						 tn= c(dk['tn'], ds['tn'], hk['tn'], hs['tn']),
+						 fna= c(dk['fna'], ds['fna'], hk['fna'], hs['fna']),
+						 tna= c(dk['tna'], ds['tna'], hk['tna'], hs['tna']),
+						 set= c('Fruitfly', 'Fruitfly', 'Human', 'Human'),
+						 quant= c('Kallisto', 'Salmon', 'Kallisto', 'Salmon') ) )
+	} else if (tool=='SUPPA2') {
+		# Apply thresholds and aggregate by gene
+		tmp <- data.table(gene = x[[1]]$gene_id, sel = x[[1]]$selected, xcl = x[[1]]$excluded, thit = x[[1]]$dpsi >= fx & x[[1]]$pval < 0.05, ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		dk <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		tmp <- data.table(gene = x[[2]]$gene_id, sel = x[[2]]$selected, xcl = x[[2]]$excluded, thit = x[[2]]$dpsi >= fx & x[[2]]$pval < 0.05, ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		ds <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		tmp <- data.table(gene = x[[3]]$gene_id, sel = x[[3]]$selected, xcl = x[[3]]$excluded, thit = x[[3]]$dpsi >= fx & x[[3]]$pval < 0.05, ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		hk <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		tmp <- data.table(gene = x[[4]]$gene_id, sel = x[[4]]$selected, xcl = x[[4]]$excluded, thit = x[[4]]$dpsi >= fx & x[[4]]$pval < 0.05, ghit = NA)
+		tmp[, ghit := any(thit), by= gene]
+		hs <- c( tp = length(tmp[ghit & sel, TRUE, by=gene]$V1),
+				 fp = length(tmp[ghit & !(sel | xcl), TRUE, by=gene]$V1),
+				 fn = length(tmp[(!ghit) & sel, TRUE, by=gene]$V1),
+				 tn = length(tmp[(!ghit) & !(sel | xcl), TRUE, by=gene]$V1),
+				 fna = length(tmp[(ghit) & xcl, TRUE, by=gene]$V1),
+				 tna = length(tmp[(!ghit) & xcl, TRUE, by=gene]$V1) )
+		# Structure.
+		return( data.table(tp= c(dk['tp'], ds['tp'], hk['tp'], hs['tp']),
+						 fp= c(dk['fp'], ds['fp'], hk['fp'], hs['fp']),
+						 fn= c(dk['fn'], ds['fn'], hk['fn'], hs['fn']),
+						 tn= c(dk['tn'], ds['tn'], hk['tn'], hs['tn']),
+						 fna= c(dk['fna'], ds['fna'], hk['fna'], hs['fna']),
+						 tna= c(dk['tna'], ds['tna'], hk['tna'], hs['tna']),
+						 set= c('Fruitfly', 'Fruitfly', 'Human', 'Human'),
+						 quant= c('Kallisto', 'Salmon', 'Kallisto', 'Salmon') ) )
+	} else if (tool=='DRIMSeq') {
+		# Apply thresholds.
+		dk <- x[[1]]$adj_pvalue < 0.05 & x[[1]]$lr >= fx
+		ds <- x[[2]]$adj_pvalue < 0.05 & x[[2]]$lr >= fx
+		hk <- x[[3]]$adj_pvalue < 0.05 & x[[3]]$lr >= fx
+		hs <- x[[4]]$adj_pvalue < 0.05 & x[[4]]$lr >= fx
+		# Structure.
+		return( data.table(tp= c(dim(ddk[dk & selected, TRUE])[1],
+					 	  dim(dds[ds & selected, TRUE])[1],
+					 	  dim(dhk[hk & selected, TRUE])[1],
+					 	  dim(dhs[hs & selected, TRUE])[1] ),
+					 fp= c(dim(ddk[dk & !(selected | excluded), TRUE])[1],
+					 	  dim(dds[ds & !(selected | excluded), TRUE])[1],
+					 	  dim(dhk[hk & !(selected | excluded), TRUE])[1],
+					 	  dim(dhs[hs & !(selected | excluded), TRUE])[1] ),
+					 fn= c(dim(ddk[(!dk) & selected, TRUE])[1],
+					 	  dim(dds[(!ds) & selected, TRUE])[1],
+					 	  dim(dhk[(!hk) & selected, TRUE])[1],
+					 	  dim(dhs[(!hs) & selected, TRUE])[1] ),
+					 tn= c(dim(ddk[(!dk) & !(selected | excluded), TRUE])[1],
+					 	  dim(dds[(!ds) & !(selected | excluded), TRUE])[1],
+					 	  dim(dhk[(!hk) & !(selected | excluded), TRUE])[1],
+					 	  dim(dhs[(!hs) & !(selected | excluded), TRUE])[1] ),
+					 fna= c(dim(ddk[dk & excluded, TRUE])[1], 
+					 	   dim(dds[ds & excluded, TRUE])[1],
+					 	   dim(dhk[hk & excluded, TRUE])[1],
+					 	   dim(dhs[hs & excluded, TRUE])[1] ),
+					 tna= c(dim(ddk[(!dk) & !excluded, TRUE])[1],
+					 	   dim(dds[(!ds) & !excluded, TRUE])[1],
+					 	   dim(dhk[(!hk) & !excluded, TRUE])[1],
+					 	   dim(dhs[(!hs) & !excluded, TRUE])[1] ),
+					 set= c('Fruitfly', 'Fruitfly', 'Human', 'Human'),
+					 quant= c('Kallisto', 'Salmon', 'Kallisto', 'Salmon') ) )
+	} else {
+		stop('Tool?')
+	}
+}
+
+# Calculate performance metrics.
+# x: List in order fly/kallisto, fly/salmon, human/kallisto, human/salmon
+measureup <- function(x, tool, fx, qt=0.95, rt=0.85) {
+	df <- countup(x, tool, fx, qt, rt)
+	return(
+		data.table(value= c(round(df[, tp/(tp+fn)], digits=3), 
+							 round(df[, fp/(tp+fp)], digits=3), 
+				   			 round(df[, as.double(tp*tn - fp*fn) / sqrt( as.double(tp + fp)*as.double(tp + fn)*as.double(tn + fp)*as.double(tn + fn) )],
+				   			 	  digits=3)), 
+						   type= factor(c(rep('Sensitivity', 4), rep('FDR', 4), rep('MCC', 4)), levels=c('Sensitivity', 'FDR', 'MCC')),
+						   tool= factor(rep(tool, 12), levels=c('DRIMSeq', 'RATs(gene)', 'RATs(transc)', 'SUPPA2')), 
+						   species=rep(df$set, 3), 
+						   quantification=rep(df$quant, 3),
+						   effect=rep(paste(ifelse(tool=='DRIMSeq', 'LR', 'D'), '>=', fx), 12),
+						   reproducibility=rep(paste('Qrep', ifelse(is.na(qt), '', '>='), qt, 'Rrep', ifelse(is.na(rt), '', '>='), rt), 12)) )
+}
+```
+
+## Performance at pval < 0.05
+
+RATs
+
+```{r measurerats}
+# RATs Dprop >= 0.20
+rgd <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.95, rt=0.85)  # 95/100 quantification iterations, 8/9 pairwise replicates
+rtd <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.95, rt=0.85)  # 95/100 quantification iterations, 8/9 pairwise replicates
+# more permissive reproducibility
+rgd1 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.90, rt=0.75)  # 90/100 quantification iterations, 7/9 pairwise replicates
+rtd1 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.90, rt=0.75)  # 90/100 quantification iterations, 7/9 pairwise replicates
+rgd2 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.85, rt=0.65)  # 85/100 quantification iterations, 6/9 pairwise replicates
+rtd2 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.85, rt=0.65)  # 90/100 quantification iterations, 7/9 pairwise replicates
+rgd3 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.80, rt=0.55)  # 80/100 quantification iterations, 5/9 pairwise replicates
+rtd3 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.80, rt=0.55)  # 90/100 quantification iterations, 7/9 pairwise replicates
+
+# RATs Dprop >= 0.10
+rgf <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.95, rt=0.85)
+rtf <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.95, rt=0.85)
+# more permissive reproducibility
+rgf1 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.90, rt=0.75)
+rtf1 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.90, rt=0.75)
+rgf2 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.85, rt=0.65)
+rtf2 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.85, rt=0.65)
+rgf3 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.80, rt=0.55)
+rtf3 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.80, rt=0.55)
+
+# RATs Dprop >= 0.05
+rgff <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.95, rt=0.85)
+rtff <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.95, rt=0.85)
+# more permissive reproducibility
+rgff1 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.90, rt=0.75)
+rtff1 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.90, rt=0.75)
+rgff2 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.85, rt=0.65)
+rtff2 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.85, rt=0.65)
+rgff3 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.80, rt=0.55)
+rtff3 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.80, rt=0.55)
+```
+
+SUPPA2
+
+```{r measuresuppa}
+# SUPPA2 does not bootstrap the reproducibility.
+
+# SUPPA2 dPSI >= 0.20
+sd <- measureup(list(sdk,sds,shk,shs), 'SUPPA2', fx=0.20, qt=NA_integer_, rt=NA_integer_)
+# SUPPA2 dPSI >= 0.10
+sf <- measureup(list(sdk,sds,shk,shs), 'SUPPA2', fx=0.10, qt=NA_integer_, rt=NA_integer_)
+# SUPPA2 dPSI >= 0.05
+sff <- measureup(list(sdk,sds,shk,shs), 'SUPPA2', fx=0.05, qt=NA_integer_, rt=NA_integer_)
+```
+
+DRIMSeq
+
+```{r measuredrimseq}
+# DRIMSeq does not bootstrap the reproducibility.
+
+# DRIMSeq lr >= 0
+dd <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=0, qt=NA_integer_, rt=NA_integer_)
+# DRIMSeq lr >= 10
+df <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=10, qt=NA_integer_, rt=NA_integer_)
+# DRIMSeq lr >= 20
+dff <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=20, qt=NA_integer_, rt=NA_integer_)
+# DRIMSeq lr >= 30
+dfff <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=30, qt=NA_integer_, rt=NA_integer_)
+```
+
+## Plot
+
+Merge reuslts into single table.
+
+```{r merge}
+# Easier to work with ggplot2 if everything is in one table.
+mega <- rbindlist(list(rgd, rtd, rgd1, rtd1, rgd2, rtd2, rgd3, rtd3,
+		  rgf, rtf, rgf1, rtf1, rgf2, rtf2, rgf3, rtf3,
+		  rgff, rtff, rgff1, rtff1, rgff2, rtff2, rgff3, rtff3,
+		  sd, sf, sff, dd, df, dff, dfff))
+```
+
+Plot.
+
+```{r plots}
+# Human set quantified with Salmon.
+hs <- ggplot(mega[quantification=='Salmon' & species=='Human', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated human dataset quantified with Salmon)', y='')
+
+# Human set quantified with Kallisto.
+hk <- ggplot(mega[quantification=='Kallisto' & species=='Human', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated human dataset quantified with Kallisto)', y='')
+
+# Fly set quantified with Salmon.
+ds <- ggplot(mega[quantification=='Salmon' & species=='Fruitfly', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated fruitfly dataset quantified with Salmon)', y='')
+
+# Fruitfly set quantified with Kallisto.
+dk <- ggplot(mega[quantification=='Kallisto' & species=='Fruitfly', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated fruitfly dataset quantified with Kallisto)', y='')
+
+print(hs)
+print(hk)
+print(ds)
+print(dk)
+```
+
+# Comparison between the tools at given thresholds, accounting for genes excluded from the simulations.
+
+The simulated sets were focused on coding genes only. Non-coding genes would be expected to appear as non-expressed and are added to the FP and TN.
+
+## Assistant functions
+
+```{r functions2}
+# Redefine the metrics function
+measureup <- function(x, tool, fx, qt=0.95, rt=0.85) {
+	df <- countup(x, tool, fx, qt, rt)
+	return(
+		data.table(value= c(round(df[, tp/(tp+fn)], digits=3), 
+							 round(df[, (fp+fna)/(tp+fp+fna)], digits=3), 
+				   			 round(df[, as.double(tp*(tn+tna) - (fp+fna)*fn) / sqrt( as.double(tp + fp+fna)*as.double(tp + fn)*as.double(tn+tna + fp+fna)*as.double(tn+tna + fn) )],
+				   			 	  digits=3)), 
+						   type= factor(c(rep('Sensitivity', 4), rep('FDR', 4), rep('MCC', 4)), levels=c('Sensitivity', 'FDR', 'MCC')),
+						   tool= factor(rep(tool, 12), levels=c('DRIMSeq', 'RATs(gene)', 'RATs(transc)', 'SUPPA2')), 
+						   species=rep(df$set, 3), 
+						   quantification=rep(df$quant, 3),
+						   effect=rep(paste(ifelse(tool=='DRIMSeq', 'LR', 'D'), '>=', fx), 12),
+						   reproducibility=rep(paste('Qrep', ifelse(is.na(qt), '', '>='), qt, 'Rrep', ifelse(is.na(rt), '', '>='), rt), 12)) )
+}
+
+
+```
+
+## Performance at pval < 0.05
+
+RATs
+
+```{r measurerats2}
+# RATs Dprop >= 0.20
+rgd <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.95, rt=0.85)  # 95/100 quantification iterations, 8/9 pairwise replicates
+rtd <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.95, rt=0.85)  # 95/100 quantification iterations, 8/9 pairwise replicates
+# more permissive reproducibility
+rgd1 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.90, rt=0.75)  # 90/100 quantification iterations, 7/9 pairwise replicates
+rtd1 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.90, rt=0.75)  # 90/100 quantification iterations, 7/9 pairwise replicates
+rgd2 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.85, rt=0.65)  # 85/100 quantification iterations, 6/9 pairwise replicates
+rtd2 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.85, rt=0.65)  # 90/100 quantification iterations, 7/9 pairwise replicates
+rgd3 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(gene)', fx=0.20, qt=0.80, rt=0.55)  # 80/100 quantification iterations, 5/9 pairwise replicates
+rtd3 <- measureup(list(rdk,rds,rhk,rhs), 'RATs(transc)', fx=0.20, qt=0.80, rt=0.55)  # 90/100 quantification iterations, 7/9 pairwise replicates
+
+# RATs Dprop >= 0.10
+rgf <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.95, rt=0.85)
+rtf <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.95, rt=0.85)
+# more permissive reproducibility
+rgf1 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.90, rt=0.75)
+rtf1 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.90, rt=0.75)
+rgf2 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.85, rt=0.65)
+rtf2 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.85, rt=0.65)
+rgf3 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(gene)', fx=0.10, qt=0.80, rt=0.55)
+rtf3 <- measureup(list(rdkth,rdsth,rhkth,rhsth), 'RATs(transc)', fx=0.10, qt=0.80, rt=0.55)
+
+# RATs Dprop >= 0.05
+rgff <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.95, rt=0.85)
+rtff <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.95, rt=0.85)
+# more permissive reproducibility
+rgff1 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.90, rt=0.75)
+rtff1 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.90, rt=0.75)
+rgff2 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.85, rt=0.65)
+rtff2 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.85, rt=0.65)
+rgff3 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(gene)', fx=0.05, qt=0.80, rt=0.55)
+rtff3 <- measureup(list(rdkth2,rdsth2,rhkth2,rhsth2), 'RATs(transc)', fx=0.05, qt=0.80, rt=0.55)
+```
+
+SUPPA2
+
+```{r measuresuppa2}
+# SUPPA2 does not bootstrap the reproducibility.
+
+# SUPPA2 dPSI >= 0.20
+sd <- measureup(list(sdk,sds,shk,shs), 'SUPPA2', fx=0.20, qt=NA_integer_, rt=NA_integer_)
+# SUPPA2 dPSI >= 0.10
+sf <- measureup(list(sdk,sds,shk,shs), 'SUPPA2', fx=0.10, qt=NA_integer_, rt=NA_integer_)
+# SUPPA2 dPSI >= 0.05
+sff <- measureup(list(sdk,sds,shk,shs), 'SUPPA2', fx=0.05, qt=NA_integer_, rt=NA_integer_)
+```
+
+DRIMSeq
+
+```{r measuredrimseq2}
+# DRIMSeq does not bootstrap the reproducibility.
+
+# DRIMSeq lr >= 0
+dd <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=0, qt=NA_integer_, rt=NA_integer_)
+# DRIMSeq lr >= 10
+df <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=10, qt=NA_integer_, rt=NA_integer_)
+# DRIMSeq lr >= 20
+dff <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=20, qt=NA_integer_, rt=NA_integer_)
+# DRIMSeq lr >= 30
+dfff <- measureup(list(ddk,dds,dhk,dhs), 'DRIMSeq', fx=30, qt=NA_integer_, rt=NA_integer_)
+```
+
+## Plot
+
+Merge reuslts into single table.
+
+```{r merge2}
+# Easier to work with ggplot2 if everything is in one table.
+mega <- rbindlist(list(rgd, rtd, rgd1, rtd1, rgd2, rtd2, rgd3, rtd3,
+		  rgf, rtf, rgf1, rtf1, rgf2, rtf2, rgf3, rtf3,
+		  rgff, rtff, rgff1, rtff1, rgff2, rtff2, rgff3, rtff3,
+		  sd, sf, sff, dd, df, dff, dfff))
+```
+
+Plot.
+
+```{r plots2}
+# Human set quantified with Salmon.
+hs <- ggplot(mega[quantification=='Salmon' & species=='Human', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated human dataset quantified with Salmon)', y='')
+
+# Human set quantified with Kallisto.
+hk <- ggplot(mega[quantification=='Kallisto' & species=='Human', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated human dataset quantified with Kallisto)', y='')
+
+# Fly set quantified with Salmon.
+ds <- ggplot(mega[quantification=='Salmon' & species=='Fruitfly', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated fruitfly dataset quantified with Salmon)', y='')
+
+# Fruitfly set quantified with Kallisto.
+dk <- ggplot(mega[quantification=='Kallisto' & species=='Fruitfly', ]) + gth3 +
+	facet_grid(type ~ tool, switch='y') +
+	geom_point(aes(x=effect, y=value, colour=reproducibility, shape=tool), shape=20) +
+	scale_y_continuous(expand=c(0,0), breaks=c(0, 0.2, 0.4, 0.6, 0.8, 1), sec.axis=dup_axis()) + 
+	coord_cartesian(ylim=c(0, 1)) +
+	scale_colour_manual(values=c('Qrep  NA Rrep  NA' = 'blue', 
+								 'Qrep >= 0.95 Rrep >= 0.85' = 'darkred', 
+								 'Qrep >= 0.9 Rrep >= 0.75' = 'red', 
+								 'Qrep >= 0.85 Rrep >= 0.65' = 'orange', 
+								 'Qrep >= 0.8 Rrep >= 0.55' = 'gold')) +
+	labs(title='DTU performance at typical significance level of 0.05', subtitle='(simulated fruitfly dataset quantified with Kallisto)', y='')
+
+print(hs)
+print(hk)
+print(ds)
+print(dk)
+```
+
+The inclusion of the excluded genes as additional negative cases does not alter the result significantly.
