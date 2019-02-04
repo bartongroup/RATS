@@ -43,9 +43,6 @@ RATs can work with several input types:
 2. Bootstrapped abundance estimates in lists of R `data.table`s.
 3. Abundance estimates in R `data.table`s.
 
-As of `v0.6.0`, input from a `sleuth` object is no longer supported by RATs. This is due to changes in Sleuth `v0.29` that made the
-bootstrap data no longer available. Instead, RATs already supports input directly from the Kallisto/Salmon quantifications.
-
 For option 1, the function `fish4rodents()` will load the data into tables suitable for option 2. Details in the respective 
 section below.
 
