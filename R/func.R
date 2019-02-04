@@ -303,9 +303,9 @@ alloc_out <- function(annot, full, n=1){
 #' @param threads Number of threads (POSIX systems only).
 #' @return list
 #'
+#' @import data.table
 #' @import utils
 #' @import parallel
-#' @import data.table
 #'
 calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
   # Ensure data.table complies.
@@ -409,7 +409,7 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' No corrections are applied.
 #' No input checks are applied.
 #'
-#' @import stats
+#' @importFrom stats pchisq
 #' @export
 #
 g.test.1 <- function(obsx, px) {
@@ -435,7 +435,7 @@ g.test.1 <- function(obsx, px) {
 #' No corrections are applied.
 #' No input checks are applied, as RATs needs to run this millions of times.
 #'
-#' @import stats
+#' @importFrom stats pchisq
 #' @export
 #
 g.test.2 <- function(obsx, obsy) {

@@ -9,7 +9,7 @@
 #' @param gene_header The title for the genes column in the output. (parent_id)
 #' @return A data.table with two columns, matching transcript IDs to gene IDs.
 #'
-#' @importFrom S4Vectors mcols
+#' @import GenomicRanges
 #' @import data.table
 #' @export
 #'
@@ -80,17 +80,17 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 #' Then one can easily \code{ggbio::autoplot()} a gene's models by its gene ID.
 #' 
 #' @param annotfile A GTF file.
-#' @param threads Number of processing threads (all available).
+#' @param threads Number of processing threads (Default 1).
 #' @return A list (by gene) of GRangeLists (by transcript).
 #'
 #' @importFrom rtracklayer import
-#' @importFrom GenomicRanges makeGRangesListFromDataFrame
 #' @import data.table
 #' @import utils
 #' @import parallel
+#' @import GenomicRanges
 #' @export
 #'
-annot2models <- function(annotfile, threads= detectCores())
+annot2models <- function(annotfile, threads= 1L)
 {
   message('This will take a few minutes...')
   gr <- import(annotfile)
@@ -99,7 +99,7 @@ annot2models <- function(annotfile, threads= detectCores())
   lg <- list()
   
   # If GTF style...
-  if ('transcript_id' %in% names(S4Vectors::mcols(gr))) {
+  if ('transcript_id' %in% names(mcols(gr))) {
     genes <- unique(gr$gene_id)
     lg <- mclapply(genes, function(g){
       features <- gr[gr$gene_id == g]
@@ -163,8 +163,9 @@ annot2models <- function(annotfile, threads= detectCores())
 #' @param threads (integer) For parallel processing. (Default 1)
 #' @return A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
 #'
-#' @import data.table
 #' @import parallel
+#' @import data.table
+#' @import rhdf5
 #' @import wasabi
 #'
 #' @export
@@ -172,7 +173,7 @@ annot2models <- function(annotfile, threads= detectCores())
 fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", half_cooked=FALSE, beartext=FALSE, threads= 1L, scaleto= 1000000)
 {
   threads <- as.integer(threads)  # Can't be decimal.
-  setDTthreads(1)  # Not a typo. Threads used for larger mclapply blocks instead of single table operations.
+  setDTthreads(1)  # Not a typo. Threads reserved for larger mclapply blocks instead of single table operations.
 
   # Don't assume the annotation is ordered properly.
   annot <- tidy_annot(annot, TARGET_COL, PARENT_COL)
@@ -219,9 +220,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
                                                                                                           # for consistency with the .h5 mode and to allow normalisation to other target sizes 
       # If data from Salmon/Wasabi or Kallisto abundance.h5...
       } else {
-        meta <- as.data.table(list( target_id=as.character(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
-                                    eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
-        counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+        meta <- as.data.table(list( target_id=as.character(h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
+                                    eff_length=as.numeric(h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
+        counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
       }
       # Normalise raw counts.
       tpm <- as.data.table( lapply(counts, function (y) {

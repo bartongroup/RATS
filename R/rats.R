@@ -39,9 +39,9 @@
 #' @return List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 #'
 #' @import utils
-#' @import parallel
+#' @importFrom parallel mclapply
 #' @import data.table
-#' @import matrixStats
+#' @import matrixStats rowMeans rowSds rowMedians rowMins rowMaxs rowCounts
 #' @export
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
                      count_data_A= NULL, count_data_B= NULL, boot_data_A= NULL, boot_data_B= NULL,
@@ -262,9 +262,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
     numpairs <- length(pairs)
     resobj$Parameters[["rep_bootnum"]] <- numpairs
-    T
+    
     if (verbose)
-      myprogress <- utils::txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
+      myprogress <- txtProgressBar(min = 0, max = numpairs, initial = 0, char = "=", width = NA, style = 3, file = stderr())
 
     if (lean){
       # Use simple counters incremented in-place.
@@ -397,7 +397,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose) {
       message("Bootstrapping quantifications...")
       # Bootstrapping can take long, so showing progress is nice.
-      myprogress <- utils::txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = stderr())
+      myprogress <- txtProgressBar(min = 0, max = qbootnum, initial = 0, char = "=", width = NA, style = 3, file = stderr())
     }
 
     #----- Iterations
