@@ -1,4 +1,5 @@
 # Relative Abundance of Transcripts (rats)
+[![DOI](https://zenodo.org/badge/55973542.svg)](https://zenodo.org/badge/latestdoi/55973542)
 
 ***
 
