@@ -228,7 +228,9 @@ dtu_plurality_summary <- function(dtuo) {
 #' @return A ggplot2 object. Simply display/print it or you can also customize it.
 #'
 #' @import data.table
+#' @import ggplot2
 #' @export
+#' 
 plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colourby=NA_character_, shapeby=NA_character_,
                       isofcolvec=c("tomato",  "lightblue", "forestgreen", "purple", "hotpink", "gold3"),
                       dtucolvec= c("TRUE"="firebrick1", "FALSE"="dodgerblue", "NA"="gold"),
@@ -379,8 +381,9 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
 #' object was created without the transcript-level tests, this function will not work.
 #'
 #' @import data.table
-
+#' @import ggplot2
 #' @export
+#' 
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
     
@@ -535,9 +538,11 @@ plot_overview <- function(dtuo, type="volcano") {
 #'   \item{"cormat" - Pairwise Pearson's correlation matrix among samples.}
 #' }
 #' @return A ggplot2 object. Simply display it or you can also customize it.
+#' 
 #' @import data.table
-#'
+#' @import ggplot2
 #' @export
+#' 
 plot_diagnostics <- function(dtuo, type="cormat") {
   with(dtuo, {
     
@@ -572,6 +577,7 @@ plot_diagnostics <- function(dtuo, type="cormat") {
 #' @param dtuo A DTU object.
 #'
 #' @import data.table
+#' @import shiny
 #' @export
 #'
 plot_shiny_volcano <- function(dtuo) {

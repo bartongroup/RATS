@@ -45,13 +45,12 @@ We recommend studying the vignettes before using RATs.
 
 ### Dependencies
 
-The package depends on a few third-party packages, which you may need to install first, if they are not present already.
-The following instruction assume the new Bioconductor (>=3.5) syntax. Consult [Bioconductor](https://bioconductor.org/install/) for the old syntax.
+The following instructions assume Bioconductor >=3.5 syntax. Consult [Bioconductor](https://bioconductor.org/install/) for the old syntax.
 
-* Direct dependencies
+* Mandatory dependencies
 
 ```
-# Needed for computation.
+# Core data structure. Additional vectorised statistics.
 install.packages(c("data.table", "matrixStats"))
 
 # Plots.
@@ -60,23 +59,21 @@ install.packages("ggplot2")
 # Data imports.
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install("COMBINE-lab/wasabi")
 BiocManager::install("rhdf5")
+BiocManager::install("COMBINE-lab/wasabi")
 
 # Annotation imports.
+BiocManager::install("S4Vectors")
 BiocManager::install("rtracklayer")
+BiocManager::install("GenomicRanges")
 ```
 
 * Optional dependencies
 
 ```
+# Interactive volcano plot.
 install.packages("shiny")
 ```
-
-* Indirect dependencies
-
-You may also be prompted to install the Bioconductor package `remotes`.
-
 
 
 ### Installation
