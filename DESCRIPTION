@@ -1,7 +1,7 @@
 Type: Package
 Package: rats
-Version: 0.6.4.7
-Date: 2019-31-01
+Version: 0.6.4.8
+Date: 2019-02-04
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
 Authors: c(person("Kimon Froussios", role=c("aut"), email="kimon.froussios@gmail.com"),
@@ -14,6 +14,7 @@ Description: Given a set of transript abundances and a transcript-to-gene index 
 License: MIT + file LICENSE
 VignetteBuilder: knitr
 Depends:
+    ggplot2  (>= 2.2.0),
     data.table  (>= 1.9.8)
 Imports:
     utils,
@@ -21,7 +22,6 @@ Imports:
     parallel,
     matrixStats,
     rtracklayer,
-    ggplot2  (>= 2.2.0),
     rhdf5,
     wasabi, 
     GenomicRanges
