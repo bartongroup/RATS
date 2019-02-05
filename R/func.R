@@ -224,7 +224,7 @@ infer_bootnum <- function(boot_data_A, boot_data_B){
 #' Create output structure.
 #'
 #' @param annot Pre-processed by \code{tidy_annot()}.
-#' @param full Full-sized structure or core fields only. Either "full" or "short".
+#' @param full Full-sized structure or core fields only. Either "full", "short" or "partial".
 #' @param n How many scaling factors to reserve space for.
 #' @return A list.
 #'
@@ -246,15 +246,17 @@ alloc_out <- function(annot, full, n=1){
                        "rep_boot"=NA, "rep_reprod_thresh"=NA_real_, "rep_bootnum"=NA_integer_, 
                        "seed"=NA_integer_, "reckless"=NA, "lean"=NA)
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
-                        "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "transc_DTU"=NA,
+                        "elig"=FALSE, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=FALSE, "transc_DTU"=NA,
                         "known_transc"=NA_integer_, "detect_transc"=NA_integer_, "elig_transc"=NA_integer_, "maxDprop"=NA_real_,
                         "pval"=NA_real_, "pval_corr"=NA_real_,
                         "quant_p_median"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_,
                         "quant_na_freq"=NA_real_, "quant_dtu_freq"=NA_real_,
                         "rep_p_median"=NA_real_, "rep_p_min"=NA_real_, "rep_p_max"=NA_real_,
                         "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
+    with(Genes,
+         setkey(Genes, parent_id) )
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
-                              "elig_xp"=NA, "elig"=NA, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=NA, "gene_DTU"=NA,
+                              "elig_xp"=NA, "elig"=FALSE, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=FALSE, "gene_DTU"=NA,
                               "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_,
                               "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
@@ -265,23 +267,35 @@ alloc_out <- function(annot, full, n=1){
                               "rep_p_median"=NA_real_, "rep_p_min"=NA_real_, "rep_p_max"=NA_real_,
                               "rep_Dprop_mean"=NA_real_, "rep_Dprop_stdev"=NA_real_, "rep_Dprop_min"=NA_real_, "rep_Dprop_max"=NA_real_,
                               "rep_na_freq"=NA_real_, "rep_dtu_freq"=NA_real_)
+    with(Transcripts,
+         setkey(Transcripts, parent_id, target_id) )
     CountData <- list()
-  } else {
+  } else if (full == "short") {
     Parameters <- list("num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_)
     Genes <- data.table("parent_id"=levels(as.factor(annot$parent_id)),
-                        "elig_transc"=NA_integer_, "elig"=NA, "elig_fx"=NA,
-                        "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, DTU=NA)
+                        "elig_transc"=NA_integer_, "elig"=FALSE, "elig_fx"=NA,
+                        "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, "DTU"=FALSE)
+    with(Genes,
+         setkey(Genes, parent_id) )
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_,  #log2FC currently not used in decision making and bootstrapping, but maybe in the future.
-                              "totalA"=NA_real_, "totalB"=NA_real_, "elig_xp"=NA, "elig"=NA,
+                              "totalA"=NA_real_, "totalB"=NA_real_, "elig_xp"=NA, "elig"=FALSE,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
-                              "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, "DTU"=NA)
+                              "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, "DTU"=FALSE)
+    with(Transcripts,
+         setkey(Transcripts, parent_id, target_id) )
+    CountData <- NULL
+  } else {
+    Parameters <- NULL
+    Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
+                        "p_median"=NA_real_, "p_min"=NA_real_, "p_max"=NA_real_,
+                        "na_freq"=NA_real_, "dtu_freq"=NA_real_, "DTU"=NA)
+    Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
+                              "p_median"=NA_real_, "p_min"=NA_real_, "p_max"=NA_real_,
+                              "Dprop_mean"=NA_real_, "Dprop_stdev"=NA_real_, "Dprop_min"=NA_real_, "Dprop_max"=NA_real_,
+                              "na_freq"=NA_real_, "dtu_freq"=NA_real_, "DTU"=NA)
     CountData <- NULL
   }
-  with(Genes,
-       setkey(Genes, parent_id) )
-  with(Transcripts,
-       setkey(Transcripts, parent_id, target_id) )
 
   return(list("Parameters"= Parameters, "Genes"= Genes, "Transcripts"= Transcripts, "Abundances"= CountData))
 }
@@ -392,6 +406,152 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
   return(resobj)
 }
 
+
+#================================================================================
+#' Perform the bootstraps.
+#'
+#' Abstracts the bootstrap process from the specific field names of each bootstrap
+#' type and removes the associated code duplication.
+#' 
+#' Providing bootstrapped data will bootstrap the quantifications, whereas plain
+#' data will bootstrap the replicates. Do not provide both.
+#' 
+#' @param lean Minimal insight reported.
+#' @param tx_filter The annotation.
+#' @param eltr Selection vector for eligible transcripts.
+#' @param elge Selection vector for eligible genes.
+#' @param boot_data_A Bootstrapped quantifications for first condition.
+#' @param boot_data_A Bootstrapped quantifications for second condition.
+#' @param count_data_A Plain quantifications for first condition.
+#' @param count_data_A Plain quantifications for second condition.
+#' @param rep_thresh Reproducibility threshold.
+#' @param niter Number of iterations (for quantification bootstraps only).
+#' @param threads Number of threads.
+#' @param verbose Progress messages.
+#' @param test_transc Do transcript-level test.
+#' @param test_genes Do gene-level test.
+#' 
+#' @import utils
+#' @import parallel
+#' @import matrixStats
+#' @import data.table
+#
+do_boot <- function(lean, tx_filter, eltr, elge, rep_thresh, 
+                    boot_data_A=NULL, boot_data_B=NULL, count_data_A=NULL, count_data_B=NULL, 
+                    niter=NULL, threads=1, verbose=TRUE, test_transc=TRUE, test_genes=TRUE, ...) {
+  
+  if (!is.null(count_data_A)) {
+    pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
+    niter <- length(pairs)
+  }
+  
+  if (verbose)
+    myprogress <- txtProgressBar(min = 0, max = niter, initial = 0, char = "=", width = NA, style = 3, file = stderr())
+  
+  # Structure to collect the results.
+  tallies <- alloc_out(tx_filter, "partial")
+  with(tallies, {
+    Genes[, dtu_freq := 0]
+    Genes[, na_freq := 0]
+    Transcripts[, dtu_freq := 0]
+    Transcripts[, na_freq := 0]
+  })
+  
+  bootout <- lapply(1:niter, function(i) {  # Single-threaded. Forking happens within calculate_DTU(). This allows call_DTU() to track and display progress.
+    if (verbose)
+      setTxtProgressBar(myprogress, i)
+    
+    if(!is.null(boot_data_A)) {
+      # Grab a random bootstrap from each replicate.
+      counts_A <- as.data.table(lapply(boot_data_A, function(smpl) { smpl[[sample( names(smpl)[1:ncol(smpl)], 1)]] }))
+      counts_B <- as.data.table(lapply(boot_data_B, function(smpl) { smpl[[sample( names(smpl)[1:ncol(smpl)], 1)]] }))
+      # I have to use list syntax to get a vector back. Usual table syntax with "with=FALSE" returns a table and I fail to cast it.
+    } else {
+      # Grab the next replicate pair, one from each condition.
+      # Scale them up for the number of respective samples, ie. "what if all my samples in this condition were very similar to the selected one".
+      counts_A <- as.data.table( count_data_A[[ names(count_data_A)[pairs[[i]][1]] ]] ) * ncol(count_data_A)
+      counts_B <- as.data.table( count_data_B[[ names(count_data_B)[pairs[[i]][2]] ]] ) * ncol(count_data_B)
+    }
+    
+    # Test.
+    iterout <- calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, "short", ...)
+    
+    if (lean){
+      # Calculate DTU rate in-place.
+      with(tallies, {
+        if (test_genes) {
+          Genes[, dtu_freq := (dtu_freq * (i-1) + ifelse(iterout$Genes$DTU, 1, 0)) / i]  # incremental mean for i values based on the ith value and the mean of the other (i-1) values.
+          Genes[, na_freq := (na_freq * (i-1) + ifelse(iterout$Genes$elig, 0, 1)) / i]
+        }
+        if (test_transc) {
+          Transcripts[, dtu_freq := (dtu_freq * (i-1) + ifelse(iterout$Transcripts$DTU, 1, 0)) / i]
+          Transcripts[, na_freq := (na_freq * (i-1) + ifelse(iterout$Transcripts$elig, 0, 1)) / i]
+        }
+      })
+      return(NULL)  # The values of interest are updated directly in every iteration, nothing to return.
+    } else {
+      # Keep multiple columns of info per iteration so as to calculate stuff once bootstrapping is completed.
+      return( with(iterout, {
+        list("tp" = Transcripts[, pval_corr],
+             "tdtu" = Transcripts[, DTU],
+             "ty" = Transcripts[, Dprop],
+             "gp" = Genes[, pval_corr],
+             "gdtu" = Genes[, DTU]) 
+      }) )
+    }
+  }) # End of iterations loop.
+  
+  if (!lean) {
+    # Calculate descriptive stats.
+    
+    if (verbose)
+      message("Summarising bootstraps...")
+    
+    with(tallies, {
+      if (test_transc) {
+        # Collate and summarise the like columns across iterations.
+        td <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["tdtu"]] }, 
+                                               mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(eltr), dtu_freq := rowCounts(td[eltr, ], value = TRUE, na.rm=TRUE) / niter]
+        
+        tp <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["tp"]] }, 
+                                               mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(eltr), p_median := rowMedians(tp[eltr, ], na.rm = TRUE)]
+        Transcripts[(eltr), p_min := rowMins(tp[eltr, ], na.rm = TRUE)]
+        Transcripts[(eltr), p_max := rowMaxs(tp[eltr, ], na.rm = TRUE)]
+        Transcripts[(eltr), na_freq := rowCounts(tp[eltr, ], value = NA, na.rm=FALSE) / niter]
+        
+        ty <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["py"]] }, 
+                                               mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Transcripts[(eltr), Dprop_mean := rowMeans(ty[eltr, ], na.rm = TRUE)]
+        Transcripts[(eltr), Dprop_stdev := rowSds(ty[eltr, ], na.rm = TRUE)]
+        Transcripts[(eltr), Dprop_min := rowMins(ty[eltr, ], na.rm = TRUE)]
+        Transcripts[(eltr), Dprop_max := rowMaxs(ty[eltr, ], na.rm = TRUE)]
+        
+        Transcripts[(eltr & DTU), reprod := (dtu_freq >= rep_thresh)]
+        Transcripts[(eltr & !DTU), reprod := (dtu_freq <= 1 - rep_thresh)]
+      }
+      
+      if (test_genes) {
+        gd <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["gdtu"]] }, 
+                                               mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elge), dtu_freq := rowCounts(gd[elge, ], value = TRUE, na.rm = TRUE) / niter]
+        
+        gp <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["gp"]] }, 
+                                               mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
+        Genes[(elge), p_median := rowMedians (gp[elge, ], na.rm = TRUE)]
+        Genes[(elge), p_min := rowMins(gp[elge, ], na.rm = TRUE)]
+        Genes[(elge), p_max := rowMaxs(gp[elge, ], na.rm = TRUE)]
+        Genes[(elge), na_freq := rowCounts(gp[elge, ], value = NA, na.rm = FALSE) / niter]
+        
+        Genes[(elge & DTU), reprod := (dtu_freq >= rep_thresh)]
+        Genes[(elge & !DTU), reprod := (dtu_freq <= 1 - rep_thresh)]
+      }
+    })
+  }
+  
+  return (tallies)
+}
 
 
 #================================================================================

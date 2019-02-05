@@ -49,10 +49,10 @@ test_that("Scaling is applied", {
   expect_equal(S * cdt[[1]], sdt[[1]])
   expect_equal(S * cdt[[2]], sdt[[2]])
   for (b in 1:length(bdt$bootA)) {
-    expect_equal(S * bdt$bootA[[b]][,-1], sdt$bootA[[b]])
+    expect_equal(S * bdt$bootA[[b]], sdt$bootA[[b]])
   }
   for (b in 1:length(bdt$bootB)) {
-    expect_equal(S * bdt$bootB[[b]][,-1], sdt$bootB[[b]])
+    expect_equal(S * bdt$bootB[[b]], sdt$bootB[[b]])
   }
   
   # Vector.
@@ -66,10 +66,10 @@ test_that("Scaling is applied", {
   expect_equal(S[3] * cdt[[2]]$V1, sdt[[2]]$V1)
   expect_equal(S[4] * cdt[[2]]$V2, sdt[[2]]$V2)
   
-  expect_equal(S[1] * bdt$bootA[[1]][,-1], sdt[[3]][[1]])
-  expect_equal(S[2] * bdt$bootA[[2]][,-1], sdt[[3]][[2]])
-  expect_equal(S[3] * bdt$bootB[[1]][,-1], sdt[[4]][[1]])
-  expect_equal(S[4] * bdt$bootB[[2]][,-1], sdt[[4]][[2]])
+  expect_equal(S[1] * bdt$bootA[[1]], sdt[[3]][[1]])
+  expect_equal(S[2] * bdt$bootA[[2]], sdt[[3]][[2]])
+  expect_equal(S[3] * bdt$bootB[[1]], sdt[[4]][[1]])
+  expect_equal(S[4] * bdt$bootB[[2]], sdt[[4]][[2]])
 })
 
 test_that("Parameters are recorded", {
@@ -89,6 +89,13 @@ test_that("Parameters are recorded", {
   expect_equal(c(param$num_replic_A, param$num_replic_B), c(2, 2))
   expect_equal(c(param$num_genes, param$num_transc), c(11, 23))
   expect_equal(list(param$p_thresh, param$abund_thresh, param$dprop_thresh, param$correction, param$abund_scaling), list(0.001, 1, 0.15, 'bonferroni', c(1,2,3,4)))
+  
+  param <- call_DTU(dbg='qbootsum', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, scaling=c(1,2,3,4),
+                    description='Test.',name_A='cA', name_B='cB', varname='testing',
+                    p_thresh=0.001, abund_thresh=1, dprop_thresh=0.15, correction='bonferroni',
+                    qboot=TRUE, qbootnum=99, qrep_thresh=0.8, rboot=TRUE, rrep_thresh=0.6, 
+                    testmode="genes", seed=666, verbose = FALSE, reckless=TRUE)$Parameters
+
   expect_equal(list(param$quant_boot, param$quant_bootnum, param$quant_reprod_thresh), list(TRUE, 99, 0.8))
   expect_equal(list(param$rep_boot, param$rep_bootnum, param$rep_reprod_thresh), list(TRUE, NA_integer_, 0.6))
 })
