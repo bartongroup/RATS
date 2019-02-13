@@ -285,15 +285,15 @@ alloc_out <- function(annot, full, n=1){
     with(Transcripts,
          setkey(Transcripts, parent_id, target_id) )
     CountData <- NULL
-  } else {
+  } else {  # Partial.
     Parameters <- NULL
     Genes <- data.table("parent_id"=as.vector(unique(annot$parent_id)),
                         "p_median"=NA_real_, "p_min"=NA_real_, "p_max"=NA_real_,
-                        "na_freq"=NA_real_, "dtu_freq"=NA_real_, "DTU"=NA)
+                        "na_freq"=NA_real_, "dtu_freq"=NA_real_)
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "p_median"=NA_real_, "p_min"=NA_real_, "p_max"=NA_real_,
                               "Dprop_mean"=NA_real_, "Dprop_stdev"=NA_real_, "Dprop_min"=NA_real_, "Dprop_max"=NA_real_,
-                              "na_freq"=NA_real_, "dtu_freq"=NA_real_, "DTU"=NA)
+                              "na_freq"=NA_real_, "dtu_freq"=NA_real_)
     CountData <- NULL
   }
 
@@ -424,7 +424,6 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' @param boot_data_A Bootstrapped quantifications for second condition.
 #' @param count_data_A Plain quantifications for first condition.
 #' @param count_data_A Plain quantifications for second condition.
-#' @param rep_thresh Reproducibility threshold.
 #' @param niter Number of iterations (for quantification bootstraps only).
 #' @param threads Number of threads.
 #' @param verbose Progress messages.
@@ -436,9 +435,10 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' @import matrixStats
 #' @import data.table
 #
-do_boot <- function(lean, tx_filter, eltr, elge, rep_thresh, 
+do_boot <- function(lean, tx_filter, eltr, elge,
                     boot_data_A=NULL, boot_data_B=NULL, count_data_A=NULL, count_data_B=NULL, 
-                    niter=NULL, threads=1, verbose=TRUE, test_transc=TRUE, test_genes=TRUE, ...) {
+                    niter=NULL, threads=1, verbose=TRUE, test_transc=TRUE, test_genes=TRUE, ...) 
+{
   
   if (!is.null(count_data_A)) {
     pairs <- as.data.frame(t( expand.grid(1:dim(count_data_A)[2], 1:dim(count_data_B)[2]) ))
@@ -491,24 +491,19 @@ do_boot <- function(lean, tx_filter, eltr, elge, rep_thresh,
       return(NULL)  # The values of interest are updated directly in every iteration, nothing to return.
     } else {
       # Keep multiple columns of info per iteration so as to calculate stuff once bootstrapping is completed.
-      return( with(iterout, {
-        list("tp" = Transcripts[, pval_corr],
-             "tdtu" = Transcripts[, DTU],
-             "ty" = Transcripts[, Dprop],
-             "gp" = Genes[, pval_corr],
-             "gdtu" = Genes[, DTU]) 
-      }) )
+      return( list("tp" = iterout$Transcripts[, pval_corr],
+                   "tdtu" = iterout$Transcripts[, DTU],
+                   "ty" = iterout$Transcripts[, Dprop],
+                   "gp" = iterout$Genes[, pval_corr],
+                   "gdtu" = iterout$Genes[, DTU]) )
     }
   }) # End of iterations loop.
   
-  if (!lean) {
-    # Calculate descriptive stats.
-    
-    if (verbose)
-      message("Summarising bootstraps...")
-    
-    with(tallies, {
-      if (test_transc) {
+  message("Summarising bootstraps...")
+  
+  with(tallies, {
+    if (test_transc) {
+      if (!lean) {
         # Collate and summarise the like columns across iterations.
         td <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["tdtu"]] }, 
                                                mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
@@ -521,18 +516,18 @@ do_boot <- function(lean, tx_filter, eltr, elge, rep_thresh,
         Transcripts[(eltr), p_max := rowMaxs(tp[eltr, ], na.rm = TRUE)]
         Transcripts[(eltr), na_freq := rowCounts(tp[eltr, ], value = NA, na.rm=FALSE) / niter]
         
-        ty <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["py"]] }, 
+        ty <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["ty"]] }, 
                                                mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         Transcripts[(eltr), Dprop_mean := rowMeans(ty[eltr, ], na.rm = TRUE)]
         Transcripts[(eltr), Dprop_stdev := rowSds(ty[eltr, ], na.rm = TRUE)]
         Transcripts[(eltr), Dprop_min := rowMins(ty[eltr, ], na.rm = TRUE)]
         Transcripts[(eltr), Dprop_max := rowMaxs(ty[eltr, ], na.rm = TRUE)]
-        
-        Transcripts[(eltr & DTU), reprod := (dtu_freq >= rep_thresh)]
-        Transcripts[(eltr & !DTU), reprod := (dtu_freq <= 1 - rep_thresh)]
       }
-      
-      if (test_genes) {
+    }
+    
+    if (test_genes) {
+      if (!lean) {
+        # Collate and summarise the like columns across iterations.
         gd <- as.matrix(as.data.table(mclapply(bootout, function(iter) { iter[["gdtu"]] }, 
                                                mc.cores= threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)))
         Genes[(elge), dtu_freq := rowCounts(gd[elge, ], value = TRUE, na.rm = TRUE) / niter]
@@ -543,12 +538,9 @@ do_boot <- function(lean, tx_filter, eltr, elge, rep_thresh,
         Genes[(elge), p_min := rowMins(gp[elge, ], na.rm = TRUE)]
         Genes[(elge), p_max := rowMaxs(gp[elge, ], na.rm = TRUE)]
         Genes[(elge), na_freq := rowCounts(gp[elge, ], value = NA, na.rm = FALSE) / niter]
-        
-        Genes[(elge & DTU), reprod := (dtu_freq >= rep_thresh)]
-        Genes[(elge & !DTU), reprod := (dtu_freq <= 1 - rep_thresh)]
       }
-    })
-  }
+    }
+  })
   
   return (tallies)
 }

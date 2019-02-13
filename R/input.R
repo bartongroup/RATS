@@ -156,8 +156,8 @@ annot2models <- function(annotfile, threads= 1L)
 #' @param B_paths (character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate, without trailing path dividers.. The directory name should be a unique identifier for the sample.
 #' @param annot (data.frame) A table matching transcript identifiers to gene identifiers. This should be the same that you used for quantification and that you will use with \code{call_DTU()}. It is used to order the transcripts consistently throughout RATs.
 #' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
-#' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)
-#' @param beartext (logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstraps} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.
+#' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. FALSE can also be used to force wasabi to repeat the conversion even if it exists. (Default FALSE)
+#' @param beartext (logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstrap} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
 #' @param threads (integer) For parallel processing. (Default 1)
@@ -180,7 +180,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 
   # Wasabi?
   if (!half_cooked) {
-    prepare_fish_for_sleuth(c(A_paths, B_paths))
+    wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths), force= !half_cooked)
   }
 
   # Sort out scaling.
@@ -220,9 +220,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
                                                                                                           # for consistency with the .h5 mode and to allow normalisation to other target sizes 
       # If data from Salmon/Wasabi or Kallisto abundance.h5...
       } else {
-        meta <- as.data.table(list( target_id=as.character(h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
-                                    eff_length=as.numeric(h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
-        counts <- as.data.table( h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+        meta <- as.data.table(list( target_id=as.character(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
+                                    eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
+        counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
       }
       # Normalise raw counts.
       tpm <- as.data.table( lapply(counts, function (y) {
