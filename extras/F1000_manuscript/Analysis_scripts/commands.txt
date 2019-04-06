@@ -85,7 +85,7 @@ python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N seven
 python3 fileutilities.py T 1:100 -L --loop R qsub +-V +-cwd +-pe smp 8 +-N eight +-b y Rscript ./scripts/ratsDTU_FDR_count-FP.R './FDR/8/***core***.rats.RDS' './FDR/8/***core***.fp.RDS' 8
 
 
-# Continued in Supplementary Analysis 1.
+# Continued in gen_extended_data_1.Rmd.
 
 
 ######## Benchmarks on simulated datasets
@@ -224,7 +224,7 @@ qsub -V -cwd -pe smp 6 -b y -N rd70kth5 Rscript ./scripts/ratsDTU_sonesonDm70-k_
 qsub -V -cwd -pe smp 6 -b y -N rh71sth5 Rscript ./scripts/ratsDTU_sonesonHs71-s_th5.R
 qsub -V -cwd -pe smp 6 -b y -N rd70sth5 Rscript ./scripts/ratsDTU_sonesonDm70-s_th5.R
 
-# Continued in Supplementary analysis 2.
+# Continued in gen_extended_data_2.Rmd.
 
 
 
@@ -327,7 +327,7 @@ qsub -cwd -V -b y Rscript ./scripts/drimseq_human.R salmon_quant/wt_merged.tsv_f
 qsub -cwd -V -b y Rscript ./scripts/drimseq_human.R salmon_quant/wt_87_merged.tsv_f25 salmon_quant/ipf_87_merged.tsv_f25 genome/Homo_sapiens.GRCh38.87.t2g.tsv DE/drimseq87
 
 
-# Continued in Supplementary analysis 3.
+# Continued in gen_extended_data_3.Rmd.
 
 
 ########
