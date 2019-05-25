@@ -13,6 +13,8 @@ t2gfile <- args[[3]]
 outpref <- args[[4]]
 smplvect <- args[[5]]
 condvect <- args[[6]]
+mgx <- args[[7]]
+mtx <- args[[8]]
 
 # basedir <- '/Volumes/kfroussios/PROJECTS/rats'
 # infile1 <- 'salmon_quant/sonesonDm70-A_merged.tsv_f25'
@@ -21,6 +23,16 @@ condvect <- args[[6]]
 # outpref <- 'DE/drimseq_soneson_Dm70-salmon'
 # smplvect <- 'a1/a2/a3/b4/b5/b6'
 # condvect <- 'A/A/A/B/B/B'
+
+if (is.null(mgx)) {
+	mgx <- 0
+}
+if (is.null(mtx)) {
+	mtx <- 0
+}
+mgx <- as.numeric(mgx)   # If it was given as parameter it is still a string
+mtx <- as.numeric(mtx)
+
 
 
 ## Covariates.
@@ -58,14 +70,14 @@ if (pv >= '1.3.3') {
 
 ## DTU.
 
-# Filter out low expression/representation (or in this case don't since SUPPA2 doesn't).
+# Filter out low expression/representation.
 repspercond <- table(samples(ddat)$group)
 ddat <- dmFilter(ddat,
-				 min_samps_gene_expr=sum(repspercond),    # all samples of one condition should meet minimal gene expression
+				 min_samps_gene_expr=min(repspercond),    # all samples of one condition should meet minimal gene expression
 				 min_samps_feature_expr=min(repspercond), # all samples of one condition should meet minimal feature expression
-				 min_gene_expr=0,
-				 min_feature_expr=0,
-				 min_samps_feature_prop=0)
+				 min_gene_expr=mgx,
+				 min_feature_expr=mtx,
+				 min_feature_prop=0)
 
 # Model.
 if (pv >= '1.3.3') {
@@ -94,8 +106,10 @@ if (pv >= '1.3.3') {
 
 # Raw.
 saveRDS(ddat, file=file.path(basedir, paste0(outpref,'.RDS')))
-res <- results(ddat)
+res <- results(ddat, level='gene')
 write.table(res, file=file.path(basedir, paste0(outpref, '.results.tsv')), sep="\t", append=FALSE, quote=FALSE, row.names=FALSE)
+res <- results(ddat, level='feature')
+write.table(res, file=file.path(basedir, paste0(outpref, '.results-t.tsv')), sep="\t", append=FALSE, quote=FALSE, row.names=FALSE)
 
 # adj_pvalue < 0.05
 # won't do here. SUPPA2 doesn't give classifications either, so I can do that later in the collective comparison of the tools.

@@ -1,6 +1,6 @@
 #
-# These commands do not form an automated reproduction of the entire analyses from scratch. 
-# All important commands and parameters are present, 
+# These commands do not form an automated reproduction of the entire analyses from scratch.
+# All important commands and parameters are present,
 # however several paths, both in the commands and in shell and R scripts, will need to be updated to reflect the location of the scripts, data files and third party binaries in your own setup.
 #
 
@@ -192,37 +192,91 @@ qsub -V -cwd -b y -N supDm-sB python3 suppa.py psiPerIsoform -g ./genome/Drosoph
 qsub -V -cwd -b y -N supDm-kA python3 suppa.py psiPerIsoform -g ./genome/Drosophila_melanogaster.BDGP5.70.gtf -e ./kallisto_quant/sonesonDm70-A_merged.tsv -o ./kallisto_quant/suppa_sonesonDm70-A
 qsub -V -cwd -b y -N supDm-kB python3 suppa.py psiPerIsoform -g ./genome/Drosophila_melanogaster.BDGP5.70.gtf -e ./kallisto_quant/sonesonDm70-B_merged.tsv -o ./kallisto_quant/suppa_sonesonDm70-B
 
-qsub -V -cwd -N supDm-s python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./salmon_quant/suppa_sonesonDm70-A_isoform.psi ./salmon_quant/suppa_sonesonDm70-B_isoform.psi -e ./salmon_quant/sonesonDm70-A_merged.tsv ./salmon_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Dm70-salmon.tsv
+qsub -V -cwd -N supDm-s -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./salmon_quant/suppa_sonesonDm70-A_isoform.psi ./salmon_quant/suppa_sonesonDm70-B_isoform.psi -e ./salmon_quant/sonesonDm70-A_merged.tsv ./salmon_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Dm70-salmon.tsv
+qsub -V -cwd -N supDm-k -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./kallisto_quant/suppa_sonesonDm70-A_isoform.psi ./kallisto_quant/suppa_sonesonDm70-B_isoform.psi -e ./kallisto_quant/sonesonDm70-A_merged.tsv ./kallisto_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Dm70-kallisto.tsv
+qsub -V -cwd -N supHs-s -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./salmon_quant/suppa_sonesonHs71-A_isoform.psi ./salmon_quant/suppa_sonesonHs71-B_isoform.psi -e ./salmon_quant/sonesonHs71-A_merged.tsv ./salmon_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Hs71-salmon.tsv
+qsub -V -cwd -N supHs-k -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./kallisto_quant/suppa_sonesonHs71-A_isoform.psi ./kallisto_quant/suppa_sonesonHs71-B_isoform.psi -e ./kallisto_quant/sonesonHs71-A_merged.tsv ./kallisto_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Hs71-kallisto.tsv
 
-qsub -V -cwd -N supDm-k python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./kallisto_quant/suppa_sonesonDm70-A_isoform.psi ./kallisto_quant/suppa_sonesonDm70-B_isoform.psi -e ./kallisto_quant/sonesonDm70-A_merged.tsv ./kallisto_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Dm70-kallisto.tsv
+qsub -V -cwd -N supDm-s1 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./salmon_quant/suppa_sonesonDm70-A_isoform.psi ./salmon_quant/suppa_sonesonDm70-B_isoform.psi -e ./salmon_quant/sonesonDm70-A_merged.tsv ./salmon_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 10 -o ./DE/suppa10_soneson_Dm70-salmon.tsv
+qsub -V -cwd -N supDm-k1 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./kallisto_quant/suppa_sonesonDm70-A_isoform.psi ./kallisto_quant/suppa_sonesonDm70-B_isoform.psi -e ./kallisto_quant/sonesonDm70-A_merged.tsv ./kallisto_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 10 -o ./DE/suppa10_soneson_Dm70-kallisto.tsv
+qsub -V -cwd -N supHs-s1 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./salmon_quant/suppa_sonesonHs71-A_isoform.psi ./salmon_quant/suppa_sonesonHs71-B_isoform.psi -e ./salmon_quant/sonesonHs71-A_merged.tsv ./salmon_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 10 -o ./DE/suppa10_soneson_Hs71-salmon.tsv
+qsub -V -cwd -N supHs-k1 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./kallisto_quant/suppa_sonesonHs71-A_isoform.psi ./kallisto_quant/suppa_sonesonHs71-B_isoform.psi -e ./kallisto_quant/sonesonHs71-A_merged.tsv ./kallisto_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 10 -o ./DE/suppa10_soneson_Hs71-kallisto.tsv
 
-qsub -V -cwd -N supHs-s python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./salmon_quant/suppa_sonesonHs71-A_isoform.psi ./salmon_quant/suppa_sonesonHs71-B_isoform.psi -e ./salmon_quant/sonesonHs71-A_merged.tsv ./salmon_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Hs71-salmon.tsv
-
-qsub -V -cwd -N supHs-k python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./kallisto_quant/suppa_sonesonHs71-A_isoform.psi ./kallisto_quant/suppa_sonesonHs71-B_isoform.psi -e ./kallisto_quant/sonesonHs71-A_merged.tsv ./kallisto_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 0 -o ./DE/suppa_soneson_Hs71-kallisto.tsv
+qsub -V -cwd -N supDm-s5 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./salmon_quant/suppa_sonesonDm70-A_isoform.psi ./salmon_quant/suppa_sonesonDm70-B_isoform.psi -e ./salmon_quant/sonesonDm70-A_merged.tsv ./salmon_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 50 -o ./DE/suppa50_soneson_Dm70-salmon.tsv
+qsub -V -cwd -N supDm-k5 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Dm_BDGP5.70.ioi -p ./kallisto_quant/suppa_sonesonDm70-A_isoform.psi ./kallisto_quant/suppa_sonesonDm70-B_isoform.psi -e ./kallisto_quant/sonesonDm70-A_merged.tsv ./kallisto_quant/sonesonDm70-B_merged.tsv -al 0.05 -th 50 -o ./DE/suppa50_soneson_Dm70-kallisto.tsv
+qsub -V -cwd -N supHs-s5 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./salmon_quant/suppa_sonesonHs71-A_isoform.psi ./salmon_quant/suppa_sonesonHs71-B_isoform.psi -e ./salmon_quant/sonesonHs71-A_merged.tsv ./salmon_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 50 -o ./DE/suppa50_soneson_Hs71-salmon.tsv
+qsub -V -cwd -N supHs-k5 -b y python3 suppa.py diffSplice -m empirical -i ./suppa_index/Hs_GRCh37.71.ioi -p ./kallisto_quant/suppa_sonesonHs71-A_isoform.psi ./kallisto_quant/suppa_sonesonHs71-B_isoform.psi -e ./kallisto_quant/sonesonHs71-A_merged.tsv ./kallisto_quant/sonesonHs71-B_merged.tsv -al 0.05 -th 50 -o ./DE/suppa50_soneson_Hs71-kallisto.tsv
 
 # DTU with DRIMSeq
 
-qsub -cwd -V -N drimDm-s Rscript drimseqDTU.R ./salmon_quant/sonesonDm70-A_merged.tsv_f25 ./salmon_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq_soneson_Dm70-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
-qsub -cwd -V -N drimDm-k Rscript drimseqDTU.R ./kallisto_quant/sonesonDm70-A_merged.tsv_f25 ./kallisto_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq_soneson_Dm70-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
-qsub -cwd -V -N drimHs-s Rscript drimseqDTU.R ./salmon_quant/sonesonHs71-A_merged.tsv_f40 ./salmon_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq_soneson_Hs71-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
-qsub -cwd -V -N drimHs-k Rscript drimseqDTU.R ./kallisto_quant/sonesonHs71-A_merged.tsv_f40 ./kallisto_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq_soneson_Hs71-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B'
+qsub -cwd -V -N drimDm-s -b y Rscript ~/scripts/r/drimseqDTU.R ./salmon_quant/sonesonDm70-A_merged.tsv_f25 ./salmon_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq0_soneson_Dm70-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 0 0
+qsub -cwd -V -N drimDm-k -b y Rscript ~/scripts/r/drimseqDTU.R ./kallisto_quant/sonesonDm70-A_merged.tsv_f25 ./kallisto_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq0_soneson_Dm70-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 0 0
+qsub -cwd -V -N drimHs-s -b y Rscript ~/scripts/r/drimseqDTU.R ./salmon_quant/sonesonHs71-A_merged.tsv_f40 ./salmon_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq0_soneson_Hs71-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 0 0
+qsub -cwd -V -N drimHs-k -b y Rscript ~/scripts/r/drimseqDTU.R ./kallisto_quant/sonesonHs71-A_merged.tsv_f40 ./kallisto_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq0_soneson_Hs71-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 0 0
+
+qsub -cwd -V -N drimDm-s -b y Rscript ~/scripts/r/drimseqDTU.R ./salmon_quant/sonesonDm70-A_merged.tsv_f25 ./salmon_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq10_soneson_Dm70-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 10 10
+qsub -cwd -V -N drimDm-k -b y Rscript ~/scripts/r/drimseqDTU.R ./kallisto_quant/sonesonDm70-A_merged.tsv_f25 ./kallisto_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq10_soneson_Dm70-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 10 10
+qsub -cwd -V -N drimHs-s -b y Rscript ~/scripts/r/drimseqDTU.R ./salmon_quant/sonesonHs71-A_merged.tsv_f40 ./salmon_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq10_soneson_Hs71-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 10 10
+qsub -cwd -V -N drimHs-k -b y Rscript ~/scripts/r/drimseqDTU.R ./kallisto_quant/sonesonHs71-A_merged.tsv_f40 ./kallisto_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq10_soneson_Hs71-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 10 10
+
+qsub -cwd -V -N drimDm-s -b y Rscript ~/scripts/r/drimseqDTU.R ./salmon_quant/sonesonDm70-A_merged.tsv_f25 ./salmon_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq50_soneson_Dm70-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 50 50
+qsub -cwd -V -N drimDm-k -b y Rscript ~/scripts/r/drimseqDTU.R ./kallisto_quant/sonesonDm70-A_merged.tsv_f25 ./kallisto_quant/sonesonDm70-B_merged.tsv_f25 ./genome/Drosophila_melanogaster.BDGP5.70.t2g.tsv DE/drimseq50_soneson_Dm70-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 50 50
+qsub -cwd -V -N drimHs-s -b y Rscript ~/scripts/r/drimseqDTU.R ./salmon_quant/sonesonHs71-A_merged.tsv_f40 ./salmon_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq50_soneson_Hs71-salmon 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 50 50
+qsub -cwd -V -N drimHs-k -b y Rscript ~/scripts/r/drimseqDTU.R ./kallisto_quant/sonesonHs71-A_merged.tsv_f40 ./kallisto_quant/sonesonHs71-B_merged.tsv_f40 ./genome/Homo_sapiens.GRCh37.71.t2g.tsv DE/drimseq50_soneson_Hs71-kallisto 's1/s2/s3/s4/s5/s6' 'A/A/A/B/B/B' 50 50
 
 # DTU with RATs
 
-qsub -V -cwd -pe smp 6 -b y -N rh71kdef Rscript ./scripts/ratsDTU_sonesonHs71-k_def.R
-qsub -V -cwd -pe smp 6 -b y -N rd70kdef Rscript ./scripts/ratsDTU_sonesonDm70-k_def.R
-qsub -V -cwd -pe smp 6 -b y -N rh71sdef Rscript ./scripts/ratsDTU_sonesonHs71-s_def.R
-qsub -V -cwd -pe smp 6 -b y -N rd70sdef Rscript ./scripts/ratsDTU_sonesonDm70-s_def.R
+qsub -V -cwd -pe smp 6 -b y -N rh71kdef Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 0 0.2 0.95 0.85 6 ./DE/rats_soneson_Hs71-kallisto_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kdef Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 0 0.2 0.95 0.85 6 ./DE/rats_soneson_Dm70-kallisto_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sdef Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 0 0.2 0.95 0.85 6 ./DE/rats_soneson_Hs71-salmon_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sdef Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 0 0.2 0.95 0.85 6 ./DE/rats_soneson_Dm70-salmon_def.RDS
 
-qsub -V -cwd -pe smp 6 -b y -N rh71kth4 Rscript ./scripts/ratsDTU_sonesonHs71-k_th4.R
-qsub -V -cwd -pe smp 6 -b y -N rd70kth4 Rscript ./scripts/ratsDTU_sonesonDm70-k_th4.R
-qsub -V -cwd -pe smp 6 -b y -N rh71sth4 Rscript ./scripts/ratsDTU_sonesonHs71-s_th4.R
-qsub -V -cwd -pe smp 6 -b y -N rd70sth4 Rscript ./scripts/ratsDTU_sonesonDm70-s_th4.R
+qsub -V -cwd -pe smp 6 -b y -N rh71kth4 Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 0 0.1 0.95 0.85 6 ./DE/rats_soneson_Hs71-kallisto_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kth4 Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 0 0.1 0.95 0.85 6 ./DE/rats_soneson_Dm70-kallisto_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sth4 Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 0 0.1 0.95 0.85 6 ./DE/rats_soneson_Hs71-salmon_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sth4 Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 0 0.1 0.95 0.85 6 ./DE/rats_soneson_Dm70-salmon_th4.RDS
 
-qsub -V -cwd -pe smp 6 -b y -N rh71kth5 Rscript ./scripts/ratsDTU_sonesonHs71-k_th5.R
-qsub -V -cwd -pe smp 6 -b y -N rd70kth5 Rscript ./scripts/ratsDTU_sonesonDm70-k_th5.R
-qsub -V -cwd -pe smp 6 -b y -N rh71sth5 Rscript ./scripts/ratsDTU_sonesonHs71-s_th5.R
-qsub -V -cwd -pe smp 6 -b y -N rd70sth5 Rscript ./scripts/ratsDTU_sonesonDm70-s_th5.R
+qsub -V -cwd -pe smp 6 -b y -N rh71kth5 Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 0 0.05 0.95 0.85 6 ./DE/rats_soneson_Hs71-kallisto_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kth5 Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 0 0.05 0.95 0.85 6 ./DE/rats_soneson_Dm70-kallisto_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sth5 Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 0 0.05 0.95 0.85 6 ./DE/rats_soneson_Hs71-salmon_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sth5 Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 0 0.05 0.95 0.85 6 ./DE/rats_soneson_Dm70-salmon_th5.RDS
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kdef Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 10 0.2 0.95 0.85 6 ./DE/rats10_soneson_Hs71-kallisto_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kdef Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 10 0.2 0.95 0.85 6 ./DE/rats10_soneson_Dm70-kallisto_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sdef Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 10 0.2 0.95 0.85 6 ./DE/rats10_soneson_Hs71-salmon_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sdef Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 10 0.2 0.95 0.85 6 ./DE/rats10_soneson_Dm70-salmon_def.RDS
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kth4 Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 10 0.1 0.95 0.85 6 ./DE/rats10_soneson_Hs71-kallisto_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kth4 Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 10 0.1 0.95 0.85 6 ./DE/rats10_soneson_Dm70-kallisto_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sth4 Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 10 0.1 0.95 0.85 6 ./DE/rats10_soneson_Hs71-salmon_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sth4 Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 10 0.1 0.95 0.85 6 ./DE/rats10_soneson_Dm70-salmon_th4.RDS
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kth5 Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 10 0.05 0.95 0.85 6 ./DE/rats10_soneson_Hs71-kallisto_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kth5 Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 10 0.05 0.95 0.85 6 ./DE/rats10_soneson_Dm70-kallisto_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sth5 Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 10 0.05 0.95 0.85 6 ./DE/rats10_soneson_Hs71-salmon_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sth5 Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 10 0.05 0.95 0.85 6 ./DE/rats10_soneson_Dm70-salmon_th5.RDS
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kdef Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 50 0.2 0.95 0.85 6 ./DE/rats50_soneson_Hs71-kallisto_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kdef Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 50 0.2 0.95 0.85 6 ./DE/rats50_soneson_Dm70-kallisto_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sdef Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 50 0.2 0.95 0.85 6 ./DE/rats50_soneson_Hs71-salmon_def.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sdef Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 50 0.2 0.95 0.85 6 ./DE/rats50_soneson_Dm70-solmon_def.RDS
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kth4 Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 50 0.1 0.95 0.85 6 ./DE/rats50_soneson_Hs71-kallisto_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kth4 Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 50 0.1 0.95 0.85 6 ./DE/rats50_soneson_Dm70-kallisto_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sth4 Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 50 0.1 0.95 0.85 6 ./DE/rats50_soneson_Hs71-salmon_th4.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sth4 Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 50 0.1 0.95 0.85 6 ./DE/rats50_soneson_Dm70-salmon_th4.RDS
+
+qsub -V -cwd -pe smp 6 -b y -N rh71kth5 Rscript ./scripts/ratsDTU_sonesonHs71-k_.R 50 0.05 0.95 0.85 6 ./DE/rats50_soneson_Hs71-kallisto_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70kth5 Rscript ./scripts/ratsDTU_sonesonDm70-k_.R 50 0.05 0.95 0.85 6 ./DE/rats50_soneson_Dm70-kallisto_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rh71sth5 Rscript ./scripts/ratsDTU_sonesonHs71-s_.R 50 0.05 0.95 0.85 6 ./DE/rats50_soneson_Hs71-salmon_th5.RDS
+qsub -V -cwd -pe smp 6 -b y -N rd70sth5 Rscript ./scripts/ratsDTU_sonesonDm70-s_.R 50 0.05 0.95 0.85 6 ./DE/rats50_soneson_Dm70-salmon_th5.RDS
+
+# DTU with DEXSeq
+
+qsub -V -cwd -N dexseq-all -b y Rscript ./scripts/dexseq_dtu.R 0
+qsub -V -cwd -N dexseq-all -b y Rscript ./scripts/dexseq_dtu.R 10
+qsub -V -cwd -N dexseq-all -b y Rscript ./scripts/dexseq_dtu.R 50
+
 
 # Continued in gen_extended_data_2.Rmd.
 
