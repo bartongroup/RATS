@@ -67,7 +67,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose) {
       message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
       message("Preparing...")
-  
+      
       if(paramcheck$warn) {
         for (w in paramcheck$warnings) {
           warning(w)  # So it displays as warning at the end of the run.
@@ -75,17 +75,13 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         }
       }
     }
-  
-    # Set seed, if required.
     if (!is.na(seed))
       set.seed(as.integer(seed))
-    
-    threads <- as.integer(threads)  # Can't be decimal.
+    threads <- as.integer(threads)          # Can't be decimal.
     setDTthreads(threads)
-  
-    if (qbootnum == 0 && qboot)   # Use smart default.
+    if (qbootnum == 0 && qboot)             # Use smart default.
       qbootnum <- paramcheck$maxboots
-    qbootnum <- as.integer(qbootnum)  # Can't be decimal.
+    qbootnum <- as.integer(qbootnum)        # Can't be decimal.
     test_transc <- any(testmode == c("transc", "both"))
     test_genes <- any(testmode == c("genes", "both"))
   
@@ -97,7 +93,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (steps == 1 || is.na(qbootnum) || qbootnum==0)
       qboot <- FALSE
   
-    
     if (dbg == "prep")
       return(list(steps, qbootnum, test_transc, test_genes))
   }
@@ -113,7 +108,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     # Look-up from target_id to parent_id.
     tx_filter <- tidy_annot(annot, TARGET_COL, PARENT_COL)
   
-    
     if (dbg == "indx")
       return(tx_filter)
   }
@@ -125,22 +119,17 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
   {
     if (verbose)
       message("Preparing data...")
-  
+    
     # Preprocess bootstrapped data.
     if (steps == 2) {
       # Re-order rows to match the annotation.
       boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
       boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
-      
       # Remove ID columns so I don't have to always subset for math operations.
       for (smpl in c(boot_data_A, boot_data_B))
           smpl[, 1 := NULL]
-      
-      
       if (dbg == "bootin")
         return(list("bootA"=boot_data_A, "bootB"=boot_data_B))
-    
-      
       # Calculate mean count across bootstraps.
       count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { return(rowMeans(b)) },
                                              mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
@@ -155,7 +144,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
     }
   
-      
     if (dbg == "countin")
       return(list("countA"=count_data_A, "countB"=count_data_B))
     
@@ -176,7 +164,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         sfA <- scaling[1:lA]
         sfB <- scaling[(1+lA):(lA+lB)]
       }
-      
       # Scale counts.
       count_data_A <- as.data.table( mclapply(1:lA, function(x) { 
                           return(count_data_A[[x]] * sfA[x])  # Can't apply scaling to whole table in one step, because each column/sample can have a different scaling factor.
@@ -197,7 +184,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       }
     }
     
-      
     if (dbg == "scale")
       return(list("countA"=count_data_A, "countB"=count_data_B, "bootA"=boot_data_A, "bootB"=boot_data_B))
   }
@@ -210,11 +196,9 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)
       message("Calculating significances...")
       
-      
     # Plain test on the abundances.
     resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", abund_thresh, p_thresh, dprop_thresh, correction, threads)
   
-    
     if (dbg == "test")
       return(resobj)
   }
@@ -238,7 +222,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       Transcripts[, stdevB := rowSds(as.matrix(count_data_B)) ]
       Transcripts[, log2FC := log2(sumB / sumA)]
     })
-  
     # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)
     resobj$Parameters[["var_name"]] <- varname
     resobj$Parameters[["cond_A"]] <- name_A
@@ -278,21 +261,17 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
     resobj$Parameters[["rep_bootnum"]] <- ncol(count_data_A) * ncol(count_data_B)
     resobj$Parameters[["rep_reprod_thresh"]] <- rrep_thresh
-    
     # Avoid repetitive cluttered syntax.
     eltr <- resobj$Transcripts$elig
     elge <- resobj$Genes$elig
-    
     # Bootstrap.
     tallies <- do_boot(lean= lean, tx_filter= tx_filter, eltr= eltr, elge= elge,
                        count_data_A= count_data_A, count_data_B= count_data_B,  
                        niter= resobj$Parameters[["rep_bootnum"]], threads= threads, verbose=TRUE, test_transc= test_transc, test_genes= test_genes, 
                        count_thresh= abund_thresh, p_thresh= p_thresh, dprop_thresh= dprop_thresh, correction= correction)
     
-    
     if (dbg == "rboot")
       return(tallies)
-    
     
     # Copy results into the output object.
     if (lean) {
@@ -330,7 +309,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
-    
     if (dbg == "rbootsum")
       return(resobj)
   }
@@ -345,21 +323,17 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
     resobj$Parameters[["quant_bootnum"]] <- qbootnum
     resobj$Parameters[["quant_reprod_thresh"]] <- qrep_thresh
-    
     # Avoid repetitive cluttered syntax.
     eltr <- resobj$Transcripts$elig
     elge <- resobj$Genes$elig
-    
     # Bootstrap.
     tallies <- do_boot(lean- lean, tx_filter= tx_filter, eltr= eltr, elge= elge,
                        boot_data_A= boot_data_A, boot_data_B= boot_data_B,  
                        niter= qbootnum, threads= threads, verbose= verbose, test_transc= test_transc, test_genes= test_genes, 
                        count_thresh= abund_thresh, p_thresh= p_thresh, dprop_thresh= dprop_thresh, correction= correction)
     
-    
     if (dbg == "qboot")
       return(tallies)
-    
     
     # Copy results into the output object.
     with(resobj, {
@@ -389,7 +363,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
     
-    
     if (dbg == "qbootsum")
       return(resobj)
   }
@@ -413,7 +386,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         Genes[(elig), DTU := (DTU & rep_reprod)]
       }
     })
-  
+    
     # Store the replicate means after re-adding the IDs.
     with(count_data_A, {
       count_data_A[,  target_id := tx_filter$target_id]

@@ -1,7 +1,7 @@
 Type: Package
 Package: rats
-Version: 0.6.4.11
-Date: 2019-02-14
+Version: 0.6.4.12
+Date: 2019-07-08
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
 Authors: c(person("Kimon Froussios", role=c("aut"), email="kimon.froussios@gmail.com"),
@@ -29,6 +29,7 @@ Suggests:
     S4Vectors,
     shiny,
     testthat,
+    roxygen2,
     knitr,
     rmarkdown,
 URL: https://github.com/bartongroup/Rats, http://www.compbio.dundee.ac.uk
