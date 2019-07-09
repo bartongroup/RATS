@@ -34,6 +34,8 @@
 #' }
 #'
 #' @import data.table
+#' @importFrom parallel detectCores
+#' @importFrom stats p.adjust.methods
 #'
 parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
                                 TARGET_COL, PARENT_COL,
@@ -61,7 +63,7 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Some transcript identifiers are not unique!"))
   
   # Simple parameters.
-  if (!correction %in% p.adjust.methods)
+  if (!correction %in% stats::p.adjust.methods)
     return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods ."))
   if (!testmode %in% c("genes", "transc", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
@@ -421,14 +423,15 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 #' @param eltr Selection vector for eligible transcripts.
 #' @param elge Selection vector for eligible genes.
 #' @param boot_data_A Bootstrapped quantifications for first condition.
-#' @param boot_data_A Bootstrapped quantifications for second condition.
+#' @param boot_data_B Bootstrapped quantifications for second condition.
 #' @param count_data_A Plain quantifications for first condition.
-#' @param count_data_A Plain quantifications for second condition.
+#' @param count_data_B Plain quantifications for second condition.
 #' @param niter Number of iterations (for quantification bootstraps only).
 #' @param threads Number of threads.
 #' @param verbose Progress messages.
 #' @param test_transc Do transcript-level test.
 #' @param test_genes Do gene-level test.
+#' @param ... Other arguments to pass on to calculate_DTU().
 #' 
 #' @import utils
 #' @import parallel
@@ -491,15 +494,16 @@ do_boot <- function(lean, tx_filter, eltr, elge,
       return(NULL)  # The values of interest are updated directly in every iteration, nothing to return.
     } else {
       # Keep multiple columns of info per iteration so as to calculate stuff once bootstrapping is completed.
-      return( list("tp" = iterout$Transcripts[, pval_corr],
-                   "tdtu" = iterout$Transcripts[, DTU],
-                   "ty" = iterout$Transcripts[, Dprop],
-                   "gp" = iterout$Genes[, pval_corr],
-                   "gdtu" = iterout$Genes[, DTU]) )
+      return( list("tp" = iterout$Transcripts[, "pval_corr", with=FALSE],
+                   "tdtu" = iterout$Transcripts[, "DTU", with=FALSE],
+                   "ty" = iterout$Transcripts[, "Dprop", with=FALSE],
+                   "gp" = iterout$Genes[, "pval_corr", with=FALSE],
+                   "gdtu" = iterout$Genes[, "DTU", with=FALSE]) )
     }
   }) # End of iterations loop.
   
-  message("Summarising bootstraps...")
+  if (verbose)
+    message("Summarising bootstraps...")
   
   with(tallies, {
     if (test_transc) {
@@ -616,7 +620,9 @@ g.test.2 <- function(obsx, obsy) {
 
 #================================================================================
 #' Tidy up annotation.
-#'
+#' 
+#' With the general english meaning of the word "tidy", not the R Tidyverse meaning.
+#' 
 #' @param annot A data.frame matching transcript identifiers to gene identifiers. Any additional columns are allowed but ignored.
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})

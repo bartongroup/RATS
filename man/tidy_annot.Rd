@@ -20,5 +20,5 @@ Extract the relevant columns as a \code{data.table} and order the rows by gene. 
 look-up structure that is consistent throughout RATs.
 }
 \description{
-Tidy up annotation.
+With the general english meaning of the word "tidy", not the R Tidyverse meaning.
 }

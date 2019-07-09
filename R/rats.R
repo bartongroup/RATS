@@ -39,7 +39,7 @@
 #' @return List of mixed types. Contains a list of runtime settings, a table of gene-level results, a table of transcript-level results, and a list of two tables with the transcript abundaces.
 #'
 #' @import utils
-#' @importFrom parallel
+#' @import parallel
 #' @import data.table
 #' @import matrixStats
 #' @export

@@ -19,9 +19,9 @@ fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
 
 \item{PARENT_COL}{The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})}
 
-\item{half_cooked}{(logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. Wasabi automatically skips conversion if abundance.h5 is present, so this parameter is redundant, unless wasabi is not installed. (Default FALSE)}
+\item{half_cooked}{(logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. FALSE can also be used to force wasabi to repeat the conversion even if it exists. (Default FALSE)}
 
-\item{beartext}{(logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstraps} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.}
+\item{beartext}{(logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstrap} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.}
 
 \item{threads}{(integer) For parallel processing. (Default 1)}
 
@@ -31,8 +31,8 @@ fish4rodents(A_paths, B_paths, annot, TARGET_COL = "target_id",
 A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
 }
 \description{
-Uses \code{wasabi} to convert Salmon read counts format to Kallisto RHDF5 format,
-then applies TPM normalisation using the info available from the abundance.h5 files.
+Convert Salmon read counts format to Kallisto RHDF5 format,
+then apply TPM normalisation using the info available from the abundance.h5 files.
 }
 \details{
 Converting, normalising and importing multiple bootstrapped abundance files takes a bit of time.

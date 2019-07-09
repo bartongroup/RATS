@@ -10,5 +10,5 @@ plot_shiny_volcano(dtuo)
 \item{dtuo}{A DTU object.}
 }
 \description{
-Interactive volcano plot, using shiny.
+This depends on the shiny package.
 }

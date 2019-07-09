@@ -52,7 +52,7 @@ get_dtu_ids <- function(dtuo) {
 #' A tally of DTU genes and transcripts.
 #' 
 #' @param dtuo A DTU object.
-#' @return A data.frame with catefory names in the first column and values in the second column.
+#' @return A data.frame with category names in the first column and values in the second column.
 #'
 #'@export
 dtu_summary <- function(dtuo) {
@@ -138,7 +138,7 @@ get_switch_ids <- function(dtuo) {
 #' A tally of genes showing isoform switching.
 #'
 #' @param dtuo A DTU object.
-#' @return A data.frame with catefory names in the first column and values in the second column.
+#' @return A data.frame with category names in the first column and values in the second column.
 #'
 #'@export
 dtu_switch_summary <- function(dtuo) {
@@ -176,12 +176,12 @@ get_plurality_ids <- function(dtuo){
 #' A tally of genes based on how many isoforms show significant change.
 #'
 #' @param dtuo A DTU object.
-#' @return A data.frame with catefory names in the first column and values in the second column.
+#' @return A data.frame with category names in the first column and values in the second column.
 #'
 #'@export
 dtu_plurality_summary <- function(dtuo) {
   tally <- sapply(get_plurality_ids(dtuo), length)
-  return( data.frame("isof_affected"=names(tally), "num_of_genes"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
+  return( data.frame("isof_affected"=names(tally), "num_of_genes"=tally, row.names=NULL, stringsAsFactors=FALSE) )
 }
 
 
@@ -574,10 +574,11 @@ plot_diagnostics <- function(dtuo, type="cormat") {
 #================================================================================
 #' Interactive volcano plot, using shiny.
 #'
+#' This depends on the shiny package.
+#'
 #' @param dtuo A DTU object.
 #'
 #' @import data.table
-#' @import shiny
 #' @export
 #'
 plot_shiny_volcano <- function(dtuo) {

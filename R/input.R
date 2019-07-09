@@ -23,7 +23,7 @@ granges2ids <- function(annot, transc_header= "target_id", gene_header= "parent_
     stop('It seems you supplied a GFF3 file. This is currenlty not implemented. Please convert to GTF using available tools and try again.')
   }
   # Don't want any unpaired IDs (genes without transcripts are irrelevant, transcripts without gene are unusable).
-  t2g <- t2g[!is.na(gene_id) & !is.na(transcript_id), ]
+  t2g <- t2g[!is.na(t2g$gene_id) & !is.na(t2g$transcript_id), ]    # R Check really does not like data.table syntax... :(
   
   names(t2g) <- c(transc_header, gene_header)
   return(t2g)
@@ -47,7 +47,7 @@ granges2ids <- function(annot, transc_header= "target_id", gene_header= "parent_
 #'
 gtf2ids <- function(annotfile, transc_header= "target_id", gene_header= "parent_id")
 {
-  annot <- import(annotfile)
+  annot <- rtracklayer::import(annotfile)
   granges2ids(annot, transc_header, gene_header)
 }
 
@@ -93,7 +93,7 @@ annot2ids <- function(annotfile, transc_header= "target_id", gene_header= "paren
 annot2models <- function(annotfile, threads= 1L)
 {
   message('This will take a few minutes...')
-  gr <- import(annotfile)
+  gr <- rtracklayer::import(annotfile)
   
   # Split entries by gene and then by transcript.
   lg <- list()

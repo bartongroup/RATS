@@ -18,6 +18,6 @@ granges2ids(annot, transc_header = "target_id",
 A data.table with two columns, matching transcript IDs to gene IDs.
 }
 \description{
-The GRanges must have at least the following metadata columsn: `gene_id` and `transcript_id` (such as GRanges imported from GTF).
+The GRanges must have at least the following metadata columns: `gene_id` and `transcript_id` (such as GRanges imported from GTF).
 GFF3-style metadata columns are currently not supported.
 }

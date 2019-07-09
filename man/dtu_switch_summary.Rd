@@ -10,7 +10,7 @@ dtu_switch_summary(dtuo)
 \item{dtuo}{A DTU object.}
 }
 \value{
-A data.frame with catefory names in the first column and values in the second column.
+A data.frame with category names in the first column and values in the second column.
 }
 \description{
 A tally of genes showing isoform switching.

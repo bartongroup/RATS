@@ -12,12 +12,13 @@ Anyone working in transcriptomics, analysing gene expression and transcript abun
 
 #### What it does
 
-1. It provides a method to detect changes in the abundance ratios of transcript isoforms of a gene.
+1. It provides a method to detect changes in the abundance ratios of transcript isoforms within a gene.
 This is called **Differential Transcript Usage (DTU)**. 
 
-2. **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
-transcript abundances, which you can obtain using any tool you like. This makes it *suitable for use with alignment-free quantification tools* 
-like [Kallisto](http://pachterlab.github.io/kallisto/) or [Salmon](https://github.com/COMBINE-lab/salmon). 
+2. **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; 
+RATs uses only the transcript abundances, which you can obtain using any tool you like. This makes it 
+*suitable for use with alignment-free quantification tools* like [Kallisto](http://pachterlab.github.io/kallisto/)
+or [Salmon](https://github.com/COMBINE-lab/salmon), as well as with traditional alignment-based quantification methods.
 
 3. RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. These bootstrapped
 data are used by RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
@@ -28,10 +29,9 @@ and thus provide a measure of confidence in the DTU calls.
 
 1. This is an R source package, and will run on any platform with a reasonably up-to-date R environment. A few third-party R packages are also required (see below).
 
-2. As input, RATs requires transcript abundance estimates with or without bootstrapping. The format either way is tables with the samples as columns and the transcripts as rows. An extra column holds the transcript IDs. Some functionality to create these from Salmon or Kallisto quantification files is provided by RATs.
+2. As input, RATs requires transcript abundance estimates with or without bootstrapping. The format either way is tables with the samples (or iterations) as columns and the transcripts as rows. The first column holds the transcript IDs. Some functionality to create these from Salmon or Kallisto quantification files is provided by RATs, but there are many other ways to set your data in the required format.
 
-3. RATs also requires a look-up table matching the transcript identifiers to the respective gene identifiers. This can be obtained through various means,
-one of them being extracting this info from a GTF file using functionality provided by RATs.
+3. RATs also requires a look-up table matching the transcript identifiers to the respective gene identifiers. This can be obtained through various means, such as extracting this info from a GTF file using functionality provided by RATs.
 
 ***
 
@@ -50,20 +50,16 @@ The following instructions assume Bioconductor >=3.5 syntax. Consult [Bioconduct
 * Mandatory dependencies
 
 ```
-# Core data structure. Additional vectorised statistics.
-install.packages(c("data.table", "matrixStats"))
+# From CRAN
 
-# Plots.
-install.packages("ggplot2")
+install.packages(c("data.table", "matrixStats", "ggplot2"))
 
-# Data imports.
+# From Bioconductor
+
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("rhdf5")
 BiocManager::install("COMBINE-lab/wasabi")
-
-# Annotation imports.
-BiocManager::install("S4Vectors")
 BiocManager::install("rtracklayer")
 BiocManager::install("GenomicRanges")
 ```
@@ -87,7 +83,7 @@ The latest release can also be installed directly from Github, using the `devtoo
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
-For testing purposes (bug resolutions, new features), you can install the on-going developmental version from Github:
+For testing purposes (bug resolutions, new features), you can install the on-going development version from Github:
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
