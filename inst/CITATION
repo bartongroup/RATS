@@ -1,0 +1,14 @@
+bibentry(bibtype = "Article",
+         title = "{Relative Abundance of Transcripts (RATs)}: Identifying differential isoform abundance from RNA-seq",
+         author = c(person("Kimon", "Froussios"),
+                    person("Kira", "Mourão"),
+                    person("Gordon G.", "Simpson"),
+                    person("Geoffrey J.", "Barton"),
+                    person("Nicholas", "Schurch")),
+         journal = "F1000Research",
+         number = 8,
+         page = 213,
+         year = 2019,
+         url = "https://doi.org/10.12688/f1000research.17916.1",
+         textVersion = "Froussios K, Mourão K, Simpson G et al. Relative Abundance of Transcripts (RATs): Identifying differential isoform abundance from RNA-seq [version 1; peer review: 1 approved, 2 approved with reservations]. F1000Research 2019, 8:213"
+)
