@@ -8,8 +8,6 @@ output:
     theme: readable
     toc: yes
     toc_float: yes
-  pdf_document:
-    toc: yes
 vignette: >
   \usepackage[utf8]{inputenc}
   %\VignetteIndexEntry{RATs 3: Raw Output} 
