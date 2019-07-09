@@ -96,7 +96,7 @@ test_that("The output structure is correct", {
   expect_true(is.data.frame(mydtu$Abundances[[1]]))
   expect_true(is.data.frame(mydtu$Abundances[[2]]))
   
-  # No qunatification bootstraps.
+  # No quantification bootstraps.
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", verbose = FALSE, qboot = FALSE, lean=FALSE)  
   expect_false(any(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Genes)))
   expect_false(any(c("quant_dtu_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max", "quant_na_freq", "quant_reprod") %in% names(mydtu$Transcripts)))
@@ -122,14 +122,14 @@ test_that("The output structure is correct", {
   
   # No bootstrap variance statstics.
   mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qbootnum=2, rboot=TRUE, qboot=TRUE, verbose = FALSE, lean=TRUE)
-  expect_false(any(c("quant_na_freq", "quant_p_median", "quant_p_min", "quant_p_max", 
-                     "rep_na_freq", "rep_p_median", "rep_p_min", "rep_p_max") %in% names(mydtu$Genes)))
-  expect_true(all(c("quant_dtu_freq", "quant_reprod", 
-                    "rep_dtu_freq", "rep_reprod") %in% names(mydtu$Genes)))
-  expect_false(any(c("quant_na_freq", "quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max",
-                     "rep_na_freq", "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max") %in% names(mydtu$Transcripts)))
-  expect_true(all(c("quant_dtu_freq", "quant_reprod", 
-                    "rep_dtu_freq", "rep_reprod") %in% names(mydtu$Transcripts)))
+  expect_false(any(c("quant_p_median", "quant_p_min", "quant_p_max", 
+                     "rep_p_median", "rep_p_min", "rep_p_max") %in% names(mydtu$Genes)))
+  expect_true(all(c("quant_dtu_freq", "quant_reprod", "quant_na_freq",
+                    "rep_dtu_freq", "rep_reprod", "rep_na_freq") %in% names(mydtu$Genes)))
+  expect_false(any(c("quant_p_median", "quant_p_min", "quant_p_max", "quant_Dprop_mean", "quant_Dprop_stdev", "quant_Dprop_min", "quant_Dprop_max",
+                     "rep_p_median", "rep_p_min", "rep_p_max", "rep_Dprop_mean", "rep_Dprop_stdev", "rep_Dprop_min", "rep_Dprop_max") %in% names(mydtu$Transcripts)))
+  expect_true(all(c("quant_dtu_freq", "quant_reprod", "quant_na_freq",
+                    "rep_dtu_freq", "rep_reprod", "rep_na_freq") %in% names(mydtu$Transcripts)))
 })
 
 #==============================================================================
