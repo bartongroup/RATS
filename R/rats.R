@@ -274,37 +274,28 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       return(tallies)
     
     # Copy results into the output object.
-    if (lean) {
-      with(resobj, {
-        Transcripts[(eltr), rep_dtu_freq := tallies$Transcripts$dtu_freq[eltr]]
-        Transcripts[(eltr), rep_na_freq := tallies$Transcripts$na_freq[eltr]]
-        Transcripts[(eltr & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
-        Transcripts[(eltr & !DTU), rep_reprod := (rep_dtu_freq < 1 - rrep_thresh)]
-        Genes[(elge), rep_dtu_freq := tallies$Genes$dtu_freq[elge]]
-        Genes[(elge), rep_na_freq := tallies$Genes$na_freq[elge]]
-        Genes[(elge & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
-        Genes[(elge & !DTU), rep_reprod := (rep_dtu_freq < 1 - rrep_thresh)]
-      })
-    } else {
-      with(resobj, {
-        Transcripts[(eltr), rep_dtu_freq := tallies$Transcripts$dtu_freq[eltr]]
+    with(resobj, {
+      Transcripts[(eltr), rep_dtu_freq := tallies$Transcripts$dtu_freq[eltr]]
+      Transcripts[(eltr), rep_na_freq := tallies$Transcripts$na_freq[eltr]]
+      Transcripts[(eltr & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
+      Transcripts[(eltr & !DTU), quant_reprod := (rep_dtu_freq < 1 - rrep_thresh)]
+      Genes[(elge), rep_dtu_freq := tallies$Genes$dtu_freq[elge]]
+      Genes[(elge), rep_na_freq := tallies$Genes$na_freq[elge]]
+      Genes[(elge & DTU), rep_reprod := (rep_dtu_freq >= rrep_thresh)]
+      Genes[(elge & !DTU), rep_reprod := (rep_dtu_freq < 1 - rrep_thresh)]
+      if (!lean) {
         Transcripts[(eltr), rep_p_median := tallies$Transcripts$p_median[eltr]]
         Transcripts[(eltr), rep_p_min := tallies$Transcripts$p_min[eltr]]
         Transcripts[(eltr), rep_p_max := tallies$Transcripts$p_max[eltr]]
-        Transcripts[(eltr), rep_na_freq := tallies$Transcripts$na_freq[eltr]]
         Transcripts[(eltr), rep_Dprop_mean := tallies$Transcripts$Dprop_mean[eltr]]
         Transcripts[(eltr), rep_Dprop_stdev := tallies$Transcripts$Dprop_stdev[eltr]]
         Transcripts[(eltr), rep_Dprop_min := tallies$Transcripts$Dprop_min[eltr]]
         Transcripts[(eltr), rep_Dprop_max := tallies$Transcripts$Dprop_max[eltr]]
-        Transcripts[(eltr), rep_reprod := tallies$Transcripts$reprod[eltr]]
-        Genes[(elge), rep_dtu_freq := tallies$Genes$dtu_freq[elge]]
         Genes[(elge), rep_p_median := tallies$Genes$p_median[elge]]
         Genes[(elge), rep_p_min := tallies$Genes$p_min[elge]]
         Genes[(elge), rep_p_max := tallies$Genes$p_max[elge]]
-        Genes[(elge), rep_na_freq := tallies$Genes$na_freq[elge]]
-        Genes[(elge), rep_reprod := tallies$Genes$reprod[elge]]
-      })
-    }
+      }
+    })
     
     if (verbose)  # Forcing a new line after the progress bar.
       message("")
@@ -345,7 +336,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       Genes[(elge), quant_na_freq := tallies$Genes$na_freq[elge]]
       Genes[(elge & DTU), quant_reprod := (quant_dtu_freq >= qrep_thresh)]
       Genes[(elge & !DTU), quant_reprod := (quant_dtu_freq < 1 - qrep_thresh)]
-      
       if (!lean) {
           Transcripts[(eltr), quant_p_median := tallies$Transcripts$p_median[eltr]]
           Transcripts[(eltr), quant_p_min := tallies$Transcripts$p_min[eltr]]
