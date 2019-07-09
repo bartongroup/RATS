@@ -1,6 +1,6 @@
 Type: Package
 Package: rats
-Version: 0.6.4.13
+Version: 0.6.4.14
 Date: 2019-07-09
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
@@ -14,24 +14,24 @@ Description: Given a set of transript abundances and a transcript-to-gene index 
 License: MIT + file LICENSE
 VignetteBuilder: knitr
 Depends:
-    ggplot2  (>= 2.2.0),
     data.table  (>= 1.9.8)
 Imports:
     utils,
     stats,
     parallel,
     matrixStats,
+    ggplot2  (>= 2.2.0),
     rtracklayer,
     rhdf5,
     wasabi, 
     GenomicRanges
 Suggests:
-    S4Vectors,
     shiny,
     testthat,
     roxygen2,
     knitr,
     rmarkdown,
+    devtools
 URL: https://github.com/bartongroup/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/bartongroup/RATS/issues
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1
