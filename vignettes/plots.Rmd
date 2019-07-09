@@ -1,7 +1,7 @@
 ---
 title: 'RATs: Plots'
 author: "Kimon Froussios"
-date: "09 FEB 2018"
+date: "08 JUL 2019"
 output:
   html_document:
     keep_md: yes
@@ -10,7 +10,7 @@ output:
     toc_float: yes
 vignette: >
   \usepackage[utf8]{inputenc}
-  %\VignetteIndexEntry{RATs 4: Plots} 
+  %\VignetteIndexEntry{RATs 3: Plots} 
   %\VignetteEngine{knitr::rmarkdown} 
 ---
 
@@ -23,11 +23,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r, include=FALSE}
 library(rats)
 ```
-
-```{r, eval=FALSE}
-library(rats)
-```
-
 
 Set up an example.
 
@@ -55,47 +50,26 @@ mydtu <- call_DTU(annot= myannot, verbose= FALSE,
 The RATs output object provides a host of information and we encourage users to familiarize themselves with it. 
 But a good plot is worth a thousand numbers. RATs provides a non-exhaustive set of basic visualisation options for the results.
 
+The plotting functions return a `ggplot2` object. You can just `print()` it, or assign it to a variable, further customise it with standard [ggplot2](http://ggplot2.org) operations, or even pass it on to other viewing functions, like `plotly::ggplotly()`.
 
 ## Isoform abundances for a given gene
 
-This function allows you to visualise what's going on in any particular gene. Both the absolute counts and the relative 
-proportions are plotted for each transcript. This is a very useful function for inspecting a gene of interest. It enables 
-quick visual evaluation of the dispersion of the replicate measurements, the magnitude of the proportion change, the 
-presence of outliers, and the consistency among the replicates.
-
-The gene plot can encode the transcript-level DTU outcome, the replicate of origin, the condition or the isoform. These are
-represented as line colour, box fill or point shape. The default choices may not please everyone, so these are all controlled 
-by parameters (see Plot Customisation later in this vignette).
-
-There are several styles for this plot, depending on your preferences. The default plot format includes the most information:
+This is a very useful function for inspecting a gene of interest. It enables quick visual evaluation of the dispersion of the replicate measurements, the magnitude of the absolute and proportion changes, the presence of outliers, and the consistency among the replicates.
 
 ```{r}
 # Grouping by condition (DEFAULT):
 plot_gene(mydtu, "MIX6", style="bycondition")
 ```
 
-The top two facets show the absolute abundances (counts) of the isoforms as supplied in the input, the bottom two show the correspondng 
-relative abundances (proportions). These are split by condition: The left two facets refer to one condition, the right two ones to the 
-other condition. The boxplots describe the abundance measurements of each isoform across replicates. 
-The actual measurements are overlayed as points and connected by lines so as to group the set of isoform abundances measured in each replicate. 
-This highlights the level of consistency between the replicates. The points and lines are placed slightly off-centre to prevent replicates 
-masking one another when the measurements are very similar. 
-
-The colours of the replicates are recycled between the two conditions, to reducethe required palette and boost contrast. 
-So in the example, there are 4 samples: controls-1, controls-2, patients-1 and patients-2.
-
-In the past, the fill colour encoded the DTU outcome, but to keep things more consistent with the other styles
-the DTU is now encoded as point shape while the fill colour echoes the condition.
-In this example, isoforms `.c1` and `.c2` change significantly, isoforms `.c3`, `.c4` and `.nc` do not change significantly 
-and isoform `.d` could not be tested.
-
-This structure is great for seeing changes in the isoform distribution profile of a gene. A more minimalist version of this, without the boxpltos,
-can also be obtained:
-
-```{r, eval=FALSE}
-# Grouping by condition (minimalist):
-plot_gene(mydtu, "MIX6", style="lines")
-```
+* The top two facets show the absolute abundances (counts) of the isoforms as supplied in the input. 
+* The bottom two facets show the correspondng relative abundances (proportions). 
+* The facets on the left ocrrespond to one condition, the facets on the right correspond to the other condition.
+* The boxplots describe the abundance distribution of each isoform across replicates. 
+* The actual abundance measurements are overlayed as points.
+* The set of abundances obtained in each replicate is shown by the lines connecting the points. This highlights the level of consistency between the replicates. 
+* The presence of DTU for each transcript is encoded in the fill and shape of the abundance points.
+* The points and lines are placed slightly off-centre to prevent replicates masking one another when the measurements are very similar. 
+* The colours of the replicates are recycled between the two conditions. So in the example, there are 4 samples: controls-1, controls-2, patients-1 and patients-2.
 
 When there are many replicates or many isoforms, it may be preferable to group abundances by isoform, making individual comparisons easier:
 
@@ -104,9 +78,32 @@ When there are many replicates or many isoforms, it may be preferable to group a
 plot_gene(mydtu, "MIX6", style="byisoform")
 ```
 
+### Customisation of the gene plot
+
+#### Change information layers
+
+The `fillby`, `colourby` and `shapeby` parameters of `plot_gene()` can be respectively used to control which information layers
+are encoded as fill, line/point colour, and point shape. Possible values are `c("isoform", "condition", "DTU", "none", "replicate")`.
+Be aware that some combinations of plot style and information layers are not possible.
+
+#### Change colour code
+
+Colour codes can be customised by specifying new values to the corresponding parameters of `plot_gene()`:
+
+* `isofcolvec` - Colour vector for isoform highlighting. Used to build a colorRampPalette.
+* `dtucolvec` - Colour vector for DTU highlighting.
+* `condcolvec` - Colour vector for condition highlighting.
+* `replcolvec` - Colour vector for replicate highlighting. Used to build a colorRampPalette.
+* `nonecol` - Colour to use when no colour coding is wanted.
+
+An example of a colour vector, using standard R colour aliases, would be `c('blue', darkred', 'gold')`.
+
+
 ### Structure of a given gene
 
-With the use of the third-party `ggbio` package, one can plot gene models from GRanges/GRangesList objects. This can be useful in interpreting transcript expression and DTU, but getting an annotation sliced up in a suitable way can be a little tedious. RATs offers a helper function to create an appropriate collection of GRanges/GRangesList objects from a GTF/GFF3 file. The collection is structured as a list (indexed by gene ID), where each element is a GRangesList object containing a GRange per transcript of that gene.
+With the use of the third-party `ggbio` package, one can plot gene models from GRanges/GRangesList objects. This can be useful in interpreting transcript expression and DTU, but getting an annotation sliced up in a suitable way can be a little tedious.
+
+RATs offers a helper function to create an appropriate collection of `GRanges`/`GRangesList` objects from a GTF file. The collection is structured as a list (indexed by gene ID), where each element is a `GRangesList` object containing a `GRanges` per transcript of that gene.
 
 ```{r eval=FALSE}
 models <- annot2models('/my/annotation/file.gtf')
@@ -115,11 +112,12 @@ library(ggbio)
 autoplot(models[['mygeneID']][[3]])
 ```
 
-For more options and more refined plots, refer to the `ggbio` documentation.
+For more options and more refined plots, refer to the [ggbio](https://bioconductor.org/packages/release/bioc/html/ggbio.html) documentation.
+
 
 ## Overview plots
 
-Our simulated dataset is too small to properly demonstrate what these plots typically look like.
+Our simulated dataset is too small to properly demonstrate what these plots might look like.
 So, instead, each one is accompanied by a static image of the plot created with a real and much larger dataset.
 
 Possibly the most common plot in differential expression is the volcano plot, which plots the effect size against 
@@ -136,7 +134,6 @@ plot_overview(mydtu, type="gvolcano")
 
 This is what these look like on a larger dataset:
 ![Transcript significance VS effect size](./figs/tvolcano.jpg)
-![Gene significance VS largest effect size among isoforms](./figs/gvolcano.jpg)
 
 You can also get density histograms for the volcanos (the Y axis is square-root compressed):
 
@@ -150,14 +147,8 @@ plot_overview(mydtu, type="maxdprop")
 
 This is what these look like on a larger dataset:
 ![Effect size distribution](./figs/dprop.jpg)
-![Largest isoform effect size per gene](./figs/maxdprop.jpg)
 
-The gene version of the effect size distribution is often bi-modal with the positive peak being larger than the negative, 
-because when a gene has isoforms with the same absolute effect size (for example genes with two isoforms) 
-the positive value is deterministically selected.
-
-Although fold-changes of transcript expression are not tied to DTU, if your input counts are suitably normalised between conditions,
-you can plot the traditional FC volcano and the relationship between FC and proportion change.
+Although fold-changes of transcript expression are not tied to DTU, you can plot the traditional FC volcano and the relationship between FC and proportion change. Bear in mind that the FCs will be based on the abundances provided as input, *without any adjustments* such as library size normalization.
 
 ```{r, eval=FALSE}
 # Proportion change VS transcript-level significance. Each point is a transcript
@@ -176,7 +167,7 @@ plot_overview(mydtu, type="fcVSdprop")
 Currently there is only one plot type in this category.
 
 ```{r}
-# Matrix of pairwise Pearson's correlations among samples.
+# Pairwise Pearson's correlations among samples.
 plot_diagnostics(mydtu, type='cormat') # Default type.
 ```
 
@@ -202,59 +193,13 @@ well as draw the isoform abundance plot for the gene.
 When you finish exploring the volcano plot, close the popup window or stop the shiny runtime in order to return to your R terminal.
 
 
-# Plot customisation
-
-## Customisation of the gene plot
-
-### Change information layers
-
-The `fillby`, `colourby` and `shapeby` parameters can be respectively used to control which information layers
-are encoded as fill, line/point colour, and point shape. Possible values are `c("isoform", "condition", "DTU", "none", "replicate")`.
-Be aware that some combinations of plot style and information layers are not possible. If safe to do so these will be silently ignored,
-otherwise an error message will appear.
-
-```{r}
-# For a less busy look, any of the information layers can be disabled.
-plot_gene(mydtu, "MIX6", style="byisoform", colourby="none", shapeby="none")
-```
-
-The following command will approximate the older version of the gene plot (where DTU determined the fill colour):
-
-```{r}
-plot_gene(mydtu, "MIX6", fillby="DTU", shapeby="none")
-```
-
-### Change colour code
-
-```{r}
-# Colour codes can be customised by specifying new values to the
-# corresponding parameters.
-plot_gene(mydtu, "MIX6", style="bycondition", fillby="condition", 
-          condcolvec=c("magenta", "cyan"),
-          replcolvec=c("green", "darkgreen"))
-```
-
-* `isofcolvec` - Colour vector for isoform highlighting. Used to build a colorRampPalette.
-* `dtucolvec` - Colour vector for DTU highlighting.
-* `condcolvec` - Colour vector for condition highlighting.
-* `replcolvec` - Colour vector for replicate highlighting. Used to build a colorRampPalette.
-* `nonecol` - Colour to use when no colour coding is wanted.
-
-
-## General customisations for all plots
-
-You can save any of the gene and overview plots as a `ggplot2` object and use ggplot2 manipulations on it, such as
-the axis tick marks, axis values, labels, titles, colours... Consult the [ggplot2](http://ggplot2.org)
-documentation for more help on these.
-
-
 ***
 
 
 # Contact information
 
 The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
-by Dr. Kimon Froussios, Dr. Kira Mour??o and Dr. Nick Schurch.
+by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
 Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
