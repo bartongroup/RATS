@@ -8,7 +8,7 @@ granges2ids(annot, transc_header = "target_id",
   gene_header = "parent_id")
 }
 \arguments{
-\item{annot}{A GRanges object that was imported from a GTF file and retains all the metadata columns.}
+\item{annot}{A GRanges object with gene_id and transcript_id metadata columns.}
 
 \item{transc_header}{The title for the transcripts column in the output. (target_id)}
 

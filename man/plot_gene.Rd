@@ -8,7 +8,7 @@ plot_gene(dtuo, pid, style = "bycondition", fillby = NA_character_,
   colourby = NA_character_, shapeby = NA_character_,
   isofcolvec = c("tomato", "lightblue", "forestgreen", "purple",
   "hotpink", "gold3"), dtucolvec = c(`TRUE` = "firebrick1", `FALSE` =
-  "dodgerblue", `NA` = "gold"), condcolvec = c("grey80", "grey15"),
+  "dodgerblue", `NA` = "gold"), condcolvec = c("grey15", "steelblue"),
   replcolvec = c("red", "blue", "green", "violet", "pink", "orange"),
   nonecol = "grey50")
 }
@@ -61,6 +61,5 @@ A ggplot2 object. Simply display/print it or you can also customize it.
 }
 \description{
 Boxplot of absolute and relative abundances for the isoforms of a given gene.
-The style option allows grouping by condition or by isoform, and provides the option to
-include the individual measuremnts from each replicate.
+The style option allows grouping by condition or by isoform.
 }
