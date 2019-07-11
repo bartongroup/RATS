@@ -18,6 +18,7 @@
 #' @param name_A The name for one condition. (Default "Condition-A")
 #' @param name_B The name for the other condition. (Default "Condition-B")
 #' @param varname The name of the covariate to which the two conditions belong. (Default \code{"condition"}).
+#' @param use_sums Use each transcript's sum of abundances across the replicates, instead of the means. Increases sensitivity, but also increases risk of false positives. RATs used only the sums up to 0.6.5 (inclusive). (Default FALSE)
 #' @param p_thresh The p-value threshold. (Default 0.05)
 #' @param dprop_thresh Effect size threshold. Minimum change in proportion of a transcript for it to be considered meaningful. (Default 0.20)
 #' @param abund_thresh Noise threshold. Minimum mean (across replicates) abundance for transcripts (and genes) to be eligible for testing. (Default 5)
@@ -46,7 +47,7 @@
 call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_id",
                      count_data_A= NULL, count_data_B= NULL, boot_data_A= NULL, boot_data_B= NULL,
                      name_A= "Condition-A", name_B= "Condition-B", varname= "condition",
-                     p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1.0,
+                     use_sums=FALSE, p_thresh= 0.05, abund_thresh= 5, dprop_thresh= 0.2, correction= "BH", scaling= 1.0,
                      testmode= "both", lean= TRUE, qboot= TRUE, qbootnum= 0L, qrep_thresh= 0.95, rboot=TRUE, rrep_thresh= 0.85,
                      description= NA_character_, verbose= TRUE, threads= 1L, seed= NA_integer_, reckless= FALSE, dbg= "0") {
   
@@ -60,7 +61,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
                                       TARGET_COL, PARENT_COL,
                                       correction, testmode, scaling, threads, seed,
                                       p_thresh, abund_thresh, dprop_thresh, 
-                                      qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose)
+                                      qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose, use_sums)
     if (paramcheck$error)
       stop(paramcheck$message)
     
@@ -197,7 +198,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
       message("Calculating significances...")
       
     # Plain test on the abundances.
-    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", abund_thresh, p_thresh, dprop_thresh, correction, threads)
+    resobj <- calculate_DTU(count_data_A, count_data_B, tx_filter, test_transc, test_genes, "full", abund_thresh, p_thresh, dprop_thresh, correction, threads, use_sums)
   
     if (dbg == "test")
       return(resobj)
@@ -214,13 +215,11 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     with(resobj, {
       # Fill in data stats.
       Genes[, known_transc :=  Transcripts[, length(target_id), by=parent_id][, V1] ]  # V1 is the automatic column name for the lengths in the subsetted data.table
-      Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(sumA + sumB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns type double.
+      Genes[, detect_transc :=  Transcripts[, .(parent_id, ifelse(abundA + abundB > 0, 1, 0))][, as.integer(sum(V2)), by = parent_id][, V1] ]  # Sum returns type double.
       Genes[(is.na(detect_transc)), detect_transc := 0]
-      Transcripts[, meanA := rowMeans(count_data_A) ]
-      Transcripts[, meanB := rowMeans(count_data_B) ]
       Transcripts[, stdevA := rowSds(as.matrix(count_data_A)) ]
       Transcripts[, stdevB := rowSds(as.matrix(count_data_B)) ]
-      Transcripts[, log2FC := log2(sumB / sumA)]
+      Transcripts[, log2FC := log2(abundB / abundA)]
     })
     # Fill in run info. (if done within the with() block, changes are local-scoped and don't take effect)
     resobj$Parameters[["var_name"]] <- varname
@@ -245,7 +244,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     resobj$Parameters[["correction"]] <- correction
     resobj$Parameters[["reckless"]] <- reckless
     resobj$Parameters[["lean"]] <- lean
-    
+    resobj$Parameters[["use_sums"]] <- use_sums
     
     if (dbg == "info")
       return(resobj)
@@ -268,7 +267,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     tallies <- do_boot(lean= lean, tx_filter= tx_filter, eltr= eltr, elge= elge,
                        count_data_A= count_data_A, count_data_B= count_data_B,  
                        niter= resobj$Parameters[["rep_bootnum"]], threads= threads, verbose=TRUE, test_transc= test_transc, test_genes= test_genes, 
-                       count_thresh= abund_thresh, p_thresh= p_thresh, dprop_thresh= dprop_thresh, correction= correction)
+                       count_thresh= abund_thresh, p_thresh= p_thresh, dprop_thresh= dprop_thresh, correction= correction, use_sums= use_sums)
     
     if (dbg == "rboot")
       return(tallies)
@@ -321,7 +320,7 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     tallies <- do_boot(lean- lean, tx_filter= tx_filter, eltr= eltr, elge= elge,
                        boot_data_A= boot_data_A, boot_data_B= boot_data_B,  
                        niter= qbootnum, threads= threads, verbose= verbose, test_transc= test_transc, test_genes= test_genes, 
-                       count_thresh= abund_thresh, p_thresh= p_thresh, dprop_thresh= dprop_thresh, correction= correction)
+                       count_thresh= abund_thresh, p_thresh= p_thresh, dprop_thresh= dprop_thresh, correction= correction, use_sums= use_sums)
     
     if (dbg == "qboot")
       return(tallies)
@@ -423,8 +422,6 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         idx <- is.na(Abundances[[2]][[paste0('V',i)]])
         Abundances[[2]][idx, paste0('V',i) := 0]
       }
-      Transcripts[is.na(meanA), meanA := c(0)]
-      Transcripts[is.na(meanB), meanB := c(0)]
       Transcripts[is.na(propA), propA := c(0)]
       Transcripts[is.na(propB), propB := c(0)]
       

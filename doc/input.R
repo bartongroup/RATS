@@ -187,6 +187,11 @@ mydtu <- call_DTU(annot = myannot,
 #                    threads = 4, verbose= FALSE)
 
 ## ------------------------------------------------------------------------
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  use_sums = TRUE, verbose= FALSE)
+
+## ------------------------------------------------------------------------
 # Bonferroni correction.
 mydtu <- call_DTU(annot = myannot, 
                   boot_data_A= mycond_A, boot_data_B= mycond_B,

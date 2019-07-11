@@ -618,6 +618,18 @@ mydtu &lt;- call_DTU(annot = myannot,
 </ol>
 <p>There are some limitations imposed by R. Refer to the <code>parallel</code> package for details (RATs uses the <code>mclapply</code> family of parallel functions).</p>
 </div>
+<div id="combining-replicates" class="section level2">
+<h2>Combining replicates</h2>
+<p>Up to and including version <code>0.6.5</code>, RATs combined the isoform abundance values across replicates by summing them. The resulting values are thus larger and pass the significance test more easily, increasing sensitivity. But this can also boost false positives.</p>
+<p>Starting with version <code>0.7.0</code>, the user is given the choice between sums and means. By default RATs now uses the means instead of the sums.</p>
+<pre class="r"><code>mydtu &lt;- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  use_sums = TRUE, verbose= FALSE)</code></pre>
+<pre><code>## Summarising bootstraps...</code></pre>
+<ol style="list-style-type: decimal">
+<li><code>use_sums</code> - Whether to test the sum of abundances across replicates, instead of the mean. (Default FALSE)</li>
+</ol>
+</div>
 <div id="correction-for-multiple-testing" class="section level2">
 <h2>Correction for multiple testing</h2>
 <p>There are as many null hypotheses tested as there are genes (for the gene-level results) or transcripts (for the transcript-level results). The default correction method is <code>BH</code> (Benjamini-Hochberg). A full list of options is listed in R’s <code>p.adjust.methods</code>.</p>

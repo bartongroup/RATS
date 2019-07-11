@@ -24,6 +24,7 @@
 #' @param reckless whether to ignore detected annotation discrepancies.
 #' @param lean whether to report descriptive statistics for Dprop and pval.
 #' @param verbose Verbose status.
+#' @param use_sums Whether to use sums or means.
 #'
 #' @return List: \itemize{
 #'  \item{"error"}{logical}
@@ -41,7 +42,7 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
                                 TARGET_COL, PARENT_COL,
                                 correction, testmode, scaling, threads, seed,
                                 p_thresh, abund_thresh, dprop_thresh, 
-                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose) {
+                                qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose, use_sums) {
   warnmsg <- list()
 
   # Input format.
@@ -91,6 +92,8 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
     return(list("error"=TRUE, "message"="Invalid value for lean! Must be TRUE/FALSE."))
   if (!is.logical(verbose))
     return(list("error"=TRUE, "message"="Invalid value for verbose! Must be TRUE/FALSE."))
+  if (!is.logical(use_sums))
+    return(list("error"=TRUE, "message"="Invalid value for use_sums! Must be TRUE/FALSE."))
   
   # Scaling
   nsmpl <- NULL
@@ -242,8 +245,8 @@ alloc_out <- function(annot, full, n=1){
                        "var_name"=NA_character_, "cond_A"=NA_character_, "cond_B"=NA_character_,
                        "data_type"=NA_character_, "num_replic_A"=NA_integer_, "num_replic_B"=NA_integer_,
                        "num_genes"=NA_integer_, "num_transc"=NA_integer_,
-                       "tests"=NA_character_, "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "correction"=NA_character_, 
-                       "abund_scaling"=numeric(length=n),
+                       "tests"=NA_character_, "use_sums"=NA, "correction"=NA_character_, 
+                       "p_thresh"=NA_real_, "abund_thresh"=NA_real_, "dprop_thresh"=NA_real_, "abund_scaling"=numeric(length=n),
                        "quant_boot"=NA,"quant_reprod_thresh"=NA_real_,  "quant_bootnum"=NA_integer_,
                        "rep_boot"=NA, "rep_reprod_thresh"=NA_real_, "rep_bootnum"=NA_integer_, 
                        "seed"=NA_integer_, "reckless"=NA, "lean"=NA)
@@ -259,9 +262,8 @@ alloc_out <- function(annot, full, n=1){
          setkey(Genes, parent_id) )
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
                               "elig_xp"=NA, "elig"=FALSE, "sig"=NA, "elig_fx"=NA, "quant_reprod"=NA, "rep_reprod"=NA, "DTU"=FALSE, "gene_DTU"=NA,
-                              "meanA"=NA_real_, "meanB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_,
-                              "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_, "totalA"=NA_real_, "totalB"=NA_real_,
-                              "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
+                              "abundA"=NA_real_, "abundB"=NA_real_, "stdevA"=NA_real_, "stdevB"=NA_real_, "log2FC"=NA_real_, 
+                              "totalA"=NA_real_, "totalB"=NA_real_, "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_,
                               "pval"=NA_real_, "pval_corr"=NA_real_,
                               "quant_p_median"=NA_real_, "quant_p_min"=NA_real_, "quant_p_max"=NA_real_,
                               "quant_Dprop_mean"=NA_real_, "quant_Dprop_stdev"=NA_real_, "quant_Dprop_min"=NA_real_, "quant_Dprop_max"=NA_real_,
@@ -280,7 +282,8 @@ alloc_out <- function(annot, full, n=1){
     with(Genes,
          setkey(Genes, parent_id) )
     Transcripts <- data.table("target_id"=annot$target_id, "parent_id"=annot$parent_id,
-                              "sumA"=NA_real_, "sumB"=NA_real_, "log2FC"=NA_real_,  #log2FC currently not used in decision making and bootstrapping, but maybe in the future.
+                              "abundA"=NA_real_, "abundB"=NA_real_,
+                              "log2FC"=NA_real_,  #log2FC currently not used in decision making and bootstrapping, but maybe in the future.
                               "totalA"=NA_real_, "totalB"=NA_real_, "elig_xp"=NA, "elig"=FALSE,
                               "propA"=NA_real_, "propB"=NA_real_, "Dprop"=NA_real_, "elig_fx"=NA,
                               "pval"=NA_real_, "pval_corr"=NA_real_, "sig"=NA, "DTU"=FALSE)
@@ -317,13 +320,14 @@ alloc_out <- function(annot, full, n=1){
 #' @param dprop_thresh Minimum difference in proportions.
 #' @param correction Multiple testing correction type.
 #' @param threads Number of threads (POSIX systems only).
+#' @param use_sums Use sums instead of means. (sums is the behaviour of RATs up to 0.6.5 inclusive, more sensitivie but more prone to false positives)
 #' @return list
 #'
 #' @import data.table
 #' @import utils
 #' @import parallel
 #'
-calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1) {
+calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes, full, count_thresh, p_thresh, dprop_thresh, correction, threads= 1, use_sums=FALSE) {
   # Ensure data.table complies.
   setDTthreads(threads)
 
@@ -341,14 +345,20 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 
     #---------- STATS
 
-    # Statistics per transcript across all bootstraps per condition, for filtered targets only.
-    Transcripts[, sumA :=  rowSums(counts_A, na.rm=TRUE) ]
-    Transcripts[, sumB :=  rowSums(counts_B, na.rm=TRUE) ]
-    # Sums and proportions, for filtered targets only.
-    Transcripts[, totalA := sum(sumA, na.rm=TRUE), by=parent_id]
-    Transcripts[, totalB := sum(sumB, na.rm=TRUE), by=parent_id]
-    Transcripts[, propA := sumA/totalA]
-    Transcripts[, propB := sumB/totalB]
+    # Isoforms abundance combined across replicates.
+    if (use_sums){
+      Transcripts[, abundA :=  rowSums(counts_A, na.rm=TRUE) ]
+      Transcripts[, abundB :=  rowSums(counts_B, na.rm=TRUE) ]
+    } else {
+      Transcripts[, abundA :=  rowSums(counts_A, na.rm=TRUE) ]
+      Transcripts[, abundB :=  rowSums(counts_B, na.rm=TRUE) ]
+    }
+    # Gene expression
+    Transcripts[, totalA := sum(abundA, na.rm=TRUE), by=parent_id]
+    Transcripts[, totalB := sum(abundB, na.rm=TRUE), by=parent_id]
+    # Relative isoform abundance
+    Transcripts[, propA := abundA/totalA]
+    Transcripts[, propB := abundB/totalB]
     Transcripts[(is.nan(propA)), propA := NA_real_]  # Replace NaN with NA.
     Transcripts[(is.nan(propB)), propB := NA_real_]
     Transcripts[, Dprop := propB - propA]
@@ -356,17 +366,22 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
     #---------- FILTER
 
     # Filter transcripts and genes to reduce number of tests:
-    ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
-    ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
-    Transcripts[, elig_xp := (sumA >= ctA | sumB >= ctB)]
+    if (use_sums){
+      ctA <- count_thresh * resobj$Parameters[["num_replic_A"]]  # Adjust count threshold for number of replicates.
+      ctB <- count_thresh * resobj$Parameters[["num_replic_B"]]
+    } else {
+      ctA <- count_thresh
+      ctB <- count_thresh
+    }
+    
+    Transcripts[, elig_xp := (abundA >= ctA | abundB >= ctB)]
     Transcripts[, elig := (elig_xp &                          # isoform expressed above the noise threshold in EITHER condition
                              totalA >= ctA & totalB >= ctB &  # at least one eligibly expressed isoform exists in EACH condition (prevent gene-on/off from creating wild proportions from low counts)
                              totalA != 0 & totalB != 0 &      # gene expressed in BOTH conditions (failsafe, in case user sets noise threshold to 0)
                              (propA != 1 | propB != 1) )]     # not the only isoform expressed.
     
-    # If sum and total are equal in both conditions, it has no detected siblings and thus cannot change in proportion.
     Genes[, elig_transc := Transcripts[, as.integer(sum(elig, na.rm=TRUE)), by=parent_id][, V1] ]
-    Genes[, elig := elig_transc >= 2]
+    Genes[, elig := elig_transc >= 2]     # Need at least two expressed isoforms in order for DTU to even be possible.
 
     # Biologically significant.
     Transcripts[, elig_fx := abs(Dprop) >= dprop_thresh]
@@ -374,11 +389,12 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
 
     #---------- TESTS
 
+    
     # Transcript-level test.
     if (test_transc) {
       if(any(Transcripts$elig)){  # If nothing is eligible, table subsetting by `elig` is nonsense and crashes. 
                                   # In that case we can just skip testing altegether, as all output fields are initialized with NA already.
-        Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(sumA, sumB, totalA, totalB)])),
+      Transcripts[(elig), pval := unlist( mclapply( as.data.frame(t(Transcripts[(elig), .(abundA, abundB, totalA, totalB)])),
                                                       function(row) {
                                                         return( g.test.2(obsx= c(row[1], row[3]-row[1]), obsy= c(row[2], row[4]-row[2])) )
                                                       }, mc.cores= threads, mc.allow.recursive= FALSE, mc.preschedule= TRUE)
@@ -395,8 +411,8 @@ calculate_DTU <- function(counts_A, counts_B, tx_filter, test_transc, test_genes
         Genes[(elig), pval := t( as.data.frame( mclapply(Genes[(elig), parent_id],
                                           function(parent) {
                                               # Extract all relevant data to avoid repeated look ups in the large table.
-                                              subdt <- Transcripts[parent, .(sumA, sumB)]  # All isoforms, including not detected ones.
-                                              return( g.test.2(obsx= subdt$sumA, obsy= subdt$sumB) )
+                                              subdt <- Transcripts[parent, .(abundA, abundB)]  # All isoforms, including not detected ones.
+                                              return( g.test.2(obsx= subdt$abundA, obsy= subdt$abundB) )
                                           }, mc.cores= threads, mc.preschedule= TRUE, mc.allow.recursive= FALSE)
                   )) ]
         Genes[(elig), pval_corr := p.adjust(pval, method=correction)]

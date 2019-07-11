@@ -10,7 +10,7 @@ test_that("No false alarms", {
   sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=FALSE, TARGET_COL= "target", PARENT_COL= "parent")
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, abund_thresh= 10,
                          rrep_thresh = 0.6, qrep_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, rboot= FALSE, qboot=TRUE,
-                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21), lean=FALSE))
+                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21), lean=FALSE, use_sums=TRUE))
   
   sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=FALSE)
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, dbg= "prep", scaling=30))
@@ -140,6 +140,10 @@ test_that("Testing parameters are checked", {
                "Unrecognized value for qboot", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, rboot="GCSE", verbose = FALSE, dbg= "prep"),
                "Unrecognized value for rboot", fixed= TRUE)
+  
+  # Sums or means
+  expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, verbose = FALSE, use_sums="sums", dbg= "prep"),
+               "Invalid value for use_sums", fixed= TRUE)
 })
   
 #==============================================================================

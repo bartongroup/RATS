@@ -5,7 +5,7 @@ context("DTU Reports")
 #==============================================================================
 test_that("The summaries work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, reckless=TRUE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, reckless=TRUE, use_sums=TRUE)
   
   expect_silent(ids <- get_dtu_ids(mydtu))
   expect_type(ids, "list")
@@ -40,7 +40,7 @@ test_that("The summaries work", {
   expect_false(any(is.na(tally)))
   
   # Lower effect size threshold to verify that DTU changes accordingly.
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE, use_sums=TRUE)
   
   expect_silent(ids <- get_dtu_ids(mydtu))
   expect_equal(ids[[1]], c("1A1B", "MIX6", "CC"))
@@ -64,7 +64,7 @@ test_that("The summaries work", {
 #==============================================================================
 test_that("The isoform switching summaries work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE, use_sums=TRUE)
   
   expect_silent(ids <- get_switch_ids(mydtu))
   expect_type(ids, "list")
@@ -90,7 +90,7 @@ test_that("The isoform switching summaries work", {
 #==============================================================================
 test_that("The plurality summaries work", {
   sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.1, reckless=TRUE, use_sums=TRUE)
   
   expect_silent(ids <- get_plurality_ids(mydtu))
   expect_type(ids, "list")
@@ -107,7 +107,7 @@ test_that("The plurality summaries work", {
   expect_equal(tally[[2]], c(2, 1))
   expect_equal(tally[[2]], as.vector(sapply(ids, length)))
   
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.3, reckless=TRUE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= "ONE", name_B= "TWO", qboot=FALSE, rboot=FALSE, verbose = FALSE, dprop_thresh=0.3, reckless=TRUE, use_sums=TRUE)
   expect_silent(ids <- get_plurality_ids(mydtu))
   expect_silent(tally <- dtu_plurality_summary(mydtu))
   expect_named(ids, c("2", "1"))

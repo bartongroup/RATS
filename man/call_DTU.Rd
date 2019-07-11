@@ -7,10 +7,10 @@
 call_DTU(annot = NULL, TARGET_COL = "target_id",
   PARENT_COL = "parent_id", count_data_A = NULL, count_data_B = NULL,
   boot_data_A = NULL, boot_data_B = NULL, name_A = "Condition-A",
-  name_B = "Condition-B", varname = "condition", p_thresh = 0.05,
-  abund_thresh = 5, dprop_thresh = 0.2, correction = "BH",
-  scaling = 1, testmode = "both", lean = TRUE, qboot = TRUE,
-  qbootnum = 0L, qrep_thresh = 0.95, rboot = TRUE,
+  name_B = "Condition-B", varname = "condition", use_sums = FALSE,
+  p_thresh = 0.05, abund_thresh = 5, dprop_thresh = 0.2,
+  correction = "BH", scaling = 1, testmode = "both", lean = TRUE,
+  qboot = TRUE, qbootnum = 0L, qrep_thresh = 0.95, rboot = TRUE,
   rrep_thresh = 0.85, description = NA_character_, verbose = TRUE,
   threads = 1L, seed = NA_integer_, reckless = FALSE, dbg = "0")
 }
@@ -34,6 +34,8 @@ call_DTU(annot = NULL, TARGET_COL = "target_id",
 \item{name_B}{The name for the other condition. (Default "Condition-B")}
 
 \item{varname}{The name of the covariate to which the two conditions belong. (Default \code{"condition"}).}
+
+\item{use_sums}{Use each transcript's sum of abundances across the replicates, instead of the means. Increases sensitivity, but also increases risk of false positives. RATs used only the sums up to 0.6.5 (inclusive). (Default FALSE)}
 
 \item{p_thresh}{The p-value threshold. (Default 0.05)}
 

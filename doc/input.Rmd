@@ -287,7 +287,7 @@ mydtu <- call_DTU(annot= myannot,
 3. `abund_thresh` - Noise threshold: (i) The minimum mean (across replicates) abundance, in at least one condition, for a transcript to be considered expressed. (ii) Also the minimum cumulative abundance of all isoforms of a gene in each of the two conditions. (Default 5, very permissive)
 
 Depending on the settings, *additional thresholds* are available and will be discussed in their respective sections below.
- 
+
 
 ## Bootstrapping 
 
@@ -432,6 +432,22 @@ mydtu <- call_DTU(annot = myannot,
 There are some limitations imposed by R. Refer to the `parallel` package for details (RATs uses the `mclapply` family of
 parallel functions).
 
+
+## Combining replicates
+
+Up to and including version `0.6.5`, RATs combined the isoform abundance values across replicates by summing them. 
+The resulting values are thus larger and pass the significance test more easily, increasing sensitivity. 
+But this can also boost false positives.
+
+Starting with version `0.7.0`, the user is given the choice between sums and means. By default RATs now uses the means instead of the sums.
+
+```{r}
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  use_sums = TRUE, verbose= FALSE)
+```
+
+1. `use_sums` - Whether to test the sum of abundances across replicates, instead of the mean. (Default FALSE)
 
 ## Correction for multiple testing
 
