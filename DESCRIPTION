@@ -1,7 +1,7 @@
 Type: Package
 Package: rats
-Version: 0.6.4.14
-Date: 2019-07-09
+Version: 0.6.4.15
+Date: 2019-07-11
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
 Authors: c(person("Kimon Froussios", role=c("aut"), email="kimon.froussios@gmail.com"),
@@ -13,9 +13,8 @@ Description: Given a set of transript abundances and a transcript-to-gene index 
     identifiers, this package identifies genes where differential transcript usage occurs.
 License: MIT + file LICENSE
 VignetteBuilder: knitr
-Depends:
-    data.table  (>= 1.9.8)
 Imports:
+    data.table  (>= 1.9.8),
     utils,
     stats,
     parallel,
