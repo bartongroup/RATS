@@ -190,8 +190,7 @@ dtu_plurality_summary <- function(dtuo) {
 #' Plot abundances for all isoforms of a specified gene.
 #'
 #' Boxplot of absolute and relative abundances for the isoforms of a given gene.
-#' The style option allows grouping by condition or by isoform, and provides the option to
-#' include the individual measuremnts from each replicate.
+#' The style option allows grouping by condition or by isoform.
 #'
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
@@ -234,7 +233,7 @@ dtu_plurality_summary <- function(dtuo) {
 plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colourby=NA_character_, shapeby=NA_character_,
                       isofcolvec=c("tomato",  "lightblue", "forestgreen", "purple", "hotpink", "gold3"),
                       dtucolvec= c("TRUE"="firebrick1", "FALSE"="dodgerblue", "NA"="gold"),
-                      condcolvec=c("grey80", "grey15"),
+                      condcolvec=c("grey15", "steelblue"),
                       replcolvec=c("red",  "blue", "green", "violet", "pink", "orange"),
                       nonecol="grey50")
 {
@@ -284,13 +283,13 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
 
     ### BY ISOFORM.
     if (style=="byisoform") {
-      if (is.na(fillby)) {
-        fillby <- "condition"
-      } else if(is.na(colourby)) {
-          colourby="condition"
+      if (is.na(colourby)) {
+        colourby <- "condition"
+      } else if(is.na(fillby)) {
+          fillby="condition"
       }
-      if (is.na(colourby))
-        colourby <- "isoform"
+      if (is.na(fillby))
+        fillby <- "isoform"
       if(is.na(shapeby))
         shapeby <- "DTU"
       if (all("condition" != c(colourby, fillby)))
@@ -298,7 +297,7 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= vis_data[[colourby]], fill= vis_data[[fillby]])) +
         facet_grid(type ~ ., scales= "free", switch="y") +
         geom_jitter(aes(shape=vis_data[[shapeby]]), position=position_jitterdodge()) +
-        geom_boxplot(position=position_dodge(), alpha=0.3, outlier.shape= NA)
+        geom_boxplot(position=position_dodge(), size=0.5, alpha=0.3, outlier.shape= NA)
     ### BY CONDITION.
     } else if (style=="bycondition") {
       if (is.na(fillby))
@@ -310,7 +309,7 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
         facet_grid(type ~ condition, scales= "free", switch="y") +
         geom_path(aes(colour= replicate, group= replicate), position=position_dodge(width=0.5), alpha=0.7) +
         geom_point(aes(colour= replicate, group= replicate, shape=vis_data[[shapeby]]), position=position_dodge(width=0.5)) +
-        geom_boxplot(aes(fill= vis_data[[fillby]]), alpha=0.25, outlier.shape= NA, colour="grey60")
+        geom_boxplot(aes(fill= vis_data[[fillby]]), size=0.5, alpha=0.25, outlier.shape= NA, colour="grey60")
       if (fillby=="condition")
         result <- result + guides(fill="none")
       if (shapeby=="none")

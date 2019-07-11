@@ -52,7 +52,9 @@ But a good plot is worth a thousand numbers. RATs provides a non-exhaustive set 
 
 The plotting functions return a `ggplot2` object. You can just `print()` it, or assign it to a variable, further customise it with standard [ggplot2](http://ggplot2.org) operations, or even pass it on to other viewing functions, like `plotly::ggplotly()`.
 
-## Isoform abundances for a given gene
+## Inspection of a given gene
+
+### Isoform abundances
 
 This is a very useful function for inspecting a gene of interest. It enables quick visual evaluation of the dispersion of the replicate measurements, the magnitude of the absolute and proportion changes, the presence of outliers, and the consistency among the replicates.
 
@@ -78,7 +80,7 @@ When there are many replicates or many isoforms, it may be preferable to group a
 plot_gene(mydtu, "MIX6", style="byisoform")
 ```
 
-### Customisation of the gene plot
+### Customisation of the abundances plot
 
 #### Change information layers
 
@@ -99,20 +101,20 @@ Colour codes can be customised by specifying new values to the corresponding par
 An example of a colour vector, using standard R colour aliases, would be `c('blue', darkred', 'gold')`.
 
 
-### Structure of a given gene
+### Structure of the given gene
 
-With the use of the third-party `ggbio` package, one can plot gene models from GRanges/GRangesList objects. This can be useful in interpreting transcript expression and DTU, but getting an annotation sliced up in a suitable way can be a little tedious.
+With the use of the third-party Bioconductor package [ggbio](https://bioconductor.org/packages/release/bioc/html/ggbio.html), one can plot gene models from `GRanges`/`GRangesList` objects. This can be useful in interpreting transcript expression and DTU.
 
-RATs offers a helper function to create an appropriate collection of `GRanges`/`GRangesList` objects from a GTF file. The collection is structured as a list (indexed by gene ID), where each element is a `GRangesList` object containing a `GRanges` per transcript of that gene.
+Therefore RATs offers a helper function to create an appropriate collection of `GRanges`/`GRangesList` objects from a GTF file. The collection is structured as a list, indexed by the GTF `gene ID` values. Each list element is a `GRangesList` object with the annotated transcripts for that gene.
 
 ```{r eval=FALSE}
 models <- annot2models('/my/annotation/file.gtf')
 library(ggbio)
-# This will plot the structure described by the 3rd entry for the given gene.
-autoplot(models[['mygeneID']][[3]])
+# This will plot the structure of all isoforms for the given gene ID.
+autoplot(models[['mygeneID']])
 ```
 
-For more options and more refined plots, refer to the [ggbio](https://bioconductor.org/packages/release/bioc/html/ggbio.html) documentation.
+For more options and more refined plots, refer to the `ggbio` documentation.
 
 
 ## Overview plots
