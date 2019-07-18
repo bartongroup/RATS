@@ -447,7 +447,7 @@ mydtu <- call_DTU(annot = myannot,
                   use_sums = TRUE, verbose= FALSE)
 ```
 
-1. `use_sums` - Whether to test the sum of abundances across replicates, instead of the mean. (Default FALSE)
+1. `use_sums` - Whether to test the sum of abundances across replicates, instead of their mean. (Default FALSE)
 
 ## Correction for multiple testing
 
