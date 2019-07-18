@@ -245,15 +245,15 @@ test_that("The output content is complete", {
 
 #==============================================================================
 test_that("The result is consistent across input data formats", {
-  sim <- sim_boot_data()
-  data_A <- sim$boots_A
-  data_B <- sim$boots_B
-  # Emulate non-bootstrap data.
-  counts_A <- data_A[[2]]
-  counts_B <- data_B[[1]]
+  sim1 <- sim_boot_data()
+  data_A <- sim1$boots_A
+  data_B <- sim1$boots_B
+  sim2 <- sim_count_data()
+  counts_A <- sim2$counts_A
+  counts_B <- sim2$counts_B
   
-  mydtu <- list(call_DTU(annot= sim$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, reckless=TRUE),
-                call_DTU(annot= sim$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, reckless=TRUE))
+  mydtu <- list(call_DTU(annot= sim1$annot, boot_data_A = data_A, boot_data_B = data_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, reckless=TRUE),
+                call_DTU(annot= sim2$annot, count_data_A = counts_A, count_data_B = counts_B, rboot=FALSE, qboot=FALSE, verbose = FALSE, reckless=TRUE))
   
   expect_equal(mydtu[[1]][[2]][, seq(1,7), with=FALSE], mydtu[[2]][[2]][, seq(1,7), with=FALSE])
   expect_equal(mydtu[[1]][[3]][, seq(1,4), with=FALSE], mydtu[[2]][[3]][, seq(1,4), with=FALSE])
@@ -262,82 +262,51 @@ test_that("The result is consistent across input data formats", {
 #==============================================================================
 test_that("Filters work correctly", {
   
-  # !!! This test is tightly dependent on the data used for the test and the parameter values, in order to
-  # !!! ensure correct response to specific scenarios.
+  # !!! This test is tightly dependent on the dataset and the parameter values,
+  # !!! in order to ensure the filtering logic behaves correctly in normal and especially outlier scenarios.
   
-  sim <- sim_boot_data()
-  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=8, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666, reckless=TRUE, use_sums=TRUE)
+  sim <- sim_boot_data(clean=FALSE)
+  mydtu <- call_DTU(annot= sim$annot, boot_data_A=sim$boots_A, boot_data_B=sim$boots_B, name_A= "ONE", name_B= "TWO", abund_thresh=20, dprop_thresh=0.1, verbose = FALSE, rboot=FALSE, qboot = FALSE, seed=666, reckless=TRUE, use_sums=TRUE)
   
-  expect_equivalent(as.list(mydtu$Genes["1A1B", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 2, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["1A1N", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["1B1C", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["1D1C", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["ALLA", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 1, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["ALLB", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["CC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 2, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["LC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 1, FALSE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["MIX6", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(6, 5, 5, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Genes["NIB", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(1, 0, 0, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Genes["NN", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), 
-                    list(2, 2, 2, TRUE, FALSE))
+  expect_equivalent(as.list(mydtu$Genes["SOLO", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(1, 1, 0, FALSE, FALSE))    # Single transcript
+  expect_equivalent(as.list(mydtu$Genes["LONE", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(1, 1, 0, FALSE, FALSE))    # Single transcript DE
+  expect_equivalent(as.list(mydtu$Genes["SAME", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 2, TRUE, FALSE))     # Two transcripts, no change
+  expect_equivalent(as.list(mydtu$Genes["D2TE", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 2, TRUE, FALSE))     # Two trnscripts DE but not DU
+  expect_equivalent(as.list(mydtu$Genes["D2TU", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 2, TRUE, TRUE))      # Two transcripts DE/DU, no switching
+  expect_equivalent(as.list(mydtu$Genes["SW", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 2, TRUE, TRUE))        # Two transcripts DE/DU/switching
+  expect_equivalent(as.list(mydtu$Genes["XSW", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 2, TRUE, TRUE))       # Two transcripts, different one expressed in each condition.
+  expect_equivalent(as.list(mydtu$Genes["FAKE", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 1, FALSE, FALSE))    # Two transcripts, same one expressed in both conditions
+  expect_equivalent(as.list(mydtu$Genes["ALLA", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 0, FALSE, TRUE))     # Two transcripts, both expressed in only one condition
+  expect_equivalent(as.list(mydtu$Genes["LC", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 2, 0, FALSE, TRUE))       # Too low count
+  expect_equivalent(as.list(mydtu$Genes["MIX", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(6, 5, 4, TRUE, TRUE))       # Variety, multiple transcripts
+  expect_equivalent(as.list(mydtu$Genes["NID", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]), list(2, 0, 0, FALSE, FALSE))     # Annotated, not quantified
+  expect_true(all(is.na(as.list(mydtu$Genes["NIA", list(known_transc, detect_transc, elig_transc, elig, elig_fx)]))))                            # Quantified, but not annotated.
   
   setkey(mydtu$Transcripts, target_id)
-  expect_equivalent(as.list(mydtu$Transcripts["1A1B.a", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["1A1B.b", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["1A1N-2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1B1C.1", list(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1B1C.2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1D1C:one", list(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1D1C:two", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["ALLA1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["ALLB1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["ALLB2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["CC_a", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["CC_b", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["LC1", list(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["LC2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c1", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c2", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c3", list(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.c4", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, TRUE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.d", .(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["MIX6.nc", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["NIB.1", .(elig_xp, elig, elig_fx)]),
-                    list(FALSE, FALSE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["1NN", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
-  expect_equivalent(as.list(mydtu$Transcripts["2NN", .(elig_xp, elig, elig_fx)]),
-                    list(TRUE, TRUE, FALSE))
+  expect_equivalent(as.list(mydtu$Transcripts["SOLO.1", list(elig_xp, elig, elig_fx)]), list(TRUE, FALSE, FALSE))   # Single transcript
+  expect_equivalent(as.list(mydtu$Transcripts["LONE.a", list(elig_xp, elig, elig_fx)]), list(TRUE, FALSE, FALSE))   # Single transcript
+  expect_equivalent(as.list(mydtu$Transcripts["SAME_1", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, FALSE))    # No change
+  expect_equivalent(as.list(mydtu$Transcripts["SAME_2", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, FALSE))    # No change
+  expect_equivalent(as.list(mydtu$Transcripts["D2TE_a", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, FALSE))    # DE, not DU
+  expect_equivalent(as.list(mydtu$Transcripts["D2TE_b", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, FALSE))    # DE, not DU
+  expect_equivalent(as.list(mydtu$Transcripts["1D2TU", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))      # DU
+  expect_equivalent(as.list(mydtu$Transcripts["2D2TU", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))      # DU
+  expect_equivalent(as.list(mydtu$Transcripts["SW1", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))        # switch
+  expect_equivalent(as.list(mydtu$Transcripts["SW2", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))        # switch
+  expect_equivalent(as.list(mydtu$Transcripts["XSW:one", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))    # Extreme switch
+  expect_equivalent(as.list(mydtu$Transcripts["XSW:two", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))    # Extreme switch
+  expect_equivalent(as.list(mydtu$Transcripts["FAKE-1", list(elig_xp, elig, elig_fx)]), list(FALSE, FALSE, FALSE))  # Not expressed
+  expect_equivalent(as.list(mydtu$Transcripts["FAKE-2", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, FALSE))    # Expressed alone in both conditions
+  expect_equivalent(as.list(mydtu$Transcripts["ALLA:1", list(elig_xp, elig, elig_fx)]), list(TRUE, FALSE, TRUE))    # Only in A
+  expect_equivalent(as.list(mydtu$Transcripts["ALLA:2", list(elig_xp, elig, elig_fx)]), list(TRUE, FALSE, TRUE))    # Only in A
+  expect_equivalent(as.list(mydtu$Transcripts["LC1", list(elig_xp, elig, elig_fx)]), list(FALSE, FALSE, TRUE))      # Too low count
+  expect_equivalent(as.list(mydtu$Transcripts["LC2", list(elig_xp, elig, elig_fx)]), list(FALSE, FALSE, TRUE))      # Too low count
+  expect_equivalent(as.list(mydtu$Transcripts["MIX.a", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))      # Primary in A
+  expect_equivalent(as.list(mydtu$Transcripts["MIX.b", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))      # Primary in B
+  expect_equivalent(as.list(mydtu$Transcripts["MIX.ab", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))     # Same in A and B, but affected by the other changes
+  expect_equivalent(as.list(mydtu$Transcripts["MIX.l1", list(elig_xp, elig, elig_fx)]), list(FALSE, FALSE, FALSE))  # Too low count
+  expect_equivalent(as.list(mydtu$Transcripts["MIX.l2", list(elig_xp, elig, elig_fx)]), list(TRUE, TRUE, TRUE))     # Marginally not too low count
+  expect_equivalent(as.list(mydtu$Transcripts["MIX.n", list(elig_xp, elig, elig_fx)]), list(FALSE, FALSE, FALSE))   # Not expressed
 })
 
 

@@ -43,21 +43,19 @@ test_that("Scaling is applied", {
   
   # Single factor.
   S <- 10
-  bdt <- call_DTU(dbg='bootin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   cdt <- call_DTU(dbg='countin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   sdt <- call_DTU(dbg='scale', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   expect_equal(S * cdt[[1]], sdt[[1]])
   expect_equal(S * cdt[[2]], sdt[[2]])
-  for (b in 1:length(bdt$bootA)) {
-    expect_equal(S * bdt$bootA[[b]], sdt$bootA[[b]])
+  for (b in 1:length(cdt$bootA)) {
+    expect_equal(S * cdt$bootA[[b]], sdt$bootA[[b]])
   }
-  for (b in 1:length(bdt$bootB)) {
-    expect_equal(S * bdt$bootB[[b]], sdt$bootB[[b]])
+  for (b in 1:length(cdt$bootB)) {
+    expect_equal(S * cdt$bootB[[b]], sdt$bootB[[b]])
   }
   
   # Vector.
   S <- c(10, 20, 30, 40)
-  bdt <- call_DTU(dbg='bootin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   cdt <- call_DTU(dbg='countin', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   sdt <- call_DTU(dbg='scale', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, scaling=S, reckless=TRUE)
   
@@ -66,14 +64,15 @@ test_that("Scaling is applied", {
   expect_equal(S[3] * cdt[[2]]$V1, sdt[[2]]$V1)
   expect_equal(S[4] * cdt[[2]]$V2, sdt[[2]]$V2)
   
-  expect_equal(S[1] * bdt$bootA[[1]], sdt[[3]][[1]])
-  expect_equal(S[2] * bdt$bootA[[2]], sdt[[3]][[2]])
-  expect_equal(S[3] * bdt$bootB[[1]], sdt[[4]][[1]])
-  expect_equal(S[4] * bdt$bootB[[2]], sdt[[4]][[2]])
+  expect_equal(S[1] * cdt$bootA[[1]], sdt[[3]][[1]])
+  expect_equal(S[2] * cdt$bootA[[2]], sdt[[3]][[2]])
+  expect_equal(S[3] * cdt$bootB[[1]], sdt[[4]][[1]])
+  expect_equal(S[4] * cdt$bootB[[2]], sdt[[4]][[2]])
 })
 
+#==============================================================================
 test_that("Parameters are recorded", {
-  sim <- sim_boot_data()
+  sim <- sim_boot_data(clean=TRUE)
   param <- call_DTU(dbg='info', annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, scaling=c(1,2,3,4),
                     description='Test.',name_A='cA', name_B='cB', varname='testing',
                     p_thresh=0.001, abund_thresh=1, dprop_thresh=0.15, correction='bonferroni',
@@ -87,7 +86,7 @@ test_that("Parameters are recorded", {
   expect_equal(c(param$var_name, param$cond_A, param$cond_B), c('testing', 'cA', 'cB'))
   expect_equal(c(param$data_type, param$tests), c("bootstrapped abundance estimates", 'genes'))
   expect_equal(c(param$num_replic_A, param$num_replic_B), c(2, 2))
-  expect_equal(c(param$num_genes, param$num_transc), c(11, 23))
+  expect_equal(c(param$num_genes, param$num_transc), c(12, 26))
   expect_equal(list(param$p_thresh, param$abund_thresh, param$dprop_thresh, param$correction, param$abund_scaling), list(0.001, 1, 0.15, 'bonferroni', c(1,2,3,4)))
   expect_equal(list(param$quant_boot, param$quant_bootnum, param$quant_reprod_thresh), list(TRUE, NA_integer_, NA_integer_))
   expect_equal(list(param$rep_boot, param$rep_bootnum, param$rep_reprod_thresh), list(TRUE, NA_integer_, NA_integer_))

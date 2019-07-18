@@ -4,22 +4,19 @@
 \alias{sim_boot_data}
 \title{Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.}
 \usage{
-sim_boot_data(errannot_inconsistent = FALSE, PARENT_COL = "parent_id",
-  TARGET_COL = "target_id", clean = FALSE)
+sim_boot_data(PARENT_COL = "parent_id", TARGET_COL = "target_id",
+  clean = TRUE)
 }
 \arguments{
-\item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)}
-
 \item{PARENT_COL}{Name for the bootdtraps column containing counts.}
 
 \item{TARGET_COL}{Name for annotation column containing transcript identification.}
 
-\item{clean}{Logical. Remove the intentional inconsistency of IDs between annotation and abundances.}
+\item{clean}{Logical. Don;t include annotation inconsistencies.}
 }
 \value{
-A list with 3 elements. First a data.frame with the corresponding annotation. 
-Then, 2 lists of data.tables. One list per condition. Each data table represents a sample and contains the estimates from the bootstrap iterations.
+A list with 3 elements. First a data.frame with the corresponding annotation. Then, 2 lists of data.tables. One list per condition, each data.table represents a sample and contains the estimates from the bootstrap iterations.
 }
 \description{
-Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.
+Try to cover a range of normal and outlier scenarios that might trip up the filters.
 }
