@@ -75,6 +75,7 @@ print( names(mydtu$Parameters) )
 * `num_genes` - (int) The number of genes in the provided annotation.
 * `num_transc` - (int) The number of transcripts in the provided annotation.
 * `tests` - (str) The value passed to the `testmode` parameter.
+* `use_sums` - (bool) Sum the replicates instead of averaging them (pre-0.7.0 RATs always summed).
 * `p_thresh` - (num) The value passed to the `p_thresh` parameter.
 * `abund_thresh` - (num) The value passed to the `abund_thresh` parameter.
 * `dprop_thresh` - (num) The value passed to the `dprop_thresh` parameter.
@@ -154,7 +155,7 @@ Pseudo-code formulas are shown here to help understand how the different fields 
 * `target_id` - (str) Transcript identifier.
 * `parent_id` - (str) Gene identifier.
 * `elig_xp` - (bool) Eligible expression level. `= (meanA >= Parameters$abund_thresh | meanB >= Parameters$abund_thresh)`.
-* `elig` - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). `= (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))`.
+* `elig` - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). `= (elig_xp & totalA != 0 & totalB != 0 & (abundA != totalA | abundB != totalB))`.
 * `sig` - (bool) Statistically significant. `= (pval_corr < Parameters$p_thresh)`.
 * `elig_fx` - (bool) Eligible effect size. Proxy for biological significance. `= (Dprop > Parameters$dprop_thresh)`.
 *. `quant_reprod` - (bool) Quantification reproducible.
@@ -163,12 +164,11 @@ For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for no
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`.
 * `DTU` - (bool) The Transcript is Differentially Used. `= (sig & elig_fx & quant_reprod & rep_reprod)`.
 * `gene_DTU` - (bool) Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in isoform ratios. `= (Genes[parent_id, DTU])`.
-* `meanA` and `meanB` - (num) The mean abundance across replicates, for each condition.
+* `abundA` and `abundB` - (num) Either the mean or the sum of the abundances across replicates, depending on what is indicated by `Parameters$use_sums`. This is the value used for the tests.
 * `stdevA` and `stdevB` - (num) The standard deviation of the abundance across the replicates.
-* `sumA` and `sumB` - (num) The sum of the abundances across replicates. This is the value used for the tests, so that replication level informs the significance.
-* `log2FC` - (num) log2 of fold-change of transcript abundance: `= log2(sumB / sumA)`. sumA and sumB are not normalised for library size, so the log2FC is meaningless unless the input data were pre-normalised (such as scaled TPMs).
-* `totalA` and `totalB` - (num) The total abundance for the gene: `totalA= sum(transcripts[parent_id, sumA])`.
-* `propA` and `propB` - (num) The proportion of the gene expression owed to this transcript. `propA= sumA / totalA`.
+* `log2FC` - (num) log2 of fold-change of transcript abundance: `= log2(abundB / abundA)`. `abundA` and `abundB` are not internally normalised for library size, so care must be taken when interpreting `log2FC`.
+* `totalA` and `totalB` - (num) The total abundance for the gene: `totalA= sum(transcripts[parent_id, abundA])`.
+* `propA` and `propB` - (num) The proportion of the gene expression owed to this transcript. `propA= abundA / totalA`.
 * `Dprop` - (num) The difference in the proportion of the transcript between the two conditions (effect size). `= (probB - propA)`.
 * `pval` - (num) The proportion equality test P-value for the transcript.
 * `pval_corr` - (num) Multiple testing corrected p-value. `= p.adjust(pval, Parameters$correction)`.
@@ -226,7 +226,7 @@ The `dtu_summary()` function lists the total number of genes and transcripts for
 
 * DTU:  There is significant change in isoform ratios (in terms of both effect size and statistical significance).
 * non-DTU:  No significant change.
-* ineligible: Ineligible for testing. Genes/transcripts with read count below the set threshold, or where the gene has only one known transcript. Up to `v0.6.0` this category was labelled "NA" instead.
+* ineligible: Ineligible for testing. Genes/transcripts with read count below the set threshold, or where the gene has only one known transcript.
 
 ```{r}
 # A tally of the outcome.

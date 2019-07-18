@@ -307,12 +307,12 @@ div.tocify {
 </ol>
 <p>For option 1, the function <code>fish4rodents()</code> will load the data into tables suitable for option 2. Details in the respective section below. For options 2 and 3, the format of the tables is as in the example below. The first column contains the transcript identifiers. Subsequent columns contain the abundances.</p>
 <pre><code>##    target  V1  V2  V3
-## 1: 1A1B.a  69  96  88
-## 2: 1A1B.b   0   0   0
-## 3:    LC1   3   2   0
-## 4:   NIA1 333 310 340
-## 5:   NIA2 666 680 610
-## 6: 1A1N-1  10  11   7</code></pre>
+## 1: SOLO.1 100 100 100
+## 2: SAME_1 200 200 200
+## 3: SAME_2 300 300 300
+## 4: LONE.a 150 150 150
+## 5: D2TE_a 300 300 300
+## 6: D2TE_b 400 400 400</code></pre>
 <ul>
 <li>In the case of option 3, each column represents a sample. Each condition is represented by a single such table.</li>
 <li>In the case of option 2, each column represents a bootstrap iteration and each table represents a sample. Each condition is represented by a list of such tables.</li>
@@ -327,12 +327,12 @@ div.tocify {
 <h2>Annotation</h2>
 <p>RATs also needs to know how to group transcripts together. This is achieved with a simple <code>data.frame</code> or <code>data.table</code> that matches transcript identifiers to gene identifiers. The expected column labels are <code>target_id</code> for the transcript IDs and <code>parent_id</code> for the gene IDs. Additional columns are allowed to be present but will be ignored. The minimal annotation table should look like this:</p>
 <pre><code>##   target_id parent_id
-## 1    1A1B.a      1A1B
-## 2    1A1B.b      1A1B
-## 3     NIB.1       NIB
-## 4    1A1N-2      1A1N
-## 5  1D1C:one      1D1C
-## 6  1D1C:two      1D1C</code></pre>
+## 1       SW2        SW
+## 2    D2TE_b      D2TE
+## 3    SAME_1      SAME
+## 4    SAME_2      SAME
+## 5    LONE.a      LONE
+## 6    D2TE_a      D2TE</code></pre>
 <p>RATs provides functionality to create this table from a GTF file or a <code>GRanges</code> object with GTF-style metadata columns. (<strong>Note:</strong> GFF3 is not supported for this)</p>
 <pre class="r"><code># Extract transcript ID to gene ID index from a GTF annotation.
 myannot &lt;- gtf2ids(&quot;my_annotation_file.gtf&quot;)
@@ -627,7 +627,7 @@ mydtu &lt;- call_DTU(annot = myannot,
                   use_sums = TRUE, verbose= FALSE)</code></pre>
 <pre><code>## Summarising bootstraps...</code></pre>
 <ol style="list-style-type: decimal">
-<li><code>use_sums</code> - Whether to test the sum of abundances across replicates, instead of the mean. (Default FALSE)</li>
+<li><code>use_sums</code> - Whether to test the sum of abundances across replicates, instead of their mean. (Default FALSE)</li>
 </ol>
 </div>
 <div id="correction-for-multiple-testing" class="section level2">
