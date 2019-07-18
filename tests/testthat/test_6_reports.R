@@ -167,8 +167,8 @@ test_that("All gene scenarios can be plotted", {
   expect_silent(plot_gene(dtuo=mydtu, pid="LC"))
   expect_silent(plot_gene(dtuo=mydtu, pid="LONE"))
   expect_silent(plot_gene(dtuo=mydtu, pid="MIX"))
-#  expect_silent(plot_gene(dtuo=mydtu, pid="NID")) #
-#  expect_silent(plot_gene(dtuo=mydtu, pid="NN"))  #
+  expect_silent(plot_gene(dtuo=mydtu, pid="NID")) #
+  expect_silent(plot_gene(dtuo=mydtu, pid="NN"))  #
   expect_silent(plot_gene(dtuo=mydtu, pid="SAME"))
   expect_silent(plot_gene(dtuo=mydtu, pid="SOLO"))
   expect_silent(plot_gene(dtuo=mydtu, pid="SW"))

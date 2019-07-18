@@ -1,3 +1,8 @@
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+# Post-analysis utilities, ie. summaries and plots.
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+
+
 #================================================================================
 #' List of DTU ids.
 #'
@@ -250,13 +255,15 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
     repdatB <- dtuo$Abundances[["condB"]][pid, -"parent_id", with=FALSE]
 
     # Restructure
-    trnum <- dim(trdat)[1]
+    trnum <- Genes[pid, known_transc]
     anum <- dtuo$Parameters$num_replic_A
     bnum <- dtuo$Parameters$num_replic_B
     sA <- colSums(repdatA[, -"target_id", with= FALSE])
     sB <- colSums(repdatB[, -"target_id", with= FALSE])
     pA <- sweep(repdatA[, -"target_id", with= FALSE], 2, sA, "/")
     pB <- sweep(repdatB[, -"target_id", with= FALSE], 2, sB, "/")
+    pA[is.nan(as.matrix(pA))] <- 0
+    pB[is.nan(as.matrix(pB))] <- 0
     vis_data <- data.table("vals"=              c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
                            "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum), rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
                            "isoform"=     unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
@@ -295,7 +302,7 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
       if (all("condition" != c(colourby, fillby)))
           stop("Either fillby or colourby must be set to 'condition' for this plot to be displayed correctly!")
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= vis_data[[colourby]], fill= vis_data[[fillby]])) +
-        facet_grid(type ~ ., scales= "free", switch="y") +
+        facet_grid(type ~ ., scales= "free") +
         geom_jitter(aes(shape=vis_data[[shapeby]]), position=position_jitterdodge()) +
         geom_boxplot(position=position_dodge(), size=0.5, alpha=0.3, outlier.shape= NA)
     ### BY CONDITION.
@@ -306,7 +313,7 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
         shapeby <- "DTU"
       colourby <- "replicate"
       result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
-        facet_grid(type ~ condition, scales= "free", switch="y") +
+        facet_grid(type ~ condition, scales= "free") +
         geom_path(aes(colour= replicate, group= replicate), position=position_dodge(width=0.5), alpha=0.7) +
         geom_point(aes(colour= replicate, group= replicate, shape=vis_data[[shapeby]]), position=position_dodge(width=0.5)) +
         geom_boxplot(aes(fill= vis_data[[fillby]]), size=0.5, alpha=0.25, outlier.shape= NA, colour="grey60")
@@ -322,27 +329,26 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
         shapeby <- "DTU"
       colourby <- "replicate"
       result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
-        facet_grid(type ~ condition, scales= "free", switch="y") +
+        facet_grid(type ~ condition, scales= "free") +
         geom_path(aes(group= replicate, colour= vis_data[[colourby]]), position=position_dodge(width=0.2)) +
         geom_point(aes(group= replicate, colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position=position_dodge(width=0.2))
     ### ERROR
     } else {
       stop("Unknown plot style.")
     }
+    # Styling
     result <- result +
-      scale_fill_manual(values=colplt[[fillby]], name=fillby) +
-      scale_colour_manual(values=colplt[[colourby]], name=colourby) +
-      scale_shape_manual(values=shaplt[[shapeby]], name=shapeby) +
-      scale_y_continuous(limits= c(0, NA), sec.axis=dup_axis()) +
-                # geom_hline(yintercept=0, size=rel(1.1)) +
+      scale_fill_manual(values=colplt[[fillby]], name=fillby, drop = FALSE) +
+      scale_colour_manual(values=colplt[[colourby]], name=colourby, drop = FALSE) +
+      scale_shape_manual(values=shaplt[[shapeby]], name=shapeby, drop = FALSE) +
+      expand_limits(y=c(0,1)) +
       labs(title= paste("gene:", pid), y= NULL, x= NULL) +
       theme(axis.text.x= element_text(angle= 90),
-                      # axis.line.x= element_line(),
                       strip.background= element_rect(fill= "grey95"),
                       strip.text.y= element_text(size= rel(1.2)),
                       strip.text.x= element_text(size= rel(1.1)),
                       panel.grid.major.x= element_line(colour = "grey95"),
-                      panel.grid.major.y= element_blank(),
+                      panel.grid.major.y= element_line(colour = "grey95"),
                       panel.grid.minor= element_blank(),
                       panel.background= element_rect(fill = "white"),
                       panel.border = element_rect(colour = "black", fill=NA),
