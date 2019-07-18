@@ -20,7 +20,7 @@ structure_data(tx_filter, steps, threads, count_data_A, count_data_B,
 
 \item{boot_data_A}{Boostrapped data for one condition.}
 
-\item{bootsB}{Bootstrapped data for other condition.}
+\item{boot_data_B}{Bootstrapped data for other condition.}
 }
 \value{
 List.

@@ -234,7 +234,7 @@ infer_bootnum <- function(boot_data_A, boot_data_B){
 #' @param count_data_A Non-bootstrapped data for one condition.
 #' @param count_data_B Non-bootstrapped data for other condition.
 #' @param boot_data_A Boostrapped data for one condition.
-#' @param bootsB Bootstrapped data for other condition.
+#' @param boot_data_B Bootstrapped data for other condition.
 #' @return List.
 #'   
 #' @import data.table
@@ -275,10 +275,11 @@ structure_data <- function(tx_filter, steps, threads, count_data_A, count_data_B
 #' 
 #' @param scaling Scaling factor(s).
 #' @param threads Threads.
+#' @param steps Infered input type.
 #' @param count_data_A Non-bootstrapped data for one condition.
 #' @param count_data_B Non-bootstrapped data for other condition.
 #' @param boot_data_A Boostrapped data for one condition.
-#' @param bootsB Bootstrapped data for other condition.
+#' @param boot_data_B Bootstrapped data for other condition.
 #' @return List.
 #'   
 #' @import data.table

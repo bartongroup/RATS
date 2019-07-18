@@ -12,13 +12,15 @@ scale_data(scaling, threads, steps, count_data_A, count_data_B,
 
 \item{threads}{Threads.}
 
+\item{steps}{Infered input type.}
+
 \item{count_data_A}{Non-bootstrapped data for one condition.}
 
 \item{count_data_B}{Non-bootstrapped data for other condition.}
 
 \item{boot_data_A}{Boostrapped data for one condition.}
 
-\item{bootsB}{Bootstrapped data for other condition.}
+\item{boot_data_B}{Bootstrapped data for other condition.}
 }
 \value{
 List.

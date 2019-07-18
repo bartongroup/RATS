@@ -97,7 +97,7 @@ sim_boot_data <- function(PARENT_COL="parent_id", TARGET_COL="target_id", clean=
 #' 
 #' @export
 #'
-sim_count_data <- function(errannot_inconsistent=FALSE, PARENT_COL="parent_id", TARGET_COL="target_id", clean=TRUE) {
+sim_count_data <- function(PARENT_COL="parent_id", TARGET_COL="target_id", clean=TRUE) {
   tx <- data.frame(target_id= c("SW2", "D2TE_b", "SAME_1", "SAME_2", "LONE.a", "D2TE_a", "SOLO.1", "2D2TU", "XSW:one", "XSW:two", "FAKE-1", "LC1", "FAKE-2", "ALLA:1", "ALLA:2", "LC2", "NNa", "NNb", "MIX.n", "MIX.ab", "1D2TU", "MIX.l2", "MIX.l1", "MIX.a", "MIX.b", "SW1"), 
                    parent_id= c("SW", "D2TE", "SAME", "SAME", "LONE", "D2TE", "SOLO", "D2TU", "XSW", "XSW", "FAKE", "LC", "FAKE", "ALLA", "ALLA", "LC", "NN", "NN", "MIX", "MIX", "D2TU", "MIX", "MIX", "MIX", "MIX", "SW"), 
                    stringsAsFactors=FALSE)
