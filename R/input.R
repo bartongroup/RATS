@@ -221,7 +221,7 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
       dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
   
       return (dt)
-    }, mc.cores = min(threads,lA), mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+    }, mc.cores = min(threads,lgth[cond]), mc.preschedule = TRUE, mc.allow.recursive = FALSE)
     
     return (boots)
   })
