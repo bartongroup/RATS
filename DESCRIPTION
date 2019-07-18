@@ -1,7 +1,7 @@
 Type: Package
 Package: rats
-Version: 0.6.4.16
-Date: 2019-07-11
+Version: 0.6.4.17
+Date: 2019-07-18
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
 Author: Kimon Froussios [aut], Kira Mourão [aut], Nick Schurch [cre]
@@ -25,12 +25,10 @@ Imports:
     wasabi, 
     GenomicRanges
 Suggests:
+    ggbio,
     shiny,
-    testthat,
-    roxygen2,
     knitr,
-    rmarkdown,
-    devtools
+    testthat
 URL: https://github.com/bartongroup/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/bartongroup/RATS/issues
 RoxygenNote: 6.1.1
