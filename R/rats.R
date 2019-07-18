@@ -1,3 +1,8 @@
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+# This is the core functionality of the package and entry point for users.
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+
+
 #================================================================================
 #' Calculate differential transcript usage.
 #'
@@ -57,18 +62,12 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     
   {
     # Input checks.
-    paramcheck <- parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
-                                      TARGET_COL, PARENT_COL,
-                                      correction, testmode, scaling, threads, seed,
-                                      p_thresh, abund_thresh, dprop_thresh, 
+    paramcheck <- parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B, TARGET_COL, PARENT_COL,
+                                      correction, testmode, scaling, threads, seed, p_thresh, abund_thresh, dprop_thresh, 
                                       qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose, use_sums)
     if (paramcheck$error)
       stop(paramcheck$message)
-    
     if (verbose) {
-      message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
-      message("Preparing...")
-      
       if(paramcheck$warn) {
         for (w in paramcheck$warnings) {
           warning(w)  # So it displays as warning at the end of the run.
@@ -76,13 +75,23 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
         }
       }
     }
+    
+    if (verbose) {
+      message(paste0("Relative Abundance of Transcripts v.", packageVersion("rats")))
+      message("Preparing...")
+    }
+    
+    # Initialize pseudo-random engine
     if (!is.na(seed))
       set.seed(as.integer(seed))
-    threads <- as.integer(threads)          # Can't be decimal.
-    setDTthreads(threads)
+    # Multi-threading
+    threads <- as.integer(threads)
+    setDTthreads(threads, restore_after_fork=TRUE)      # Supposedly DT detects when it is inside a fork and automatically switches to single-thread.
+    
+    # Interpret test selection options.
     if (qbootnum == 0 && qboot)             # Use smart default.
       qbootnum <- paramcheck$maxboots
-    qbootnum <- as.integer(qbootnum)        # Can't be decimal.
+    qbootnum <- as.integer(qbootnum)
     test_transc <- any(testmode == c("transc", "both"))
     test_genes <- any(testmode == c("genes", "both"))
   
@@ -121,74 +130,47 @@ call_DTU <- function(annot= NULL, TARGET_COL= "target_id", PARENT_COL= "parent_i
     if (verbose)
       message("Preparing data...")
     
-    # Preprocess bootstrapped data.
-    if (steps == 2) {
-      # Re-order rows to match the annotation.
-      boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
-      boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
-      # Remove ID columns so I don't have to always subset for math operations.
-      for (smpl in c(boot_data_A, boot_data_B))
-          smpl[, 1 := NULL]
-      if (dbg == "bootin")
-        return(list("bootA"=boot_data_A, "bootB"=boot_data_B))
-      # Calculate mean count across bootstraps.
-      count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { return(rowMeans(b)) },
-                                             mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
-      count_data_B <- as.data.table(mclapply(boot_data_B, function(b) { return(rowMeans(b)) },
-                                             mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
-    # Preprocess unbootstrapped data.
-    } else {
-      # Just re-order rows and crop out the transcript IDs.
-      nn <- names(count_data_A)
-      count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
-      nn <- names(count_data_B)  # The number of columns may be different from A.
-      count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
-    }
-  
-    if (dbg == "countin")
-      return(list("countA"=count_data_A, "countB"=count_data_B))
+    tmp <- structure_data(tx_filter, steps, threads, count_data_A, count_data_B, boot_data_A, boot_data_B)
+    boot_data_A <- tmp$ba
+    boot_data_B <- tmp$bb
+    count_data_A <- tmp$ca
+    count_data_B <- tmp$cb
+    tids <- tmp$ids
+    rm(tmp)
     
-      
+    if (dbg == "countin")
+      return(list("countA"=count_data_A, "countB"=count_data_B, "bootA"=boot_data_A, "bootB"=boot_data_B))
+    
+    
     if (any(scaling != 1)) {
       if (verbose)
         message("Applying scaling factor(s)...")
       
-      # Scaling factors.
-      lA <- dim(count_data_A)[2]
-      lB <- dim(count_data_B)[2]
-      sfA <- NULL
-      sfB <- NULL
-      if (length(scaling) == 1) {
-        sfA <- rep(scaling, lA)
-        sfB <- rep(scaling, lB)
-      } else {
-        sfA <- scaling[1:lA]
-        sfB <- scaling[(1+lA):(lA+lB)]
-      }
-      # Scale counts.
-      count_data_A <- as.data.table( mclapply(1:lA, function(x) { 
-                          return(count_data_A[[x]] * sfA[x])  # Can't apply scaling to whole table in one step, because each column/sample can have a different scaling factor.
-                      }, mc.cores=threads, mc.allow.recursive = FALSE) )
-      count_data_B <- as.data.table( mclapply(1:lB, function(x) { 
-                          return(count_data_B[[x]] * sfB[x]) 
-                      }, mc.cores=threads, mc.allow.recursive = FALSE) )
-      # Also scale the bootstraps, if they exist.
-      if (steps > 1){
-        boot_data_A <- lapply(1:lA , function (smpl){
-                          return(as.data.table( mclapply(boot_data_A[[smpl]], function(b) { 
-                                                    return(b * sfA[smpl]) # The bootstraps table belongs to a single sample, so here I can apply the factor to the whole table.
-                                                }, mc.cores=threads, mc.allow.recursive = FALSE) )) })
-        boot_data_B <- lapply(1:lB , function (smpl){
-                          return(as.data.table( mclapply(boot_data_B[[smpl]], function(b) { 
-                                                    return(b * sfB[smpl])
-                                                }, mc.cores=threads, mc.allow.recursive = FALSE) )) })
-      }
+      tmp <- scale_data(scaling, threads, steps, count_data_A, count_data_B, boot_data_A, boot_data_B)
+      boot_data_A <- tmp$ba
+      boot_data_B <- tmp$bb
+      count_data_A <- tmp$ca
+      count_data_B <- tmp$cb
+      rm(tmp)
     }
     
     if (dbg == "scale")
       return(list("countA"=count_data_A, "countB"=count_data_B, "bootA"=boot_data_A, "bootB"=boot_data_B))
   }
 
+  
+  #---------- CONSISTENCY
+  
+  # Do annotation IDs match qunatification IDs? If not, it's inadvisable to continue with the analysis.
+  if (annotation_inconsistent(tx_filter, tids)){
+    if (reckless) {
+      if (verbose)
+        warning("There are unmatched feature-IDs between the annotation and the quantifications. This can be a sign of the wrong annotation being used.
+              You have enabled `reckless` mode, so the analysis will continue at your own risk.")
+    } else {
+      stop("ABORTED: There are unmatched feature-IDs between the annotation and the quantifications. This can be a sign of the wrong annotation being used.")
+    }
+  }
   
   #---------- TEST
 

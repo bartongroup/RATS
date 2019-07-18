@@ -1,3 +1,8 @@
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+# The functions in this file are mainly helper functions, not intended to be invoked directly.
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+
+
 #================================================================================
 #' Check input parameters.
 #'
@@ -38,10 +43,8 @@
 #' @importFrom parallel detectCores
 #' @importFrom stats p.adjust.methods
 #'
-parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
-                                TARGET_COL, PARENT_COL,
-                                correction, testmode, scaling, threads, seed,
-                                p_thresh, abund_thresh, dprop_thresh, 
+parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, boot_data_B, TARGET_COL, PARENT_COL,
+                                correction, testmode, scaling, threads, seed, p_thresh, abund_thresh, dprop_thresh, 
                                 qboot, qbootnum, qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose, use_sums) {
   warnmsg <- list()
 
@@ -49,9 +52,23 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   if(any(is.null(annot),
          all( any(is.null(count_data_A), is.null(count_data_B)),
               any(is.null(boot_data_A), is.null(boot_data_B)) ) ))
-    return(list("error"=TRUE, "message"="Insufficient parameters!"))
+    return(list("error"=TRUE, "message"="Insufficient data parameters!"))
   if(any(is.null(count_data_A) != is.null(count_data_B), is.null(boot_data_A) != is.null(boot_data_B)))
     return(list("error"=TRUE, "message"="You must specify (the same type of) data for both conditions!"))
+  # Booted counts.
+  if (!is.null(boot_data_A)) {
+    if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
+      return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
+  }
+  # Counts.
+  if (!is.null(count_data_A)) {  # If boot_data available, ignore count_data.
+    if(is.null(boot_data_A)) {
+      if (!is.data.table(count_data_A) | !is.data.table(count_data_B))
+        return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
+    } else {
+      warnmsg["cnts&boots"] <- "Received multiple input formats! Only the bootstrapped data will be used."
+    }
+  }
   
   # Annotation.
   if (!is.logical(reckless) || is.na(reckless))
@@ -61,11 +78,11 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   if (any(!c(TARGET_COL, PARENT_COL) %in% names(annot)))
     return(list("error"=TRUE, "message"="The specified target and/or parent IDs field names do not exist in annot!"))
   if (length(annot[[TARGET_COL]]) != length(unique(annot[[TARGET_COL]])))
-    return(list("error"=TRUE, "message"="Some transcript identifiers are not unique!"))
+    return(list("error"=TRUE, "message"="Some transcript identifiers are not unique in `annot`!"))
   
   # Simple parameters.
   if (!correction %in% stats::p.adjust.methods)
-    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods ."))
+    return(list("error"=TRUE, "message"="Invalid p-value correction method name. Refer to stats::p.adjust.methods."))
   if (!testmode %in% c("genes", "transc", "both"))
     return(list("error"=TRUE, "message"="Unrecognized value for testmode!"))
   if ((!is.numeric(p_thresh)) || p_thresh > 1 || p_thresh < 0)
@@ -81,9 +98,9 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   if (!is.logical(rboot))
     return(list("error"=TRUE, "message"="Unrecognized value for rboot! Must be TRUE/FALSE."))
   if ((!is.numeric(qrep_thresh)) || qrep_thresh < 0 || qrep_thresh > 1)
-    return(list("error"=TRUE, "message"="Invalid reproducibility threshold! Must be between 0 and 1."))
+    return(list("error"=TRUE, "message"="Invalid quantification reproducibility threshold! Must be between 0 and 1."))
   if ((!is.numeric(rrep_thresh)) || rrep_thresh < 0 || rrep_thresh > 1)
-    return(list("error"=TRUE, "message"="Invalid reproducibility threshold! Must be between 0 and 1."))
+    return(list("error"=TRUE, "message"="Invalid cross-replicate reproducibility threshold! Must be between 0 and 1."))
   if ((!is.numeric(threads)) || threads <= 0)
     return(list("error"=TRUE, "message"="Invalid number of threads! Must be positive integer."))
   if (threads > parallel::detectCores(logical= TRUE))
@@ -107,37 +124,6 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
   if (!is.na(seed) && (!is.numeric(seed) || as.integer(seed) != seed) )
     return(list("error"=TRUE, "message"="Invalid seed! Must be integer or NA_integer_."))
   
-  
-  # Booted counts.
-  if (!is.null(boot_data_A)) {
-      if (any(!is.list(boot_data_A), !is.list(boot_data_A), !is.data.table(boot_data_A[[1]]), !is.data.table(boot_data_B[[1]]) ))
-        return(list("error"=TRUE, "message"="The bootstrap data are not lists of data.tables!"))
-  }
-
-  # Counts.
-  if (!is.null(count_data_A)) {  # If boot_data available, ignore count_data.
-    if(is.null(boot_data_A)) {
-      if (!is.data.table(count_data_A) | !is.data.table(count_data_B))
-        return(list("error"=TRUE, "message"="The counts data are not data.tables!"))
-      if ( !all(count_data_A[[1]] %in% annot[[TARGET_COL]]) && !all(annot[[TARGET_COL]] %in% count_data_A[[1]]) ) {
-        if(reckless){
-          warnmsg["annotation-mismatch"] <- "The transcript IDs in the quantifications and the annotation do not match completely! Did you use different annotations? Reckless mode enabled, continuing at your own risk..."
-        } else {
-          return(list("error"=TRUE, "message"="The transcript IDs in the quantifications and the annotation do not match completely! Did you use different annotations?"))
-        }
-      }
-      if (!all( count_data_A[[1]][order(count_data_A[[1]])] == count_data_B[[1]][order(count_data_B[[1]])] )) {
-        if (reckless) {
-          warnmsg["countIDs"] <- "Transcript IDs do not match completely between conditions! Did you use different annotations? Reckless mode enabled, continuing at your own risk..."
-        } else {
-          return(list("error"=TRUE, "message"="Transcript IDs do not match completely between conditions! Did you use different annotations?"))
-        }
-      }
-    } else {
-      warnmsg["cnts&boots"] <- "Received multiple input formats! Only the bootstrapped data will be used."
-    }
-  }
-
   # Bootstrap.
   minboots <- NA_integer_
   samples_by_condition <- NULL
@@ -206,6 +192,20 @@ parameters_are_good <- function(annot, count_data_A, count_data_B, boot_data_A, 
 
 
 #================================================================================
+#' Feature IDs match between 
+#'
+#' This is applied after bootstrapped counts are checked and combined down to a single vector of values per sample.
+#' So it covers both bootstrapped and non-bootstrapped input.
+#' 
+#' @param annot Annotation dataframe.
+#' @param tids List of transcript ID vectors.
+#' @return bool
+#' 
+annotation_inconsistent <- function(annot, tids) {
+  return( any( vapply(tids, function(v) { return( !all(annot$target_id %in% v) | !all(v %in% annot$target_id) ) }, logical(1)) ) )
+}
+
+#================================================================================
 #' Rule-of-thumb number of iterations.
 #'
 #' @param boot_data_A List of tables of bootstrapped counts.
@@ -222,6 +222,101 @@ infer_bootnum <- function(boot_data_A, boot_data_B){
     minboot <- min(minboot, length(boot_data_B[[k]]) - 1)
   }
   return(minboot)
+}
+
+
+#================================================================================
+#' Structure input data.
+#' 
+#' @param tx_filter Pre-processed annotation.
+#' @param steps Infered input type.
+#' @param threads Threads.
+#' @param count_data_A Non-bootstrapped data for one condition.
+#' @param count_data_B Non-bootstrapped data for other condition.
+#' @param boot_data_A Boostrapped data for one condition.
+#' @param bootsB Bootstrapped data for other condition.
+#' @return List.
+#'   
+#' @import data.table
+#' @importFrom parallel mclapply
+#'
+structure_data <- function(tx_filter, steps, threads, count_data_A, count_data_B, boot_data_A, boot_data_B) {
+  # Preprocess bootstrapped data.
+  tids <- list()
+  if (steps == 2) {
+    # Re-order rows to match the annotation.
+    boot_data_A <- lapply(boot_data_A, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
+    boot_data_B <- lapply(boot_data_B, function(x) { x[match(tx_filter$target_id, x[[1]]), ] })
+    # Remove ID columns so I don't have to always subset for math operations.
+    for (smpl in c(boot_data_A, boot_data_B))
+      smpl[, 1 := NULL]
+    # Calculate mean count across bootstraps.
+    count_data_A <- as.data.table(mclapply(boot_data_A, function(b) { return(rowMeans(b)) },
+                                           mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
+    count_data_B <- as.data.table(mclapply(boot_data_B, function(b) { return(rowMeans(b)) },
+                                           mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE))
+    # Preprocess unbootstrapped/debootstrapped data.
+  } else {
+    # Just re-order rows and crop out the transcript IDs.
+    tids[["a"]] <- count_data_A[[1]]
+    nn <- names(count_data_A)
+    count_data_A <- count_data_A[match(tx_filter$target_id, count_data_A[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
+    tids[["b"]] <- count_data_B[[1]]
+    nn <- names(count_data_B)  # The number of columns may be different from A.
+    count_data_B <- count_data_B[match(tx_filter$target_id, count_data_B[[1]]),  nn[seq.int(2, length(nn))],  with=FALSE]
+  }
+  
+  return (list("ca"=count_data_A, "cb"=count_data_B, "ba"=boot_data_A, "bb"=boot_data_B, "ids"=tids))
+}
+
+
+#================================================================================
+#' Apply scaling.
+#' 
+#' @param scaling Scaling factor(s).
+#' @param threads Threads.
+#' @param count_data_A Non-bootstrapped data for one condition.
+#' @param count_data_B Non-bootstrapped data for other condition.
+#' @param boot_data_A Boostrapped data for one condition.
+#' @param bootsB Bootstrapped data for other condition.
+#' @return List.
+#'   
+#' @import data.table
+#' @importFrom parallel mclapply
+#'
+scale_data <- function(scaling, threads, steps, count_data_A, count_data_B, boot_data_A, boot_data_B) {
+  # Scaling factors.
+  lA <- dim(count_data_A)[2]
+  lB <- dim(count_data_B)[2]
+  sfA <- NULL
+  sfB <- NULL
+  if (length(scaling) == 1) {
+    sfA <- rep(scaling, lA)
+    sfB <- rep(scaling, lB)
+  } else {
+    sfA <- scaling[1:lA]
+    sfB <- scaling[(1+lA):(lA+lB)]
+  }
+  # Scale counts.
+  count_data_A <- as.data.table( mclapply(1:lA, function(x) { 
+    return(count_data_A[[x]] * sfA[x])  # Can't apply scaling to whole table in one step, because each column/sample can have a different scaling factor.
+  }, mc.cores=threads, mc.allow.recursive = FALSE) )
+  count_data_B <- as.data.table( mclapply(1:lB, function(x) { 
+    return(count_data_B[[x]] * sfB[x]) 
+  }, mc.cores=threads, mc.allow.recursive = FALSE) )
+  # Also scale the bootstraps, if they exist.
+  if (steps > 1){
+    boot_data_A <- lapply(1:lA , function (smpl){
+      return(as.data.table( mclapply(boot_data_A[[smpl]], function(b) { 
+        return(b * sfA[smpl]) # The bootstraps table belongs to a single sample, so here I can apply the factor to the whole table.
+      }, mc.cores=threads, mc.allow.recursive = FALSE) )) })
+    boot_data_B <- lapply(1:lB , function (smpl){
+      return(as.data.table( mclapply(boot_data_B[[smpl]], function(b) { 
+        return(b * sfB[smpl])
+      }, mc.cores=threads, mc.allow.recursive = FALSE) )) })
+  }
+  
+  return (list("ca"=count_data_A, "cb"=count_data_B, "ba"=boot_data_A, "bb"=boot_data_B))
 }
 
 

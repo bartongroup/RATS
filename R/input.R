@@ -1,3 +1,8 @@
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+# Helper functions for setting up the input, if necessary.
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+
+
 #================================================================================
 #' Extract matching transcript and gene IDs from a GRanges object.
 #'
@@ -153,40 +158,36 @@ annot2models <- function(annotfile, threads= 1L)
 fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", half_cooked=FALSE, beartext=FALSE, threads= 1L, scaleto= 1000000)
 {
   threads <- as.integer(threads)  # Can't be decimal.
-  setDTthreads(1)  # Not a typo. Threads reserved for larger mclapply blocks instead of single table operations.
+  setDTthreads(threads, restore_after_fork = TRUE)
 
   # Don't assume the annotation is ordered properly.
   annot <- tidy_annot(annot, TARGET_COL, PARENT_COL)
 
   # Wasabi?
-  if (!half_cooked) {
-    wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths), force= !half_cooked)
-  }
+  wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths), force= !half_cooked)
 
-  # Sort out scaling.
-  lA <- length(A_paths)
-  lB <- length(B_paths)
-  sfA <- NULL
-  sfB <- NULL
-  if (length(scaleto) == 1) {
-    sfA <- rep(scaleto, lA)
-    sfB <- rep(scaleto, lB)
-  } else {
-    sfA <- scaleto[1:lA]
-    sfB <- scaleto[(1+lA):(lA+lB)]
+  # Sort out scaling factor per sample.
+  lgth <- c("A"=length(A_paths), "B"=length(B_paths))
+  sfac <- list("A"=NA_real_, "B"=NA_real_)
+  if (length(scaleto) == 1) {     # uniform scaling
+    sfac$A <- rep(scaleto, lgth$A)
+    sfac$B <- rep(scaleto, lgth$B)
+  } else {                        # individual scaling
+    sfac$A <- scaleto[1:lgth$A]
+    sfac$B <- scaleto[(1 + lgth$A):(lgth$A + lgth$B)]
   }
 
   # Load and convert.
   res <- lapply(c('A', 'B'), function(cond) {
-    boots_A <- mclapply(1:lA, function(x) {
-      # Get the correct files and scaling factors.
+    boots <- mclapply(1:lgth[cond], function(x) {
+      # Get the respective file and scaling factor.
+      sf <- sfac[[cond]][x]
       if (cond=='A') {
         fil <- A_paths[x]
-        sf <- sfA[x]
       } else {
         fil <- B_paths[x]
-        sf <- sfB[x]
       }
+      
       # If data from Kallisto plaintext...
       if (beartext) {
         # list the bootstrap files
@@ -204,12 +205,14 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
                                     eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
         counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
       }
+      
       # Normalise raw counts.
       tpm <- as.data.table( lapply(counts, function (y) {
         cpb <- y / meta$eff_length
         tcpb <- sf / sum(cpb)
         return(cpb * tcpb)
       }) )
+      
       # Structure.
       dt <- as.data.table( cbind(meta$target_id, tpm) )
       with(dt, setkey(dt, V1) )
@@ -218,7 +221,9 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
       dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
   
       return (dt)
-    }, mc.cores = threads, mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+    }, mc.cores = min(threads,lA), mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+    
+    return (boots)
   })
   
   names(res) <- c("boot_data_A", "boot_data_B")
@@ -255,8 +260,11 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
 #'
 denest_sleuth_boots <- function(slo, annot, samples, COUNTS_COL="tpm", BS_TARGET_COL="target_id",
                                 TARGET_COL="target_id", PARENT_COL="parent_id", threads= 1) {
+  
+  warning("DEPRECATED: denest_sleuth_boots() no longer serves a purpose in RATs and will be eventually removed.")
+  
   # Ensure data.table complies.
-  setDTthreads(threads)
+  setDTthreads(threads, restore_after_fork = TRUE)
 
   # Compared to the size of other structures involved in calling DTU, this should make negligible difference.
   tx <- tidy_annot(annot, TARGET_COL, PARENT_COL)$target_id
