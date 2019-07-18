@@ -60,7 +60,7 @@ This is a very useful function for inspecting a gene of interest. It enables qui
 
 ```{r}
 # Grouping by condition (DEFAULT):
-plot_gene(mydtu, "MIX6", style="bycondition")
+plot_gene(mydtu, "MIX", style="bycondition")
 ```
 
 * The top two facets show the absolute abundances (counts) of the isoforms as supplied in the input. 
@@ -77,7 +77,7 @@ When there are many replicates or many isoforms, it may be preferable to group a
 
 ```{r}
 # Grouping by isoform:
-plot_gene(mydtu, "MIX6", style="byisoform")
+plot_gene(mydtu, "MIX", style="byisoform")
 ```
 
 ### Customisation of the abundances plot
