@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
   - family-names: Froussios, Mourão, Simpson, Barton, Schurch
-    given-names: Kimon, Kira, Gordon, Geoff, Nicholas
+    given-names: Kimon, Kira, Gordon G, Geoffrey J, Nick J
     orcid: https://orcid.org/0000-0003-2812-0525
 title: "Identifying differential isoform abundance with RATs: a universal tool and a warning"
 version: 0.6.5
