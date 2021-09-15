@@ -4,10 +4,6 @@
 Publication: https://doi.org/10.12688/f1000research.17916.1
 ***
 
-Publication: https://doi.org/10.12688/f1000research.17916.1
-
-***
-
 
 ## Description
 
