@@ -1,7 +1,13 @@
 # Relative Abundance of Transcripts (rats)
 [![DOI](https://zenodo.org/badge/55973542.svg)](https://zenodo.org/badge/latestdoi/55973542)
 
+Publication: https://doi.org/10.12688/f1000research.17916.1
 ***
+
+Publication: https://doi.org/10.12688/f1000research.17916.1
+
+***
+
 
 ## Description
 
