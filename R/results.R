@@ -558,7 +558,10 @@ plot_diagnostics <- function(dtuo, type="cormat") {
       names(mydata)[seq.int(1,dtuo$Parameters$num_replic_A)] <- paste0(dtuo$Parameters$cond_A, '_', names(mydata)[seq.int(1,dtuo$Parameters$num_replic_A)])
       names(mydata)[seq.int(dtuo$Parameters$num_replic_A+1, dtuo$Parameters$num_replic_A + dtuo$Parameters$num_replic_B)] <- paste0(dtuo$Parameters$cond_B, '_', names(mydata)[seq.int(dtuo$Parameters$num_replic_A+1, dtuo$Parameters$num_replic_A + dtuo$Parameters$num_replic_B)])
       # Do all the pairwise correlations between the columns. Must leave out all rows that contain NA, otherwise all correlations become NA.
-      corels <- melt(cor(mydata[complete.cases(mydata)]))
+      mc <- data.frame(cor(mydata[complete.cases(mydata)]))
+      mcn <- names(mc)
+      mc['sample1'] <- mcn
+      corels <- melt(data.table(mc), id.vars="sample1", variable.name = "sample2")
       result <- ggplot() +
         geom_tile(aes(x=corels[[1]], y=corels[[2]], fill=corels[[3]])) +
         scale_fill_gradient(low="purple", high="white") +
