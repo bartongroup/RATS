@@ -1,18 +1,16 @@
 ---
 title: 'RATs: Raw Output'
 author: "Kimon Froussios"
-date: "09 MAR 2018"
+date: "08 JUL 2019"
 output:
   html_document:
     keep_md: yes
     theme: readable
     toc: yes
     toc_float: yes
-  pdf_document:
-    toc: yes
 vignette: >
   \usepackage[utf8]{inputenc}
-  %\VignetteIndexEntry{RATs 3: Raw Output} 
+  %\VignetteIndexEntry{RATs 2: Raw Output} 
   %\VignetteEngine{knitr::rmarkdown} 
 ---
 
@@ -24,10 +22,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 library(rats)
+library(data.table)
 ```
 
 
-Set up an example.
+Let's set up an example, using RAT's data emulator (used for code testing, not suitable for data simulations).
 
 ```{r}
 # Simulate some data.
@@ -42,87 +41,6 @@ mydtu <- call_DTU(annot= myannot, verbose= FALSE,
                   boot_data_A= mycond_A, boot_data_B= mycond_B,
                   dprop_thresh=0.1, qboot=TRUE, rboot=FALSE)
 ```
-
-
-***
-
-
-# Quick results
-
-For your convenience, RATs provides a few functions to give you a quick summary of your results.
-However, we do recommend you become familiar with the actual results structure and content, as
-this will allow you to better understand the reasons behind your results and enable you to ask 
-more complex/detailed questions than those covered by the functions provided.
-
-## Summary of DTU
-
-The `dtu_summary()` function lists the total number of genes and transcripts for each of 3 categories:
-
-* DTU:  There is significant change in isoform ratios (in terms of both effect size and statistical significance).
-* non-DTU:  No significant change.
-* ineligible: Ineligible for testing. Genes/transcripts with read count below the set threshold, or where the gene has only one known transcript. Up to `v0.6.0` this category was labelled "NA" instead.
-
-```{r}
-# A really simple tally of the outcome.
-print( dtu_summary(mydtu) )
-```
-
-RATs tests for DTU at both the gene level and the transcript level. Therefore, as of v0.4.2, `dtu_summury()`
-will display the DTU genes according to either method as well as the intersection of the two.
-
-The `get_dtu_ids()` function lists the coresponding identifiers per category.
-As of `v0.4.2` it uses the same category names as `dtu_summury()` for consistency and clarity.
-
-```{r}
-# Gene and transcript IDs corresponding to the tally above.
-ids <- get_dtu_ids(mydtu)
-print( ids )
-```
-
-The ID lists obtained with `get_dtu_ids()` are *ordered by effect size* (`Dprop`).
-
-
-## Summary of isoform switching
-
-Isoform switching is a subset of DTU. Primary isoform switching is often considered the most likely 
-type of DTU to have an effect. The following two functions summarise the extent of isoform switching 
-in the results:
-
-```{r}
-# A tally of genes switching isoform ranks.
-print( dtu_switch_summary(mydtu) )
-
-# The gene IDs displaying isoform switching.
-ids <- get_switch_ids(mydtu)
-print( ids )
-```
-
-Again, three versions of the results are shown, covering the respective DTU methods in RATs.
-
-The gene "MIX6" is showing both primary and tertiary isoform switching. Looking at the abundances (more on this in the plots vignette),
-indeed isoforms c1 and c2 swap ranks, as do isoforms c3 and c4:
-
-```{r}
-plot_gene(mydtu, "MIX6")
-```
-
-
-## Summary of DTU plurality
-
-In case you want to know how many isoforms are affected per gene.
-
-```{r}
-# A tally of genes switching isoform ranks.
-print( dtu_plurality_summary(mydtu) )
-
-# The gene IDs displaying isoform switching.
-ids <- get_plurality_ids(mydtu)
-print( ids )
-```
-
-These give you the number and IDs of genes in which 2, 3, etc isoforms show DTU.
-
-For example, one gene ("MIX6") is showing significant change in 3 of its isoforms.
 
 
 ***
@@ -146,7 +64,7 @@ print( names(mydtu) )
 print( names(mydtu$Parameters) )
 ```
 
-* `description` - (str) Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters...
+* `description` - (str) Free-text description of the run. It is useful to record data sources, annotation source and version, experimental parameters, etc...
 * `time` - (str) Date and time for the run. This does not represent the exact time the run started.
 * `rats_version` - (str) The version of RATs.
 * `R_version` - (str) The version of R (including OS architecture).
@@ -157,62 +75,63 @@ print( names(mydtu$Parameters) )
 * `num_genes` - (int) The number of genes in the provided annotation.
 * `num_transc` - (int) The number of transcripts in the provided annotation.
 * `tests` - (str) The value passed to the `testmode` parameter.
+* `use_sums` - (bool) Sum the replicates instead of averaging them (pre-0.7.0 RATs always summed).
 * `p_thresh` - (num) The value passed to the `p_thresh` parameter.
 * `abund_thresh` - (num) The value passed to the `abund_thresh` parameter.
 * `dprop_thresh` - (num) The value passed to the `dprop_thresh` parameter.
 * `correction` - (str) Multiple testing correction method.
 * `abund_scaling` - (num) The value(s) passed to the `scaling` parameter. It will be either a single numeric value or a named vector of values.
-* `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter, if `qboot==TRUE`.
 * `quant_boot` - (bool) The value passed to the `qboots` parameter.
+* `quant_reprod_thresh` - (num) The value passed to the `qrep_thresh` parameter, if `qboot==TRUE`.
 * `quant_bootnum` - (int) The value passed to the `qbootnum` parameter, if `qboot==TRUE`.
-* `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter, if `rboot==TRUE`..
 * `rep_boot` - (bool) The value passed to the `rboot` parameter.
+* `rep_reprod_thresh` - (num) The value passed to the `rrep_thresh` parameter, if `rboot==TRUE`.
 * `rep_bootnum` - (int) The number of replicate bootstrapping iterations (currently  M*N, where M and N are the numbers of samples in the two conditions), if `rboot==TRUE`.
 * `seed` - (int) Custom seed for the random generator. `NA` if none was specified.
 * `reckless` - (bool) The value passed to the `reckless` parameter.
+* `lean` - (bool) The value passed to the `lean` parameter.
 
 **Note:** If bootstraps are disabled, the bootstrap-related fields may be `NA`, regardless of supplied values, to reflect the fact that they were not used.
 
 
 ## Genes
 
-`Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
-results at the gene level.  For your convenience, the respective aggregated transcript-level DTU calls are 
+`Genes` is a [data.table](https://cran.r-project.org/web/packages/data.table/) listing 
+results at the gene level. For your convenience, the respective aggregated transcript-level DTU calls are 
 also included here (defined as at least one isoform being called DTU individually).
-
-The maximum likelihood-based G-test of independence is used to compare the set of isoform ratios between the two conditions. 
 
 ```{r}
 # Genes table's fields.
 print( names(mydtu$Genes) )
 ```
 
-The first few columns show the result of each decision step. The remaining columns list the values based on which the decisions were made.
-Pseudo-code formulas are shown to help understand how the different fields interact when making decisions.
+The first few columns show the result of each decision step in a boolean manner, allowing easy filtering of the table. 
+The remaining columns list the values based on which these decisions were made.
+Pseudo-code formulas are shown here to help understand how the different fields interact when making decisions.
 
 * `parent_id` - (str) Gene identifier.
 * `elig` - (bool) Eligible for testing. Whether the gene met the pre-filtering criteria. `= (elig_transc >= 2)`.
-* `sig` - (bool) Statistically significant. `= (pvalAB_corr < Parameters$p_thresh) & (pvalBA_corr < Parameters$p_thresh)`.
+* `sig` - (bool) Statistically significant. `= (pval_corr < Parameters$p_thresh)`.
 * `elig_fx` - (bool) Eligible effect size. Whether at least one of the isoforms meets the effect size criterion. `= any(Transcript[parent_id, elig_fx])`.
-* `quant_reprod` - (bool) Quantification reproducible.
+* `quant_reprod` - (bool) Result reproducible across quantification iterations.
 For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for non-DTU `= (quant_dtu_freq <= 1 - Parameters$quant_reprod_thresh)`.
-* `rep_reprod` - (bool) Replication reproducible.
+* `rep_reprod` - (bool) Result reproducible across replicates.
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`.
-* `DTU` - (bool) Differential Transcript Usage. `= (sig & elig_fx & quant_reprod & rep_reprod)`.
+* `DTU` - (bool) Gene-level Differential Transcript Usage. `= (sig & elig_fx & quant_reprod & rep_reprod)`.
 * `transc_DTU` - (bool) Aggregated from `Transcripts$DTU`: At least one isoform was individually reported as DTU. `= (Transcript[ , any(DTU), by=parent_id])`.
 * `known_transc` - (int) Number of known trascripts for this gene according to the given annotation.
 * `detect_trancs` - (int) Number of detected (expressed) transcripts in the given dataset.
 * `elig_transc` - (int) Number of eligible transcripts, aggregated from `Transcripts$elig`.
-* `pval` - (num) G test of independence p-value for the isoform ratios.
+* `pval` - (num) G test of independence p-value for the isoform ratios of the gene.
 * `pval_corr` - (num) Multiple testing corrected p-value. `pval_corr= p.adjust(pval, Parameters$correction)`.
-* `quant_p_median` - (num) Median of corrected p-values across quantification bootstraps.
-* `quant_p_min` - (num) Minimum observed (corrected) p-value across quantification bootstraps.
-* `quant_p_max` - (num) Maximum observed (corrected) p-value across quantification bootstraps.
+* `quant_p_median` - (num) Median of corrected p-values across quantification bootstraps (not available in `lean` mode).
+* `quant_p_min` - (num) Minimum observed (corrected) p-value across quantification bootstraps (not available in `lean` mode).
+* `quant_p_max` - (num) Maximum observed (corrected) p-value across quantification bootstraps (not available in `lean` mode).
 * `quant_na_freq` - (num) Fraction of quantification iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `quant_dtu_freq` - (num) Fraction of replicate iterations that support a positive `DTU` classification.
-* `rep_p_median` - (num) Median p-value across replication bootstraps.
-* `rep_p_min` - (num) Minimum observed p-value across replication bootstraps.
-* `rep_p_max` - (num) Maximum observed p-value across replication bootstraps.
+* `rep_p_median` - (num) Median p-value across replication bootstraps (not available in `lean` mode).
+* `rep_p_min` - (num) Minimum observed p-value across replication bootstraps (not available in `lean` mode).
+* `rep_p_max` - (num) Maximum observed p-value across replication bootstraps (not available in `lean` mode).
 * `rep_na_freq` - (num) Fraction of replication iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `rep_dtu_freq` - (num) Fraction of replication iterations that support a positive `DTU` classification.
 
@@ -221,20 +140,22 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 
 ## Transcripts
 
-`Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) with many fields, listing 
+`Transcripts` is a [data.table](https://cran.r-project.org/web/packages/data.table/) listing 
 results at the transcript level. For your convenience, the respective gene-level DTU calls are also included here.
-
-The maximum likelihood-based G-test of independence is used to compare each given isoform's proportions in the two conditions.
 
 ```{r}
 # Transcripts table's fields.
 print( names(mydtu$Transcripts) )
 ```
 
+The first few columns show the result of each decision step in a boolean manner, allowing easy filtering of the table. 
+The remaining columns list the values based on which these decisions were made.
+Pseudo-code formulas are shown here to help understand how the different fields interact when making decisions.
+
 * `target_id` - (str) Transcript identifier.
 * `parent_id` - (str) Gene identifier.
 * `elig_xp` - (bool) Eligible expression level. `= (meanA >= Parameters$abund_thresh | meanB >= Parameters$abund_thresh)`.
-* `elig` - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). `= (elig_xp & totalA != 0 & totalB != 0 & (sumA != totalA | sumB != totalB))`.
+* `elig` - (bool) Eligible for testing (meets the noise threshold and at least one other isoform is expressed). `= (elig_xp & totalA != 0 & totalB != 0 & (abundA != totalA | abundB != totalB))`.
 * `sig` - (bool) Statistically significant. `= (pval_corr < Parameters$p_thresh)`.
 * `elig_fx` - (bool) Eligible effect size. Proxy for biological significance. `= (Dprop > Parameters$dprop_thresh)`.
 *. `quant_reprod` - (bool) Quantification reproducible.
@@ -242,32 +163,31 @@ For positive DTU, `= (quant_dtu_freq >= Parameters$quant_reprod_thresh)`, for no
 * `rep_reprod` - (bool) Replication reproducible.
 For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DTU `= (rep_dtu_freq <= 1 - Parameters$rep_reprod_thresh)`.
 * `DTU` - (bool) The Transcript is Differentially Used. `= (sig & elig_fx & quant_reprod & rep_reprod)`.
-*. `gene_DTU` - (bool) Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in isoform ratios. `= (Genes[parent_id, DTU])`.
-* `meanA` and `meanB` - (num) The mean abundance across replicates, for each condition.
+* `gene_DTU` - (bool) Expanded from `Genes$DTU`. Indicates that the gene as a whole shows significant change in isoform ratios. `= (Genes[parent_id, DTU])`.
+* `abundA` and `abundB` - (num) Either the mean or the sum of the abundances across replicates, depending on what is indicated by `Parameters$use_sums`. This is the value used for the tests.
 * `stdevA` and `stdevB` - (num) The standard deviation of the abundance across the replicates.
-* `sumA` and `sumB` - (num) The sum of the abundances across replicates. This is the value used for the tests, so that replication level informs the significance.
-* `log2FC` - (num) log2 of fold-change of transcript abundance: `= log2(sumB / sumA)`. sumA and sumB are not normalised for library size, so the log2FC is meaningless unless the input data were pre-normalised (such as scaled TPMs).
-* `totalA` and `totalB` - (num) The total abundance for the gene: `totalA= sum(transcripts[parent_id, sumA])`.
-* `propA` and `propB` - (num) The proportion of the gene expression owed to this transcript. `propA= sumA / totalA`.
+* `log2FC` - (num) log2 of fold-change of transcript abundance: `= log2(abundB / abundA)`. `abundA` and `abundB` are not internally normalised for library size, so care must be taken when interpreting `log2FC`.
+* `totalA` and `totalB` - (num) The total abundance for the gene: `totalA= sum(transcripts[parent_id, abundA])`.
+* `propA` and `propB` - (num) The proportion of the gene expression owed to this transcript. `propA= abundA / totalA`.
 * `Dprop` - (num) The difference in the proportion of the transcript between the two conditions (effect size). `= (probB - propA)`.
 * `pval` - (num) The proportion equality test P-value for the transcript.
 * `pval_corr` - (num) Multiple testing corrected p-value. `= p.adjust(pval, Parameters$correction)`.
-* `quant_p_median` - (num) Median of corrected p-value across quantification bootstraps.
-* `quant_p_min` - (num) Minimum observed (corrected) p-value across quantification bootstraps.
-* `quant_p_max` - (num) Maximum observed (corrected) p-value across quantification bootstraps.
-* `quant_Dprop_mean` - (num) Mean effect size across quantification bootstraps.
-* `quant_Dprop_stdev` - (num) Standard deviation of effect size across quantification bootstraps.
-* `quant_Dprop_min` - (num) Minimum observed effect size across quantification bootstraps.
-* `quant_Dprop_max` - (num) Maximum observed effect size across quantification bootstraps.
+* `quant_p_median` - (num) Median of corrected p-value across quantification bootstraps (not available in `lean` mode).
+* `quant_p_min` - (num) Minimum observed (corrected) p-value across quantification bootstraps (not available in `lean` mode).
+* `quant_p_max` - (num) Maximum observed (corrected) p-value across quantification bootstraps (not available in `lean` mode).
+* `quant_Dprop_mean` - (num) Mean effect size across quantification bootstraps (not available in `lean` mode).
+* `quant_Dprop_stdev` - (num) Standard deviation of effect size across quantification bootstraps (not available in `lean` mode).
+* `quant_Dprop_min` - (num) Minimum observed effect size across quantification bootstraps (not available in `lean` mode).
+* `quant_Dprop_max` - (num) Maximum observed effect size across quantification bootstraps (not available in `lean` mode).
 * `quant_na_freq` - (num) Fraction of quantification iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `quant_dtu_freq` - (num) Fraction of quantification iterations that support a positive `DTU` classification.
-* `rep_p_median` - (num) Median of corrected p-value across replication bootstraps.
-* `rep_p_min` - (num) Minimum observed (corrected) p-value across replication bootstraps.
-* `rep_p_max` - (num) Maximum observed (corrected) p-value across replication bootstraps.
-* `rep_Dprop_mean` - (num) Mean effect size across replication bootstraps.
-* `rep_Dprop_stdev` - (num) Standard deviation of effect size across replication bootstraps.
-* `rep_Dprop_min` - (num) Minimum observed effect size across replication bootstraps.
-* `rep_Dprop_max` - (num) Maximum observed effect size across replication bootstraps.
+* `rep_p_median` - (num) Median of corrected p-value across replication bootstraps (not available in `lean` mode).
+* `rep_p_min` - (num) Minimum observed (corrected) p-value across replication bootstraps (not available in `lean` mode).
+* `rep_p_max` - (num) Maximum observed (corrected) p-value across replication bootstraps (not available in `lean` mode).
+* `rep_Dprop_mean` - (num) Mean effect size across replication bootstraps (not available in `lean` mode).
+* `rep_Dprop_stdev` - (num) Standard deviation of effect size across replication bootstraps (not available in `lean` mode).
+* `rep_Dprop_min` - (num) Minimum observed effect size across replication bootstraps (not available in `lean` mode).
+* `rep_Dprop_max` - (num) Maximum observed effect size across replication bootstraps (not available in `lean` mode).
 * `rep_na_freq` - (num) Fraction of replication iterations in which `DTU` could not be determined (not meeting pre-filtering criteria).
 * `rep_dtu_freq` - (num) Fraction of replication iterations that support a positive `DTU` classification.
 
@@ -276,9 +196,8 @@ For positive DTU, `= (rep_dtu_freq >= Parameters$rep_reprod_thresh)`, for non-DT
 
 ## Abundances
  
-`Abundances` is a list of two `data.table`s, one for each condition. Each transcript is represented by a single abundance value per replicate, 
-so if bootstrapped data was used, these values are the means across iterations. If plain abundances were provided as input, then `Abundances` 
-essentially contains the input data. These abundances are included in the output because they are required for some of RATs' plotting options.
+`Abundances` is a list of two `data.table`s, one for each condition. 
+Each transcript is represented by a single abundance value per replicate, so if bootstrapped data was used, these values are the means across iterations. If plain abundances were provided as input, then `Abundances` essentially contains the input data. These abundances are included in the output because they are required for some of RATs' plotting options.
 
 ```{r}
 # Elements of Abundances.
@@ -295,6 +214,66 @@ print( head(mydtu$Abundances[[1]]) )
 
 ***
 
+# Quick results
+
+For your convenience, RATs provides a few functions to give you a quick summary of the run. They all follow the same style.
+
+These reports should not be seen as a substitute for the detailed RATs output.
+
+## Summary of DTU
+
+The `dtu_summary()` function lists the total number of genes and transcripts for each of 3 categories:
+
+* DTU:  There is significant change in isoform ratios (in terms of both effect size and statistical significance).
+* non-DTU:  No significant change.
+* ineligible: Ineligible for testing. Genes/transcripts with read count below the set threshold, or where the gene has only one known transcript.
+
+```{r}
+# A tally of the outcome.
+print( dtu_summary(mydtu) )
+```
+
+The `get_dtu_ids()` function lists the coresponding identifiers per category.
+The ID lists obtained ordered by effect size (`Dprop`).
+
+```{r}
+# Gene and transcript IDs corresponding to the tally above.
+ids <- get_dtu_ids(mydtu)
+print( names(ids) )
+print( ids )
+```
+
+## Summary of isoform switching
+
+Isoform switching is a subset of DTU. Primary isoform switching is often considered the most likely 
+type of DTU to have an effect. The following two functions summarise the extent of isoform switching 
+in the results:
+
+```{r}
+# A tally of genes switching isoform ranks.
+print( dtu_switch_summary(mydtu) )
+
+# The gene IDs displaying isoform switching.
+ids <- get_switch_ids(mydtu)
+print( names(ids) )
+```
+
+## Summary of DTU plurality
+
+In case you want to know how many isoforms are affected per gene.
+
+```{r}
+# A tally of genes switching isoform ranks.
+print( dtu_plurality_summary(mydtu) )
+
+# The gene IDs displaying isoform switching.
+ids <- get_plurality_ids(mydtu)
+```
+
+These give you the number and IDs of genes in which 2, 3, etc... isoforms show DTU.
+
+
+***
 
 # Contact information
 

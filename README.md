@@ -15,12 +15,13 @@ Anyone working in transcriptomics, analysing gene expression and transcript abun
 
 #### What it does
 
-1. It provides a method to detect changes in the abundance ratios of transcript isoforms of a gene.
+1. It provides a method to detect changes in the abundance ratios of transcript isoforms within a gene.
 This is called **Differential Transcript Usage (DTU)**. 
 
-2. **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; RATs uses only the
-transcript abundances, which you can obtain using any tool you like. This makes it *suitable for use with alignment-free quantification tools* 
-like [Kallisto](http://pachterlab.github.io/kallisto/) or [Salmon](https://github.com/COMBINE-lab/salmon). 
+2. **RATs is workflow-agnostic**. Quantification quality details are left to the quantification tools; 
+RATs uses only the transcript abundances, which you can obtain using any tool you like. This makes it 
+*suitable for use with alignment-free quantification tools* like [Kallisto](http://pachterlab.github.io/kallisto/)
+or [Salmon](https://github.com/COMBINE-lab/salmon), as well as with traditional alignment-based quantification methods.
 
 3. RATs is able to take advantage of the bootstrapped quantifications provided by the alignment-free tools. These bootstrapped
 data are used by RATs to assess how much the technical variability of the heuristic quantifications affects differential transcript usage
@@ -31,10 +32,9 @@ and thus provide a measure of confidence in the DTU calls.
 
 1. This is an R source package, and will run on any platform with a reasonably up-to-date R environment. A few third-party R packages are also required (see below).
 
-2. As input, RATs requires transcript abundance estimates with or without bootstrapping. The format either way is tables with the samples as columns and the transcripts as rows. An extra column holds the transcript IDs. Some functionality to create these from Salmon or Kallisto quantification files is provided by RATs.
+2. As input, RATs requires transcript abundance estimates with or without bootstrapping. The format either way is tables with the samples (or iterations) as columns and the transcripts as rows. The first column holds the transcript IDs. Some functionality to create these from Salmon or Kallisto quantification files is provided by RATs, but there are many other ways to set your data in the required format.
 
-3. RATs also requires a look-up table matching the transcript identifiers to the respective gene identifiers. This can be obtained through various means,
-one of them being extracting this info from a GTF file using functionality provided by RATs.
+3. RATs also requires a look-up table matching the transcript identifiers to the respective gene identifiers. This can be obtained through various means, such as extracting this info from a GTF file using functionality provided by RATs.
 
 ***
 
@@ -48,42 +48,31 @@ We recommend studying the vignettes before using RATs.
 
 ### Dependencies
 
-The package depends on a few third-party packages, which you may need to install first, if they are not present already. 
-Most of these relate to specific functionality that you may not wish to use, thus are optional:
+The following instructions assume Bioconductor >=3.5 syntax. Consult [Bioconductor](https://bioconductor.org/install/) for the old syntax.
 
-* Packages needed for computation
-
-```
-install.packages(c("data.table", "matrixStats"))
-```
-
-* Package needed for plotting results (optional, recommended)
+* Mandatory dependencies
 
 ```
-install.packages("ggplot2")
+# From CRAN
+
+install.packages(c("data.table", "matrixStats", "ggplot2"))
+
+# From Bioconductor
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("rhdf5")
+BiocManager::install("COMBINE-lab/wasabi")
+BiocManager::install("rtracklayer")
+BiocManager::install("GenomicRanges")
 ```
 
-* Packages needed for importing abundances from Salmon/Kallisto output (optional, recommended)
+* Optional dependencies
 
 ```
-install.packages("devtools")
-
-source("http://bioconductor.org/biocLite.R")
-
-# Format converter from Salmon/Sailfish to Kallisto.
-biocLite("COMBINE-lab/wasabi")
-
-# Compressed format parser, for Kallisto.
-biocLite("rhdf5")
-```
-
-* Package needed for interactive visualisation feature (optional)
-
-```
+# Interactive volcano plot.
 install.packages("shiny")
 ```
-
-If you have trouble installing these dependencies, your system could be missing source compilers for C and/or Fortran, and possibly other libraries, which you can see by scrolling back through the installation output to look for the errors. Please refer to the R manual or the respective package documentation for help.
 
 
 ### Installation
@@ -93,15 +82,15 @@ Download the package file and then install it using:
 
 `install.packages("<path/to/downloaded/package>", repos = NULL, type="source")`
 
-The latest release can also be installed directly from Github, using the `devtools` package (but this option has a tendency to install exhaustive minor dependencies or update existing packages, so it can take a while to complete):
+The latest release can also be installed directly from Github, using the `devtools` package:
 
 `devtools::install_github("bartongroup/rats", ref="master")`
 
-For testing purposes (bug resolutions, new features), you can install the ongoing developmental version from Github:
+For testing purposes (bug resolutions, new features), you can install the on-going development version from Github:
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas developmental versions now have a 4-part version number. Despite having version numbers, developmental versions are not archived and are **not suitable** for reproducible/critical/publishable analyses. They may also temporarily not work correctly or at all. For critical analyses you should use the latest release version.
+From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas development versions now have a 4-part version number. Development versions are not archived and are **not suitable** for reproducible/publishable analyses. They may also temporarily not work correctly or not work at all. For important analyses you should use the latest release version.
 
 Eventually, we aim to make the package also available through Bioconductor.
 
@@ -126,8 +115,8 @@ The `rats` R package was developed within [The Barton Group](http://www.compbio.
 by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
 
 To report **problems** or ask for **assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
-Providing a *reproducible working example* that demonstrates your issue is strongly encouraged. Also, be sure to **read the vignette(s)**, and browse/search
-the support forum before posting a new issue, in case your question is already answered there.
+Providing a *small reproducible working example* that demonstrates your issue is strongly encouraged. 
+Also, be sure to **read the vignette(s)**, and browse/search the support forum before posting a new issue.
 
 Enjoy!
 

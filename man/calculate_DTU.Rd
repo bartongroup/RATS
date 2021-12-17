@@ -5,7 +5,8 @@
 \title{Set up and execute the tests.}
 \usage{
 calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, full,
-  count_thresh, p_thresh, dprop_thresh, correction, threads = 1)
+  count_thresh, p_thresh, dprop_thresh, correction, threads = 1,
+  use_sums = FALSE)
 }
 \arguments{
 \item{counts_A}{A data.table of counts for condition A. x: sample, y: transcript.}
@@ -29,6 +30,8 @@ calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, full,
 \item{correction}{Multiple testing correction type.}
 
 \item{threads}{Number of threads (POSIX systems only).}
+
+\item{use_sums}{Use sums instead of means. (sums is the behaviour of RATs up to 0.6.5 inclusive, more sensitivie but more prone to false positives)}
 }
 \value{
 list

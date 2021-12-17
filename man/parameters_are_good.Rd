@@ -4,10 +4,10 @@
 \alias{parameters_are_good}
 \title{Check input parameters.}
 \usage{
-parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
-  TARGET_COL, PARENT_COL, correction, testmode, scaling, threads, seed,
-  p_thresh, abund_thresh, dprop_thresh, qboot, qbootnum, qrep_thresh, rboot,
-  rrep_thresh, reckless)
+parameters_are_good(annot, count_data_A, count_data_B, boot_data_A,
+  boot_data_B, TARGET_COL, PARENT_COL, correction, testmode, scaling,
+  threads, seed, p_thresh, abund_thresh, dprop_thresh, qboot, qbootnum,
+  qrep_thresh, rboot, rrep_thresh, reckless, lean, verbose, use_sums)
 }
 \arguments{
 \item{annot}{Annotation dataframe.}
@@ -50,7 +50,13 @@ parameters_are_good(annot, count_data_A, count_data_B, boot_data_A, boot_data_B,
 
 \item{rrep_thresh}{Confidence threshold.}
 
-\item{reckless}{whether to ignore detected annotation discrepancies}
+\item{reckless}{whether to ignore detected annotation discrepancies.}
+
+\item{lean}{whether to report descriptive statistics for Dprop and pval.}
+
+\item{verbose}{Verbose status.}
+
+\item{use_sums}{Whether to use sums or means.}
 }
 \value{
 List: \itemize{

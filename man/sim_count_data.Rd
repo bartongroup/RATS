@@ -4,12 +4,10 @@
 \alias{sim_count_data}
 \title{Generate an artificial dataset of abundance estimates, for code-testing or examples.}
 \usage{
-sim_count_data(errannot_inconsistent = FALSE, PARENT_COL = "parent_id",
-  TARGET_COL = "target_id", clean = FALSE)
+sim_count_data(PARENT_COL = "parent_id", TARGET_COL = "target_id",
+  clean = TRUE)
 }
 \arguments{
-\item{errannot_inconsistent}{Logical. Introduces an inconsistency in the transcript IDs, for testing of sanity checks. (FALSE)}
-
 \item{PARENT_COL}{Name for the bootdtraps column containing counts.}
 
 \item{TARGET_COL}{Name for annotation column containing transcript identification.}

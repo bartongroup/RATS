@@ -1,33 +1,34 @@
 Type: Package
 Package: rats
-Version: 0.6.4
-Date: 2018-05-18
+Version: 0.6.4.17
+Date: 2019-07-18
 Title: Relative Abundance of Transcripts
 Encoding: UTF-8
-Authors: c(person("Kimon Froussios", role=c("aut"), email="k.froussios@dundee.ac.uk"),
-             person("Kira Mourão", role=c("aut"), email="k.mourao@dundee.ac.uk"),
-             person("Nick J. Schurch", role=c("cre"), email="n.schurch@dundee.ac.uk"))
 Author: Kimon Froussios [aut], Kira Mourão [aut], Nick Schurch [cre]
-Maintainer: Kimon Froussios <k.froussios@dundee.ac.uk>
+Maintainer: Kimon Froussios <kimon.froussios@gmail.com>
 Description: Given a set of transript abundances and a transcript-to-gene index of
     identifiers, this package identifies genes where differential transcript usage occurs.
+Authors@R: c(person("Kimon Froussios", role=c("aut", "cre"), email="kimon.froussios@gmail.com"),
+             person("Kira Mourão", role=c("aut")),
+             person("Nick J. Schurch", role=c("aut")) )
 License: MIT + file LICENSE
 VignetteBuilder: knitr
-Depends:
-    data.table  (>= 1.9.8)
 Imports:
+    data.table  (>= 1.9.8),
     utils,
     stats,
     parallel,
-    matrixStats
-Suggests:
+    matrixStats,
     ggplot2  (>= 2.2.0),
+    rtracklayer,
     rhdf5,
-    wasabi,
+    wasabi, 
+    GenomicRanges
+Suggests:
+    ggbio,
     shiny,
-    testthat,
     knitr,
-    rmarkdown
+    testthat
 URL: https://github.com/bartongroup/Rats, http://www.compbio.dundee.ac.uk
 BugReports: https://github.com/bartongroup/RATS/issues
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.1

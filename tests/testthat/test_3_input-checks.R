@@ -7,46 +7,19 @@ test_that("No false alarms", {
   name_A <- "one"
   name_B <- "two"
   
-  sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=FALSE, TARGET_COL= "target", PARENT_COL= "parent")
+  sim <- sim_boot_data(clean=TRUE, TARGET_COL= "target", PARENT_COL= "parent")
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A = "AAAA", name_B = "BBBB", varname= "waffles", p_thresh= 0.01, abund_thresh= 10,
                          rrep_thresh = 0.6, qrep_thresh = 0.8, testmode= "transc", correction= "bonferroni", verbose= FALSE, rboot= FALSE, qboot=TRUE,
-                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21)))
+                         qbootnum= 100, TARGET_COL= "target", PARENT_COL= "parent", threads= 2, dbg= "prep", scaling=c(10, 11, 20, 21), lean=FALSE, use_sums=TRUE))
   
-  sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=FALSE)
+  sim <- sim_boot_data(clean=TRUE)
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, dbg= "prep", scaling=30))
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, rboot=FALSE, qboot= FALSE, verbose = FALSE, dbg= "prep"))
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, dbg= "prep"))
   expect_silent(call_DTU(annot= sim$annot, count_data_A= sim$boots_A[[1]], count_data_B= sim$boots_B[[1]], verbose = FALSE, dbg= "prep"))
 })
   
-#==============================================================================
-test_that("Feature ID inconsistencies abort or warn", {
-  sim <- sim_boot_data(clean=TRUE, errannot_inconsistent=TRUE)
-  
-  expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, dbg= "prep"),
-                 "Inconsistent set of transcript IDs across samples", fixed= TRUE)
-  expect_error(call_DTU(annot= sim$annot, count_data_A= sim$boots_A[[1]], count_data_B= sim$boots_B[[1]], verbose = FALSE, dbg= "prep"),
-                 "Transcript IDs do not match completely between conditions", fixed= TRUE)
-  expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_B, boot_data_B= sim$boots_A, verbose = FALSE, dbg= "prep"),
-               "The transcript IDs in the quantifications and the annotation do not match", fixed= TRUE)
-  expect_error(call_DTU(annot= sim$annot, count_data_A= sim$boots_B[[1]], count_data_B= sim$boots_A[[1]], verbose = FALSE, dbg= "prep"),
-               "The transcript IDs in the quantifications and the annotation do not match", fixed= TRUE)
-  
-  expect_warning(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = TRUE, dbg= "prep", reckless=TRUE),
-               "Inconsistent set of transcript IDs across samples", fixed= TRUE)
-  expect_warning(call_DTU(annot= sim$annot, count_data_A= sim$boots_A[[1]], count_data_B= sim$boots_B[[1]], verbose = TRUE, dbg= "prep", reckless=TRUE),
-               "Transcript IDs do not match completely between conditions", fixed= TRUE)
-  expect_warning(call_DTU(annot= sim$annot, boot_data_A= sim$boots_B, boot_data_B= sim$boots_A, verbose = TRUE, dbg= "prep", reckless=TRUE),
-               "The transcript IDs in the quantifications and the annotation do not match", fixed= TRUE)
-  expect_warning(call_DTU(annot= sim$annot, count_data_A= sim$boots_B[[1]], count_data_B= sim$boots_A[[1]], verbose = TRUE, dbg= "prep", reckless=TRUE),
-               "The transcript IDs in the quantifications and the annotation do not match", fixed= TRUE)
-  
-  expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, verbose = FALSE, dbg= "prep", reckless=TRUE))
-  expect_silent(call_DTU(annot= sim$annot, count_data_A= sim$boots_A[[1]], count_data_B= sim$boots_B[[1]], verbose = FALSE, dbg= "prep", reckless=TRUE))
-  expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_B, boot_data_B= sim$boots_A, verbose = FALSE, dbg= "prep", reckless=TRUE))
-  expect_silent(call_DTU(annot= sim$annot, count_data_A= sim$boots_B[[1]], count_data_B= sim$boots_A[[1]], verbose = FALSE, dbg= "prep", reckless=TRUE))
-})
-  
+
 #==============================================================================
 test_that("Annotation format is checked", {
   sim <- sim_boot_data(clean=TRUE)
@@ -65,6 +38,20 @@ test_that("Annotation format is checked", {
   a[1, "target_id"] <- a[2, "target_id"]
   expect_error(call_DTU(annot= a, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, verbose = FALSE, dbg= "prep"), 
                "transcript identifiers are not unique")
+})
+
+#==============================================================================
+test_that("Feature IDs are consistent", {
+  sim1 <- sim_count_data(clean=TRUE)
+  expect_false( annotation_inconsistent(sim1$annot, list(sim1$counts_A[[1]], sim1$counts_B[[1]])) )
+  
+  sim2 <- sim_count_data(clean=FALSE)
+  expect_true( annotation_inconsistent(sim2$annot, list(sim2$counts_A[[1]], sim2$counts_B[[1]])) )
+  
+  sink('/dev/null')
+  expect_warning(suppressMessages(mydtu <- call_DTU(annot=sim2$annot, count_data_A = sim2$counts_A, count_data_B = sim2$counts_B, verbose=TRUE, reckless=TRUE, dbg="qbootsum")), "wrong annotation" )
+  sink()
+  expect_error( call_DTU(annot=sim2$annot, count_data_A = sim2$counts_A, count_data_B = sim2$counts_B, verbose=FALSE, reckless=FALSE), "wrong annotation" )
 })
   
 #==============================================================================
@@ -113,13 +100,13 @@ test_that("Bootstrap parameters are checked", {
   
   # Confidence threshold.
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, rrep_thresh = -2, verbose = FALSE, dbg= "prep"),
-               "Invalid reproducibility threshold", fixed= TRUE)
+               "Invalid cross-replicate reproducibility threshold", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, rrep_thresh = 2, verbose = FALSE, dbg= "prep"),
-               "Invalid reproducibility threshold", fixed= TRUE)
+               "Invalid cross-replicate reproducibility threshold", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, qrep_thresh = -2, verbose = FALSE, dbg= "prep"),
-               "Invalid reproducibility threshold", fixed= TRUE)
+               "Invalid quantification reproducibility threshold", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, qrep_thresh = 2, verbose = FALSE, dbg= "prep"),
-               "Invalid reproducibility threshold", fixed= TRUE)
+               "Invalid quantification reproducibility threshold", fixed= TRUE)
 })
 
 #==============================================================================
@@ -140,6 +127,10 @@ test_that("Testing parameters are checked", {
                "Unrecognized value for qboot", fixed= TRUE)
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, rboot="GCSE", verbose = FALSE, dbg= "prep"),
                "Unrecognized value for rboot", fixed= TRUE)
+  
+  # Sums or means
+  expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, verbose = FALSE, use_sums="sums", dbg= "prep"),
+               "Invalid value for use_sums", fixed= TRUE)
 })
   
 #==============================================================================
@@ -195,10 +186,14 @@ test_that("General behaviour parameters are checked", {
   expect_silent(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE), verbose= FALSE, dbg= "prep"))
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, threads = parallel::detectCores(logical=TRUE) + 1, verbose= FALSE, dbg= "prep"),
                "threads exceed", fixed= TRUE)
-
+  
   # Verbose is bool.
   expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, verbose="yes", dbg= "prep"),
-               "not interpretable as logical", fixed= TRUE)
+               "Must be TRUE/FALSE", fixed= TRUE)
+  
+  # Lean is bool.
+  expect_error(call_DTU(annot= sim$annot, boot_data_A= sim$boots_A, boot_data_B= sim$boots_B, name_A= name_A, name_B= name_B, lean="yes", dbg= "prep"),
+               "Must be TRUE/FALSE", fixed= TRUE)
 })
 
 #EOF

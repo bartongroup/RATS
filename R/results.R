@@ -1,3 +1,8 @@
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+# Post-analysis utilities, ie. summaries and plots.
+########## ########## ########## ########## ########## ########## ########## ########## ##########
+
+
 #================================================================================
 #' List of DTU ids.
 #'
@@ -52,7 +57,7 @@ get_dtu_ids <- function(dtuo) {
 #' A tally of DTU genes and transcripts.
 #' 
 #' @param dtuo A DTU object.
-#' @return A data.frame with catefory names in the first column and values in the second column.
+#' @return A data.frame with category names in the first column and values in the second column.
 #'
 #'@export
 dtu_summary <- function(dtuo) {
@@ -138,7 +143,7 @@ get_switch_ids <- function(dtuo) {
 #' A tally of genes showing isoform switching.
 #'
 #' @param dtuo A DTU object.
-#' @return A data.frame with catefory names in the first column and values in the second column.
+#' @return A data.frame with category names in the first column and values in the second column.
 #'
 #'@export
 dtu_switch_summary <- function(dtuo) {
@@ -176,12 +181,12 @@ get_plurality_ids <- function(dtuo){
 #' A tally of genes based on how many isoforms show significant change.
 #'
 #' @param dtuo A DTU object.
-#' @return A data.frame with catefory names in the first column and values in the second column.
+#' @return A data.frame with category names in the first column and values in the second column.
 #'
 #'@export
 dtu_plurality_summary <- function(dtuo) {
   tally <- sapply(get_plurality_ids(dtuo), length)
-  return( data.frame("isof_affected"=names(tally), "num_of_genes"=tally, row.names=NULL, stringsAsFactors=FALSE)  )
+  return( data.frame("isof_affected"=names(tally), "num_of_genes"=tally, row.names=NULL, stringsAsFactors=FALSE) )
 }
 
 
@@ -190,8 +195,7 @@ dtu_plurality_summary <- function(dtuo) {
 #' Plot abundances for all isoforms of a specified gene.
 #'
 #' Boxplot of absolute and relative abundances for the isoforms of a given gene.
-#' The style option allows grouping by condition or by isoform, and provides the option to
-#' include the individual measuremnts from each replicate.
+#' The style option allows grouping by condition or by isoform.
 #'
 #' @param dtuo A DTU object.
 #' @param pid A \code{parent_id} to make the plot for.
@@ -228,11 +232,13 @@ dtu_plurality_summary <- function(dtuo) {
 #' @return A ggplot2 object. Simply display/print it or you can also customize it.
 #'
 #' @import data.table
+#' @import ggplot2
 #' @export
+#' 
 plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colourby=NA_character_, shapeby=NA_character_,
                       isofcolvec=c("tomato",  "lightblue", "forestgreen", "purple", "hotpink", "gold3"),
                       dtucolvec= c("TRUE"="firebrick1", "FALSE"="dodgerblue", "NA"="gold"),
-                      condcolvec=c("grey80", "grey15"),
+                      condcolvec=c("grey15", "steelblue"),
                       replcolvec=c("red",  "blue", "green", "violet", "pink", "orange"),
                       nonecol="grey50")
 {
@@ -249,13 +255,15 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
     repdatB <- dtuo$Abundances[["condB"]][pid, -"parent_id", with=FALSE]
 
     # Restructure
-    trnum <- dim(trdat)[1]
+    trnum <- Genes[pid, known_transc]
     anum <- dtuo$Parameters$num_replic_A
     bnum <- dtuo$Parameters$num_replic_B
     sA <- colSums(repdatA[, -"target_id", with= FALSE])
     sB <- colSums(repdatB[, -"target_id", with= FALSE])
     pA <- sweep(repdatA[, -"target_id", with= FALSE], 2, sA, "/")
     pB <- sweep(repdatB[, -"target_id", with= FALSE], 2, sB, "/")
+    pA[is.nan(as.matrix(pA))] <- 0
+    pB[is.nan(as.matrix(pB))] <- 0
     vis_data <- data.table("vals"=              c( unlist(repdatA[, -"target_id", with=FALSE]), unlist(repdatB[, -"target_id", with=FALSE]),                               unlist(pA),                               unlist(pB)  ),
                            "condition"= with(dtuo, c( rep.int(Parameters$cond_A, trnum * anum),    rep.int(Parameters$cond_B, trnum * bnum), rep.int(Parameters$cond_A, trnum * anum), rep.int(Parameters$cond_B, trnum * bnum) )),
                            "isoform"=     unlist(list( with(repdatA, rep.int(target_id, anum)),     with(repdatB, rep.int(target_id, bnum)),  with(repdatA, rep.int(target_id, anum)),  with(repdatB, rep.int(target_id, bnum)) )),
@@ -282,21 +290,21 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
 
     ### BY ISOFORM.
     if (style=="byisoform") {
-      if (is.na(fillby)) {
-        fillby <- "condition"
-      } else if(is.na(colourby)) {
-          colourby="condition"
+      if (is.na(colourby)) {
+        colourby <- "condition"
+      } else if(is.na(fillby)) {
+          fillby="condition"
       }
-      if (is.na(colourby))
-        colourby <- "isoform"
+      if (is.na(fillby))
+        fillby <- "isoform"
       if(is.na(shapeby))
         shapeby <- "DTU"
       if (all("condition" != c(colourby, fillby)))
           stop("Either fillby or colourby must be set to 'condition' for this plot to be displayed correctly!")
-      result <- ggplot2::ggplot(vis_data, ggplot2::aes(x= isoform, y= vals, colour= vis_data[[colourby]], fill= vis_data[[fillby]])) +
-        ggplot2::facet_grid(type ~ ., scales= "free", switch="y") +
-        ggplot2::geom_jitter(ggplot2::aes(shape=vis_data[[shapeby]]), position=ggplot2::position_jitterdodge()) +
-        ggplot2::geom_boxplot(position=ggplot2::position_dodge(), alpha=0.3, outlier.shape= NA)
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= vis_data[[colourby]], fill= vis_data[[fillby]])) +
+        facet_grid(type ~ ., scales= "free") +
+        geom_jitter(aes(shape=vis_data[[shapeby]]), position=position_jitterdodge()) +
+        geom_boxplot(position=position_dodge(), size=0.5, alpha=0.3, outlier.shape= NA)
     ### BY CONDITION.
     } else if (style=="bycondition") {
       if (is.na(fillby))
@@ -304,15 +312,15 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
       if (is.na(shapeby))
         shapeby <- "DTU"
       colourby <- "replicate"
-      result <- ggplot2::ggplot(vis_data, ggplot2::aes(x= isoform, y= vals)) +
-        ggplot2::facet_grid(type ~ condition, scales= "free", switch="y") +
-        ggplot2::geom_path(ggplot2::aes(colour= replicate, group= replicate), position=ggplot2::position_dodge(width=0.5), alpha=0.7) +
-        ggplot2::geom_point(ggplot2::aes(colour= replicate, group= replicate, shape=vis_data[[shapeby]]), position=ggplot2::position_dodge(width=0.5)) +
-        ggplot2::geom_boxplot(ggplot2::aes(fill= vis_data[[fillby]]), alpha=0.25, outlier.shape= NA, colour="grey60")
+      result <- ggplot(vis_data, aes(x= isoform, y= vals)) +
+        facet_grid(type ~ condition, scales= "free") +
+        geom_path(aes(colour= replicate, group= replicate), position=position_dodge(width=0.5), alpha=0.7) +
+        geom_point(aes(colour= replicate, group= replicate, shape=vis_data[[shapeby]]), position=position_dodge(width=0.5)) +
+        geom_boxplot(aes(fill= vis_data[[fillby]]), size=0.5, alpha=0.25, outlier.shape= NA, colour="grey60")
       if (fillby=="condition")
-        result <- result + ggplot2::guides(fill="none")
+        result <- result + guides(fill="none")
       if (shapeby=="none")
-        result <- result + ggplot2::guides(shape="none")
+        result <- result + guides(shape="none")
     ### BY CONDITION LINESONLY.
     } else if (style=="lines") {
       if (is.na(fillby))
@@ -320,38 +328,37 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
       if(is.na(shapeby))
         shapeby <- "DTU"
       colourby <- "replicate"
-      result <- ggplot2::ggplot(vis_data, ggplot2::aes(x= isoform, y= vals, colour= replicate)) +
-        ggplot2::facet_grid(type ~ condition, scales= "free", switch="y") +
-        ggplot2::geom_path(ggplot2::aes(group= replicate, colour= vis_data[[colourby]]), position=ggplot2::position_dodge(width=0.2)) +
-        ggplot2::geom_point(ggplot2::aes(group= replicate, colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position=ggplot2::position_dodge(width=0.2))
+      result <- ggplot(vis_data, aes(x= isoform, y= vals, colour= replicate)) +
+        facet_grid(type ~ condition, scales= "free") +
+        geom_path(aes(group= replicate, colour= vis_data[[colourby]]), position=position_dodge(width=0.2)) +
+        geom_point(aes(group= replicate, colour= vis_data[[colourby]], shape=vis_data[[shapeby]]), position=position_dodge(width=0.2))
     ### ERROR
     } else {
       stop("Unknown plot style.")
     }
+    # Styling
     result <- result +
-      ggplot2::scale_fill_manual(values=colplt[[fillby]], name=fillby) +
-      ggplot2::scale_colour_manual(values=colplt[[colourby]], name=colourby) +
-      ggplot2::scale_shape_manual(values=shaplt[[shapeby]], name=shapeby) +
-      ggplot2::scale_y_continuous(limits= c(0, NA), sec.axis=ggplot2::dup_axis()) +
-                # geom_hline(yintercept=0, size=rel(1.1)) +
-      ggplot2::labs(title= paste("gene:", pid), y= NULL, x= NULL) +
-      ggplot2::theme(axis.text.x= ggplot2::element_text(angle= 90),
-                      # axis.line.x= element_line(),
-                      strip.background= ggplot2::element_rect(fill= "grey95"),
-                      strip.text.y= ggplot2::element_text(size= ggplot2::rel(1.2)),
-                      strip.text.x= ggplot2::element_text(size= ggplot2::rel(1.1)),
-                      panel.grid.major.x= ggplot2::element_line(colour = "grey95"),
-                      panel.grid.major.y= ggplot2::element_blank(),
-                      panel.grid.minor= ggplot2::element_blank(),
-                      panel.background= ggplot2::element_rect(fill = "white"),
-                      panel.border = ggplot2::element_rect(colour = "black", fill=NA),
-                      legend.key = ggplot2::element_rect(fill = 'white') )
+      scale_fill_manual(values=colplt[[fillby]], name=fillby, drop = FALSE) +
+      scale_colour_manual(values=colplt[[colourby]], name=colourby, drop = FALSE) +
+      scale_shape_manual(values=shaplt[[shapeby]], name=shapeby, drop = FALSE) +
+      expand_limits(y=c(0,1)) +
+      labs(title= paste("gene:", pid), y= NULL, x= NULL) +
+      theme(axis.text.x= element_text(angle= 90),
+                      strip.background= element_rect(fill= "grey95"),
+                      strip.text.y= element_text(size= rel(1.2)),
+                      strip.text.x= element_text(size= rel(1.1)),
+                      panel.grid.major.x= element_line(colour = "grey95"),
+                      panel.grid.major.y= element_line(colour = "grey95"),
+                      panel.grid.minor= element_blank(),
+                      panel.background= element_rect(fill = "white"),
+                      panel.border = element_rect(colour = "black", fill=NA),
+                      legend.key = element_rect(fill = 'white') )
     if ( any(fillby == c("none", "isoform")) )
-      result <- result + ggplot2::guides(fill="none")
+      result <- result + guides(fill="none")
     if ( any(colourby == c("none", "isoform")) )
-      result <- result + ggplot2::guides(colour="none")
+      result <- result + guides(colour="none")
     if ( any(shapeby == c("none", "isoform")) )
-      result <- result + ggplot2::guides(shape="none")
+      result <- result + guides(shape="none")
     return(result)
   })
 }
@@ -379,8 +386,9 @@ plot_gene <- function(dtuo, pid, style="bycondition", fillby=NA_character_, colo
 #' object was created without the transcript-level tests, this function will not work.
 #'
 #' @import data.table
-
+#' @import ggplot2
 #' @export
+#' 
 plot_overview <- function(dtuo, type="volcano") {
   with(dtuo, {
     
@@ -388,140 +396,140 @@ plot_overview <- function(dtuo, type="volcano") {
     if (any(type == c("transc_volcano", "tvolcano", "volcano"))) {
       mydata = Transcripts[, .(target_id, Dprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot2::ggplot() +
-        ggplot2::geom_point(ggplot2::aes(x=mydata[DTU==FALSE, Dprop], y=mydata[DTU==FALSE,neglogP], colour=mydata[DTU==FALSE, DTU]), alpha = 0.3, shape=20) +
-        ggplot2::geom_point(ggplot2::aes(x=mydata[DTU==TRUE, Dprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.3, shape=20) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
-        ggplot2::ggtitle("Effect size VS significance (transcript level)") +
-        ggplot2::labs(x= "Isoform propotion difference", y = "-log10 (Pval)") +
-        ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
-        ggplot2::scale_y_continuous(expand=c(0,0))
+      result <- ggplot() +
+        geom_point(aes(x=mydata[DTU==FALSE, Dprop], y=mydata[DTU==FALSE,neglogP], colour=mydata[DTU==FALSE, DTU]), alpha = 0.3, shape=20) +
+        geom_point(aes(x=mydata[DTU==TRUE, Dprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.3, shape=20) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
+        ggtitle("Effect size VS significance (transcript level)") +
+        labs(x= "Isoform propotion difference", y = "-log10 (Pval)") +
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        scale_y_continuous(expand=c(0,0))
     
     ### GENE VOLCANO
     } else if (any(type == c("gene_volcano", "gvolcano"))) {
       mydata = Genes[, .(parent_id, maxDprop, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot2::ggplot() +
-        ggplot2::geom_point(ggplot2::aes(x=mydata[DTU==FALSE, maxDprop], y=mydata[DTU==FALSE,neglogP], colour=mydata[DTU==FALSE, DTU]), alpha = 0.3, shape=20) +
-        ggplot2::geom_point(ggplot2::aes(x=mydata[DTU==TRUE, maxDprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.3, shape=20) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
-        ggplot2::ggtitle("Effect size VS significance (gene level)") +
-        ggplot2::labs(x= "Largest difference in isoform propotion", y = "-log10 (Pval)") +
-        ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
-        ggplot2::scale_y_continuous(expand=c(0,0))
+      result <- ggplot() +
+        geom_point(aes(x=mydata[DTU==FALSE, maxDprop], y=mydata[DTU==FALSE,neglogP], colour=mydata[DTU==FALSE, DTU]), alpha = 0.3, shape=20) +
+        geom_point(aes(x=mydata[DTU==TRUE, maxDprop], y=mydata[DTU==TRUE,neglogP], colour=mydata[DTU==TRUE, DTU]), alpha = 0.3, shape=20) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
+        ggtitle("Effect size VS significance (gene level)") +
+        labs(x= "Largest difference in isoform propotion", y = "-log10 (Pval)") +
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        scale_y_continuous(expand=c(0,0))
     
     ### GENE VOLCANO 2
     } else if (any(type == c("gtvolcano"))) {
       mydata = Genes[, .(parent_id, maxDprop, -log10(pval_corr), transc_DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot2::ggplot() +
-        ggplot2::geom_point(ggplot2::aes(x=mydata[transc_DTU==FALSE, maxDprop], y=mydata[transc_DTU==FALSE,neglogP], colour=mydata[transc_DTU==FALSE, transc_DTU]), alpha = 0.3, shape=20) +
-        ggplot2::geom_point(ggplot2::aes(x=mydata[transc_DTU==TRUE, maxDprop], y=mydata[transc_DTU==TRUE,neglogP], colour=mydata[transc_DTU==TRUE, transc_DTU]), alpha = 0.3, shape=20) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
-        ggplot2::ggtitle("Effect size VS significance (transcript level)") +
-        ggplot2::labs(x= "Largest difference in isoform propotion", y = "-log10 (Pval)") +
-        ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
-        ggplot2::scale_y_continuous(expand=c(0,0))
+      result <- ggplot() +
+        geom_point(aes(x=mydata[transc_DTU==FALSE, maxDprop], y=mydata[transc_DTU==FALSE,neglogP], colour=mydata[transc_DTU==FALSE, transc_DTU]), alpha = 0.3, shape=20) +
+        geom_point(aes(x=mydata[transc_DTU==TRUE, maxDprop], y=mydata[transc_DTU==TRUE,neglogP], colour=mydata[transc_DTU==TRUE, transc_DTU]), alpha = 0.3, shape=20) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_hline(yintercept= -Parameters$p_thresh, colour="grey50") +
+        ggtitle("Effect size VS significance (transcript level)") +
+        labs(x= "Largest difference in isoform propotion", y = "-log10 (Pval)") +
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        scale_y_continuous(expand=c(0,0))
     
     ### TRADITIONAL VOLCANO
     } else if (any(type == "fcvolcano")) {
       mydata = Transcripts[, .(target_id, log2FC, -log10(pval_corr), DTU)]
       names(mydata)[3] <- "neglogP"
-      result <- ggplot2::ggplot(data = na.omit(mydata), ggplot2::aes(log2FC, neglogP, colour = DTU)) +
-        ggplot2::geom_point(shape=16, alpha = 0.3) +
-        ggplot2::ggtitle("Isoform abundance fold-change VS significance") +
-        ggplot2::labs(x = "log2 (FC)", y = "-log10 (Pval)")
+      result <- ggplot(data = na.omit(mydata), aes(log2FC, neglogP, colour = DTU)) +
+        geom_point(shape=16, alpha = 0.3) +
+        ggtitle("Isoform abundance fold-change VS significance") +
+        labs(x = "log2 (FC)", y = "-log10 (Pval)")
     
     ### EFFECT SIZE
     } else if (type == "dprop") {
-      result <- ggplot2::ggplot(data= Transcripts[(elig), .(Dprop, DTU)], ggplot2::aes(x=Dprop, fill=DTU)) +
-        ggplot2::geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::ggtitle("Effect size (transcript level)") +
-        ggplot2::labs(x = "Isoform proportion difference", y = "Number of Transcripts") +
-        ggplot2::scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
-        ggplot2::theme( axis.line.x = ggplot2::element_line() )
-      maxy <- max(ggplot2::ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
+      result <- ggplot(data= Transcripts[(elig), .(Dprop, DTU)], aes(x=Dprop, fill=DTU)) +
+        geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        ggtitle("Effect size (transcript level)") +
+        labs(x = "Isoform proportion difference", y = "Number of Transcripts") +
+        scale_x_continuous(breaks = seq(-1, 1, 0.2)) +
+        theme( axis.line.x = element_line() )
+      maxy <- max(ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
       maxy <- maxy + maxy * 0.05
       result <- result +
-        ggplot2::scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
+        scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
                            breaks=c(100, 500, 1000, pretty(c(0, maxy), n=4)))
     
     ### MAXDPROP
     } else if (type == "maxdprop") {
       mydata = Genes[, .(parent_id, maxDprop, DTU)]
-      result <- ggplot2::ggplot(data = na.omit(mydata), ggplot2::aes(x=maxDprop, fill=DTU)) +
-        ggplot2::geom_histogram(binwidth = 0.02, position="identity", alpha = 0.4) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::ggtitle("Effect size (gene level)") +
-        ggplot2::labs(x = "Largest isoform proportion difference per gene", y = "Number of genes") +
-        ggplot2::scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
-        ggplot2::theme(axis.line.x= ggplot2::element_line())
-      maxy <- max(ggplot2::ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
+      result <- ggplot(data = na.omit(mydata), aes(x=maxDprop, fill=DTU)) +
+        geom_histogram(binwidth = 0.02, position="identity", alpha = 0.4) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        ggtitle("Effect size (gene level)") +
+        labs(x = "Largest isoform proportion difference per gene", y = "Number of genes") +
+        scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
+        theme(axis.line.x= element_line())
+      maxy <- max(ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
       maxy <- maxy + maxy * 0.05
       result <- result +
-        ggplot2::scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
+        scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
                                        breaks=pretty(c(0, maxy), n=5))
     
     ### FC vs DPROP
     } else if (type == "fcVSdprop") {
-      result <- ggplot2::ggplot(data = na.omit(Transcripts[, .(log2FC, Dprop, DTU)]), ggplot2::aes(x=Dprop, y=log2FC, colour=DTU)) +
-        ggplot2::geom_point(shape=20, alpha = 0.3) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::ggtitle("Transcript abundance fold-change VS isoform proportion change") +
-        ggplot2::labs(x = "Proportion difference", y = "log2 (FC)") +
-        ggplot2::theme( panel.grid.minor.y= ggplot2::element_line(colour= "grey95", size=ggplot2::rel(1.5)) )
+      result <- ggplot(data = na.omit(Transcripts[, .(log2FC, Dprop, DTU)]), aes(x=Dprop, y=log2FC, colour=DTU)) +
+        geom_point(shape=20, alpha = 0.3) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        ggtitle("Transcript abundance fold-change VS isoform proportion change") +
+        labs(x = "Proportion difference", y = "log2 (FC)") +
+        theme( panel.grid.minor.y= element_line(colour= "grey95", size=rel(1.5)) )
     
     ### REPRODUCIBILITY vs DPROP
     } else if (type == "reprodVSdprop") {
-      result <- ggplot2::ggplot(data= na.omit(Transcripts[, .(Dprop, quant_dtu_freq, DTU)]), ggplot2::aes(x=Dprop, y=quant_dtu_freq, colour=DTU)) +
-        ggplot2::geom_point(shape=20, alpha=0.3) +
-        ggplot2::geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::geom_hline(yintercept= Parameters$quant_reprod_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::ggtitle("Reproducibility VS effect size") +
-        ggplot2::labs(x = "Isoform proportion change", y = "Pass frequency") +
-        ggplot2::scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
-        ggplot2::scale_y_continuous(limits= c(0, 1.01), expand= c(0, 0)) +
-        ggplot2::theme( axis.line.x = ggplot2::element_line() )
+      result <- ggplot(data= na.omit(Transcripts[, .(Dprop, quant_dtu_freq, DTU)]), aes(x=Dprop, y=quant_dtu_freq, colour=DTU)) +
+        geom_point(shape=20, alpha=0.3) +
+        geom_vline(xintercept= Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_vline(xintercept= -Parameters$dprop_thresh, colour="grey50", size=rel(0.5)) +
+        geom_hline(yintercept= Parameters$quant_reprod_thresh, colour="grey50", size=rel(0.5)) +
+        ggtitle("Reproducibility VS effect size") +
+        labs(x = "Isoform proportion change", y = "Pass frequency") +
+        scale_x_continuous(limits=c(-1, 1), breaks = seq(-1, 1, 0.2)) +
+        scale_y_continuous(limits= c(0, 1.01), expand= c(0, 0)) +
+        theme( axis.line.x = element_line() )
     
     ### REPRODUCIBILITY
     } else if (type == "reprod") {
-      result <- ggplot2::ggplot(data= na.omit(Genes[, .(quant_dtu_freq, DTU)]), ggplot2::aes(x=quant_dtu_freq, fill=DTU)) +
-        ggplot2::geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
-        ggplot2::geom_vline(xintercept= Parameters$quant_reprod_thresh, colour="grey50", size=ggplot2::rel(0.5)) +
-        ggplot2::scale_x_continuous(breaks = seq(0, 1, 0.2), expand=c(0, 0)) +
-        ggplot2::ggtitle("DTU Reproducibility") +
-        ggplot2::labs(x = "Pass frequency", y = "Number of Genes") +
-        ggplot2::theme( axis.line = ggplot2::element_line() )
-      maxy <- max(ggplot2::ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
+      result <- ggplot(data= na.omit(Genes[, .(quant_dtu_freq, DTU)]), aes(x=quant_dtu_freq, fill=DTU)) +
+        geom_histogram(binwidth = 0.02, position="identity", alpha = 0.5) +
+        geom_vline(xintercept= Parameters$quant_reprod_thresh, colour="grey50", size=rel(0.5)) +
+        scale_x_continuous(breaks = seq(0, 1, 0.2), expand=c(0, 0)) +
+        ggtitle("DTU Reproducibility") +
+        labs(x = "Pass frequency", y = "Number of Genes") +
+        theme( axis.line = element_line() )
+      maxy <- max(ggplot_build(result)$data[[1]]$y, na.rm=TRUE)
       maxy <- maxy + maxy * 0.05
       result <- result +
-        ggplot2::scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
+        scale_y_continuous(limits=c(0, maxy), expand=c(0, 0), trans="sqrt",
                            breaks=c(100, 500, 1000, pretty(c(0, maxy), n=4))) +
-        ggplot2::coord_flip()
+        coord_flip()
     } else {
       stop("Unrecognized plot type!")
     }
     
     # Apply theme.
     result <- result +
-      ggplot2::scale_fill_manual(values=c("lightblue", "red")) +
-      ggplot2::scale_colour_manual(values=c("lightblue", "red")) +
-      ggplot2::guides(colour=ggplot2::guide_legend("DTU")) +
-      ggplot2::theme(panel.background= ggplot2::element_rect(fill= "white"),
-                      panel.grid.major= ggplot2::element_line(colour= "grey95"),
+      scale_fill_manual(values=c("lightblue", "red")) +
+      scale_colour_manual(values=c("lightblue", "red")) +
+      guides(colour=guide_legend("DTU")) +
+      theme(panel.background= element_rect(fill= "white"),
+                      panel.grid.major= element_line(colour= "grey95"),
                       # panel.border = element_rect(colour = "black", fill=NA),
-                      legend.key = ggplot2::element_rect(fill = 'white') )
+                      legend.key = element_rect(fill = 'white') )
 
     return(result)
   })
@@ -535,9 +543,11 @@ plot_overview <- function(dtuo, type="volcano") {
 #'   \item{"cormat" - Pairwise Pearson's correlation matrix among samples.}
 #' }
 #' @return A ggplot2 object. Simply display it or you can also customize it.
+#' 
 #' @import data.table
-#'
+#' @import ggplot2
 #' @export
+#' 
 plot_diagnostics <- function(dtuo, type="cormat") {
   with(dtuo, {
     
@@ -548,18 +558,21 @@ plot_diagnostics <- function(dtuo, type="cormat") {
       names(mydata)[seq.int(1,dtuo$Parameters$num_replic_A)] <- paste0(dtuo$Parameters$cond_A, '_', names(mydata)[seq.int(1,dtuo$Parameters$num_replic_A)])
       names(mydata)[seq.int(dtuo$Parameters$num_replic_A+1, dtuo$Parameters$num_replic_A + dtuo$Parameters$num_replic_B)] <- paste0(dtuo$Parameters$cond_B, '_', names(mydata)[seq.int(dtuo$Parameters$num_replic_A+1, dtuo$Parameters$num_replic_A + dtuo$Parameters$num_replic_B)])
       # Do all the pairwise correlations between the columns. Must leave out all rows that contain NA, otherwise all correlations become NA.
-      corels <- melt(cor(mydata[complete.cases(mydata)]))
-      result <- ggplot2::ggplot() +
-        ggplot2::geom_tile(ggplot2::aes(x=corels[[1]], y=corels[[2]], fill=corels[[3]])) +
-        ggplot2::scale_fill_gradient(low="purple", high="white") +
-        ggplot2::xlab('Sample') + ggplot2::ylab('Sample') + ggplot2::ggtitle('Pairwise Pearson\'s correlations') + ggplot2::labs(fill='corr') +
-        ggplot2::theme(axis.text.x=ggplot2::element_text(angle=90))
+      mc <- data.frame(cor(mydata[complete.cases(mydata)]))
+      mcn <- names(mc)
+      mc['sample1'] <- mcn
+      corels <- melt(data.table(mc), id.vars="sample1", variable.name = "sample2")
+      result <- ggplot() +
+        geom_tile(aes(x=corels[[1]], y=corels[[2]], fill=corels[[3]])) +
+        scale_fill_gradient(low="purple", high="white") +
+        xlab('Sample') + ylab('Sample') + ggtitle('Pairwise Pearson\'s correlations') + labs(fill='corr') +
+        theme(axis.text.x=element_text(angle=90))
     }
     
     # Apply theme.
     result <- result +
-      ggplot2::theme(panel.background= ggplot2::element_rect(fill= "white"),
-                      legend.key = ggplot2::element_rect(fill = 'white') )
+      theme(panel.background= element_rect(fill= "white"),
+                      legend.key = element_rect(fill = 'white') )
     
     return(result)
   })
@@ -568,6 +581,8 @@ plot_diagnostics <- function(dtuo, type="cormat") {
 
 #================================================================================
 #' Interactive volcano plot, using shiny.
+#'
+#' This depends on the shiny package.
 #'
 #' @param dtuo A DTU object.
 #'
