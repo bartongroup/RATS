@@ -127,21 +127,17 @@ annot2models <- function(annotfile, threads= 1L)
 
 
 #================================================================================
-#' Import abundances directly from salmon and kallisto output.
+#' Import abundances directly from kallisto output.
 #'
-#' Convert Salmon read counts format to Kallisto RHDF5 format,
-#' then apply TPM normalisation using the info available from the abundance.h5 files.
+#' Apply TPM normalisation using the info available from the abundance.h5 files.
 #'
 #' Converting, normalising and importing multiple bootstrapped abundance files takes a bit of time.
 #' IMPORTANT: This function is currently not intended to be used to import non-bootstrapped quantifications.
-#'
-#' \code{wasabi} automatically skips format conversion if a folder already contains an \code{abundance.h5} file.
 #'
 #' @param A_paths (character) A vector of strings, listing the directory paths to the quantifications for the first condition. One directory per replicate, without trailing path dividers. The directory name should be a unique identifier for the sample.
 #' @param B_paths (character) A vector of strings, listing the directory paths to the quantifications for the second condition. One directory per replicate, without trailing path dividers.. The directory name should be a unique identifier for the sample.
 #' @param annot (data.frame) A table matching transcript identifiers to gene identifiers. This should be the same that you used for quantification and that you will use with \code{call_DTU()}. It is used to order the transcripts consistently throughout RATs.
 #' @param scaleto (double) Scaling factor for normalised abundances. (Default 1000000 gives TPM). If a numeric vector is supplied instead, its length must match the total number of samples. The value order should correspond to the samples in group A followed by group B. This allows each sample to be scaled to its own actual library size, allowing higher-throughput samples to carry more weight in deciding DTU.
-#' @param half_cooked (logical) If TRUE, input is already in \code{Kallisto} h5 format and \code{wasabi} conversion will be skipped. FALSE can also be used to force wasabi to repeat the conversion even if it exists. (Default FALSE)
 #' @param beartext (logical) Instead of importing bootstrap data from the \code{abundance.h5} file of each sample, import it from plaintext files in a \code{bootstrap} subdirectory created by running \code{kallisto}'s \code{h5dump} subcommand (Default FALSE). This workaround circumvents some mysterious .h5 parsing issues on certain systems.
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
@@ -151,11 +147,10 @@ annot2models <- function(annotfile, threads= 1L)
 #' @import parallel
 #' @import data.table
 #' @import rhdf5
-#' @import wasabi
 #'
 #' @export
 
-fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", half_cooked=FALSE, beartext=FALSE, threads= 1L, scaleto= 1000000)
+fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT_COL="parent_id", beartext=FALSE, threads= 1L, scaleto= 1000000)
 {
   threads <- as.integer(threads)  # Can't be decimal.
   setDTthreads(threads, restore_after_fork = TRUE)
@@ -163,15 +158,12 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
   # Don't assume the annotation is ordered properly.
   annot <- tidy_annot(annot, TARGET_COL, PARENT_COL)
 
-  # Wasabi?
-  wasabi::prepare_fish_for_sleuth(c(A_paths, B_paths), force= !half_cooked)
-
   # Sort out scaling factor per sample.
   lgth <- c("A"=length(A_paths), "B"=length(B_paths))
   sfac <- list("A"=NA_real_, "B"=NA_real_)
   if (length(scaleto) == 1) {     # uniform scaling
-    sfac$A <- rep(scaleto, lgth$A)
-    sfac$B <- rep(scaleto, lgth$B)
+    sfac$A <- rep(scaleto, lgth["A"])
+    sfac$B <- rep(scaleto, lgth["B"])
   } else {                        # individual scaling
     sfac$A <- scaleto[1:lgth$A]
     sfac$B <- scaleto[(1 + lgth$A):(lgth$A + lgth$B)]
