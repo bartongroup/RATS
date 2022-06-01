@@ -4,8 +4,7 @@
 \alias{granges2ids}
 \title{Extract matching transcript and gene IDs from a GRanges object.}
 \usage{
-granges2ids(annot, transc_header = "target_id",
-  gene_header = "parent_id")
+granges2ids(annot, transc_header = "target_id", gene_header = "parent_id")
 }
 \arguments{
 \item{annot}{A GRanges object with gene_id and transcript_id metadata columns.}

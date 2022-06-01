@@ -4,8 +4,15 @@
 \alias{scale_data}
 \title{Apply scaling.}
 \usage{
-scale_data(scaling, threads, steps, count_data_A, count_data_B,
-  boot_data_A, boot_data_B)
+scale_data(
+  scaling,
+  threads,
+  steps,
+  count_data_A,
+  count_data_B,
+  boot_data_A,
+  boot_data_B
+)
 }
 \arguments{
 \item{scaling}{Scaling factor(s).}

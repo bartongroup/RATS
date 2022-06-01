@@ -4,8 +4,7 @@
 \alias{gtf2ids}
 \title{Extract matching transcript and gene IDs from a GTF file.}
 \usage{
-gtf2ids(annotfile, transc_header = "target_id",
-  gene_header = "parent_id")
+gtf2ids(annotfile, transc_header = "target_id", gene_header = "parent_id")
 }
 \arguments{
 \item{annotfile}{A GTF file.}

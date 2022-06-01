@@ -4,8 +4,7 @@
 \alias{sim_boot_data}
 \title{Generate an artificial dataset of bootstrapped abundance estimates, for code-testing or examples.}
 \usage{
-sim_boot_data(PARENT_COL = "parent_id", TARGET_COL = "target_id",
-  clean = TRUE)
+sim_boot_data(PARENT_COL = "parent_id", TARGET_COL = "target_id", clean = TRUE)
 }
 \arguments{
 \item{PARENT_COL}{Name for the bootdtraps column containing counts.}

@@ -4,10 +4,22 @@
 \alias{do_boot}
 \title{Perform the bootstraps.}
 \usage{
-do_boot(lean, tx_filter, eltr, elge, boot_data_A = NULL,
-  boot_data_B = NULL, count_data_A = NULL, count_data_B = NULL,
-  niter = NULL, threads = 1, verbose = TRUE, test_transc = TRUE,
-  test_genes = TRUE, ...)
+do_boot(
+  lean,
+  tx_filter,
+  eltr,
+  elge,
+  boot_data_A = NULL,
+  boot_data_B = NULL,
+  count_data_A = NULL,
+  count_data_B = NULL,
+  niter = NULL,
+  threads = 1,
+  verbose = TRUE,
+  test_transc = TRUE,
+  test_genes = TRUE,
+  ...
+)
 }
 \arguments{
 \item{lean}{Minimal insight reported.}

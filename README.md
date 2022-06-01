@@ -70,6 +70,9 @@ BiocManager::install("GenomicRanges")
 * Optional dependencies
 
 ```
+# Gene models
+BiocManager::install("ggbio")
+
 # Interactive volcano plot.
 install.packages("shiny")
 ```

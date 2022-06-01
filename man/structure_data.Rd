@@ -4,8 +4,15 @@
 \alias{structure_data}
 \title{Structure input data.}
 \usage{
-structure_data(tx_filter, steps, threads, count_data_A, count_data_B,
-  boot_data_A, boot_data_B)
+structure_data(
+  tx_filter,
+  steps,
+  threads,
+  count_data_A,
+  count_data_B,
+  boot_data_A,
+  boot_data_B
+)
 }
 \arguments{
 \item{tx_filter}{Pre-processed annotation.}
