@@ -142,7 +142,7 @@ annot2models <- function(annotfile, threads= 1L)
 #' @param TARGET_COL The name of the column for the transcript identifiers in \code{annot}. (Default \code{"target_id"})
 #' @param PARENT_COL The name of the column for the gene identifiers in \code{annot}. (Default \code{"parent_id"})
 #' @param threads (integer) For parallel processing. (Default 1)
-#' @return A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic bootstrapped data input format.
+#' @return A list of two, representing the TPM abundances per condition. These will be formatted in the RATs generic data input format, preferably for bootstrapped estimates (if bootstraps are available) or otherwise for plain count estimates.
 #'
 #' @import parallel
 #' @import data.table
@@ -193,32 +193,59 @@ fish4rodents <- function(A_paths, B_paths, annot, TARGET_COL="target_id", PARENT
                                                                                                           # for consistency with the .h5 mode and to allow normalisation to other target sizes 
       # If data from Salmon/Wasabi or Kallisto abundance.h5...
       } else {
+        content <- rhdf5::h5ls(file.path(fil, "abundance.h5"))
         meta <- as.data.table(list( target_id=as.character(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/ids")), 
                                     eff_length=as.numeric(rhdf5::h5read(file.path(fil, "abundance.h5"), "/aux/eff_lengths")) ))
-        counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+        
+        if ('bootstrap' %in% content$name) {
+          counts <- as.data.table( rhdf5::h5read(file.path(fil, "abundance.h5"), "/bootstrap") )
+          # Normalise raw counts.
+          tpm <- as.data.table( lapply(counts, function (y) {
+            cpb <- y / meta$eff_length
+            tcpb <- sf / sum(cpb)
+            return(cpb * tcpb)
+          }) )
+          # Structure.
+          dt <- as.data.table( cbind(meta$target_id, tpm) )
+          with(dt, setkey(dt, V1) )
+          names(dt)[1] <- TARGET_COL
+          # Order transcripts to match annotation.
+          dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
+          
+        } else {
+          counts <- rhdf5::h5read(file.path(fil, "abundance.h5"), "/est_counts")
+          # Normalize.
+          cpb <- counts / meta$eff_length
+          tcpb <- sf / sum(cpb)
+          tpm <- cpb * tcpb
+          # Structure
+          dt <- as.data.table( cbind(meta$target_id, tpm) )
+          with(dt, setkey(dt, V1) )
+          names(dt)[1] <- TARGET_COL
+          names(dt)[2] <- basename(fil)
+          # Order transcripts to match annotation.
+          dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
+        }
+        
+        return (dt)
       }
-      
-      # Normalise raw counts.
-      tpm <- as.data.table( lapply(counts, function (y) {
-        cpb <- y / meta$eff_length
-        tcpb <- sf / sum(cpb)
-        return(cpb * tcpb)
-      }) )
-      
-      # Structure.
-      dt <- as.data.table( cbind(meta$target_id, tpm) )
-      with(dt, setkey(dt, V1) )
-      names(dt)[1] <- TARGET_COL
-      # Order transcripts to match annotation.
-      dt <- merge(annot[, c(TARGET_COL), with=FALSE], dt, by=TARGET_COL, all=TRUE)
-  
       return (dt)
     }, mc.cores = min(threads,lgth[cond]), mc.preschedule = TRUE, mc.allow.recursive = FALSE)
+    
+    # If single measurement for all samples, ie. est_counts instead of bootsraps, merge and unnest to meet un-bootsrapped format.
+    if( sum(vapply(boots, function(b){length(b)-1}, numeric(1))) == length(boots) ) {
+      boots <- Reduce(merge, boots)
+    }
     
     return (boots)
   })
   
-  names(res) <- c("boot_data_A", "boot_data_B")
+  if (is.data.table(res[[1]])) {
+    names(res) <- c("count_data_A", "count_data_B")
+  } else {
+    names(res) <- c("boot_data_A", "boot_data_B")
+  }
+  
   return(res)
 }
 

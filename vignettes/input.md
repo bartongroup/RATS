@@ -1,0 +1,596 @@
+---
+title: 'RATs: Input and Settings'
+author: "Kimon Froussios"
+date: "31 MAR 2022"
+output:
+  html_document:
+    keep_md: yes
+    theme: readable
+    toc: yes
+    toc_float: yes
+vignette: >
+  \usepackage[utf8]{inputenc}
+  %\VignetteIndexEntry{RATs 1: Input & Settings}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+
+
+
+
+
+***
+
+# Input formats
+
+## Data
+
+RATs can work with several input types:
+
+1. [Kallisto](http://pachterlab.github.io/kallisto/) quantifications in plain-text or RHDF5 format.
+2. Bootstrapped abundance estimates in lists of R `data.table`s.
+3. Abundance estimates in R `data.table`s.
+
+For option 1, the function `fish4rodents()` will load the data into tables suitable for options 2 or 3 accordingly. 
+Details in the respective section below. For options 2 and 3, the format of the tables is as in the example below. 
+The first column contains the transcript identifiers and subsequent columns contain the abundances.
+
+
+```
+##    target  V1  V2  V3
+## 1: SOLO.1 100 100 100
+## 2: SAME_1 200 200 200
+## 3: SAME_2 300 300 300
+## 4: LONE.a 150 150 150
+## 5: D2TE_a 300 300 300
+## 6: D2TE_b 400 400 400
+```
+
+* In the case of option 3, each column represents a sample. Each condition is represented by a single such table.
+* In the case of option 2, each column represents a bootstrap iteration and each table represents a sample. Each 
+condition is represented by a list of such tables.
+
+### Read counts, TPMs, etc
+
+To get the best results, we recommend obtaining TPM abundances, so as to account for differing transcript lengths, and then scaling these values to your actual library sizes to regain count-like magnitudes. 
+You can scale all libraries to the depth of your shallowest library for equal weight of all samples, or you can scale each sample to its own library if depths vary greatly and you want the deeper libraries to carry more weight.
+
+RATs provides parameters to scale the length-normalized abundances per sample to meet this requirement. 
+
+## Annotation
+
+RATs also needs to know how to group transcripts together. This is achieved with a simple `data.frame` or `data.table` that matches transcript identifiers to gene identifiers. The expected column labels are `target_id` for the transcript IDs and `parent_id` for the gene IDs. Additional columns are allowed to be present but will be ignored. The minimal annotation table should look like this:
+
+
+```
+##   target_id parent_id
+## 1       SW2        SW
+## 2    D2TE_b      D2TE
+## 3    SAME_1      SAME
+## 4    SAME_2      SAME
+## 5    LONE.a      LONE
+## 6    D2TE_a      D2TE
+```
+
+RATs provides functionality to create this table from a GTF file or a `GRanges` object with GTF-style metadata columns. 
+(**Note:** GFF3 is not supported for this)
+
+
+```r
+# Extract transcript ID to gene ID index from a GTF annotation.
+myannot <- gtf2ids("my_annotation_file.gtf")
+
+# Extract transcript ID and gene ID from a GRanges object. 
+# It must have GTF-style metadata columns "gene_id" and "transcript_id".
+myannot <- granges2ids(mygranges)
+```
+
+Extracting the ID pairs from a `TxDb` object is simpler and does not require a dedicated helper function:
+
+
+```r
+myannot <- select(mytxdb, keys(mytxdb), "GENEID", "TXNAME")
+# Rename the columns to match what RATs expects.
+names(myannot) <- c('gene_id', 'target_id')
+```
+
+
+***
+
+
+# Calling DTU 
+
+
+As input data, we will use the data emulators that RATs uses in its code tests. 
+These "data" are extremely limited and completely fictional, but are adequate to demonstrate data format and command syntax.
+If RATs issues *warnings* about the emulated dataset being too small, disregard them for this tutorial, they are meant for real datasets.
+
+### DTU from abundance estimates, without bootstraps
+
+This is the simplest usage case.
+
+First, let's emulate some data to work with:
+
+
+```r
+# Simulate some data.
+simdat <- sim_count_data(clean=TRUE)
+# For convenience let's assign the contents of the list to separate variables
+mycond_A <- simdat[[2]]       # Simulated abundances for one condition.
+mycond_B <- simdat[[3]]       # Simulated abundances for other condition.
+myannot <- simdat[[1]]        # Transcript and gene IDs for the above data.
+```
+
+Each condition is a single data.table:
+
+
+```r
+print( class(mycond_A) )
+```
+
+```
+## [1] "data.table" "data.frame"
+```
+
+Now we can call DTU:
+
+
+```r
+# Find DTU between the simulated datasets.
+mydtu <- call_DTU(annot= myannot, count_data_A= mycond_A, 
+                  count_data_B= mycond_B, verbose= FALSE,
+                  scaling= 1,
+                  name_A= "healthy", name_B= "patients", 
+                  varname= "My phenotype",
+                  description="Comparison of two simulated counts datasets 
+                  for the tutorial. Simulated using built-in functionality 
+                  of RATs.")
+```
+
+```
+## Summarising bootstraps...
+```
+
+#### Mandatory arguments:
+
+1. `annot` - An annotation data frame, as described in the Input formats section.
+2. `count_data_A` and `count_data_B` - Each is a `data.table` of transcript abundances as described in the Input formats section. They should contain length-normalized values, like TPMs or pseudocounts by up-scaled TPMs.
+3. `scaling` - A vector of scaling factors (one per sample), or a single scaling factor to be applied to all samples. This parameter is mandatory if input is TPM, but can be omitted if abundances are pre-scaled.
+
+#### Optional arguments (will be recorded in the output object, but have no effect on the run):
+
+* `name_A`, `name_B` - A name for each conditon.
+* `varname` - The name of the variable/condition.
+* `description` - Free-text description.
+
+
+
+### DTU from bootstrapped abundance estimates
+
+First, let's emulate some data, as we did before.
+
+
+```r
+# Simulate some data. (Notice it is a different function than before.)
+simdat <- sim_boot_data(clean=TRUE)
+
+# For convenience let's assign the contents of the list to separate variables
+mycond_A <- simdat[[2]]   # Simulated bootstrapped data for one condition.
+mycond_B <- simdat[[3]]   # Simulated bootstrapped data for other condition.
+myannot <- simdat[[1]]    # Transcript and gene IDs for the above data.
+```
+
+Each condition is a list of `data.table` objects:
+
+
+```r
+print( class(mycond_A) )
+```
+
+```
+## [1] "list"
+```
+
+```r
+print( class(mycond_A[[1]]) )
+```
+
+```
+## [1] "data.table" "data.frame"
+```
+
+Now we can call DTU:
+
+
+```r
+# Find DTU between conditions.
+mydtu <- call_DTU(annot= myannot, boot_data_A= mycond_A, 
+                  boot_data_B= mycond_B, verbose= FALSE, 
+                  scaling= 1,
+                  name_A= "wildtype", name_B= "some mutant", 
+                  varname = "My phenotype", description="Comparison of 
+                  two simulated datasets of bootstrapped counts for the 
+                  tutorial. Simulated using built-in functionality 
+                  of RATs.")
+```
+
+```
+## Summarising bootstraps...
+```
+
+#### Mandatory arguments:
+
+1. `annot` - An annotation data frame, as described in the *Input formats* section.
+2. `boot_data_A` and `boot_data_B` - Each is a list of `data.table` objects, as described in the Input section. They should contain length-normalized values, like TPMs or pseudocounts by up-scaled TPMs.
+3. `scaling` - A vector of scaling factors (one per sample), or a single scaling factor to be applied to all samples. This parameter is mandatory if input is TPM, but can be omitted if abundances are pre-scaled.
+
+#### Optional arguments (will be recorded in the output object, but have no effect on the run):
+
+* `name_A`, `name_B` - A name for each condition.
+* `varname` - The name of the variable/condition.
+* `description` - Free-text description.
+
+
+### DTU with Kallisto output
+
+The raw abundances are normalised to TPM (default). Consider instead providing the real depth of your libraries. 
+
+
+```r
+# Mock-up code, does not run.
+
+# 1. Collect your outputs into vectors. The end of each path should be a 
+#    directory with a unique name/identifier for one sample and containing
+#    the respective output of Kallisto.
+samples_A <- c("your/path/SAMPLE1", "your/path/SAMPLE4","your/path/SAMPLE5")
+samples_B <- c("your/path/SAMPLE2", "your/path/SAMPLE3","your/path/SAMPLE7", "your/path/SAMPLE10")
+
+# 2. Calculate length- & library-normalised abundances. 
+#    Scale them to 1M reads for TPM values.
+mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
+                       annot= myannot, scaleto=1e6) # scaling to TPM
+```
+
+The output is a list, containing either two lists of `data.table` objects of bootstrapped data or just two `data.table`s of non-bootstrapped data, as per the input formats specifications. Then follow the respective example for the data type, as already covered above.
+
+#### Mandatory arguments (`fish4rodents`):
+
+1. `A_paths` and `B_paths` - Two vectors containing the paths to the quantification output directories, one vector for each condition. The
+last segments of each path should be a directory with a unique identifying name for a single sample.
+2. `annot` - An annotation data frame, as described in the Input formats section.
+
+#### Optional arguments (`fish4rodents`):
+
+* `scaleto` - Library depth to aim for. (Default 1000000 gives TPM values).
+* `beartext` - directs `fish4rodents()` to read bootstrap data from plain-text files in a `bootstraps` subdirectory in each sample, instead of parsing the abundance.h5 file of the sample. (Default FALSE)
+
+
+
+***
+
+
+# Advanced Parameters and Settings
+
+
+
+## Main Thresholds
+
+The following three main thresholds are used in RATs:
+
+
+```r
+# Calling DTU with custom thresholds.
+mydtu <- call_DTU(annot= myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  p_thresh= 0.01, dprop_thres = 0.15, abund_thresh= 10,
+                  verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `p_thresh` - Statistical significance level. (Default 0.05, very permissive)
+2. `dprop_thresh` - Effect size threshold: The minimum difference in the isoform's proportion between the two conditions. (Default 0.20, quite strict)
+3. `abund_thresh` - Noise threshold: (i) The minimum mean (across replicates) abundance, in at least one condition, for a transcript to be considered expressed. (ii) Also the minimum cumulative abundance of all isoforms of a gene in each of the two conditions. (Default 5, very permissive)
+
+Depending on the settings, *additional thresholds* are available and will be discussed in their respective sections below.
+
+
+## Bootstrapping 
+
+RATs offers two types of bootstrapping:
+
+1. Bootstrapping of significance and effect size against the variability in the quantifications. 
+This requires bootstrapped quantifications as input.
+2. Bootstrapping of significance and effect size against the variability among replicates.
+
+Enabling these two procedures assesses the robustness of the DTU calls. In both cases, what is measured 
+is the fraction of iterations in which the significance and effect size meet their respective thresholds.
+**Note** If bootstrapping is switched off, the respective fields will not be included in the output.
+
+### Quantification bootstraping
+
+In this process, one quantification iteration will be randomly selected from each sample and DTU will be called on it. 
+This will be repeated `qbootnum` times.
+
+Three parameters control bootstrapping of DTU calls against the fluctuations in the quantification:
+
+
+```r
+# Do bootstrap (default). Do 100 iterations.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  qboot = TRUE, qbootnum = 100, qrep_thresh= 0.95,
+                  verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `qboot` - Whether to bootstrap against the quantifications. (Default TRUE)
+2. `qbootnum` - Number of bootstrap iterations. Ignored if `qboot=FALSE`. 0 is a special value prompting RATs to infer a value from the data (currently equal to the number of bootstraps in the data). (Default 0)
+3. `qrep_thresh` - Reproducibility threshold: The minimum fraction of the iterations that have to agree on a result to consider it confident. To calculate the reproducibility without factoring it into the DTU classification, set the threshold to 0. Ignored if `qboot=FALSE`. (Default 0.95)
+
+### Replicate bootstraping
+
+In this process, all the 1 vs. 1 combinations of samples, one from each condition, are used to bootstrap the variation across replicates.
+
+Two parameters control bootstrapping of DTU calls against the samples:
+
+
+```r
+# Bootstrap (default).
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  rboot = TRUE, qrep_thresh= 0.85, verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `rboot` - Whether to bootstrap the replicates or not. (Default TRUE)
+2. `rrep_thresh` - Reproducibility threshold: The minimum fraction of the iterations that have to agree on a result to consider it confident. Ignored if `rboot=FALSE`. To calculate the reproducibility without factoring it in the DTU classification, set the threshold to 0. (Default 0.85)
+
+**Note** that for few replicates per condition, the reproducibility values are highly discrete. 
+For example, the number of iterations for 2 samples per condition is `2 * 2 = 4`. 
+So the minimum disagreement rate is `1 / 4 = 0.25`, or conversely a reproducibility of `3/4 = 0.75`.
+The default threshold value of 0.85 is based on 3 replicates per condition, meaning 9 iterations and aiming for `8/9=0.889` agreement.
+
+### Extra bootstrapping info
+
+Additional information on the range, variance and centre of the effect size and p-value across bootstrap iterations can be calculated on request. This requires keeping the full raw results for every iteration in memory and can have a considerable footprint that scales with the number of transcripts and iterations. This is controlled by the `lean` parameter.
+
+
+```r
+# Extra info on variance across iterations.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  lean = FALSE, verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `lean` - Keep a light memory footprint but reporting only the reproducibility rate, without spread statistics. (Default TRUE)
+
+
+## Abundance scaling and normalisation
+
+Unlike Differential Transcript/Gene Expression, where libraries must be normalised for size so that expression values are comparable, abundances for Differential Transcript Usage are normalised to the expression of the respective individual gene. Therefore, RATs does not require the libraries to have the same size.
+
+For flexibility with different types of input, scaling can be applied in either/both of two stages: The data import step by 
+`fish4rodents()`, or/and the actual testing step by `call_DTU()`. The import applies length normalization and by default scales to 1 million. Such values are useful to have for use in other analyses. These TPMs can then be re-scaled to length-normalized pseudo-counts that reflect the library sizes.
+
+Both `fish4rodents()` and `call_DTU()` support scaling by a single value or a vector of values.
+
+
+```r
+# The following code is for demonstration only and won't run
+# without valid paths supplied to fish4rodents().
+
+# The following are equivalent.
+
+# 1:
+# Scale to individual library sizes directly at the import step.
+mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
+                       annot= myannot, 
+                       scaleto= c(25123456, 2665431, 23131313, 
+                                 5000000, 45123132, 48456654, 52363636),
+                       verbose= FALSE)
+# No additional scaling needed.
+mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A, 
+                  boot_data_B= mydata$boot_data_B, 
+                  scaling= 1,  # default
+                  verbose= FALSE)  
+
+# 2:
+# Normalise quantifications but do not scale them at all.
+mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
+                       annot= myannot, 
+                       scaleto=1)
+# Scale library fractions to the library sizes.
+mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A, 
+                  boot_data_B= mydata$boot_data_B,  
+                  scaling= c(25123456, 2665431, 23131313, 5000000, 
+                            45123132, 48456654, 52363636), 
+                  verbose= FALSE)
+
+# 3:
+# Scale Kallisto quantifications to TPMs.
+mydata <- fish4rodents(A_paths= samples_A, B_paths= samples_B, 
+                       annot= myannot, 
+                       scaleto= 1000000)  # default
+# Scale TPMs to individual library sizes.
+mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A, 
+                  boot_data_B= mydata$boot_data_B,
+                  scaling=c(25.123456, 26.65431, 23.131313, 50.0, 45.123132, 48.456654, 52.363636), 
+                  verbose= FALSE)
+```
+
+Take care to ensure that the scaling you apply is appropriate.
+
+**Note** that if you simply run both methods with their respective scaling defaults, you'll effectively run RATs 
+on TPM values, which is extremely underpowered and not recommended.
+
+
+## Multi-threading
+
+RATs completion time depends on the number of annotated and expressed transcripts. Single-threaded, RATs can take up to 
+a few minutes per iteration, for large annotations. Fortunately, the task is parallelisable:
+
+
+```r
+# Using 4 threads for parallel computing.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  threads = 4, verbose= FALSE)
+```
+
+1. `threads` - The number of threads to use. (Default 1)
+
+There are some limitations imposed by R. Refer to the `parallel` package for details (RATs uses the `mclapply` family of
+parallel functions).
+
+
+## Combining replicates
+
+Up to and including version `0.6.5`, RATs combined the isoform abundance values across replicates by summing them. 
+The resulting values are thus larger and pass the significance test more easily, increasing sensitivity. 
+But this can also boost false positives.
+
+Now, instead, the user is given the choice between sums and means. By default RATs now uses the means instead of the sums.
+
+
+```r
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  use_sums = TRUE, verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `use_sums` - Whether to test the sum of abundances across replicates, instead of their mean. (Default FALSE)
+
+## Correction for multiple testing
+
+There are as many null hypotheses tested as there are genes (for the gene-level results) or transcripts (for the transcript-level results). 
+The default correction method is `BH` (Benjamini-Hochberg). A full list of options is listed in R's `p.adjust.methods`.
+
+
+```r
+# Bonferroni correction.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  correction = "bonferroni", verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `correction` - Type of multiple testing correction. (Default "BH")
+
+
+## Test selection
+
+RATs runs both gene-level DTU calls and transcript-level DTU calls. They are independent from one another and we consider 
+them complementary and recommend using them together, but the option to skip either is provided, for special use cases. 
+The output fields of the skipped test will be filled with `NA`.
+
+
+```r
+# Transcripts only.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  testmode="transc", verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+```r
+# Genes only.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  testmode="genes", verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `testmode` - Which test(s) to run {"transc", "genes", "both"}. (Default "both")
+
+
+## Input field names
+
+### Annotation field names
+
+Although it is easy to rename the columns of a table to comply with the expected names, this may sometimes be undesireable, so RATs
+allows you to change the expected names instead.
+
+
+
+
+
+```r
+# Call DTU using annotation with custom field names.
+mydtu <- call_DTU(annot = myannot, 
+                  boot_data_A= mycond_A, boot_data_B= mycond_B,
+                  TARGET_COL="transcript", PARENT_COL="gene",
+                  verbose= FALSE)
+```
+
+```
+## Summarising bootstraps...
+```
+
+1. `TARGET_COL` - The name of the field holding the transcript identifiers in the annotation data frame. (Default "target_id")
+2. `PARENT_COL` - The name of the field holding the respective gene identifiers in the annotation data frame. (Default "parent_id")
+
+The `TARGET_COL` and `PARENT_COL` parameters are also available for `fish4rodents()`.
+
+
+## Annotation discrepancies
+
+RATs will abort the run if the set of feature IDs in the provided annotation does not match fully the set of IDs in the quantifications.
+If this happens, ensure you are using the exact same annotation throughout your workflow.
+
+For special use cases, RATs provides the option to ignore the discrepancy and pretend everything is OK. Do this at your own risk.
+
+
+```r
+mydtu <- call_DTU(annot= myannot, boot_data_A= mydata$boot_data_A, 
+                  boot_data_B= mydata$boot_data_B,
+                  reckless=TRUE, verbose=TRUE)
+```
+
+1. `reckless` - Ignore inconsistent set of IDs between annotation and quantifications. (Default FALSE)
+
+In reckless mode, all internal operations and the output of RATs are based on the annotation provided:
+
+* Any transcript IDs present in the data but missing from the annotation will be ignored and will not show up in the output at all, as they cannot be matched to the gene IDs.
+* Any transcript ID present in the annotation but missing from the data will be included in the output as zero expression. They can be identified later as `NA` values in `$Transcripts[, .(stdevA, stdevB)]` as these fields are not used downstream by RATs. `NA` values in other numeric fields are explicitly overwritten with `0` to allow downstream interoperability.
+
+***
+
+
+# Contact information
+
+The `rats` R package was developed within [The Barton Group](http://www.compbio.dundee.ac.uk) at [The University of Dundee](http://www.dundee.ac.uk)
+by Dr. Kimon Froussios, Dr. Kira Mourão and Dr. Nick Schurch.
+
+To **report problems** or **ask for assistance**, please raise a new issue [on the project's support forum](https://github.com/bartongroup/Rats/issues).
+Providing a *reproducible working example* that demonstrates your issue is strongly encouraged to help us understand the problem. Also, be sure 
+to **read the vignette(s)**, and browse/search the support forum before posting a new issue, in case your question is already answered there.
+
+Enjoy!
+
+![](./figs/rats_logo.png)
