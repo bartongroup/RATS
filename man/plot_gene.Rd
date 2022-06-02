@@ -4,13 +4,19 @@
 \alias{plot_gene}
 \title{Plot abundances for all isoforms of a specified gene.}
 \usage{
-plot_gene(dtuo, pid, style = "bycondition", fillby = NA_character_,
-  colourby = NA_character_, shapeby = NA_character_,
-  isofcolvec = c("tomato", "lightblue", "forestgreen", "purple",
-  "hotpink", "gold3"), dtucolvec = c(`TRUE` = "firebrick1", `FALSE` =
-  "dodgerblue", `NA` = "gold"), condcolvec = c("grey15", "steelblue"),
+plot_gene(
+  dtuo,
+  pid,
+  style = "bycondition",
+  fillby = NA_character_,
+  colourby = NA_character_,
+  shapeby = NA_character_,
+  isofcolvec = c("tomato", "lightblue", "forestgreen", "purple", "hotpink", "gold3"),
+  dtucolvec = c(`TRUE` = "firebrick1", `FALSE` = "dodgerblue", `NA` = "gold"),
+  condcolvec = c("grey15", "steelblue"),
   replcolvec = c("red", "blue", "green", "violet", "pink", "orange"),
-  nonecol = "grey50")
+  nonecol = "grey50"
+)
 }
 \arguments{
 \item{dtuo}{A DTU object.}

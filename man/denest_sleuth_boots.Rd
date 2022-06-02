@@ -4,9 +4,16 @@
 \alias{denest_sleuth_boots}
 \title{Extract bootstrap counts into a less nested structure.}
 \usage{
-denest_sleuth_boots(slo, annot, samples, COUNTS_COL = "tpm",
-  BS_TARGET_COL = "target_id", TARGET_COL = "target_id",
-  PARENT_COL = "parent_id", threads = 1)
+denest_sleuth_boots(
+  slo,
+  annot,
+  samples,
+  COUNTS_COL = "tpm",
+  BS_TARGET_COL = "target_id",
+  TARGET_COL = "target_id",
+  PARENT_COL = "parent_id",
+  threads = 1
+)
 }
 \arguments{
 \item{slo}{A sleuth object.}

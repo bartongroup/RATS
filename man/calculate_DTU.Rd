@@ -4,9 +4,20 @@
 \alias{calculate_DTU}
 \title{Set up and execute the tests.}
 \usage{
-calculate_DTU(counts_A, counts_B, tx_filter, test_transc, test_genes, full,
-  count_thresh, p_thresh, dprop_thresh, correction, threads = 1,
-  use_sums = FALSE)
+calculate_DTU(
+  counts_A,
+  counts_B,
+  tx_filter,
+  test_transc,
+  test_genes,
+  full,
+  count_thresh,
+  p_thresh,
+  dprop_thresh,
+  correction,
+  threads = 1,
+  use_sums = FALSE
+)
 }
 \arguments{
 \item{counts_A}{A data.table of counts for condition A. x: sample, y: transcript.}
