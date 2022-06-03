@@ -92,7 +92,7 @@ For testing purposes (bug resolutions, new features), you can install the on-goi
 
 `devtools::install_github("bartongroup/rats", ref="development")`
 
-From `v0.6.0` onwards, release versions of RATs continue to have a 3-part release number, whereas development versions now have a 4-part version number. Development versions are not archived and are **not suitable** for reproducible/publishable analyses. They may also temporarily not work correctly or not work at all. For important analyses you should use the latest release version.
+Development versions are not archived and are **not suitable** for reproducible/publishable analyses. They may also temporarily not work correctly or not work at all. For important analyses you should use the latest release version.
 
 Eventually, we aim to make the package also available through Bioconductor.
 
