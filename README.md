@@ -62,7 +62,6 @@ install.packages(c("data.table", "matrixStats", "ggplot2"))
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("rhdf5")
-BiocManager::install("COMBINE-lab/wasabi")
 BiocManager::install("rtracklayer")
 BiocManager::install("GenomicRanges")
 ```
